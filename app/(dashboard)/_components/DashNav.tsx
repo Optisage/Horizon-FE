@@ -2,6 +2,7 @@ import Image from "next/image";
 
 import Logo from "@/public/assets/svg/Optisage Logo.svg";
 import { CgMenuRightAlt } from "react-icons/cg";
+import CountrySelect from "./CountrySelect";
 
 const DashNav = () => {
   return (
@@ -29,9 +30,12 @@ const DashNav = () => {
       </div>
 
       <div className="flex gap-3 md:gap-6 items-center">
-        <p className="hidden lg:block text-sm font-medium text-[#090F0D]">
-          For better experience, install OptiSage Chrome Extension.
-        </p>
+        <div className="hidden lg:flex gap-6 items-center">
+          <p className="text-sm font-medium text-[#090F0D]">
+            For better experience, install OptiSage Chrome Extension.
+          </p>
+          <CountrySelect />
+        </div>
 
         <label
           htmlFor="my-drawer-2"

@@ -1,3 +1,5 @@
+import { RiSearchLine } from "react-icons/ri";
+
 interface SearchInputProps {
   placeholder?: string;
   value: string;
@@ -6,19 +8,27 @@ interface SearchInputProps {
 }
 
 const SearchInput: React.FC<SearchInputProps> = ({
-  placeholder = "Search",
+  placeholder = "Search for Products on Amazon (For example; Nivea for Men Invisible or ASIN: B0093HZW6I)",
   value,
   onChange,
   className = "",
 }) => {
   return (
-    <input
-      type="text"
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-      placeholder={placeholder}
-      className={`w-full px-3.5 py-2.5 rounded-lg border border-neutral-300 text-neutral-700 focus:outline-none focus:border-primary-400 ${className}`}
-    />
+    <form
+      onSubmit={(e) => e.preventDefault()}
+      className={`w-full ${className}`}
+    >
+      <div className="relative z-0">
+        <RiSearchLine className="absolute top-0 bottom-0 size-5 my-auto text-gray-400 left-3" />
+        <input
+          type="text"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder={placeholder}
+          className="w-full py-2 pl-10 pr-4 text-[#52525B] text-sm border border-transparent rounded-[10px] outline-none bg-[#F4F4F5] focus:bg-white focus:border-primary-focused duration-200"
+        />
+      </div>
+    </form>
   );
 };
 
