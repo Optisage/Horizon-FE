@@ -114,9 +114,15 @@ const Login = () => {
         ) : (
           <button
             onClick={() => router.push("/connect-amazon")}
-            className="text-gray-900 border border-[#E4E4E7] rounded-[10px] px-4 py-2 active:scale-95 duration-200 hover:bg-gray-50 text-center flex gap-2 items-center justify-center"
+            className="text-gray-900 border border-[#E4E4E7] rounded-[10px] px-2 py-2 active:scale-95 duration-200 hover:bg-gray-50 flex gap-2 items-center justify-center text-sm"
           >
-            <Image src={Amazon} alt="Amazon" width={31} height={32} />
+            <Image
+              src={Amazon}
+              alt="Amazon"
+              className="size-8"
+              width={31}
+              height={32}
+            />
             Connect your Seller Central for Better Experience
           </button>
         )}
