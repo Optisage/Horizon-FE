@@ -1,26 +1,8 @@
 import type { Metadata } from "next";
-import localFont from "next/font/local";
+import { Inter } from "next/font/google";
 import "./globals.css";
 
-const sf_pro_display = localFont({
-  src: [
-    {
-      path: "../fonts/SFPRODISPLAYREGULAR.otf",
-      weight: "400",
-      style: "normal",
-    },
-    {
-      path: "../fonts/SFPRODISPLAYSEMIBOLDITALIC.otf",
-      weight: "600",
-      style: "italic",
-    },
-    {
-      path: "../fonts/SFPRODISPLAYBOLD.otf",
-      weight: "700",
-      style: "normal",
-    },
-  ],
-});
+const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: {
@@ -38,9 +20,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" data-theme="light">
-      <body className={`${sf_pro_display.className} antialiased`}>
-        {children}
-      </body>
+      <body className={`${inter.className} antialiased`}>{children}</body>
     </html>
   );
 }
