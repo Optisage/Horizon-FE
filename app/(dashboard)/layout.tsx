@@ -6,7 +6,7 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <div className="drawer lg:drawer-open text-black mx-auto max-w-[1640px]">
+    <div className="drawer lg:drawer-open text-black mx-auto max-w-screen-2xl 2xl:border">
       <label htmlFor="my-drawer-2" className="sr-only">
         Toggle Drawer
       </label>

@@ -21,11 +21,11 @@ import { RiVerifiedBadgeFill } from "react-icons/ri";
 const menuData = [
   { id: "1", path: "/dashboard", label: "Dashboard", icon: DashboardIcon },
   { id: "2", path: "", label: "Keepa", icon: KeepaIcon, comingSoon: true },
-  { id: "3", path: "", label: "Credit", icon: CreditIcon, comingSoon: true },
 ];
 
 const secondaryMenu = [
-  { id: "4", path: "/settings", label: "Settings", icon: SettingsIcon },
+  { id: "3", path: "/settings", label: "Settings", icon: SettingsIcon },
+  { id: "4", path: "", label: "Credit", icon: CreditIcon, comingSoon: true },
 ];
 
 const billingMenu = [
