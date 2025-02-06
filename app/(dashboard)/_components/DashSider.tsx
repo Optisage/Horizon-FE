@@ -15,24 +15,27 @@ import {
 } from "@/public/assets/svg/icons";
 import LogoutModal from "./LogoutModal";
 import { BiChevronRight } from "react-icons/bi";
+import { RiVerifiedBadgeFill } from "react-icons/ri";
 
 // Sidebar data
 const menuData = [
   { id: "1", path: "/dashboard", label: "Dashboard", icon: DashboardIcon },
-  { id: "2", path: "#", label: "Keepa", icon: KeepaIcon },
-  { id: "3", path: "#", label: "Credit", icon: CreditIcon },
-  { id: "4", path: "", label: "Subscriptions", icon: SubscriptionsIcon },
+  { id: "2", path: "", label: "Keepa", icon: KeepaIcon, comingSoon: true },
+  { id: "3", path: "", label: "Credit", icon: CreditIcon, comingSoon: true },
 ];
 
 const secondaryMenu = [
-  { id: "5", path: "/settings", label: "Settings", icon: SettingsIcon },
+  { id: "4", path: "/settings", label: "Settings", icon: SettingsIcon },
+];
+
+const billingMenu = [
+  { id: "5", path: "", label: "Subscriptions", icon: SubscriptionsIcon },
 ];
 
 const DashSider = () => {
   const pathName = usePathname();
   const [activePath, setActivePath] = useState("");
   const [openModal, setOpenModal] = useState(false);
-
   const router = useRouter();
 
   const handleLogout = () => {
@@ -56,74 +59,93 @@ const DashSider = () => {
       >
         <item.icon className="size-5 mr-3 text-inherit" />
         <span>{item.label}</span>
+        {item.comingSoon && (
+          <span className="ml-auto bg-primary text-white text-xs px-1.5 py-0.5 rounded-md">
+            Coming Soon
+          </span>
+        )}
       </Link>
     ));
 
   return (
-    <div className="drawer-side z-10 ">
+    <div className="drawer-side z-10">
       <label htmlFor="my-drawer-2" className="drawer-overlay" />
-      <aside className="flex flex-col space-y-4 w-[270px] h-screen overflow-hidden shadow-xl bg-[#F7F7F7] border-r border-r-neutral-200 py-4 overflow-y-scroll">
-        {/* Logo */}
-        <div className="flex justify-center py-3 border-b">
-          <Link href="/dashboard">
-            <Image
-              src={Logo}
-              alt="Logo"
-              className="w-2/3 mx-auto xl:w-auto"
-              width={187}
-              height={49}
-              quality={90}
-              priority
-            />
-          </Link>
+      <aside className="flex flex-col justify-between w-[270px] h-screen overflow-hidden shadow-xl bg-[#F7F7F7] border-r border-r-neutral-200 overflow-y-scroll">
+        <div className="">
+          {/* Logo */}
+          <div className="flex justify-center p-6 border-b">
+            <Link href="/dashboard">
+              <Image
+                src={Logo}
+                alt="Logo"
+                className="w-2/3 sm:w-[187px] sm:h-[49px] mx-auto"
+                width={187}
+                height={49}
+                quality={90}
+                priority
+              />
+            </Link>
+          </div>
+
+          {/* Dashboard Section */}
+          <div className="px-4 pb-3 pt-5 text-xs text-[#4B4B62] uppercase">
+            Dashboard
+          </div>
+          <ul className="space-y-1 px-4">{renderMenu(menuData)}</ul>
+
+          <div className="border-t border-[#EBEBEB] my-3" />
+
+          {/* Preferences Section */}
+          <div className="px-4 pb-3 text-xs text-[#4B4B62] uppercase">
+            Preferences
+          </div>
+          <ul className="space-y-1 px-4">{renderMenu(secondaryMenu)}</ul>
+
+          <div className="border-t border-[#EBEBEB] my-3" />
+
+          {/* Billing Section */}
+          <div className="px-4 pb-3 text-xs text-[#4B4B62] uppercase">
+            Billing
+          </div>
+          <ul className="space-y-1 px-4">{renderMenu(billingMenu)}</ul>
         </div>
 
-        {/* Primary menu */}
-        <ul className="flex-grow space-y-1 px-4">{renderMenu(menuData)}</ul>
-
-        {/* Divider */}
-        <div className="border-t border-gray-200 my-4"></div>
-
-        {/* Secondary menu */}
-        {/* <ul className="space-y-1 px-4">{renderMenu(secondaryMenu)}</ul> */}
-        <ul className="space-y-1 px-4">
-          {secondaryMenu.map((item) => (
-            <Link
-              href={item.path}
-              key={item.path}
-              className={`flex items-center px-4 py-3 rounded-sm text-sm cursor-pointer ${
-                activePath === item.path
-                  ? "bg-primary-50 text-primary-400 font-semibold"
-                  : "text-neutral-700 hover:bg-gray-50"
-              }`}
-              // onClick={() => item.label === "Log out" && setOpenModal(true)}
-            >
-              <item.icon className="size-5 mr-3 text-inherit" />
-              <span>{item.label}</span>
-            </Link>
-          ))}
-        </ul>
-
-        {/* Profile */}
-        <div className="flex gap-3 items-center p-4 mt-auto">
-          <div className=" size-10 overflow-hidden">
-            <Image
-              src="https://avatar.iran.liara.run/public/38"
-              alt="Avatar"
-              className="size-10"
-              width={40}
-              height={40}
-              quality={90}
-              priority
-            />
+        <div>
+          {/* Invite & Earn */}
+          <div className="p-4 border-t border-gray-200 mt-6">
+            <p className="text-sm font-medium">
+              Invite & Earn: Share Optisage!
+            </p>
+            <p className="text-xs text-gray-500 mt-1">
+              Invite other sellers to Optisage & help them succeed and unlock
+              exclusive perks too!
+            </p>
+            <button className="bg-primary hover:bg-primary-hover duration-200 text-white text-sm font-medium px-4 py-2 rounded-md w-full mt-3 active:scale-95">
+              Refer a Seller
+            </button>
           </div>
 
-          <div className="text-sm">
-            <p className="font-medium">Bawmal</p>
-            <p className="text-[#787891] text-xs">b@bawmal.com</p>
-          </div>
+          {/* Profile Section */}
+          <div className="flex gap-3 items-center p-4 mt-auto">
+            <div className="size-10 overflow-hidden">
+              <Image
+                src="https://avatar.iran.liara.run/public/38"
+                alt="Avatar"
+                className="size-10 rounded-full"
+                width={40}
+                height={40}
+                quality={90}
+                priority
+              />
+            </div>
 
-          <div className="flex-1 flex justify-end">
+            <div className="text-sm flex-1">
+              <p className="font-medium flex items-center gap-1">
+                Bawmal <RiVerifiedBadgeFill className="text-primary size-4" />
+              </p>
+              <p className="text-[#787891] text-xs">b@bawmal.com</p>
+            </div>
+
             <button
               type="button"
               aria-label="Logout"
@@ -136,6 +158,7 @@ const DashSider = () => {
         </div>
       </aside>
 
+      {/* Logout Modal */}
       <LogoutModal
         openModal={openModal}
         setOpenModal={setOpenModal}

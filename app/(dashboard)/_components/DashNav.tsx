@@ -9,14 +9,14 @@ const DashNav = () => {
       <Image
         src={Logo}
         alt="Logo"
-        className="lg:hidden w-1/2 sm:w-[187px] sm:h-[49px]"
+        className="lg:hidden w-1/3 sm:w-[187px] sm:h-[49px]"
         width={187}
         height={49}
         quality={90}
         priority
       />
 
-      <div className="flex items-center gap-3">
+      <div className="hidden lg:flex items-center gap-3">
         <p className="text-sm font-medium text-[#090F0D]">
           6 days left on your free trial
         </p>
@@ -29,7 +29,7 @@ const DashNav = () => {
       </div>
 
       <div className="flex gap-3 md:gap-6 items-center">
-        <p className="text-sm font-medium text-[#090F0D]">
+        <p className="hidden lg:block text-sm font-medium text-[#090F0D]">
           For better experience, install OptiSage Chrome Extension.
         </p>
 
