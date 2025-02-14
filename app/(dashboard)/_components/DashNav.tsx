@@ -6,7 +6,7 @@ import CountrySelect from "./CountrySelect";
 
 const DashNav = () => {
   return (
-    <nav className="flex items-center justify-between px-5 py-3 md:py-4 lg:px-6 sticky top-0 bg-white lg:shadow-sm lg:border-transparent border-b border-gray-200 z-50">
+    <nav className="flex items-center justify-between px-5 py-3 md:py-4 lg:px-6 sticky top-0 bg-white lg:shadow-sm lg:border-transparent border-b border-gray-200 z-40">
       <Image
         src={Logo}
         alt="Logo"

@@ -68,7 +68,7 @@ const DashSider = () => {
     ));
 
   return (
-    <div className="drawer-side z-10">
+    <div className="drawer-side z-50">
       <label htmlFor="my-drawer-2" className="drawer-overlay" />
       <aside className="flex flex-col justify-between w-[270px] h-screen overflow-hidden shadow-xl bg-[#F7F7F7] border-r border-r-neutral-200 overflow-y-scroll">
         <div className="">
