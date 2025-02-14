@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 import {
   ConfigProvider,
@@ -20,6 +21,7 @@ import {
   CalendarProps,
   Slider,
 } from "antd";
+import type { Dayjs } from "dayjs";
 import { InputProps, PasswordProps } from "antd/es/input";
 import React from "react";
 import Search from "antd/es/input/Search";
@@ -27,7 +29,7 @@ import { AiOutlineFilter } from "react-icons/ai";
 import TextArea from "antd/es/input/TextArea";
 
 const primaryConfig = {
-  fontFamily: "Geist Sans, sans-serif",
+  fontFamily: "Inter, sans-serif",
   colorPrimary: "#18CB96",
 };
 
@@ -85,7 +87,8 @@ export const CustomTable = ({ ...props }: TableProps<any>) => (
     />
   </ConfigProvider>
 );
-export const CustomCalender = ({ ...props }: CalendarProps<any>) => (
+
+export const CustomCalender = ({ ...props }: CalendarProps<Dayjs>) => (
   <ConfigProvider
     theme={{
       token: {
