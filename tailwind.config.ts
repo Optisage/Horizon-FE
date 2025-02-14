@@ -18,6 +18,10 @@ export default {
           border: "#18CB9633",
           surface: "#18CB960D",
         },
+        
+        border:{
+          DEFAULT: "#EBEBEB"
+        },
 
         success: {
           // DEFAULT: "",
