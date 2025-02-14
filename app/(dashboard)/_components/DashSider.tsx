@@ -29,7 +29,12 @@ const secondaryMenu = [
 ];
 
 const billingMenu = [
-  { id: "5", path: "", label: "Subscriptions", icon: SubscriptionsIcon },
+  {
+    id: "5",
+    path: "/subscriptions",
+    label: "Subscriptions",
+    icon: SubscriptionsIcon,
+  },
 ];
 
 const DashSider = () => {
