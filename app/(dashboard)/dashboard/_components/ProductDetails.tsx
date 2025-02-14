@@ -30,6 +30,7 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
+import AlertsDrawer from "./AlertsDrawer";
 
 const pieData = [
   { name: "The Beauty Center", value: 33, color: "#0000FF" },
@@ -195,13 +196,7 @@ const ProductDetails = () => {
                   </span>
 
                   <div>
-                    <button
-                      type="button"
-                      className="border border-border bg-white px-3 py-2 rounded-xl flex gap-1 items-center font-semibold active:scale-95 duration-200 text-sm md:text-base"
-                    >
-                      See all alerts
-                      <RxArrowTopRight className="size-5" />
-                    </button>
+                    <AlertsDrawer />
                   </div>
                 </div>
 
