@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { SearchInput } from "../../_components";
 import Image from "next/image";
-import Link from "next/link";
 import { Pagination, Select } from "antd";
 import { useRouter } from "next/navigation";
 
@@ -13,6 +12,7 @@ import Product2 from "@/public/assets/images/product-2.png";
 import Product3 from "@/public/assets/images/product-3.png";
 import Product4 from "@/public/assets/images/product-4.png";
 import Product5 from "@/public/assets/images/product-5.png";
+import SalesStats from "./SalesStats";
 
 const products = [
   {
@@ -107,10 +107,12 @@ const Dashboard = () => {
             {products.map((product) => (
               <div
                 key={product.id}
-                onClick={() => router.push(`/dashboard/product/${product.id}`)}
                 className="hover:bg-gray-50 duration-200 cursor-pointer px-4 py-3.5 flex flex-col sm:flex-row sm:items-center gap-4"
               >
                 <Image
+                  onClick={() =>
+                    router.push(`/dashboard/product/${product.id}`)
+                  }
                   src={product.image}
                   alt="product"
                   className="size-16 rounded-lg object-cover"
@@ -120,20 +122,21 @@ const Dashboard = () => {
                   priority
                 />
                 <div className="flex flex-col gap-1 text-[#09090B]">
-                  <p className="font-bold">{product.title}</p>
+                  <p
+                    onClick={() =>
+                      router.push(`/dashboard/product/${product.id}`)
+                    }
+                    className="font-bold hover:underline duration-100"
+                  >
+                    {product.title}
+                  </p>
                   <p>
                     {"⭐".repeat(product.rating)}{" "}
                     <span className="font-bold">({product.reviews})</span>
                   </p>
                   <p className="text-sm">By ASIN: {product.asin}</p>
                   <p className="text-sm">
-                    {product.category} |{" "}
-                    <Link
-                      href=""
-                      className="text-primary hover:underline duration-150"
-                    >
-                      Sales Statistics
-                    </Link>
+                    {product.category} | <SalesStats />
                   </p>
                 </div>
               </div>
