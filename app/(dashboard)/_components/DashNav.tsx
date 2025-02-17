@@ -1,12 +1,17 @@
+"use client";
+
 import Image from "next/image";
 
 import Logo from "@/public/assets/svg/Optisage Logo.svg";
 import { CgMenuRightAlt } from "react-icons/cg";
 import CountrySelect from "./CountrySelect";
+import { useRouter } from "next/navigation";
 
 const DashNav = () => {
+  const router = useRouter();
+
   return (
-    <nav className="flex items-center justify-between px-5 py-3 md:py-4 lg:px-6 sticky top-0 bg-white lg:shadow-sm lg:border-transparent border-b border-gray-200 z-50">
+    <nav className="flex items-center justify-between px-5 py-3 md:py-4 lg:px-6 sticky top-0 bg-white lg:shadow-sm lg:border-transparent border-b border-gray-200 z-40">
       <Image
         src={Logo}
         alt="Logo"
@@ -22,6 +27,7 @@ const DashNav = () => {
           6 days left on your free trial
         </p>
         <button
+          onClick={() => router.push("/subscriptions")}
           type="button"
           className="text-sm rounded-xl bg-[#33B28A] hover:bg-[#33B28A]/90 text-white py-2 px-4 active:scale-95 duration-200 font-medium"
         >
