@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
+import ReduxProvider from "@/redux/provider";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -20,7 +21,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" data-theme="light">
+      <ReduxProvider>
       <body className={`${inter.className} antialiased`}>{children}</body>
+      </ReduxProvider>
     </html>
   );
 }
