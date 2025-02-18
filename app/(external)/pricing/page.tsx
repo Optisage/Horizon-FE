@@ -1,3 +1,4 @@
+
 import { Metadata } from "next";
 import Pricing from "./_components/Pricing";
 

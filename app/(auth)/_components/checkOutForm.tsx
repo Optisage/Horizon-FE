@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useStripe, useElements, CardElement } from "@stripe/react-stripe-js";
 import { useCreateSubscriptionMutation } from "../../../redux/api/subscriptionApi";
+import { useAppSelector } from "@/redux/hooks";
 
 const SubscriptionCheckoutForm = () => {
   const stripe = useStripe();
@@ -11,6 +12,7 @@ const SubscriptionCheckoutForm = () => {
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
 
+  const subScriptionId = useAppSelector((state) => state.global.subScriptionId);
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!stripe || !elements) {
@@ -49,7 +51,7 @@ const SubscriptionCheckoutForm = () => {
         payment_method: paymentMethod.id,
         email: email,
         name:name,
-        pricing_id:2
+        pricing_id: subScriptionId
       }).unwrap();
 
 

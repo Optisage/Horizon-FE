@@ -1,62 +1,66 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 import { IoEyeOffOutline, IoEyeOutline } from "react-icons/io5";
 import Logo from "@/public/assets/svg/Optisage Logo.svg";
-import Amazon from "@/public/assets/svg/amazon.svg";
-import { useLoginMutation } from "@/redux/api/auth";
+
+import { useSetPasswordMutation } from "@/redux/api/auth";
 import { message } from "antd";
 
-const Login = () => {
+const SignUp = () => {
   const router = useRouter();
-  const [step, setStep] = useState(1);
+
   const [showPassword, setShowPassword] = useState(false);
+  const [email, setEmail] = useState("tunde@getnoticed.ca");
   const [password, setPassword] = useState("");
-  const [email, setEmail] = useState("");
-  const [login, {data, isLoading}] = useLoginMutation()
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [expires, setExpires] = useState("");
+  const [token, setToken] = useState("");
 
+  const [signUp, {data, isLoading}]= useSetPasswordMutation()
 
+  console.log(data)
+  useEffect(() => {
+    // Extract the expires value from the URL
+    const params = new URLSearchParams(window.location.search);
+    const expiresValue = params.get("expires");
+    const tokenValue = params.get("signature")
+    if (expiresValue) {
+      setExpires(expiresValue);
+      console.log("Expires value set to:", expiresValue); // Log the value
+    };
+    if (tokenValue) setToken(tokenValue);
+  }, []);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     console.log("starting")
 
+    if (password !== confirmPassword) {
+      alert("Passwords do not match");
+      return;
+    }
 
     const payload = {
       email,
       password,
+      password_confirmation: confirmPassword,
+      expires: expires,
     };
 
     try {
-      const response = await login(payload).unwrap();
-      console.log("login-up success:", response);
+      const response = await signUp({data: payload , token}).unwrap();
+      console.log("Sign-up success:", response);
       //router.push("/success");
     } catch (error) {
-      console.error("Login failed:", error);
-      message.error("failed")
+      console.error("Sign-up failed:", error);
+      message.error("failke")
     }
   };
-  const handleContinue = async (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-  
-    if (step === 1 && email) {
-      setStep(2);
-    } else if (step === 2) {
-      // Call handleSubmit when the password is provided
-      if (!password) {
-        message.error("Please enter your password.");
-        return;
-      }
-  
-      await handleSubmit(e);
-    }
-  };
-
-  
 
   return (
     <section className="bg-[#FAFAFA] h-screen flex flex-col items-center px-4 md:px-0">
@@ -67,9 +71,9 @@ const Login = () => {
       </div>
 
       <div className="w-full max-w-[480px] sm:w-[480px] flex flex-col gap-4 p-6 px-3 sm:p-6 bg-white my-auto rounded-lg shadow-md">
-        {step < 3 ? (
+        
           <>
-            <form className="flex flex-col gap-4" onSubmit={handleContinue}>
+            <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
               <div className="flex flex-col gap-1">
                 <label
                   htmlFor="email"
@@ -82,14 +86,14 @@ const Login = () => {
                   name="email"
                   id="email"
                   placeholder="Ex: marc@example.com"
-                  className="p-3 bg-[#F4F4F5] border border-transparent focus:border-neutral-700 placeholder:text-[#52525B] text-sm rounded-md outline-none w-full"
-                  required
+                  className="p-3 bg-[#d7d7d7] border border-transparent focus:border-neutral-700 placeholder:text-[#52525B] text-sm rounded-md outline-none w-full"
+                 // required
                   value={email}
+                  disabled
                   onChange={(e) => setEmail(e.target.value)}
                 />
               </div>
 
-              {step === 2 && (
                 <div className="flex flex-col gap-1">
                   <label
                     htmlFor="password"
@@ -125,14 +129,37 @@ const Login = () => {
                     </button>
                   </div>
                 </div>
-              )}
+                {/**...CONFIRM PASSWORD....*/}
+                <div className="flex flex-col gap-1">
+                  <label
+                    htmlFor="password"
+                    className="text-sm text-neutral-700 font-medium"
+                  >
+                    Confirm Password
+                  </label>
+                  <div className="relative">
+                    <input
+                      type='password'
+                      name="confirm-password"
+                        id="confirm-password"
+                      placeholder="Confirm your password"
+                      className="p-3 pr-10 bg-[#F4F4F5] border border-transparent focus:border-neutral-700 placeholder:text-[#52525B] text-sm rounded-md outline-none w-full"
+                      required
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                    />
+
+                   
+                  </div>
+                </div>
 
               <button
                 type="submit"
                 className="rounded-lg bg-primary hover:bg-primary-hover text-white font-semibold p-2 active:scale-95 duration-200"
+                onClick={handleSubmit}
+                disabled={isLoading}
               >
-                {isLoading ? "Logging In..." : "Continue"}
-                
+                {isLoading ? "Signing up..." : "Sign Up"}
               </button>
             </form>
 
@@ -148,24 +175,10 @@ const Login = () => {
               .
             </p>
           </>
-        ) : (
-          <button
-            onClick={() => router.push("/dashboard")} // connect to amazon api here
-            className="text-gray-900 border border-[#E4E4E7] rounded-[10px] px-2 py-2 active:scale-95 duration-200 hover:bg-gray-50 flex gap-2 items-center justify-center text-sm"
-          >
-            <Image
-              src={Amazon}
-              alt="Amazon"
-              className="size-8"
-              width={31}
-              height={32}
-            />
-            Connect your Seller Central for Better Experience
-          </button>
-        )}
+        
       </div>
     </section>
   );
 };
 
-export default Login;
+export default SignUp;

@@ -42,6 +42,13 @@ export const authApi = createApi({
         body: data,
       }),
     }),
+    setPassword: builder.mutation({
+      query: ({data, token}) => ({
+        url: `auth/set-password/${token}`,
+        method: "POST",
+        body: data,
+      }),
+    }),
     forgetPassword: builder.mutation({
       query: (data) => ({
         url: "forget_password",
@@ -53,6 +60,12 @@ export const authApi = createApi({
     getProfile: builder.query({
       query: () => "me",
       providesTags: ["Profile"],
+    }),
+    getPricing: builder.query<any, {}>({
+      query: () => ({
+        url:"pricing",
+        method:"GET"
+      }),
     }),
     logout: builder.query({
       query: () => "auth/logout",
@@ -67,4 +80,6 @@ export const {
   useLogoutQuery,
   useCreatePasswordMutation,
   useForgetPasswordMutation,
+  useLazyGetPricingQuery,
+  useSetPasswordMutation
 } = authApi;

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import ReduxProvider from "@/redux/provider";
+import '@ant-design/v5-patch-for-react-19';
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -21,9 +22,13 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" data-theme="light">
+      
+      <body className={`${inter.className} antialiased`}>
       <ReduxProvider>
-      <body className={`${inter.className} antialiased`}>{children}</body>
-      </ReduxProvider>
+        {children}
+        </ReduxProvider>
+        </body>
+     
     </html>
   );
 }

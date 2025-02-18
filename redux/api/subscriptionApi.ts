@@ -1,7 +1,6 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 
 interface SubscriptionRequest {
-  paymentMethodId: string;
   email:string,
   name: string,
   pricing_id: number,
