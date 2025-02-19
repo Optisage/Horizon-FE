@@ -1,6 +1,10 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
+import ReduxProvider from "@/redux/provider";
+import { AntdRegistry } from '@ant-design/nextjs-registry';
+import '@ant-design/v5-patch-for-react-19';
+
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -20,7 +24,17 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" data-theme="light">
-      <body className={`${inter.className} antialiased`}>{children}</body>
+      
+      <body className={`${inter.className} antialiased`}>
+    <AntdRegistry>
+      <ReduxProvider>
+
+        {children}
+        
+        </ReduxProvider>
+        </AntdRegistry>
+        </body>
+     
     </html>
   );
 }
