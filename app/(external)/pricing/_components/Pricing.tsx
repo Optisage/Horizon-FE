@@ -1,6 +1,39 @@
+"use client"
+import { useLazyGetPricingQuery } from "@/redux/api/auth";
+import { setSubScriptionId } from "@/redux/slice/globalSlice";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 import { FaCheckCircle } from "react-icons/fa";
+import { useDispatch } from "react-redux";
 
 const Pricing = () => {
+  const dispatch = useDispatch(); // Initialize dispatch
+  const router = useRouter(); // Initialize dispatch
+  const [getPricing, {data, isLoading}] = useLazyGetPricingQuery()
+
+  useEffect(()=>{
+    getPricing({})
+  },[])
+
+  console.log(data)
+ // Assuming response.payload.data is available
+ // Ensure data is defined before mapping
+ const subInfo = data?.data ? data.data.map(item => ({
+  key: item.id,
+  title: item.name,
+  price: item.price,
+  subTitle: `${item.price === '0.00' ? '2,000 words per month' : item.price === '24.00' ? '20,000 words per month' : '100,000 words per month'}`,
+  subItems: [
+    item.name === 'Free' ? 'Only 1 user seat' : item.name === 'Pro' ? '6 User Seats' : 'Unlimited User Seats',
+    'Unlimited Projects',
+    '90+ copywriting tools',
+    'Priority email support',
+    item.name === 'Pro' ? '24+ Languages' : null,
+    item.name === 'Business' ? 'Private company infobase' : null,
+    item.name === 'Business' ? 'SOC 2 compliant' : null,
+  ].filter(Boolean) // Remove null values
+})) : [];
+
   return (
     <section className="py-12 px-4 bg-gray-100 h-dvh flex flex-col gap-12">
       <div className="max-w-4xl mx-auto text-center">
@@ -13,104 +46,49 @@ const Pricing = () => {
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-6xl mx-auto font-medium">
         {/* Free Plan */}
-        <div className="bg-white p-6 rounded-xl shadow-md flex flex-col gap-4">
-          <h3 className="text-xl font-semibold">Free</h3>
-          <p className="text-3xl font-bold">$0</p>
-
-          <p className="text-gray-600">2,000 words per month</p>
-          <ul className="mt-4 text-left space-y-2">
-            <li className="flex gap-2 items-center">
-              <FaCheckCircle className="size-5 text-green-700" /> Only 1 user
-              seat
-            </li>
-            <li className="flex gap-2 items-center">
-              <FaCheckCircle className="size-5 text-green-700" /> Unlimited
-              Projects
-            </li>
-            <li className="flex gap-2 items-center">
-              <FaCheckCircle className="size-5 text-green-700" /> 90+
-              copywriting tools
-            </li>
-            <li className="flex gap-2 items-center">
-              <FaCheckCircle className="size-5 text-green-700" /> Priority email
-              support
-            </li>
-            <li className="flex gap-2 items-center">
-              <FaCheckCircle className="size-5 text-gray-500" /> 24+ Languages
-            </li>
-          </ul>
-          <button className="mt-4 bg-green-500 text-white px-4 py-2 rounded-lg w-full">
-            Sign Up for Free
-          </button>
-        </div>
-
-        {/* Pro Plan */}
-        <div className="bg-white p-6 rounded-xl shadow-md relative border-2 border-green-500 flex flex-col gap-4">
-          <span className="absolute top-2 right-2 bg-green-600 text-white px-3 py-1 text-sm rounded-lg">
+        {
+          subInfo.map((item, index)=> (
+            <div className={`${item.title === 'Pro'? "border-2 border-green-500":""} h-fit bg-white p-6 rounded-xl shadow-md flex flex-col gap-4 relative`} key={index}>
+               {
+                item.title === "Pro" && (
+                  <span className="absolute top-2 right-2 bg-green-600 text-white px-3 py-1 text-sm rounded-lg">
             Most Popular
           </span>
-          <h3 className="text-xl font-semibold">Pro</h3>
-          <p className="text-3xl font-bold mt-2">
-            $24<span className="text-lg">/mo</span>
-          </p>
-          <p className="text-gray-600">20,000 words per month</p>
-          <ul className="mt-4 text-left space-y-2">
-            <li className="flex gap-2 items-center">
-              <FaCheckCircle className="size-5 text-green-700" /> 6 User Seats
-            </li>
-            <li className="flex gap-2 items-center">
-              <FaCheckCircle className="size-5 text-green-700" /> Unlimited
-              Projects
-            </li>
-            <li className="flex gap-2 items-center">
-              <FaCheckCircle className="size-5 text-green-700" /> 90+
-              copywriting tools
-            </li>
-            <li className="flex gap-2 items-center">
-              <FaCheckCircle className="size-5 text-green-700" /> Priority email
-              support
-            </li>
-            <li className="flex gap-2 items-center">
-              <FaCheckCircle className="size-5 text-green-700" /> 24+ Languages
-            </li>
-          </ul>
-          <button className="mt-4 bg-green-500 text-white px-4 py-2 rounded-lg w-full">
-            Get Started
-          </button>
-        </div>
-
-        {/* Business Plan */}
-        <div className="bg-white p-6 rounded-xl shadow-md flex flex-col gap-4">
-          <h3 className="text-xl font-semibold">Business</h3>
-          <p className="text-3xl font-bold">
-            $45<span className="text-lg">/mo</span>
-          </p>
-          <p className="text-gray-600">100,000 words per month</p>
-          <ul className="mt-4 text-left space-y-2">
-            <li className="flex gap-2 items-center">
-              <FaCheckCircle className="size-5 text-green-700" /> Chat Interface
-            </li>
-            <li className="flex gap-2 items-center">
-              <FaCheckCircle className="size-5 text-green-700" /> Unlimited User
-              Seats
-            </li>
-            <li className="flex gap-2 items-center">
-              <FaCheckCircle className="size-5 text-green-700" /> 90+
-              copywriting tools
-            </li>
-            <li className="flex gap-2 items-center">
-              <FaCheckCircle className="size-5 text-green-700" /> Private
-              company infobase
-            </li>
-            <li className="flex gap-2 items-center">
-              <FaCheckCircle className="size-5 text-green-700" /> SOC 2
-              compliant
-            </li>
-          </ul>
-          <button className="mt-4 bg-green-500 text-white px-4 py-2 rounded-lg w-full">
-            Get Started
-          </button>
-        </div>
+                )
+               }
+            <h3 className="text-xl font-semibold">{item.title}</h3>
+            <p className="text-3xl font-bold">
+              ${item.price}
+              <span className="text-lg">/mo</span>
+              </p>
+  
+            <p className="text-gray-600">{item.subTitle}</p>
+            <ul className="mt-4 text-left space-y-2">
+              {
+                item.subItems.map((subItem, index)=>(
+                  <li className="flex gap-2 items-center" key={index}>
+                  <FaCheckCircle className="size-5 text-green-700" /> {subItem}
+                </li>
+                ))
+              }
+             
+              
+            </ul>
+            <button className="mt-4 bg-green-500 text-white px-4 py-2 rounded-lg w-full"
+           onClick={() => {
+            console.log("Item being dispatched:", item); // Log the item
+            dispatch(setSubScriptionId(item.key)); 
+            router.push('/checkout');
+          }}
+            >
+            {
+              item.title === "Free"? '  Sign Up for Free' : 'Get Started'
+            }
+            </button>
+          </div>
+          ))
+        }
+      
       </div>
     </section>
   );

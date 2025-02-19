@@ -4,7 +4,7 @@ import React, { useState, useLayoutEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
-
+import Cookies from 'js-cookie';
 import Logo from "@/public/assets/svg/Optisage Logo.svg";
 import {
   DashboardIcon,
@@ -45,6 +45,8 @@ const DashSider = () => {
 
   const handleLogout = () => {
     router.push("/");
+    // Clear the token cookie
+  Cookies.remove("token");
   };
 
   useLayoutEffect(() => {
