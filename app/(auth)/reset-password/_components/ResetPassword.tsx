@@ -1,17 +1,54 @@
 "use client";
 
+import { useResetPasswordMutation } from "@/redux/api/auth";
+import { message } from "antd";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
-
+import { FormEvent, useState } from "react";
+import { LoadingOutlined } from "@ant-design/icons";
 import { IoEyeOffOutline, IoEyeOutline } from "react-icons/io5";
 
 const ResetPassword = () => {
   const router = useRouter();
+
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [resetPassword, { isLoading }] = useResetPasswordMutation();
+  const params = new URLSearchParams(window.location.search);
+  const tokenValue = params.get("token");
+  const emailValue = params.get("email");
+const [messageApi, contextHolder] = message.useMessage();
+  console.log("Token from URL:", tokenValue);
+
+  const handleSubmit = (e: FormEvent) => {
+    e.preventDefault();
+    resetPassword({
+      email: emailValue,
+      password: password,
+      password_confirmation: confirmPassword,
+      token: tokenValue,
+    })
+      .unwrap()
+      .then(() => {
+        messageApi.open({
+          type: 'success',
+          content: 'Reset Successful',
+        });
+        router.push("/");
+      })
+      .catch(() => {
+        messageApi.open({
+          type: 'error',
+          content: 'Reset Failed',
+        });
+
+      });
+  };
 
   return (
     <>
+    {contextHolder}
       <span className="flex flex-col gap-3">
         <h1 className="text-[#111827] font-bold text-xl md:text-2xl">
           Create New Password
@@ -22,7 +59,7 @@ const ResetPassword = () => {
         </p>
       </span>
 
-      <form className="flex flex-col gap-4">
+      <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
         <div className="flex flex-col gap-1">
           <label
             htmlFor="password"
@@ -38,6 +75,8 @@ const ResetPassword = () => {
               placeholder="Enter password"
               className="p-3 pr-10 bg-[#F4F4F5] border border-transparent focus:border-neutral-700 placeholder:text-[#52525B] text-sm rounded-md outline-none w-full"
               required
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
             />
 
             <button
@@ -70,6 +109,8 @@ const ResetPassword = () => {
               placeholder="Enter password"
               className="p-3 pr-10 bg-[#F4F4F5] border border-transparent focus:border-neutral-700 placeholder:text-[#52525B] text-sm rounded-md outline-none w-full"
               required
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
             />
 
             <button
@@ -91,9 +132,10 @@ const ResetPassword = () => {
 
         <button
           type="submit"
-          onClick={() => router.push("/")}
           className="rounded-lg bg-primary hover:bg-primary-hover text-white font-semibold p-2 active:scale-95 duration-200"
+          disabled={isLoading}
         >
+          {isLoading && <LoadingOutlined spin />}
           Create New Password
         </button>
       </form>

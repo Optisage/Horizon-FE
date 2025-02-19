@@ -1,6 +1,7 @@
 import { createApi } from "@reduxjs/toolkit/query/react";
 import { baseQueryForAuth } from "../queryInterceptor";
 import { setUser } from "../slice/authSlice";
+import Cookies from "js-cookie";
 
 export const authApi = createApi({
   reducerPath: "auth",
@@ -18,8 +19,17 @@ export const authApi = createApi({
       onQueryStarted(id, { dispatch, queryFulfilled }) {
         queryFulfilled
           .then((apiResponse) => {
-            dispatch(setUser(apiResponse.data?.user))
-            sessionStorage.setItem("token", apiResponse.data?.token);
+            //console.log("API Response:", apiResponse.data?.data?.token); // Log the entire response
+            dispatch(setUser(apiResponse.data?.data.user));
+            // Set the token in cookies with a 7-day expiration, accessible on all paths, secure, and SameSite set to 'Strict'
+            Cookies.set("token", apiResponse.data?.data.token, {
+              expires: 7,
+              path: "/", // Accessible on all paths
+              //secure: true, // Only sent over HTTPS
+              //sameSite: 'Strict' // Cookie is not sent with cross-site requests
+            });
+            console.log("Stored Token:", Cookies.get("token"));
+            //sessionStorage.setItem("token", apiResponse.data?.token);
           })
           .catch((error) => {
             console.log(error);
@@ -43,7 +53,7 @@ export const authApi = createApi({
       }),
     }),
     setPassword: builder.mutation({
-      query: ({data, token}) => ({
+      query: ({ data, token }) => ({
         url: `auth/set-password/${token}`,
         method: "POST",
         body: data,
@@ -51,7 +61,14 @@ export const authApi = createApi({
     }),
     forgetPassword: builder.mutation({
       query: (data) => ({
-        url: "forget_password",
+        url: "forgot-password",
+        method: "POST",
+        body: data,
+      }),
+    }),
+    resetPassword: builder.mutation({
+      query: (data) => ({
+        url: "reset-password",
         method: "POST",
         body: data,
       }),
@@ -63,8 +80,8 @@ export const authApi = createApi({
     }),
     getPricing: builder.query<any, {}>({
       query: () => ({
-        url:"pricing",
-        method:"GET"
+        url: "pricing",
+        method: "GET",
       }),
     }),
     logout: builder.query({
@@ -81,5 +98,6 @@ export const {
   useCreatePasswordMutation,
   useForgetPasswordMutation,
   useLazyGetPricingQuery,
-  useSetPasswordMutation
+  useSetPasswordMutation,
+  useResetPasswordMutation,
 } = authApi;

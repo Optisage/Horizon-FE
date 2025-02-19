@@ -1,5 +1,5 @@
 "use client";
-
+import React from 'react';
 import { FormEvent, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
@@ -10,7 +10,8 @@ import Amazon from "@/public/assets/svg/amazon.svg";
 import { useLoginMutation } from "@/redux/api/auth";
 import { message } from "antd";
 
-const Login = () => {
+
+const Login: React.FC = () => {
   const router = useRouter();
   const [step, setStep] = useState(1);
   const [showPassword, setShowPassword] = useState(false);
@@ -18,7 +19,14 @@ const Login = () => {
   const [email, setEmail] = useState("");
   const [login, {data, isLoading}] = useLoginMutation()
 
+  const [messageApi, contextHolder] = message.useMessage();
 
+  const success = () => {
+    messageApi.open({
+      type: 'success',
+      content: 'This is a success message',
+    });
+  };
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -33,10 +41,18 @@ const Login = () => {
     try {
       const response = await login(payload).unwrap();
       console.log("login-up success:", response);
-      //router.push("/success");
+      messageApi.open({
+        type: 'success',
+        content: 'Login Successful',
+      });
+      router.push("/dashboard");
     } catch (error) {
+      messageApi.open({
+        type: 'error',
+        content: error?.data?.message,
+      });
       console.error("Login failed:", error);
-      message.error("failed")
+      
     }
   };
   const handleContinue = async (e: FormEvent<HTMLFormElement>) => {
@@ -59,6 +75,7 @@ const Login = () => {
 
   return (
     <>
+    {contextHolder}
       {step < 3 ? (
         <>
           <form className="flex flex-col gap-4" onSubmit={handleContinue}>
@@ -121,6 +138,7 @@ const Login = () => {
 
               <button
                 type="submit"
+                
                 className="rounded-lg bg-primary hover:bg-primary-hover text-white font-semibold p-2 active:scale-95 duration-200"
               >
                 {isLoading ? "Logging In..." : "Continue"}

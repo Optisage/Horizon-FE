@@ -2,6 +2,9 @@ import React, { useState } from "react";
 import { useStripe, useElements, CardElement } from "@stripe/react-stripe-js";
 import { useCreateSubscriptionMutation } from "../../../redux/api/subscriptionApi";
 import { useAppSelector } from "@/redux/hooks";
+import { Modal } from 'antd';
+import Image from "next/image";
+import sub from "@/public/assets/images/sub.jpg"
 
 const SubscriptionCheckoutForm = () => {
   const stripe = useStripe();
@@ -11,8 +14,19 @@ const SubscriptionCheckoutForm = () => {
   const [message, setMessage] = useState("");
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
 
   const subScriptionId = useAppSelector((state) => state.global.subScriptionId);
+  const showModal = () => {
+    setIsModalOpen(true);
+  };
+
+
+  const handleCancel = () => {
+    setIsModalOpen(false);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!stripe || !elements) {
@@ -51,7 +65,7 @@ const SubscriptionCheckoutForm = () => {
         payment_method: paymentMethod.id,
         email: email,
         name:name,
-        pricing_id: subScriptionId
+        pricing_id: 2
       }).unwrap();
 
 
@@ -66,6 +80,7 @@ const SubscriptionCheckoutForm = () => {
       }
 
       setMessage("Subscription successful! Thank you.");
+      showModal();
     } catch (err: any) {
       setMessage(err.data?.error || "An unexpected error occurred. Please try again.");
     } finally {
@@ -73,8 +88,10 @@ const SubscriptionCheckoutForm = () => {
     }
   };
 
+  
+
   return (
-    <main className="flex justify-center items-center w-full h-svh">
+    <main className="flex justify-center items-center w-full ">
       <form
         onSubmit={handleSubmit}
         className="max-w-md w-full mx-auto p-6 border border-gray-300 rounded-lg bg-white shadow-sm space-y-5"
@@ -84,15 +101,16 @@ const SubscriptionCheckoutForm = () => {
           placeholder="Enter email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          className="p-4 border border-gray-300 rounded-md bg-gray-50 w-full"
+          className="p-4 border border-gray-300 rounded-md bg-gray-50 w-full focus:outline-none"
           required
+          onClick={showModal}
         />
         <input
           type="text"
           placeholder="Enter your name"
           value={name}
           onChange={(e) => setName(e.target.value)}
-          className="p-4 border border-gray-300 rounded-md bg-gray-50 mb-6 w-full"
+          className="p-4 border border-gray-300 rounded-md bg-gray-50 mb-6 w-full focus:outline-none"
           required
         />
 
@@ -129,6 +147,26 @@ const SubscriptionCheckoutForm = () => {
           </div>
         )}
       </form>
+
+      <Modal title="Subscription Successful" 
+      open={isModalOpen}  
+      onCancel={handleCancel}
+      footer={false}
+      centered={true}
+      maskClosable={false}
+      close={false}
+      closeIcon={null}
+      >
+      <Image
+      src={sub}
+      alt="image" 
+      className=" h-[100px] w-auto mx-auto"
+      />
+      <p className=" text-center font-bold text-sm">
+       <span className=" text-green-500"> Subscription Successful</span><br/>
+        Please check your email to complete your signup
+      </p>
+      </Modal>
     </main>
   );
 };

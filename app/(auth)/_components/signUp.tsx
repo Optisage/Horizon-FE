@@ -4,36 +4,38 @@ import { FormEvent, useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-
 import { IoEyeOffOutline, IoEyeOutline } from "react-icons/io5";
 import Logo from "@/public/assets/svg/Optisage Logo.svg";
 
 import { useSetPasswordMutation } from "@/redux/api/auth";
 import { message } from "antd";
 
+
 const SignUp = () => {
   const router = useRouter();
 
   const [showPassword, setShowPassword] = useState(false);
-  const [email, setEmail] = useState("tunde@getnoticed.ca");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [expires, setExpires] = useState("");
   const [token, setToken] = useState("");
 
   const [signUp, {data, isLoading}]= useSetPasswordMutation()
-
+  const [messageApi, contextHolder] = message.useMessage();
   console.log(data)
   useEffect(() => {
     // Extract the expires value from the URL
     const params = new URLSearchParams(window.location.search);
     const expiresValue = params.get("expires");
+    const emailValue = params.get("email");
     const tokenValue = params.get("signature")
     if (expiresValue) {
       setExpires(expiresValue);
       console.log("Expires value set to:", expiresValue); // Log the value
     };
     if (tokenValue) setToken(tokenValue);
+    if (emailValue) setEmail(emailValue);
   }, []);
 
   const handleSubmit = async (e: FormEvent) => {
@@ -55,15 +57,24 @@ const SignUp = () => {
     try {
       const response = await signUp({data: payload , token}).unwrap();
       console.log("Sign-up success:", response);
-      //router.push("/success");
+      messageApi.open({
+        type: 'success',
+        content: 'Registration Completed',
+      });
+      router.push("/");
     } catch (error) {
       console.error("Sign-up failed:", error);
-      message.error("failke")
+      messageApi.open({
+        type: 'success',
+        content: 'Registration Failed',
+      });
+    
     }
   };
 
   return (
     <section className="bg-[#FAFAFA] h-screen flex flex-col items-center px-4 md:px-0">
+      {contextHolder}
       <div className="pt-20">
         <Link href="/">
           <Image src={Logo} alt="Logo" width={203} height={53} quality={90} />
