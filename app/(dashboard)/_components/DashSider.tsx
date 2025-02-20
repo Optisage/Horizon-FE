@@ -12,6 +12,7 @@ import {
   KeepaIcon,
   SubscriptionsIcon,
   CreditIcon,
+  HistoryIcon,
 } from "@/public/assets/svg/icons";
 import LogoutModal from "./LogoutModal";
 import { BiChevronRight } from "react-icons/bi";
@@ -20,17 +21,18 @@ import { RiVerifiedBadgeFill } from "react-icons/ri";
 // Sidebar data
 const menuData = [
   { id: "1", path: "/dashboard", label: "Dashboard", icon: DashboardIcon },
-  { id: "2", path: "", label: "Keepa", icon: KeepaIcon, comingSoon: true },
+  { id: "2", path: "/history", label: "History", icon: HistoryIcon },
+  { id: "3", path: "", label: "Keepa", icon: KeepaIcon, comingSoon: true },
 ];
 
 const secondaryMenu = [
-  { id: "3", path: "/settings", label: "Settings", icon: SettingsIcon },
-  { id: "4", path: "", label: "Credit", icon: CreditIcon, comingSoon: true },
+  { id: "4", path: "/settings", label: "Settings", icon: SettingsIcon },
+  { id: "5", path: "", label: "Credit", icon: CreditIcon, comingSoon: true },
 ];
 
 const billingMenu = [
   {
-    id: "5",
+    id: "6",
     path: "/subscriptions",
     label: "Subscriptions",
     icon: SubscriptionsIcon,
