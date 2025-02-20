@@ -2,9 +2,9 @@ import React, { useState } from "react";
 import { useStripe, useElements, CardElement } from "@stripe/react-stripe-js";
 import { useCreateSubscriptionMutation } from "../../../redux/api/subscriptionApi";
 import { useAppSelector } from "@/redux/hooks";
-import { Modal } from 'antd';
+import { Modal } from "antd";
 import Image from "next/image";
-import sub from "@/public/assets/images/sub.jpg"
+import sub from "@/public/assets/images/sub.jpg";
 
 const SubscriptionCheckoutForm = () => {
   const stripe = useStripe();
@@ -16,12 +16,11 @@ const SubscriptionCheckoutForm = () => {
   const [name, setName] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const subScriptionId = useAppSelector((state) => state.global.subScriptionId);
   const showModal = () => {
     setIsModalOpen(true);
   };
-
 
   const handleCancel = () => {
     setIsModalOpen(false);
@@ -46,13 +45,14 @@ const SubscriptionCheckoutForm = () => {
 
     try {
       // Create a PaymentMethod
-      const { error: pmError, paymentMethod } = await stripe.createPaymentMethod({
-        type: "card",
-        card: cardElement,
-        billing_details: {
-          email: email, // Send email to Stripe
-        },
-      });
+      const { error: pmError, paymentMethod } =
+        await stripe.createPaymentMethod({
+          type: "card",
+          card: cardElement,
+          billing_details: {
+            email: email, // Send email to Stripe
+          },
+        });
 
       if (pmError || !paymentMethod) {
         setMessage(pmError?.message || "Error creating payment method.");
@@ -64,14 +64,15 @@ const SubscriptionCheckoutForm = () => {
       const res = await createSubscription({
         payment_method: paymentMethod.id,
         email: email,
-        name:name,
-        pricing_id: 2
+        name: name,
+        pricing_id: 2,
       }).unwrap();
-
 
       // Handle SCA if required
       if (res.clientSecret) {
-        const { error: confirmError } = await stripe.confirmCardPayment(res.clientSecret);
+        const { error: confirmError } = await stripe.confirmCardPayment(
+          res.clientSecret
+        );
         if (confirmError) {
           setMessage(confirmError.message || "Payment authentication failed.");
           setLoading(false);
@@ -81,14 +82,15 @@ const SubscriptionCheckoutForm = () => {
 
       setMessage("Subscription successful! Thank you.");
       showModal();
-    } catch (err: any) {
-      setMessage(err.data?.error || "An unexpected error occurred. Please try again.");
+    } catch (err: unknown) {
+      setMessage(
+        (err as { data?: { error?: string } })?.data?.error ||
+          "An unexpected error occurred. Please try again."
+      );
     } finally {
       setLoading(false);
     }
   };
-
-  
 
   return (
     <main className="flex justify-center items-center w-full ">
@@ -148,24 +150,21 @@ const SubscriptionCheckoutForm = () => {
         )}
       </form>
 
-      <Modal title="Subscription Successful" 
-      open={isModalOpen}  
-      onCancel={handleCancel}
-      footer={false}
-      centered={true}
-      maskClosable={false}
-      close={false}
-      closeIcon={null}
+      <Modal
+        title="Subscription Successful"
+        open={isModalOpen}
+        onCancel={handleCancel}
+        footer={false}
+        centered={true}
+        maskClosable={false}
+        closeIcon={null}
       >
-      <Image
-      src={sub}
-      alt="image" 
-      className=" h-[100px] w-auto mx-auto"
-      />
-      <p className=" text-center font-bold text-sm">
-       <span className=" text-green-500"> Subscription Successful</span><br/>
-        Please check your email to complete your signup
-      </p>
+        <Image src={sub} alt="image" className=" h-[100px] w-auto mx-auto" />
+        <p className=" text-center font-bold text-sm">
+          <span className=" text-green-500"> Subscription Successful</span>
+          <br />
+          Please check your email to complete your signup
+        </p>
       </Modal>
     </main>
   );

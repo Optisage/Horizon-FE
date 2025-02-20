@@ -5,6 +5,7 @@ import SubscriptionHistoryTable from "./SubscriptionHistoryTable";
 import { Heading } from "@/app/(dashboard)/_components";
 
 const Subscriptions = () => {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [isMonthly, setIsMonthly] = useState(true);
   const monthlyPrice = 35;
   const annualPrice = monthlyPrice * 12;
@@ -19,7 +20,7 @@ const Subscriptions = () => {
       {/* plans */}
       <div className="flex flex-col gap-12">
         {/* Toggle Buttons */}
-        <div className="rounded-xl p-1 border border-[#EBEBEB] flex gap-1 w-max mx-auto">
+        {/* <div className="rounded-xl p-1 border border-[#EBEBEB] flex gap-1 w-max mx-auto">
           <button
             type="button"
             className={`${
@@ -42,7 +43,7 @@ const Subscriptions = () => {
           >
             Annually
           </button>
-        </div>
+        </div> */}
 
         {/* grid */}
         <div className="grid sm:grid-cols-2 gap-6">
@@ -71,7 +72,7 @@ const Subscriptions = () => {
           {/* Premium Plan */}
           <div className="bg-[url(/assets/images/pricing-bg.png)] bg-no-repeat bg-cover bg-top border border-[#EBEBEB] hover:border-primary duration-200 rounded-3xl p-6 flex flex-col gap-6 text-[#787891]">
             <span className="flex flex-col gap-5">
-              <h3>Premium</h3>
+              <h3>Pro</h3>
               <p>
                 <span className="text-xl sm:text-2xl font-semibold">$</span>
                 <span className="text-[#01011D] text-xl sm:text-2xl font-semibold">
@@ -86,7 +87,7 @@ const Subscriptions = () => {
               type="button"
               className="px-6 py-2.5 text-sm border border-transparent rounded-xl font-medium text-white bg-primary hover:bg-primary-hover duration-200"
             >
-              Switch to Premium
+              Switch to Pro
             </button>
           </div>
         </div>

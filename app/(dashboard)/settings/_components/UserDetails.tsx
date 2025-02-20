@@ -129,18 +129,24 @@ const UserDetails = () => {
                 </span>
               </div>
             )}
+
+            {vatType === "flat" && (
+              <div>
+                <span className="flex flex-col gap-4">
+                  <label htmlFor="flat-rate" className="text-sm font-medium">
+                    Flat rate
+                  </label>
+                  <Input
+                    id="flat-rate"
+                    defaultValue="10%"
+                    className="px-3 py-2"
+                  />
+                </span>
+              </div>
+            )}
           </div>
         </div>
       )}
-
-      <div>
-        <button
-          type="submit"
-          className="px-6 py-2 bg-primary hover:bg-primary-hover rounded-xl text-white text-sm font-medium"
-        >
-          Save
-        </button>
-      </div>
 
       {/* others */}
       <div className="flex flex-col gap-6">
@@ -229,6 +235,15 @@ const UserDetails = () => {
             defaultValue="$0.00"
             className="px-3 py-2"
           />
+        </div>
+
+        <div>
+          <button
+            type="submit"
+            className="px-6 py-2 bg-primary hover:bg-primary-hover rounded-xl text-white text-sm font-medium"
+          >
+            Save
+          </button>
         </div>
       </div>
     </div>

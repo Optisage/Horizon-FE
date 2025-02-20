@@ -1,9 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { SearchInput } from "../../_components";
+import { CustomPagination, SearchInput } from "../../_components";
 import Image from "next/image";
-import { Pagination, Select } from "antd";
+
 import { useRouter } from "next/navigation";
 
 import UFO from "@/public/assets/svg/ufo.svg";
@@ -14,7 +14,7 @@ import Product4 from "@/public/assets/images/product-4.png";
 import Product5 from "@/public/assets/images/product-5.png";
 import SalesStats from "./SalesStats";
 
-const products = [
+export const products = [
   {
     id: 1,
     image: Product1,
@@ -97,7 +97,7 @@ const Dashboard = () => {
 
       {searchValue.trim() !== "" && (
         <main className="flex flex-col gap-20 justify-between h-full">
-          <div className="p-2 rounded-lg border border-[#E4E4E7] flex flex-col divide-y divide-[#E4E4E7]">
+          <div className="p-2 rounded-lg border border-border flex flex-col divide-y divide-[#E4E4E7]">
             <span className="bg-[#FAFAFA] px-4 py-3.5">
               <h4 className="text-neutral-900 font-medium text-base md:text-lg">
                 Product
@@ -144,22 +144,7 @@ const Dashboard = () => {
           </div>
 
           {/* pagination */}
-          <div className="p-4 border-t flex flex-col md:flex-row items-center gap-6 justify-between">
-            <p className="text-[#3F3F46]">Page of 1 of 16</p>
-
-            <Pagination defaultCurrent={1} total={50} />
-
-            <Select
-              defaultValue="6"
-              style={{ width: 142 }}
-              options={[
-                { value: "6", label: "6 Data per row" },
-                { value: "8", label: "8 Data per row" },
-                { value: "10", label: "10 Data per row" },
-                { value: "20", label: "20 Data per row" },
-              ]}
-            />
-          </div>
+          <CustomPagination />
         </main>
       )}
     </section>

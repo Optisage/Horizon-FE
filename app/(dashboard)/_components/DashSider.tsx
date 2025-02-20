@@ -4,7 +4,7 @@ import React, { useState, useLayoutEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
-import Cookies from 'js-cookie';
+import Cookies from "js-cookie";
 import Logo from "@/public/assets/svg/Optisage Logo.svg";
 import {
   DashboardIcon,
@@ -12,25 +12,34 @@ import {
   KeepaIcon,
   SubscriptionsIcon,
   CreditIcon,
+  HistoryIcon,
 } from "@/public/assets/svg/icons";
 import LogoutModal from "./LogoutModal";
 import { BiChevronRight } from "react-icons/bi";
 import { RiVerifiedBadgeFill } from "react-icons/ri";
+import { GoPerson } from "react-icons/go";
 
 // Sidebar data
 const menuData = [
   { id: "1", path: "/dashboard", label: "Dashboard", icon: DashboardIcon },
-  { id: "2", path: "", label: "Keepa", icon: KeepaIcon, comingSoon: true },
+  { id: "2", path: "/history", label: "History", icon: HistoryIcon },
+  { id: "3", path: "", label: "Keepa", icon: KeepaIcon, comingSoon: true },
+  {
+    id: "4",
+    path: "seller",
+    label: "Seller",
+    icon: GoPerson,
+  },
 ];
 
 const secondaryMenu = [
-  { id: "3", path: "/settings", label: "Settings", icon: SettingsIcon },
-  { id: "4", path: "", label: "Credit", icon: CreditIcon, comingSoon: true },
+  { id: "5", path: "/settings", label: "Settings", icon: SettingsIcon },
+  { id: "6", path: "", label: "Credit", icon: CreditIcon, comingSoon: true },
 ];
 
 const billingMenu = [
   {
-    id: "5",
+    id: "7",
     path: "/subscriptions",
     label: "Subscriptions",
     icon: SubscriptionsIcon,
@@ -46,7 +55,7 @@ const DashSider = () => {
   const handleLogout = () => {
     router.push("/");
     // Clear the token cookie
-  Cookies.remove("token");
+    Cookies.remove("token");
   };
 
   useLayoutEffect(() => {
@@ -127,8 +136,11 @@ const DashSider = () => {
               Invite other sellers to Optisage & help them succeed and unlock
               exclusive perks too!
             </p>
-            <button className="bg-primary hover:bg-primary-hover duration-200 text-white text-sm font-medium px-4 py-2 rounded-md w-full mt-3 active:scale-95">
-              Refer a Seller
+            <button
+              onClick={() => router.push("/referral")}
+              className="bg-primary hover:bg-primary-hover duration-200 text-white text-sm font-medium px-4 py-2 rounded-md w-full mt-3 active:scale-95"
+            >
+              Refer and Earn
             </button>
           </div>
 

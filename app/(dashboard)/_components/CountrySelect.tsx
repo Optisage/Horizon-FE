@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import { BiChevronDown } from "react-icons/bi";
 
 const countries = [
-  { code: "US", name: "Switch Marketplace Country", flag: "🇺🇸" },
+  { code: "", name: "Switch Marketplace Country", flag: "🇺🇸" },
   { code: "US", name: "United States", flag: "🇺🇸" },
   { code: "CA", name: "Canada", flag: "🇨🇦" },
   { code: "GB", name: "United Kingdom", flag: "🇬🇧" },

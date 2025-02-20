@@ -31,13 +31,13 @@ const DashNav = () => {
           type="button"
           className="text-sm rounded-xl bg-[#33B28A] hover:bg-[#33B28A]/90 text-white py-2 px-4 active:scale-95 duration-200 font-medium"
         >
-          Update Billing Details
+          Subscribe Now
         </button>
       </div>
 
       <div className="flex gap-3 md:gap-6 items-center">
         <div className="hidden lg:flex gap-6 items-center">
-          <p className="text-sm font-medium text-[#090F0D]">
+          <p className="hidden xl:block text-sm font-medium text-[#090F0D]">
             For better experience, install OptiSage Chrome Extension.
           </p>
           <CountrySelect />
