@@ -4,7 +4,7 @@ import React, { useState, useLayoutEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
-import Cookies from 'js-cookie';
+import Cookies from "js-cookie";
 import Logo from "@/public/assets/svg/Optisage Logo.svg";
 import {
   DashboardIcon,
@@ -46,7 +46,7 @@ const DashSider = () => {
   const handleLogout = () => {
     router.push("/");
     // Clear the token cookie
-  Cookies.remove("token");
+    Cookies.remove("token");
   };
 
   useLayoutEffect(() => {
@@ -128,7 +128,7 @@ const DashSider = () => {
               exclusive perks too!
             </p>
             <button className="bg-primary hover:bg-primary-hover duration-200 text-white text-sm font-medium px-4 py-2 rounded-md w-full mt-3 active:scale-95">
-              Refer a Seller
+              Refer and Earn
             </button>
           </div>
 

@@ -70,6 +70,15 @@ const BuyingCriteria = () => {
 
         <Input id="minimum-roi" defaultValue="$0.00" className="px-3 py-2" />
       </div>
+
+      <div>
+        <button
+          type="submit"
+          className="px-6 py-2 bg-primary hover:bg-primary-hover rounded-xl text-white text-sm font-medium"
+        >
+          Save
+        </button>
+      </div>
     </div>
   );
 };
