@@ -1,38 +1,37 @@
 "use client";
 
 import Image from "next/image";
-import { useRouter } from "next/navigation";
-import sub from "@/public/assets/images/sub.jpg"
+import sub from "@/public/assets/images/sub.jpg";
 import LockIllustration from "@/public/assets/svg/lock-illustration.svg";
 import { FormEvent, useState } from "react";
 import { useForgetPasswordMutation } from "@/redux/api/auth";
 import { message, Modal } from "antd";
-import { LoadingOutlined } from '@ant-design/icons';
+import { LoadingOutlined } from "@ant-design/icons";
+
 const ForgotPassword = () => {
-  const router = useRouter();
-  const [ForgotPassword, {isLoading}] = useForgetPasswordMutation()
-const [email, setEmail] =useState("")
+  const [ForgotPassword, { isLoading }] = useForgetPasswordMutation();
+  const [email, setEmail] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-const showModal = () => {
-  setIsModalOpen(true);
-};
+  const showModal = () => {
+    setIsModalOpen(true);
+  };
 
+  const handleCancel = () => {
+    setIsModalOpen(false);
+  };
 
-const handleCancel = () => {
-  setIsModalOpen(false);
-};
-
-
-const handleSubmit =(e: FormEvent)=>{
-  e.preventDefault()
-  ForgotPassword({email: email}).unwrap()
-  .then(()=>{
-    showModal()
-  }).catch(()=>{
-message.error("Failed to send link")
-  });
-}
+  const handleSubmit = (e: FormEvent) => {
+    e.preventDefault();
+    ForgotPassword({ email: email })
+      .unwrap()
+      .then(() => {
+        showModal();
+      })
+      .catch(() => {
+        message.error("Failed to send link");
+      });
+  };
 
   return (
     <>
@@ -80,33 +79,25 @@ message.error("Failed to send link")
           disabled={isLoading}
           className="rounded-lg bg-primary hover:bg-primary-hover text-white font-semibold p-2 active:scale-95 duration-200"
         >
-          {
-            isLoading && (
-              <LoadingOutlined spin />
-            )
-
-          }
+          {isLoading && <LoadingOutlined spin />}
           Send me an email
         </button>
       </form>
-      <Modal title="Reset Password" 
-      open={isModalOpen}  
-      onCancel={handleCancel}
-      footer={false}
-      centered={true}
-      maskClosable={false}
-      close={false}
-      closeIcon={null}
+      <Modal
+        title="Reset Password"
+        open={isModalOpen}
+        onCancel={handleCancel}
+        footer={false}
+        centered={true}
+        maskClosable={false}
+        closeIcon={null}
       >
-      <Image
-      src={sub}
-      alt="image" 
-      className=" h-[100px] w-auto mx-auto"
-      />
-      <p className=" text-center font-bold text-sm">
-       <span className=" text-green-500"> Reset Password Link</span><br/>
-        Please check your email to complete your password reset
-      </p>
+        <Image src={sub} alt="image" className=" h-[100px] w-auto mx-auto" />
+        <p className=" text-center font-bold text-sm">
+          <span className=" text-green-500"> Reset Password Link</span>
+          <br />
+          Please check your email to complete your password reset
+        </p>
       </Modal>
     </>
   );

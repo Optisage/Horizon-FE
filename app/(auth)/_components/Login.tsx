@@ -16,10 +16,12 @@ const Login: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [password, setPassword] = useState("");
   const [email, setEmail] = useState("");
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [login, { data, isLoading }] = useLoginMutation();
 
   const [messageApi, contextHolder] = message.useMessage();
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const success = () => {
     messageApi.open({
       type: "success",
@@ -44,10 +46,19 @@ const Login: React.FC = () => {
         content: "Login Successful",
       });
       router.push("/dashboard");
-    } catch (error) {
+    } catch (error: unknown) {
+      const errorMessage =
+        error &&
+        typeof error === "object" &&
+        "data" in error &&
+        error.data &&
+        typeof error.data === "object" &&
+        "message" in error.data
+          ? (error.data as { message: string }).message
+          : "Login failed";
       messageApi.open({
         type: "error",
-        content: error?.data?.message,
+        content: errorMessage,
       });
       console.error("Login failed:", error);
     }
