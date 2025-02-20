@@ -56,6 +56,22 @@ const AlertsDrawer = () => {
               This Product is Eligible to Sell
             </h4>
 
+            {/* not eligible */}
+            {/* <div className="mt-4 flex flex-col gap-4">
+              <h4 className="text-2xl font-semibold text-[#FF0000]">
+                This Product is not eligible to sell
+              </h4>
+
+              <span>
+                <button
+                  type="button"
+                  className="px-6 py-2 bg-primary hover:bg-primary-hover rounded-xl text-white text-sm font-medium"
+                >
+                  Get Approval on Amazon
+                </button>
+              </span>
+            </div> */}
+
             {/* Alert Details */}
             <div className="mt-4 space-y-3">
               {[

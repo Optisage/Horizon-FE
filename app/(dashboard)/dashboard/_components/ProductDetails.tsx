@@ -189,8 +189,8 @@ const ProductDetails = () => {
               <div className="p-6 bg-[#F5F3FF] rounded-t-lg flex items-center gap-4 justify-between">
                 <div className="flex flex-col gap-4">
                   <span className="flex flex-col gap-2">
-                    <p className="text-lg md:text-xl">
-                      This Product is eligible to sell
+                    <p className="text-lg md:text-xl text-[#09090B] font-semibold">
+                      This product is eligible to sell
                     </p>
                     <p className="text-red-500 text-sm">There are 2 issues</p>
                   </span>
@@ -255,7 +255,7 @@ const ProductDetails = () => {
                   <InputNumber
                     value={costPrice}
                     onChange={(value) => setCostPrice(value || 0)}
-                    className="px-4 py-1.5 w-full"
+                    className="px-4 py-1.5 !w-full"
                     prefix="$"
                     min={0}
                   />
@@ -265,7 +265,7 @@ const ProductDetails = () => {
                   <InputNumber
                     value={salePrice}
                     onChange={(value) => setSalePrice(value || 0)}
-                    className="px-4 py-1.5 w-full"
+                    className="px-4 py-1.5 !w-full"
                     prefix="$"
                     min={0}
                   />
@@ -318,7 +318,7 @@ const ProductDetails = () => {
                   </button>
                 </div>
 
-                <div className="bg-[#F4F4F5] rounded-xl py-2">
+                <div className="bg-[#F4F4F5] rounded-xl p-2">
                   {activeTab === "maximumCost" && (
                     <div className="space-y-2">
                       <div className="text-sm text-gray-600">
