@@ -17,22 +17,29 @@ import {
 import LogoutModal from "./LogoutModal";
 import { BiChevronRight } from "react-icons/bi";
 import { RiVerifiedBadgeFill } from "react-icons/ri";
+import { GoPerson } from "react-icons/go";
 
 // Sidebar data
 const menuData = [
   { id: "1", path: "/dashboard", label: "Dashboard", icon: DashboardIcon },
   { id: "2", path: "/history", label: "History", icon: HistoryIcon },
   { id: "3", path: "", label: "Keepa", icon: KeepaIcon, comingSoon: true },
+  {
+    id: "4",
+    path: "seller",
+    label: "Seller",
+    icon: GoPerson,
+  },
 ];
 
 const secondaryMenu = [
-  { id: "4", path: "/settings", label: "Settings", icon: SettingsIcon },
-  { id: "5", path: "", label: "Credit", icon: CreditIcon, comingSoon: true },
+  { id: "5", path: "/settings", label: "Settings", icon: SettingsIcon },
+  { id: "6", path: "", label: "Credit", icon: CreditIcon, comingSoon: true },
 ];
 
 const billingMenu = [
   {
-    id: "6",
+    id: "7",
     path: "/subscriptions",
     label: "Subscriptions",
     icon: SubscriptionsIcon,
