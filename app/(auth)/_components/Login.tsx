@@ -1,5 +1,5 @@
 "use client";
-import React from 'react';
+import React from "react";
 import { FormEvent, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
@@ -10,28 +10,26 @@ import Amazon from "@/public/assets/svg/amazon.svg";
 import { useLoginMutation } from "@/redux/api/auth";
 import { message } from "antd";
 
-
 const Login: React.FC = () => {
   const router = useRouter();
   const [step, setStep] = useState(1);
   const [showPassword, setShowPassword] = useState(false);
   const [password, setPassword] = useState("");
   const [email, setEmail] = useState("");
-  const [login, {data, isLoading}] = useLoginMutation()
+  const [login, { data, isLoading }] = useLoginMutation();
 
   const [messageApi, contextHolder] = message.useMessage();
 
   const success = () => {
     messageApi.open({
-      type: 'success',
-      content: 'This is a success message',
+      type: "success",
+      content: "This is a success message",
     });
   };
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    console.log("starting")
-
+    console.log("starting");
 
     const payload = {
       email,
@@ -42,22 +40,21 @@ const Login: React.FC = () => {
       const response = await login(payload).unwrap();
       console.log("login-up success:", response);
       messageApi.open({
-        type: 'success',
-        content: 'Login Successful',
+        type: "success",
+        content: "Login Successful",
       });
       router.push("/dashboard");
     } catch (error) {
       messageApi.open({
-        type: 'error',
+        type: "error",
         content: error?.data?.message,
       });
       console.error("Login failed:", error);
-      
     }
   };
   const handleContinue = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-  
+
     if (step === 1 && email) {
       setStep(2);
     } else if (step === 2) {
@@ -66,16 +63,14 @@ const Login: React.FC = () => {
         message.error("Please enter your password.");
         return;
       }
-  
+
       await handleSubmit(e);
     }
   };
 
-  
-
   return (
     <>
-    {contextHolder}
+      {contextHolder}
       {step < 3 ? (
         <>
           <form className="flex flex-col gap-4" onSubmit={handleContinue}>
@@ -98,25 +93,25 @@ const Login: React.FC = () => {
               />
             </div>
 
-              {step === 2 && (
-                <div className="flex flex-col gap-1">
-                  <label
-                    htmlFor="password"
-                    className="text-sm text-neutral-700 font-medium"
-                  >
-                    Password
-                  </label>
-                  <div className="relative">
-                    <input
-                      type={showPassword ? "text" : "password"}
-                      name="password"
-                      id="password"
-                      placeholder="Enter your password"
-                      className="p-3 pr-10 bg-[#F4F4F5] border border-transparent focus:border-neutral-700 placeholder:text-[#52525B] text-sm rounded-md outline-none w-full"
-                      required
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                    />
+            {step === 2 && (
+              <div className="flex flex-col gap-1">
+                <label
+                  htmlFor="password"
+                  className="text-sm text-neutral-700 font-medium"
+                >
+                  Password
+                </label>
+                <div className="relative">
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    name="password"
+                    id="password"
+                    placeholder="Enter your password"
+                    className="p-3 pr-10 bg-[#F4F4F5] border border-transparent focus:border-neutral-700 placeholder:text-[#52525B] text-sm rounded-md outline-none w-full"
+                    required
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                  />
 
                   <button
                     type="button"
@@ -136,15 +131,13 @@ const Login: React.FC = () => {
               </div>
             )}
 
-              <button
-                type="submit"
-                
-                className="rounded-lg bg-primary hover:bg-primary-hover text-white font-semibold p-2 active:scale-95 duration-200"
-              >
-                {isLoading ? "Logging In..." : "Continue"}
-                
-              </button>
-            </form>
+            <button
+              type="submit"
+              className="rounded-lg bg-primary hover:bg-primary-hover text-white font-semibold p-2 active:scale-95 duration-200"
+            >
+              {isLoading ? "Logging In..." : "Continue"}
+            </button>
+          </form>
 
           <Link href="" className="font-medium underline">
             Privacy Policy
@@ -164,7 +157,7 @@ const Login: React.FC = () => {
       ) : (
         <button
           onClick={() => router.push("/dashboard")} // connect to amazon api here
-          className="text-gray-900 border border-[#E4E4E7] rounded-[10px] px-2 py-2 active:scale-95 duration-200 hover:bg-gray-50 flex gap-2 items-center justify-center text-sm"
+          className="text-gray-900 border border-border rounded-[10px] px-2 py-2 active:scale-95 duration-200 hover:bg-gray-50 flex gap-2 items-center justify-center text-sm"
         >
           <Image
             src={Amazon}

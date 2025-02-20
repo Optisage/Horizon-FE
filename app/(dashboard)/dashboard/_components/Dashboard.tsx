@@ -97,7 +97,7 @@ const Dashboard = () => {
 
       {searchValue.trim() !== "" && (
         <main className="flex flex-col gap-20 justify-between h-full">
-          <div className="p-2 rounded-lg border border-[#E4E4E7] flex flex-col divide-y divide-[#E4E4E7]">
+          <div className="p-2 rounded-lg border border-border flex flex-col divide-y divide-[#E4E4E7]">
             <span className="bg-[#FAFAFA] px-4 py-3.5">
               <h4 className="text-neutral-900 font-medium text-base md:text-lg">
                 Product

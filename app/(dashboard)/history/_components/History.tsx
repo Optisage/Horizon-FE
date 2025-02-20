@@ -28,7 +28,7 @@ const History = () => {
       </div>
 
       <main className="flex flex-col gap-20 justify-between h-full">
-        <div className="p-2 rounded-lg border border-[#E4E4E7] flex flex-col divide-y divide-[#E4E4E7]">
+        <div className="p-2 rounded-lg border border-border flex flex-col divide-y divide-[#E4E4E7]">
           <span className="py-2 text-[#95A4B7] border-b border-gray-50 uppercase font-bold text-sm">
             Today
           </span>
