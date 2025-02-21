@@ -60,8 +60,11 @@ const SignUp = () => {
       messageApi.open({
         type: 'success',
         content: 'Registration Completed',
+        onClose: () => {
+          router.push("/");
+        },
       });
-      router.push("/");
+      //router.push("/");
     } catch (error) {
       console.error("Sign-up failed:", error);
       messageApi.open({
@@ -83,7 +86,6 @@ const SignUp = () => {
 
       <div className="w-full max-w-[480px] sm:w-[480px] flex flex-col gap-4 p-6 px-3 sm:p-6 bg-white my-auto rounded-lg shadow-md">
         
-          <>
             <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
               <div className="flex flex-col gap-1">
                 <label
@@ -185,7 +187,7 @@ const SignUp = () => {
               </Link>
               .
             </p>
-          </>
+          
         
       </div>
     </section>
