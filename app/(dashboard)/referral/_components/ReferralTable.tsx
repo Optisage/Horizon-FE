@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { Table } from "antd";
-import { Checkbox } from "antd";
 
 interface Referral {
   key: string;
