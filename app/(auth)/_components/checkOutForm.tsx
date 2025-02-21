@@ -105,7 +105,6 @@ const SubscriptionCheckoutForm = () => {
           onChange={(e) => setEmail(e.target.value)}
           className="p-4 border border-gray-300 rounded-md bg-gray-50 w-full focus:outline-none"
           required
-          onClick={showModal}
         />
         <input
           type="text"
