@@ -25,7 +25,8 @@ export default function Heading({
       {help && (
         <button
           type="button"
-          className="flex gap-2.5 items-center rounded-xl px-4 py-2 border border-[#EBEBEB] text-[#787891] hover:bg-gray-50 duration-200 active:scale-95"
+          // hidden for now until the help modal is implemented
+          className="hidden gap-2.5 items-center rounded-xl px-4 py-2 border border-[#EBEBEB] text-[#787891] hover:bg-gray-50 duration-200 active:scale-95"
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"

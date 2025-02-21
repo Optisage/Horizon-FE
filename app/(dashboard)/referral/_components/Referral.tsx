@@ -75,7 +75,7 @@ const Referral = () => {
           </div>
 
           <div className="flex flex-col md:flex-row xl:flex-col gap-4">
-            <div className="border border-border rounded-lg p-5 flex gap-4 items-center">
+            <div className="border border-border rounded-lg p-5 flex gap-4 items-center cursor-pointer">
               <span>
                 <span className="size-[50px] flex items-center justify-center bg-[#F7F7F7] text-[#4B4B62] rounded-full">
                   <HiOutlineUserAdd className="size-6" />
@@ -91,7 +91,12 @@ const Referral = () => {
                 </p>
               </span>
             </div>
-            <div className="border border-border rounded-lg p-5 flex gap-4 items-center">
+
+            <div className="border border-border rounded-lg p-5 flex gap-4 items-center relative cursor-pointer">
+              <span className="absolute right-3 top-3 bg-primary text-white text-xs px-1.5 py-0.5 rounded-md">
+                Coming Soon
+              </span>
+
               <span>
                 <span className="size-[50px] flex items-center justify-center bg-[#F7F7F7] text-[#4B4B62] rounded-full">
                   <HiOutlinePlayCircle className="size-6" />
