@@ -44,8 +44,11 @@ const Login: React.FC = () => {
       messageApi.open({
         type: "success",
         content: "Login Successful",
+        onClose: () => {
+          router.push("/dashboard");
+        },
       });
-      router.push("/dashboard");
+      
     } catch (error: unknown) {
       const errorMessage =
         error &&
