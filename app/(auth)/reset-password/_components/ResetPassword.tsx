@@ -34,8 +34,11 @@ const [messageApi, contextHolder] = message.useMessage();
         messageApi.open({
           type: 'success',
           content: 'Reset Successful',
+          onClose: () => {
+            router.push("/");
+          }
         });
-        router.push("/");
+       
       })
       .catch(() => {
         messageApi.open({
