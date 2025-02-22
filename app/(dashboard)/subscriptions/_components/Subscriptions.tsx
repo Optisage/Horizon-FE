@@ -65,7 +65,7 @@ const Subscriptions = () => {
               type="button"
               className="px-6 py-2.5 text-sm border border-[#EDEDEE] rounded-xl font-medium hover:bg-gray-50 duration-200"
             >
-              Switch to Basic
+              Switch to Pro
             </button>
           </div>
 
@@ -87,7 +87,7 @@ const Subscriptions = () => {
               type="button"
               className="px-6 py-2.5 text-sm border border-transparent rounded-xl font-medium text-white bg-primary hover:bg-primary-hover duration-200"
             >
-              Switch to Pro
+              Switch to Free
             </button>
           </div>
         </div>

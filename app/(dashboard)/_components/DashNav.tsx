@@ -6,6 +6,7 @@ import Logo from "@/public/assets/svg/Optisage Logo.svg";
 import { CgMenuRightAlt } from "react-icons/cg";
 import CountrySelect from "./CountrySelect";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 const DashNav = () => {
   const router = useRouter();
@@ -37,9 +38,12 @@ const DashNav = () => {
 
       <div className="flex gap-3 md:gap-6 items-center">
         <div className="hidden lg:flex gap-6 items-center">
-          <p className="hidden xl:block text-sm font-medium text-[#090F0D]">
+          <Link
+            href=""
+            className="hidden xl:block text-sm font-medium text-[#090F0D]"
+          >
             For better experience, install OptiSage Chrome Extension.
-          </p>
+          </Link>
           <CountrySelect />
         </div>
 
