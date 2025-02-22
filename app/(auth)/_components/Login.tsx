@@ -9,6 +9,7 @@ import { IoEyeOffOutline, IoEyeOutline } from "react-icons/io5";
 import Amazon from "@/public/assets/svg/amazon.svg";
 import { useLoginMutation } from "@/redux/api/auth";
 import { message } from "antd";
+import { passwordRegex } from "@/utils/regex";
 
 const Login: React.FC = () => {
   const router = useRouter();
@@ -21,6 +22,7 @@ const Login: React.FC = () => {
 
   const [messageApi, contextHolder] = message.useMessage();
 
+  
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const success = () => {
     messageApi.open({
@@ -74,7 +76,14 @@ const Login: React.FC = () => {
     } else if (step === 2) {
       // Call handleSubmit when the password is provided
       if (!password) {
-        message.error("Please enter your password.");
+        messageApi.error("Please enter your password.");
+        return;
+      }
+
+      if (!passwordRegex.test(password)) {
+        messageApi.error(
+         "Password must be at least 8 characters long."
+        );
         return;
       }
 

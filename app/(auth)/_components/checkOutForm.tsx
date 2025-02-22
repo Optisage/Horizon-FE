@@ -108,7 +108,7 @@ const SubscriptionCheckoutForm = () => {
         />
         <input
           type="text"
-          placeholder="Enter your name"
+          placeholder="Enter your full name"
           value={name}
           onChange={(e) => setName(e.target.value)}
           className="p-4 border border-gray-300 rounded-md bg-gray-50 mb-6 w-full focus:outline-none"
@@ -127,7 +127,7 @@ const SubscriptionCheckoutForm = () => {
           className={`w-full py-2 px-4 rounded-md text-white font-semibold ${
             !stripe || loading
               ? "bg-gray-400 cursor-not-allowed"
-              : "bg-blue-600 hover:bg-blue-700"
+              : "rounded-lg bg-primary hover:bg-primary-hover text-white font-semibold p-2 active:scale-95 duration-200"
           } transition-colors`}
           aria-disabled={!stripe || loading}
         >
