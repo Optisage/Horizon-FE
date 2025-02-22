@@ -63,9 +63,18 @@ const CustomDatePicker: React.FC<CustomDatePickerProps> = ({
   };
 
   const rangePresets = [
-    { label: "1M", value: [dayjs(), dayjs().add(1, "month")] },
-    { label: "3M", value: [dayjs(), dayjs().add(3, "month")] },
-    { label: "6M", value: [dayjs(), dayjs().add(6, "month")] },
+    {
+      label: "1M",
+      value: [dayjs(), dayjs().add(1, "month")] as [dayjs.Dayjs, dayjs.Dayjs],
+    },
+    {
+      label: "3M",
+      value: [dayjs(), dayjs().add(3, "month")] as [dayjs.Dayjs, dayjs.Dayjs],
+    },
+    {
+      label: "6M",
+      value: [dayjs(), dayjs().add(6, "month")] as [dayjs.Dayjs, dayjs.Dayjs],
+    },
   ];
 
   return (
