@@ -9,6 +9,7 @@ import Logo from "@/public/assets/svg/Optisage Logo.svg";
 
 import { useSetPasswordMutation } from "@/redux/api/auth";
 import { message } from "antd";
+import { passwordRegex } from "@/utils/regex";
 
 
 const SignUp = () => {
@@ -43,9 +44,16 @@ const SignUp = () => {
     console.log("starting")
 
     if (password !== confirmPassword) {
-      alert("Passwords do not match");
+      messageApi.error("Passwords do not match");
       return;
     }
+     if (!passwordRegex.test(password)) {
+            messageApi.error(
+             "Password must be at least 8 characters long."
+            );
+            return;
+          }
+    
 
     const payload = {
       email,
@@ -76,15 +84,10 @@ const SignUp = () => {
   };
 
   return (
-    <section className="bg-[#FAFAFA] h-screen flex flex-col items-center px-4 md:px-0">
+    <>
       {contextHolder}
-      <div className="pt-20">
-        <Link href="/">
-          <Image src={Logo} alt="Logo" width={203} height={53} quality={90} />
-        </Link>
-      </div>
-
-      <div className="w-full max-w-[480px] sm:w-[480px] flex flex-col gap-4 p-6 px-3 sm:p-6 bg-white my-auto rounded-lg shadow-md">
+    
+      <div >
         
             <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
               <div className="flex flex-col gap-1">
@@ -176,21 +179,11 @@ const SignUp = () => {
               </button>
             </form>
 
-            <Link href="" className="font-medium underline">
-              Privacy Policy
-            </Link>
-
-            <p>
-              Forgot your password? You can{" "}
-              <Link href="" className="underline hover:font-medium">
-                reset it here
-              </Link>
-              .
-            </p>
+           
           
         
       </div>
-    </section>
+    </>
   );
 };
 
