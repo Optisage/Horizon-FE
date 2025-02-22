@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
 import { LoadingOutlined } from "@ant-design/icons";
 import { IoEyeOffOutline, IoEyeOutline } from "react-icons/io5";
+import { passwordRegex } from "@/utils/regex";
 
 const ResetPassword = () => {
   const router = useRouter();
@@ -23,6 +24,16 @@ const [messageApi, contextHolder] = message.useMessage();
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
+    if (password !== confirmPassword) {
+      messageApi.error("Passwords do not match");
+      return;
+    }
+     if (!passwordRegex.test(password)) {
+                messageApi.error(
+                 "Password must be at least 8 characters long"
+                );
+                return;
+              }
     resetPassword({
       email: emailValue,
       password: password,
