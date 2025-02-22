@@ -1,11 +1,8 @@
 "use client";
 
 import { FormEvent, useEffect, useState } from "react";
-import Image from "next/image";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { IoEyeOffOutline, IoEyeOutline } from "react-icons/io5";
-import Logo from "@/public/assets/svg/Optisage Logo.svg";
 
 import { useSetPasswordMutation } from "@/redux/api/auth";
 import { message } from "antd";
