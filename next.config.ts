@@ -8,6 +8,11 @@ const nextConfig: NextConfig = {
       hostname: "avatar.iran.liara.run",
       port: "",
       pathname: "/**"
+    },{
+      protocol: "https",
+      hostname: "flagcdn.com",
+      port: "",
+      pathname: "/**"
     }]
   },
 };
