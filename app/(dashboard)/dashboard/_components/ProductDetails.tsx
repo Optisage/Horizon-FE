@@ -42,14 +42,32 @@ const pieData = [
   { name: "T&D Supplies", value: 30, color: "#00E4E4" },
 ];
 
-const lineData = [
-  { date: "Jan 1", amazon: 6000, buyBox: 3500 },
-  { date: "Jan 10", amazon: 6500, buyBox: 3400 },
-  { date: "Jan 15", amazon: 7500, buyBox: 4200 },
-  { date: "Jan 20", amazon: 6300, buyBox: 3800 },
-  { date: "Feb 10", amazon: 6800, buyBox: 4900 },
-  { date: "Feb 25", amazon: 7000, buyBox: 4200 },
-];
+const marketData = {
+  price: [
+    { date: "Jan 1", amazon: 6000, buyBox: 3500 },
+    { date: "Jan 10", amazon: 6500, buyBox: 3400 },
+    { date: "Jan 15", amazon: 7500, buyBox: 4200 },
+    { date: "Jan 20", amazon: 6300, buyBox: 3800 },
+    { date: "Feb 10", amazon: 6800, buyBox: 4900 },
+    { date: "Feb 25", amazon: 7000, buyBox: 4200 },
+  ],
+  volume: [
+    { date: "Jan 1", amazon: 1200, buyBox: 800 },
+    { date: "Jan 10", amazon: 1400, buyBox: 900 },
+    { date: "Jan 15", amazon: 1600, buyBox: 1100 },
+    { date: "Jan 20", amazon: 1300, buyBox: 950 },
+    { date: "Feb 10", amazon: 1500, buyBox: 1200 },
+    { date: "Feb 25", amazon: 1700, buyBox: 1300 },
+  ],
+  reviews: [
+    { date: "Jan 1", amazon: 450, buyBox: 280 },
+    { date: "Jan 10", amazon: 480, buyBox: 300 },
+    { date: "Jan 15", amazon: 520, buyBox: 350 },
+    { date: "Jan 20", amazon: 490, buyBox: 320 },
+    { date: "Feb 10", amazon: 550, buyBox: 380 },
+    { date: "Feb 25", amazon: 600, buyBox: 400 },
+  ],
+};
 
 const ProductDetails = () => {
   const [searchValue, setSearchValue] = useState("");
@@ -62,6 +80,19 @@ const ProductDetails = () => {
   const [activeTab2, setActiveTab2] = useState("Price");
   const [activeTab3, setActiveTab3] = useState("Yearly");
   const [activeTab4, setActiveTab4] = useState("Current");
+
+  const getDataForTab = () => {
+    switch (activeTab2.toLowerCase()) {
+      case "price":
+        return marketData.price;
+      case "volume":
+        return marketData.volume;
+      case "reviews":
+        return marketData.reviews;
+      default:
+        return marketData.price;
+    }
+  };
 
   const router = useRouter();
 
@@ -699,7 +730,7 @@ const ProductDetails = () => {
                 </div>
 
                 <ResponsiveContainer width="100%" height={300}>
-                  <LineChart data={lineData}>
+                  <LineChart data={getDataForTab()}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="date" />
                     <YAxis />
