@@ -30,7 +30,8 @@ const CustomDatePicker: React.FC = () => {
       </button>
 
       {/* Ant Design DatePicker */}
-      <span className="border flex items-center">
+      <span className="border flex items-center gap-2 px-2">
+        <BsCalendar className="size-4" />
         <DatePicker
           picker="month"
           value={selectedDate}
@@ -38,7 +39,7 @@ const CustomDatePicker: React.FC = () => {
           format="MMM YYYY"
           allowClear={false}
           suffixIcon={null}
-          className="!border-none !rounded-none !shadow-none !p-1 !text-center"
+          className="!border-none !rounded-none !shadow-none !p-1 !text-center !w-[93px]"
           popupClassName="custom-datepicker-popup"
           renderExtraFooter={() => null}
         />
