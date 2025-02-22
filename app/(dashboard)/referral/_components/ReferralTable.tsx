@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { Table } from "antd";
-import { Checkbox } from "antd";
 
 interface Referral {
   key: string;
@@ -164,16 +163,18 @@ const ReferralTable = () => {
       </div>
 
       {/* Tab Content */}
-      <Table
-        columns={columns}
-        dataSource={
-          activeTab === "all"
-            ? data
-            : data.filter((item) => item.status === "Active")
-        }
-        rowSelection={{ type: "checkbox" }}
-        pagination={false}
-      />
+      <div className="overflow-x-scroll">
+        <Table
+          columns={columns}
+          dataSource={
+            activeTab === "all"
+              ? data
+              : data.filter((item) => item.status === "Active")
+          }
+          rowSelection={{ type: "checkbox" }}
+          pagination={false}
+        />
+      </div>
     </div>
   );
 };
