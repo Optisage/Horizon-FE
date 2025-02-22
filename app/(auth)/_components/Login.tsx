@@ -50,7 +50,6 @@ const Login: React.FC = () => {
           router.push("/dashboard");
         },
       });
-      
     } catch (error: unknown) {
       const errorMessage =
         error &&
@@ -167,12 +166,12 @@ const Login: React.FC = () => {
           </Link>
 
           <p>
-            Forgot your password? You can{" "}
+            Forgot your password? You can reset it{" "}
             <Link
               href="/forgot-password"
               className="underline hover:font-medium"
             >
-              reset it here
+              here
             </Link>
             .
           </p>

@@ -31,11 +31,12 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import AlertsDrawer from "./AlertsDrawer";
+import { useRouter } from "next/navigation";
 
 const pieData = [
-  { name: "The Beauty Center", value: 33, color: "#0000FF" },
-  { name: "Devine Makeup", value: 33, color: "#FF0080" },
-  { name: "T&D Supplies", value: 34, color: "#00E4E4" },
+  { name: "The Beauty Center", value: 35, color: "#0000FF" },
+  { name: "Devine Makeup", value: 35, color: "#FF0080" },
+  { name: "T&D Supplies", value: 30, color: "#00E4E4" },
 ];
 
 const lineData = [
@@ -51,11 +52,13 @@ const ProductDetails = () => {
   const [searchValue, setSearchValue] = useState("");
 
   const [fulfillmentType, setFulfillmentType] = useState("FBA");
-  const [activeTab, setActiveTab] = useState("maximumCost");
+  const [activeTab, setActiveTab] = useState("totalFees");
   const [costPrice, setCostPrice] = useState(40000);
   const [salePrice, setSalePrice] = useState(40000);
   const [storageMonths, setStorageMonths] = useState(0);
   const [activeTab2, setActiveTab2] = useState("Price");
+
+  const router = useRouter();
 
   const fees = {
     referralFee: 9.69,
@@ -321,8 +324,17 @@ const ProductDetails = () => {
                 <div className="bg-[#F4F4F5] rounded-xl p-2">
                   {activeTab === "maximumCost" && (
                     <div className="space-y-2">
-                      <div className="text-sm text-gray-600">
-                        Maximum cost details here...
+                      <div className="flex justify-between text-sm">
+                        <span className="text-[#595959]">Min. ROI</span>
+                        <span className="font-semibold text-black">25%</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-[#595959]">Min. Profit</span>
+                        <span className="font-semibold text-black">$3.00</span>
+                      </div>
+                      <div className="border-t pt-2 font-semibold flex justify-between">
+                        <span>Maximum Cost</span>
+                        <span>$26.60</span>
                       </div>
                     </div>
                   )}
@@ -473,7 +485,10 @@ const ProductDetails = () => {
                     <tr key={offer.id} className="border-b">
                       <td className="p-2">{offer.id}</td>
                       <td className="p-2">
-                        <div>
+                        <div
+                          onClick={() => router.push("/seller")}
+                          className="cursor-pointer"
+                        >
                           {offer.seller}
                           {offer.leader && (
                             <span className="text-xs text-primary block">
@@ -596,14 +611,15 @@ const ProductDetails = () => {
                     </Pie>
                   </PieChart>
                 </ResponsiveContainer>
+
                 <ul>
                   {pieData.map((entry, index) => (
                     <li key={index} className="flex items-center gap-2">
                       <span
-                        className="w-3 h-3 rounded-full"
+                        className="size-3 rounded-lg"
                         style={{ backgroundColor: entry.color }}
                       ></span>
-                      {entry.name}
+                      {entry.name} &nbsp; -{entry.value}%
                     </li>
                   ))}
                 </ul>

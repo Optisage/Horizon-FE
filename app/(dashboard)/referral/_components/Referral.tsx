@@ -5,9 +5,10 @@ import Illustration2 from "@/public/assets/svg/illustration-2.svg";
 import Illustration3 from "@/public/assets/svg/illustration-3.svg";
 
 import { BsPieChart } from "react-icons/bs";
-import { HiOutlineChartBar, HiOutlineUserAdd } from "react-icons/hi";
+import { HiOutlineChartBar } from "react-icons/hi";
 import { HiOutlinePlayCircle } from "react-icons/hi2";
 import ReferralTable from "./ReferralTable";
+import SocialReferralModal from "./SocialReferralModal";
 
 const Referral = () => {
   return (
@@ -75,23 +76,13 @@ const Referral = () => {
           </div>
 
           <div className="flex flex-col md:flex-row xl:flex-col gap-4">
-            <div className="border border-border rounded-lg p-5 flex gap-4 items-center">
-              <span>
-                <span className="size-[50px] flex items-center justify-center bg-[#F7F7F7] text-[#4B4B62] rounded-full">
-                  <HiOutlineUserAdd className="size-6" />
-                </span>
+            <SocialReferralModal />
+
+            <div className="border border-border rounded-lg p-5 flex gap-4 items-center relative cursor-pointer">
+              <span className="absolute right-3 top-3 bg-primary text-white text-xs px-1.5 py-0.5 rounded-md">
+                Coming Soon
               </span>
-              <span className="flex flex-col gap-2">
-                <h4 className="text-[#01011D] text-base font-medium">
-                  Invite and Earn
-                </h4>
-                <p className="text-[#4B4B62] text-xs">
-                  Invite other sellers to Optisage & help them succeed and
-                  unlock exclusive perks too!
-                </p>
-              </span>
-            </div>
-            <div className="border border-border rounded-lg p-5 flex gap-4 items-center">
+
               <span>
                 <span className="size-[50px] flex items-center justify-center bg-[#F7F7F7] text-[#4B4B62] rounded-full">
                   <HiOutlinePlayCircle className="size-6" />

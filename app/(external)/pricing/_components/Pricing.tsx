@@ -1,24 +1,24 @@
 "use client";
+
 import { useLazyGetPricingQuery } from "@/redux/api/auth";
 import { setSubScriptionId } from "@/redux/slice/globalSlice";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { FaCheckCircle } from "react-icons/fa";
 import { useDispatch } from "react-redux";
 
 const Pricing = () => {
-  const dispatch = useDispatch(); // Initialize dispatch
-  const router = useRouter(); // Initialize dispatch
+  const dispatch = useDispatch();
+  const router = useRouter();
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [getPricing, { data, isLoading }] = useLazyGetPricingQuery();
+  const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
+  const [showModal, setShowModal] = useState(false);
 
   useEffect(() => {
     getPricing({});
   }, [getPricing]);
 
-  console.log(data);
-  // Assuming response.payload.data is available
-  // Ensure data is defined before mapping
   interface PricingData {
     id: string;
     name: string;
@@ -57,9 +57,21 @@ const Pricing = () => {
           item.name === "Pro" ? "24+ Languages" : null,
           item.name === "Business" ? "Private company infobase" : null,
           item.name === "Business" ? "SOC 2 compliant" : null,
-        ].filter(Boolean) as string[], // Remove null values
+        ].filter(Boolean) as string[],
       }))
     : [];
+
+  const handleGetStarted = (planId: string) => {
+    setSelectedPlan(planId);
+    setShowModal(true);
+  };
+
+  const confirmSubscription = () => {
+    if (selectedPlan) {
+      dispatch(setSubScriptionId(parseInt(selectedPlan)));
+      router.push("/checkout");
+    }
+  };
 
   return (
     <section className="py-12 px-4 bg-gray-100 h-dvh flex flex-col gap-12">
@@ -72,7 +84,6 @@ const Pricing = () => {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-6xl mx-auto font-medium">
-        {/* Free Plan */}
         {subInfo.map((item, index) => (
           <div
             className={`${
@@ -101,17 +112,42 @@ const Pricing = () => {
             </ul>
             <button
               className="mt-4 bg-green-500 text-white px-4 py-2 rounded-lg w-full"
-              onClick={() => {
-                console.log("Item being dispatched:", item); // Log the item
-                dispatch(setSubScriptionId(parseInt(item.key)));
-                router.push("/checkout");
-              }}
+              onClick={() => handleGetStarted(item.key)}
             >
-              {item.title === "Free" ? "  Sign Up for Free" : "Get Started"}
+              {item.title === "Free" ? "Sign Up for Free" : "Get Started"}
             </button>
           </div>
         ))}
       </div>
+
+      {/* Modal */}
+      {showModal && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 p-4 sm:p-0">
+          <div className="bg-white p-6 rounded-lg shadow-lg max-w-96 text-center">
+            <h3 className="text-xl font-bold">7-Day Free Trial</h3>
+            <p className="text-gray-600 mt-2">
+              You won&apos;t be charged today. Your 7-day free trial begins
+              after you enter your card details, and you can cancel anytime
+              before the trial ends.
+            </p>
+
+            <div className="mt-4 flex flex-col-reverse sm:flex-row gap-3 justify-center">
+              <button
+                className="px-4 py-2 bg-gray-300 rounded-lg"
+                onClick={() => setShowModal(false)}
+              >
+                Cancel
+              </button>
+              <button
+                className="px-4 py-2 bg-green-500 text-white rounded-lg"
+                onClick={confirmSubscription}
+              >
+                Continue to Checkout
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </section>
   );
 };
