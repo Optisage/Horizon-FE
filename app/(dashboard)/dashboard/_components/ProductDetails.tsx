@@ -30,8 +30,11 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
+
 import AlertsDrawer from "./AlertsDrawer";
 import { useRouter } from "next/navigation";
+import CustomDatePicker from "./CustomDatePicker";
+import { IoMdRefresh } from "react-icons/io";
 
 const pieData = [
   { name: "The Beauty Center", value: 35, color: "#0000FF" },
@@ -39,14 +42,32 @@ const pieData = [
   { name: "T&D Supplies", value: 30, color: "#00E4E4" },
 ];
 
-const lineData = [
-  { date: "Jan 1", amazon: 6000, buyBox: 3500 },
-  { date: "Jan 10", amazon: 6500, buyBox: 3400 },
-  { date: "Jan 15", amazon: 7500, buyBox: 4200 },
-  { date: "Jan 20", amazon: 6300, buyBox: 3800 },
-  { date: "Feb 10", amazon: 6800, buyBox: 4900 },
-  { date: "Feb 25", amazon: 7000, buyBox: 4200 },
-];
+const marketData = {
+  price: [
+    { date: "Jan 1", amazon: 6000, buyBox: 3500 },
+    { date: "Jan 10", amazon: 6500, buyBox: 3400 },
+    { date: "Jan 15", amazon: 7500, buyBox: 4200 },
+    { date: "Jan 20", amazon: 6300, buyBox: 3800 },
+    { date: "Feb 10", amazon: 6800, buyBox: 4900 },
+    { date: "Feb 25", amazon: 7000, buyBox: 4200 },
+  ],
+  volume: [
+    { date: "Jan 1", amazon: 1200, buyBox: 800 },
+    { date: "Jan 10", amazon: 1400, buyBox: 900 },
+    { date: "Jan 15", amazon: 1600, buyBox: 1100 },
+    { date: "Jan 20", amazon: 1300, buyBox: 950 },
+    { date: "Feb 10", amazon: 1500, buyBox: 1200 },
+    { date: "Feb 25", amazon: 1700, buyBox: 1300 },
+  ],
+  reviews: [
+    { date: "Jan 1", amazon: 450, buyBox: 280 },
+    { date: "Jan 10", amazon: 480, buyBox: 300 },
+    { date: "Jan 15", amazon: 520, buyBox: 350 },
+    { date: "Jan 20", amazon: 490, buyBox: 320 },
+    { date: "Feb 10", amazon: 550, buyBox: 380 },
+    { date: "Feb 25", amazon: 600, buyBox: 400 },
+  ],
+};
 
 const ProductDetails = () => {
   const [searchValue, setSearchValue] = useState("");
@@ -57,6 +78,21 @@ const ProductDetails = () => {
   const [salePrice, setSalePrice] = useState(40000);
   const [storageMonths, setStorageMonths] = useState(0);
   const [activeTab2, setActiveTab2] = useState("Price");
+  const [activeTab3, setActiveTab3] = useState("Yearly");
+  const [activeTab4, setActiveTab4] = useState("Current");
+
+  const getDataForTab = () => {
+    switch (activeTab2.toLowerCase()) {
+      case "price":
+        return marketData.price;
+      case "volume":
+        return marketData.volume;
+      case "reviews":
+        return marketData.reviews;
+      default:
+        return marketData.price;
+    }
+  };
 
   const router = useRouter();
 
@@ -397,6 +433,7 @@ const ProductDetails = () => {
               </div>
             </div>
 
+            {/* stats grid */}
             <div className="border border-border p-4 rounded-xl flex flex-col gap-5">
               <div className="grid grid-cols-2 gap-3">
                 <div className="flex flex-col sm:flex-row gap-2 sm:items-center">
@@ -466,25 +503,25 @@ const ProductDetails = () => {
           {/* right */}
           <div className="flex flex-col gap-5">
             {/* Offers Section */}
-            <div className="border border-border p-4 flex flex-col gap-2 rounded-xl">
-              <div className="flex items-center space-x-2 font-semibold text-gray-700">
+            <div className="border border-border flex flex-col rounded-xl">
+              <div className="flex items-center space-x-2 font-semibold text-gray-700 p-3">
                 <span className="text-lg">Offers</span>
               </div>
-              <table className="w-full mt-2 border-collapse text-sm">
+              <table className="w-full border-collapse text-sm">
                 <thead>
-                  <tr className="border-b text-left">
-                    <th className="p-2">S/N</th>
-                    <th className="p-2">Seller</th>
-                    <th className="p-2">Stock</th>
-                    <th className="p-2">Price</th>
-                    <th className="p-2">Buybox Share</th>
+                  <tr className="border-b text-left bg-[#F7F7F7]">
+                    <th className="p-3">S/N</th>
+                    <th className="p-3">Seller</th>
+                    <th className="p-3">Stock</th>
+                    <th className="p-3">Price</th>
+                    <th className="p-3">Buybox Share</th>
                   </tr>
                 </thead>
                 <tbody>
                   {offersData.offers.map((offer) => (
                     <tr key={offer.id} className="border-b">
-                      <td className="p-2">{offer.id}</td>
-                      <td className="p-2">
+                      <td className="p-3">{offer.id}</td>
+                      <td className="p-3">
                         <div
                           onClick={() => router.push("/seller")}
                           className="cursor-pointer"
@@ -497,9 +534,9 @@ const ProductDetails = () => {
                           )}
                         </div>
                       </td>
-                      <td className="p-2">{offer.stock}</td>
-                      <td className="p-2">{offer.price}</td>
-                      <td className="p-2">
+                      <td className="p-3">{offer.stock}</td>
+                      <td className="p-3">{offer.price}</td>
+                      <td className="p-3">
                         <div className="relative w-20 h-2 bg-gray-200 rounded-full">
                           <div
                             className="absolute top-0 left-0 h-2 bg-green-500 rounded-full"
@@ -515,7 +552,29 @@ const ProductDetails = () => {
 
             {/* Ranks & Prices Section */}
             <div className="border border-border p-4 flex flex-col gap-2 rounded-xl">
-              <div className="text-lg font-semibold">Ranks & Prices</div>
+              <div className="flex gap-4 items-center justify-between">
+                <h2 className="text-lg font-semibold">Ranks & Prices</h2>
+                <button type="button" className="flex gap-1.5 items-center">
+                  <IoMdRefresh className="size-5" />
+                  Refresh
+                </button>
+              </div>
+
+              <div className="flex items-center gap-1 mt-4">
+                {["Current", "30", "90", "180", "All"].map((tab) => (
+                  <button
+                    key={tab}
+                    className={`px-3 py-1 rounded-full text-black border ${
+                      tab === activeTab4
+                        ? "bg-[#E7EBFE] border-transparent"
+                        : "bg-transparent border-border"
+                    }`}
+                    onClick={() => setActiveTab4(tab)}
+                  >
+                    {tab}
+                  </button>
+                ))}
+              </div>
 
               <div className="p-3 bg-[#F6FEFC] rounded-2xl flex items-center justify-between">
                 <div className="flex items-center gap-2">
@@ -587,20 +646,27 @@ const ProductDetails = () => {
             {/* Buy Box Analysis */}
             <div className="p-6 border rounded-lg">
               <h2 className="text-lg font-semibold">Buy Box Analysis</h2>
-              <div className="flex items-center gap-1 mt-4">
-                {["Yearly", "Monthly", "Weekly", "Daily"].map((label) => (
-                  <button
-                    key={label}
-                    className={`px-3 py-1 rounded-full text-black border border-transparent ${
-                      label === "Monthly"
-                        ? "bg-[#E7EBFE]"
-                        : "bg-transparent border-border"
-                    }`}
-                  >
-                    {label}
-                  </button>
-                ))}
+              <div className="flex items-center gap-4 mt-4 justify-between">
+                <div className="flex items-center gap-1">
+                  {["Yearly", "Monthly", "Weekly", "Daily"].map((tab) => (
+                    <button
+                      key={tab}
+                      className={`px-3 py-1 rounded-full text-black border ${
+                        tab === activeTab3
+                          ? "bg-[#E7EBFE] border-transparent"
+                          : "bg-transparent border-border"
+                      }`}
+                      onClick={() => setActiveTab3(tab)}
+                    >
+                      {tab}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Date Picker */}
+                <CustomDatePicker />
               </div>
+
               <div className="flex justify-between items-center mt-6">
                 <ResponsiveContainer width={250} height={250}>
                   <PieChart>
@@ -628,14 +694,19 @@ const ProductDetails = () => {
 
             {/* Market Analysis */}
             <div className="p-6 border rounded-lg">
-              <h2 className="text-lg font-semibold">Market Analysis</h2>
+              <div className="flex justify-between items-center">
+                <h2 className="text-lg font-semibold">Market Analysis</h2>
+                {/* Date Picker */}
+                <CustomDatePicker />
+              </div>
+
               <div className="flex items-center gap-1 mt-4">
                 {["Price", "Volume", "Reviews"].map((tab) => (
                   <button
                     key={tab}
-                    className={`px-3 py-1 rounded-full text-black border border-transparent ${
+                    className={`px-3 py-1 rounded-full text-black border ${
                       tab === activeTab2
-                        ? "bg-[#E7EBFE]"
+                        ? "bg-[#E7EBFE] border-transparent"
                         : "bg-transparent border-border"
                     }`}
                     onClick={() => setActiveTab2(tab)}
@@ -644,9 +715,22 @@ const ProductDetails = () => {
                   </button>
                 ))}
               </div>
-              <div className="mt-6">
+
+              <div className="mt-6 flex flex-col gap-4">
+                {/* Legend */}
+                <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-2">
+                    <span className="size-3 rounded-lg bg-[#FF0080]"></span>
+                    <span>Amazon</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="size-3 rounded-lg bg-[#00E4E4]"></span>
+                    <span>Buy Box</span>
+                  </div>
+                </div>
+
                 <ResponsiveContainer width="100%" height={300}>
-                  <LineChart data={lineData}>
+                  <LineChart data={getDataForTab()}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="date" />
                     <YAxis />
