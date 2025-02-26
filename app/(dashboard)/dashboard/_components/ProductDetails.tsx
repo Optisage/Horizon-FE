@@ -604,7 +604,8 @@ const ProductDetails = () => {
                         </td>
                         <td className="p-3">{offer.stock}</td>
                         <td className="p-3">{offer.price}</td>
-                        <td className="p-3">
+                        <td className="p-3 flex gap-1 items-center">
+                          {offer.buyboxShare}
                           <div className="relative w-20 h-2 bg-gray-200 rounded-full">
                             <div
                               className="absolute top-0 left-0 h-2 bg-green-500 rounded-full"
