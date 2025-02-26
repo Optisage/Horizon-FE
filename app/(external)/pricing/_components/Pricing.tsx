@@ -34,13 +34,14 @@ const Pricing = () => {
   }
 
   const sharedFeatures = [
-    "Insights Dashboard",
+    "Real time Alerts (Buy Box, Price Drops, Stock)",
     "Profitability Calculator",
-    "Real-time Alerts (Price increase/drops, Inventory change, Buy Box)",
-    "Competitor Analysis (Reverse sourcing)",
-    "IP Alert",
-    "Product Scanner",
-    "Reports",
+    "Competitor Analysis (Storefront Stalking)",
+    "Insights Dashboard (Sales Estimator)",
+    "Individual Scanner",
+    "Basic Reporting",
+    "IP alert",
+    "Reward Dashboard",
   ];
 
   const subInfo: SubInfoItem[] = data?.data
