@@ -7,6 +7,7 @@ import { BsArrowDown, BsArrowUp } from "react-icons/bs";
 import ProductThumbnail from "@/public/assets/images/women-shoes.png";
 import Image from "next/image";
 import { FaCheckCircle } from "react-icons/fa";
+import CustomDatePicker from "./CustomDatePicker";
 
 const buyBoxData = [
   {
@@ -103,9 +104,14 @@ const SalesStats = () => {
 
           {/* Seller Analytics */}
           <div className="border border-border rounded-xl shadow-sm p-4 flex flex-col gap-3">
-            <p className="text-[#0A0A0A] font-semibold text-base">
-              Seller Analytics
-            </p>
+            <div className="flex flex-col sm:flex-row sm:items-center gap-4 justify-between">
+              <p className="text-[#0A0A0A] font-semibold text-base">
+                Seller Analytics
+              </p>
+
+              {/* this is for range */}
+              <CustomDatePicker isRange />
+            </div>
 
             <div className="bg-[#FFF9D6] rounded-xl p-3 flex items-center gap-4 justify-between">
               <span className="flex flex-col gap-1">

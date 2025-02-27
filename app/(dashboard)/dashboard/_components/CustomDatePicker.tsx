@@ -5,18 +5,77 @@ import "dayjs/locale/en";
 import { BsCalendar } from "react-icons/bs";
 import { HiChevronLeft, HiChevronRight } from "react-icons/hi";
 
-const CustomDatePicker: React.FC = () => {
-  const [selectedDate, setSelectedDate] = useState(dayjs());
+interface CustomDatePickerProps {
+  isRange?: boolean;
+  onChange?: (dates: dayjs.Dayjs | [dayjs.Dayjs, dayjs.Dayjs]) => void;
+}
 
-  // Move to previous month
-  const handlePrevMonth = () => {
-    setSelectedDate((prev) => prev.subtract(1, "month"));
+const CustomDatePicker: React.FC<CustomDatePickerProps> = ({
+  isRange = false,
+  onChange,
+}) => {
+  const [startDate, setStartDate] = useState(dayjs());
+  const [endDate, setEndDate] = useState(dayjs().add(1, "month"));
+
+  const handlePrev = () => {
+    if (isRange) {
+      const duration = endDate.diff(startDate, "month");
+      const newStart = startDate.subtract(1, "month");
+      const newEnd = newStart.add(duration, "month");
+      setStartDate(newStart);
+      setEndDate(newEnd);
+      onChange?.([newStart, newEnd]);
+    } else {
+      const newDate = startDate.subtract(1, "month");
+      setStartDate(newDate);
+      onChange?.(newDate);
+    }
   };
 
-  // Move to next month
-  const handleNextMonth = () => {
-    setSelectedDate((prev) => prev.add(1, "month"));
+  const handleNext = () => {
+    if (isRange) {
+      const duration = endDate.diff(startDate, "month");
+      const newStart = startDate.add(1, "month");
+      const newEnd = newStart.add(duration, "month");
+      setStartDate(newStart);
+      setEndDate(newEnd);
+      onChange?.([newStart, newEnd]);
+    } else {
+      const newDate = startDate.add(1, "month");
+      setStartDate(newDate);
+      onChange?.(newDate);
+    }
   };
+
+  const handleDateChange = (
+    dates: dayjs.Dayjs | [dayjs.Dayjs, dayjs.Dayjs] | null
+  ) => {
+    if (!dates) return;
+
+    if (isRange && Array.isArray(dates)) {
+      setStartDate(dates[0]);
+      setEndDate(dates[1]);
+      onChange?.(dates as [dayjs.Dayjs, dayjs.Dayjs]);
+    } else if (!isRange && !Array.isArray(dates)) {
+      setStartDate(dates);
+      onChange?.(dates);
+    }
+  };
+
+  const rangePresets = [
+    {
+      label: "1M",
+      value: [dayjs(), dayjs().add(1, "month")] as [dayjs.Dayjs, dayjs.Dayjs],
+    },
+    {
+      label: "3M",
+      value: [dayjs(), dayjs().add(3, "month")] as [dayjs.Dayjs, dayjs.Dayjs],
+    },
+    {
+      label: "6M",
+      value: [dayjs(), dayjs().add(6, "month")] as [dayjs.Dayjs, dayjs.Dayjs],
+    },
+  ];
 
   return (
     <div className="flex items-center">
@@ -24,32 +83,49 @@ const CustomDatePicker: React.FC = () => {
         aria-label="Previous"
         type="button"
         className="p-2 rounded-l-full border border-gray-300"
-        onClick={handlePrevMonth}
+        onClick={handlePrev}
       >
         <HiChevronLeft size={16} />
       </button>
 
-      {/* Ant Design DatePicker */}
       <span className="border flex items-center gap-2 px-2">
-        <BsCalendar className="size-4" />
-        <DatePicker
-          picker="month"
-          value={selectedDate}
-          onChange={(date) => setSelectedDate(date || dayjs())}
-          format="MMM YYYY"
-          allowClear={false}
-          suffixIcon={null}
-          className="!border-none !rounded-none !shadow-none !p-1 !text-center !w-[93px]"
-          popupClassName="custom-datepicker-popup"
-          renderExtraFooter={() => null}
-        />
+        {!isRange && <BsCalendar className="size-4" />}
+
+        {isRange ? (
+          <DatePicker.RangePicker
+            picker="month"
+            value={[startDate, endDate]}
+            onChange={(dates) =>
+              handleDateChange(dates as [dayjs.Dayjs, dayjs.Dayjs])
+            }
+            format="MMM YYYY"
+            allowClear={false}
+            suffixIcon={null}
+            className="!border-none !rounded-none !shadow-none !p-1 !text-center !w-[200px]"
+            popupClassName="custom-datepicker-popup"
+            renderExtraFooter={() => null}
+            presets={rangePresets}
+          />
+        ) : (
+          <DatePicker
+            picker="month"
+            value={startDate}
+            onChange={(date) => handleDateChange(date)}
+            format="MMM YYYY"
+            allowClear={false}
+            suffixIcon={null}
+            className="!border-none !rounded-none !shadow-none !p-1 !text-center !w-[93px]"
+            popupClassName="custom-datepicker-popup"
+            renderExtraFooter={() => null}
+          />
+        )}
       </span>
 
       <button
         aria-label="Next"
         type="button"
         className="p-2 rounded-r-full border border-gray-300"
-        onClick={handleNextMonth}
+        onClick={handleNext}
       >
         <HiChevronRight size={16} />
       </button>

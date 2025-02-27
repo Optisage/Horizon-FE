@@ -43,19 +43,19 @@ const Pricing = () => {
   }
 
   const sharedFeatures = [
-    "Insights Dashboard",
+    "Real time Alerts (Buy Box, Price Drops, Stock)",
     "Profitability Calculator",
-    "Real-time Alerts (Price increase/drops, Inventory change, Buy Box)",
-    "Competitor Analysis (Reverse sourcing)",
-    "IP Alert",
-    "Product Scanner",
-    "Reports",
+    "Competitor Analysis (Storefront Stalking)",
+    "Insights Dashboard (Sales Estimator)",
+    "Individual Scanner",
+    "Basic Reporting",
+    "IP alert",
+    "Reward Dashboard",
   ];
 
   const subInfo: SubInfoItem[] = data?.data
     ? (data.data as PricingData[])
         .map((item) => {
-         
           return {
             key: item.id,
             title: item.name,
@@ -67,13 +67,9 @@ const Pricing = () => {
         .filter((item): item is SubInfoItem => item !== null)
     : [];
 
-  const handleGetStarted = (planId: string, planTitle: string) => {
+  const handleGetStarted = (planId: string) => {
     setSelectedPlan(planId);
-    if (planTitle === "Free") {
-      setShowModal(true);
-    } else {
-      confirmSubscription();
-    }
+    setShowModal(true);
   };
 
   const confirmSubscription = () => {
@@ -93,42 +89,39 @@ const Pricing = () => {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-6xl mx-auto font-medium">
-        {subInfo.map((item, index) =>
-          item ? (
-            <div
-              className={`${
-                item.title === "Pro" ? "border-2 border-green-500" : ""
-              } h-fit bg-white p-6 rounded-xl shadow-md flex flex-col gap-4 relative`}
-              key={index}
+        {subInfo.map((item, index) => (
+          <div
+            className={`${
+              item.title === "Premium" ? "border-2 border-green-500" : ""
+            } h-fit bg-white p-6 rounded-xl shadow-md flex flex-col gap-4 relative`}
+            key={index}
+          >
+            {item.title === "Premium" && (
+              <span className="absolute top-2 right-2 bg-green-600 text-white px-3 py-1 text-sm rounded-lg">
+                Most Popular
+              </span>
+            )}
+            <h3 className="text-xl font-semibold">{item.title}</h3>
+            <p className="text-3xl font-bold">
+              ${item.price}
+              <span className="text-lg">/mo</span>
+            </p>
+            <p className="text-gray-600">{item.subTitle}</p>
+            <ul className="mt-4 text-left space-y-2">
+              {item.subItems.map((subItem, index) => (
+                <li className="flex gap-2 items-center" key={index}>
+                  <FaCheckCircle className="size-5 text-green-700" /> {subItem}
+                </li>
+              ))}
+            </ul>
+            <button
+              className="mt-4 bg-green-500 text-white px-4 py-2 rounded-lg w-full"
+              onClick={() => handleGetStarted(item.key)}
             >
-              {item.title === "Pro" && (
-                <span className="absolute top-2 right-2 bg-green-600 text-white px-3 py-1 text-sm rounded-lg">
-                  Most Popular
-                </span>
-              )}
-              <h3 className="text-xl font-semibold">{item.title}</h3>
-              <p className="text-3xl font-bold">
-                ${item.price}
-                <span className="text-lg">/mo</span>
-              </p>
-              <p className="text-gray-600">{item.subTitle}</p>
-              <ul className="mt-4 text-left space-y-2">
-                {item.subItems.map((subItem, index) => (
-                  <li className="flex gap-2 items-center" key={index}>
-                    <FaCheckCircle className="size-5 text-green-700" />{" "}
-                    {subItem}
-                  </li>
-                ))}
-              </ul>
-              <button
-                className="mt-4 bg-green-500 text-white px-4 py-2 rounded-lg w-full"
-                onClick={() => handleGetStarted(item.key, item.title)}
-              >
-                {item.title === "Free" ? "Sign Up for Free" : "Get Started"}
-              </button>
-            </div>
-          ) : null
-        )}
+              Start Free Trial
+            </button>
+          </div>
+        ))}
       </div>
 
       {showModal && (
