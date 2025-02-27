@@ -2,7 +2,7 @@
 
 import { useLazyGetPricingQuery } from "@/redux/api/auth";
 import { setSubScriptionId } from "@/redux/slice/globalSlice";
-import { useRouter } from "next/navigation";
+import { useRouter,useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { FaCheckCircle } from "react-icons/fa";
 import { useDispatch } from "react-redux";
@@ -10,6 +10,7 @@ import { useDispatch } from "react-redux";
 const Pricing = () => {
   const dispatch = useDispatch();
   const router = useRouter();
+  const searchParams = useSearchParams(); // Add this hook
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [getPricing, { data, isLoading }] = useLazyGetPricingQuery();
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
@@ -17,7 +18,15 @@ const Pricing = () => {
 
   useEffect(() => {
     getPricing({});
-  }, [getPricing]);
+
+    // Get the ref parameter from URL
+    const refCode = searchParams.get('ref');
+    if (refCode) {
+      // Store the referral code in sessionStorage
+      sessionStorage.setItem('referralCode', refCode);
+      console.log('Referral code stored:', refCode);
+    }
+  }, [getPricing, searchParams]);
 
   interface PricingData {
     id: string;
@@ -47,7 +56,6 @@ const Pricing = () => {
   const subInfo: SubInfoItem[] = data?.data
     ? (data.data as PricingData[])
         .map((item) => {
-          if (item.name !== "Pro" && item.name !== "Premium") return null;
           return {
             key: item.id,
             title: item.name,
