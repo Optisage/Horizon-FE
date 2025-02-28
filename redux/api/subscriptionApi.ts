@@ -6,6 +6,7 @@ interface SubscriptionRequest {
   name: string,
   pricing_id: number,
   payment_method:string
+  referral_code:string
 }
 
 interface SubscriptionResponse {

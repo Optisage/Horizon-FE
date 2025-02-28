@@ -1,9 +1,68 @@
 import { CustomInput as Input } from "@/lib/AntdComponents";
+import { useUpdateSettingsMutation } from "@/redux/api/user";
+import { Button, message } from "antd";
+import { useState } from "react";
 import { IoMdInformationCircleOutline } from "react-icons/io";
 
-const BuyingCriteria = () => {
+
+interface BuyingCriteriaProps {
+  buyingCriteria: {
+    maximum_bsr_percentage: number;
+    maximum_roi_percentage: number;
+    minimum_bsr_percentage: number;
+    minimum_profit_percentage: number;
+  };
+  
+}
+
+const BuyingCriteria = ({ buyingCriteria }: BuyingCriteriaProps)  => {
+  const [saveSettings,{isLoading}] = useUpdateSettingsMutation()
+  const [formData, setFormData] = useState(buyingCriteria);
+  const [messageApi, contextHolder] = message.useMessage();
+
+
+  const handleInputChange = (field: keyof typeof buyingCriteria, value: string) => {
+    // Remove '$' and spaces, then convert to a number
+    const cleanValue = Number(value.replace(/[$\s]/g, ''));
+  
+    // Ensure valid number, default to 0 if NaN
+    setFormData(prev => ({
+      ...prev,
+      [field]: isNaN(cleanValue) ? 0 : cleanValue
+    }));
+  };
+
+  const handleSaveSettings = () => {
+    const updatedFields = Object.keys(formData).reduce((acc, key) => {
+      const numValue = Number(formData[key as keyof typeof formData]);
+  
+      // Ensure values are numbers and only send changed fields
+      if (!isNaN(numValue) && numValue !== Number(buyingCriteria[key as keyof typeof buyingCriteria])) {
+        acc[key as keyof typeof formData] = numValue;
+      }
+      return acc;
+    }, {} as Partial<typeof formData>);
+  
+    if (Object.keys(updatedFields).length === 0) {
+      messageApi.info("No changes made.");
+      return;
+    }
+  
+    console.log("Payload being sent:", updatedFields); // Debugging
+  
+    saveSettings(updatedFields)
+      .unwrap()
+      .then(() => {
+        messageApi.success("Buying Criteria Saved Successfully");
+      })
+      .catch(() => {
+        messageApi.error("Failed to save setting");
+      });
+  };
+
   return (
     <div className="flex flex-col gap-6">
+      {contextHolder}
       <div className="flex flex-col sm:flex-row gap-4 sm:gap-8 justify-between sm:items-center">
         <span className="flex flex-col gap-1 sm:min-w-[400px] max-w-[412px] text-[#C2C2CE]">
           <label htmlFor="mimimum-bsr" className=" text-[#01011D] font-medium">
@@ -17,7 +76,11 @@ const BuyingCriteria = () => {
           </p>
         </span>
 
-        <Input id="mimimum-bsr" defaultValue="$0.00" className="px-3 py-2" />
+        <Input id="mimimum-bsr"
+         defaultValue="$0.00" className="px-3 py-2"
+         value={`$ ${formData?.minimum_bsr_percentage.toString()}`}
+         onChange={(e) => handleInputChange('minimum_bsr_percentage', e.target.value)}
+          />
       </div>
 
       <div className="flex flex-col sm:flex-row gap-4 sm:gap-8 justify-between sm:items-center">
@@ -33,7 +96,11 @@ const BuyingCriteria = () => {
           </p>
         </span>
 
-        <Input id="maximum-bsr" defaultValue="$0.00" className="px-3 py-2" />
+        <Input id="maximum-bsr" 
+        defaultValue="$0.00" className="px-3 py-2" 
+        value={`$ ${formData?.maximum_bsr_percentage.toString()}`}
+        onChange={(e) => handleInputChange('maximum_bsr_percentage', e.target.value)}
+        />
       </div>
 
       <div className="flex flex-col sm:flex-row gap-4 sm:gap-8 justify-between sm:items-center">
@@ -52,7 +119,11 @@ const BuyingCriteria = () => {
           </p>
         </span>
 
-        <Input id="minimum-profit" defaultValue="$0.00" className="px-3 py-2" />
+        <Input id="minimum-profit" 
+        defaultValue="$0.00" className="px-3 py-2" 
+        value={`$ ${formData?.minimum_profit_percentage.toString()}`}
+        onChange={(e) => handleInputChange('minimum_profit_percentage', e.target.value)}
+        />
       </div>
 
       <div className="flex flex-col sm:flex-row gap-4 sm:gap-8 justify-between sm:items-center">
@@ -68,16 +139,22 @@ const BuyingCriteria = () => {
           </p>
         </span>
 
-        <Input id="minimum-roi" defaultValue="$0.00" className="px-3 py-2" />
+        <Input id="minimum-roi" 
+        defaultValue="$0.00" className="px-3 py-2" 
+        value={`$ ${formData?.maximum_roi_percentage.toString()}`}
+        onChange={(e) => handleInputChange('maximum_roi_percentage', e.target.value)}
+        />
       </div>
 
       <div>
-        <button
-          type="submit"
-          className="px-6 py-2 bg-primary hover:bg-primary-hover rounded-xl text-white text-sm font-medium"
+        <Button
+          htmlType="submit"
+          className="px-6 py-2 bg-primary border-none hover:!bg-primary-hover rounded-xl !text-white text-sm font-medium"
+          onClick={handleSaveSettings}
+          loading={isLoading}
         >
           Save
-        </button>
+        </Button>
       </div>
     </div>
   );

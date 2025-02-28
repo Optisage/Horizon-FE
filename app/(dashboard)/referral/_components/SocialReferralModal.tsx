@@ -4,10 +4,13 @@ import { useState } from "react";
 import { Modal } from "antd";
 import { HiOutlineUserAdd } from "react-icons/hi";
 import { FaFacebook, FaTwitter, FaWhatsapp, FaTelegram } from "react-icons/fa";
+import { useAppSelector } from "@/redux/hooks";
 
 const SocialReferralModal = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const referralLink = "https://optisage.com/referral?code=YOUR_UNIQUE_CODE"; // Replace with dynamic link generation later
+  const {username} = useAppSelector((state) => state.api?.user) || {};
+  
+  const referralLink = `https://optisage.com/pricing?ref=${username}`; // Replace with dynamic link generation later
   const [copied, setCopied] = useState(false);
 
   const handleShare = (platform: string) => {

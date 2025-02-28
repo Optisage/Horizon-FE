@@ -3,10 +3,17 @@ import type { NextRequest } from 'next/server';
 
 export function middleware(request: NextRequest) {
   // Check for the token in cookies
-  const token = request.cookies.get('token'); // Adjust the cookie name as needed
+  const token = request.cookies.get('optisage-token'); // Adjust the cookie name as needed
 
   // Define the paths that require authentication
-  const protectedPaths = ['/dashboard', '/dashboard/settings', '/dashboard/subscriptions'];
+  const protectedPaths = [
+    '/dashboard',
+     '/settings',
+      '/subscriptions',
+      '/referral',
+      '/history',
+      '/seller',
+  ];
 
   // Check if the request is for a protected path
   if (protectedPaths.some(path => request.nextUrl.pathname.startsWith(path))) {
@@ -22,5 +29,12 @@ export function middleware(request: NextRequest) {
 
 // Specify the paths where the middleware should run
 export const config = {
-  matcher: ['/dashboard/:path*', '/dashboard/settings', '/dashboard/subscriptions'],
+  matcher: [
+    '/dashboard/:path*',
+     '/settings',
+      '/subscriptions',
+      '/referral',
+      '/history',
+      '/seller',
+  ],
 }; 

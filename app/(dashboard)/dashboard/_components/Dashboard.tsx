@@ -14,6 +14,7 @@ import Product4 from "@/public/assets/images/product-4.png";
 import Product5 from "@/public/assets/images/product-5.png";
 import SalesStats from "./SalesStats";
 
+
 export const products = [
   {
     id: 1,
@@ -70,7 +71,7 @@ export const products = [
 const Dashboard = () => {
   const [searchValue, setSearchValue] = useState("");
   const router = useRouter();
-
+ 
   return (
     <section className="flex flex-col gap-8 min-h-[50dvh] md:min-h-[80dvh]">
       <SearchInput value={searchValue} onChange={setSearchValue} />

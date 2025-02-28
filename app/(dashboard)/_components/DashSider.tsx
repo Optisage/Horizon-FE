@@ -17,6 +17,7 @@ import {
 import LogoutModal from "./LogoutModal";
 import { BiChevronRight } from "react-icons/bi";
 import { RiVerifiedBadgeFill } from "react-icons/ri";
+import { useAppSelector } from "@/redux/hooks";
 
 // Sidebar data
 const menuData = [
@@ -44,11 +45,12 @@ const DashSider = () => {
   const [activePath, setActivePath] = useState("");
   const [openModal, setOpenModal] = useState(false);
   const router = useRouter();
-
+  const {first_name, email} = useAppSelector((state) => state.api?.user) || {};
   const handleLogout = () => {
-    router.push("/");
     // Clear the token cookie
-    Cookies.remove("token");
+    Cookies.remove("optisage-token");
+    router.push("/");
+    
   };
 
   useLayoutEffect(() => {
@@ -153,9 +155,9 @@ const DashSider = () => {
 
             <div className="text-sm flex-1">
               <p className="font-medium flex items-center gap-1">
-                Bawmal <RiVerifiedBadgeFill className="text-primary size-4" />
+                {first_name} <RiVerifiedBadgeFill className="text-primary size-4" />
               </p>
-              <p className="text-[#787891] text-xs">b@bawmal.com</p>
+              <p className="text-[#787891] text-xs">{email}</p>
             </div>
 
             <button
