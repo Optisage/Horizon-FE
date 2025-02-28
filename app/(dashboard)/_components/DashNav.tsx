@@ -7,9 +7,11 @@ import { CgMenuRightAlt } from "react-icons/cg";
 import CountrySelect from "./CountrySelect";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { useAppSelector } from "@/redux/hooks";
 
 const DashNav = () => {
   const router = useRouter();
+  const {subscription_type} = useAppSelector((state) => state.api?.user) || {};
 
   return (
     <nav className="flex items-center justify-between px-5 py-3 md:py-4 lg:px-6 sticky top-0 bg-white lg:shadow-sm lg:border-transparent border-b border-gray-200 z-40">
@@ -30,7 +32,7 @@ const DashNav = () => {
         <button
           onClick={() => router.push("/subscriptions")}
           type="button"
-          className="text-sm rounded-xl bg-[#33B28A] hover:bg-[#33B28A]/90 text-white py-2 px-4 active:scale-95 duration-200 font-medium"
+          className={`text-sm rounded-xl bg-[#33B28A] hover:bg-[#33B28A]/90 text-white py-2 px-4 active:scale-95 duration-200 font-medium ${subscription_type === 'free'? "block" :"hidden"}`}
         >
           Subscribe Now
         </button>

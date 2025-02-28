@@ -5,11 +5,13 @@ import { authApi } from './api/auth';
 import { subscriptionApi } from './api/subscriptionApi';
 import { persistReducer, persistStore } from 'redux-persist';
 import storage from "redux-persist/lib/storage";
+import { userApi } from './api/user';
 
 const rootReducer = combineReducers({
   api: authReducer,
   global: globalReducer,
   [authApi.reducerPath]: authApi.reducer,
+  [userApi.reducerPath]: userApi.reducer,
   [subscriptionApi.reducerPath]: subscriptionApi.reducer,
 });
 
@@ -28,7 +30,8 @@ export const store = configureStore({
       serializableCheck: false,
     }).concat([
       authApi.middleware,
-      subscriptionApi.middleware
+      subscriptionApi.middleware,
+      userApi.middleware,
      
       
     ]),
