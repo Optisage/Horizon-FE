@@ -16,7 +16,7 @@ const SubscriptionCheckoutForm = () => {
   const [name, setName] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+ 
   const subScriptionId = useAppSelector((state) => state.global.subScriptionId);
   const showModal = () => {
     setIsModalOpen(true);
@@ -45,6 +45,8 @@ const SubscriptionCheckoutForm = () => {
 
     try {
       // Create a PaymentMethod
+       // Get referral code from sessionStorage
+       const referralCode = sessionStorage.getItem('referralCode') || "";
       const { error: pmError, paymentMethod } =
         await stripe.createPaymentMethod({
           type: "card",
@@ -65,7 +67,8 @@ const SubscriptionCheckoutForm = () => {
         payment_method: paymentMethod.id,
         email: email,
         name: name,
-        pricing_id: 2,
+        pricing_id: subScriptionId,
+        referral_code:referralCode
       }).unwrap();
 
       // Handle SCA if required

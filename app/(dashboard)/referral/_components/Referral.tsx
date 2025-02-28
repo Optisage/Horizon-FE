@@ -1,3 +1,4 @@
+"use client"
 import Image from "next/image";
 
 import Illustration1 from "@/public/assets/svg/illustration-1.svg";
@@ -9,8 +10,33 @@ import { HiOutlineChartBar } from "react-icons/hi";
 import { HiOutlinePlayCircle } from "react-icons/hi2";
 import ReferralTable from "./ReferralTable";
 import SocialReferralModal from "./SocialReferralModal";
+import { useLazyGetReferralsQuery } from "@/redux/api/user";
+import { useEffect } from "react";
+
+
+interface ReferralData {
+  points: number;
+  conversion: {
+    dollar_equivalent: number;
+    point: number;
+    formular: string;
+  };
+  earnings: number;
+  week_earnings: number;
+  referral_link: string;
+  referrals: [];
+}
+
 
 const Referral = () => {
+  const [getRef, {data: refData, isLoading}] = useLazyGetReferralsQuery()
+  useEffect(()=>{
+    getRef({})
+  /* eslint-disable-next-line react-hooks/exhaustive-deps */
+  },[])
+
+  const referralData = refData?.data as ReferralData;
+
   return (
     <section className="flex flex-col gap-12 min-h-[50dvh] md:min-h-[80dvh]">
       <div className="flex flex-col gap-8">
@@ -109,7 +135,7 @@ const Referral = () => {
                   Points Balance
                 </h5>
                 <p className="text-[#01011D] font-semibold text-xl md:text-2xl">
-                  200pts
+                  {referralData?.points}pts
                 </p>
               </span>
 
@@ -130,7 +156,7 @@ const Referral = () => {
                   Earnings this Week
                 </h5>
                 <p className="text-[#01011D] font-semibold text-xl md:text-2xl">
-                  0.00
+                {referralData?.week_earnings}
                 </p>
               </span>
 
@@ -146,7 +172,7 @@ const Referral = () => {
         </div>
       </div>
 
-      <ReferralTable />
+      <ReferralTable tableLoading={isLoading} tableData={referralData?.referrals || []}/>
     </section>
   );
 };

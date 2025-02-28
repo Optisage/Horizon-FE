@@ -5,7 +5,7 @@ const initialState: Record<string, any> = {
   notAuthorized: false,
   serverError: false,
   isAuthenticated: false,
-  user:[],
+  user:{},
   avi: ''
 };
 
@@ -13,8 +13,8 @@ export const authSlice = createSlice({
   name: "api",
   initialState,
   reducers: {
-    setUser: (state, action: PayloadAction<{ user:{id: string; name: string; email: string} }>) => {
-      state.user = action.payload.user;
+    setUser: (state, action: PayloadAction<{ data:{id: string; name: string; email: string} }>) => {
+      state.user = action.payload.data;
       state.isAuthenticated = true;
     },
     setAvi: (state, action: PayloadAction<{profileImage: string}>) => {

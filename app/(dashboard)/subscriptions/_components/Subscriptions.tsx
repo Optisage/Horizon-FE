@@ -1,14 +1,25 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import SubscriptionHistoryTable from "./SubscriptionHistoryTable";
 import { Heading } from "@/app/(dashboard)/_components";
+import { useLazyGetSubscriptionsQuery } from "@/redux/api/user";
 
 const Subscriptions = () => {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [isMonthly, setIsMonthly] = useState(true);
   const monthlyPrice = 35;
   const annualPrice = monthlyPrice * 12;
+
+  const [getSubscription, {data}] = useLazyGetSubscriptionsQuery()
+
+
+  useEffect(()=>{
+    getSubscription({})
+    /* eslint-disable-next-line react-hooks/exhaustive-deps */
+  },[])
+
+  console.log(data)
 
   return (
     <section className="flex flex-col gap-8 min-h-[50dvh] md:min-h-[80dvh]">

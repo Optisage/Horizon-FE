@@ -1,15 +1,26 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { Heading } from "@/app/(dashboard)/_components";
 import UserDetails from "./UserDetails";
 import BuyingCriteria from "./BuyingCriteria";
+import { useLazyGetSettingsQuery } from "@/redux/api/user";
 
 const Settings = () => {
   const [activeTab, setActiveTab] = useState<"userDetails" | "buyingCriteria">(
     "userDetails"
   );
+
+  const [getSettings, { isLoading, data: settingsData }] =
+    useLazyGetSettingsQuery();
+
+  useEffect(() => {
+    getSettings({});
+  }, [getSettings]);
+  console.log(settingsData);
+
+
 
   return (
     <section className="flex flex-col gap-8 min-h-[50dvh] md:min-h-[80dvh]">
@@ -49,7 +60,15 @@ const Settings = () => {
         </div>
 
         {/* Tab Content */}
-        {activeTab === "userDetails" ? <UserDetails /> : <BuyingCriteria />}
+        {isLoading ? (
+          <div className=" w-full flex justify-center">
+          <div className="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-primary"></div>
+          </div>
+        ) : activeTab === "userDetails" ? (
+          <UserDetails userData={settingsData?.data} />
+        ) : (
+          <BuyingCriteria buyingCriteria={settingsData?.data} />
+        )}
       </div>
     </section>
   );
