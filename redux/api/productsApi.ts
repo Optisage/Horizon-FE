@@ -3,6 +3,8 @@ import { baseQueryForAuth } from "../queryInterceptor";
 
 export const productsApi = createApi({
   reducerPath: "productsApi",
+  refetchOnReconnect: true,
+  refetchOnMountOrArgChange: 10,
   baseQuery: baseQueryForAuth,
   endpoints: (builder) => ({
     searchItems: builder.query({

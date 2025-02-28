@@ -9,6 +9,8 @@ import Image from "next/image";
 import { FaCheckCircle } from "react-icons/fa";
 import CustomDatePicker from "./CustomDatePicker";
 
+import { useGetBuyboxInfoQuery } from "@/redux/api/productsApi";
+
 const buyBoxData = [
   {
     seller: "Wale Enterprise",
