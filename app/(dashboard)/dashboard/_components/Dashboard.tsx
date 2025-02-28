@@ -10,7 +10,7 @@ import {
   useSearchItemsQuery,
   useFetchMarketplacesQuery,
 } from "@/redux/api/productsApi";
-interface Product {
+export interface Product {
   asin: string;
   image?: string;
   title: string;
@@ -42,10 +42,12 @@ interface Product {
       net_revenue: {
         amount: number;
         percentage: number;
+        currency: string;
       };
       price: {
         amount: number;
         percentage: number;
+        currency: string;
       };
       monthly_units_sold: {
         amount: number;
@@ -58,6 +60,7 @@ interface Product {
       monthly_revenue: {
         amount: number;
         percentage: number;
+        currency: string;
       };
     };
     date_first_available: string;
@@ -108,7 +111,8 @@ const Dashboard = () => {
   // Transform API response to match your Product interface
   const products =
     debouncedSearch && data?.data?.items
-      ? data.data.items.map((item: any) => ({
+      ? // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        data.data.items.map((item: any) => ({
           asin: item.basic_details.asin,
           image: item.basic_details.product_image,
           title: item.basic_details.product_name,
@@ -209,6 +213,7 @@ const Dashboard = () => {
             nextToken={data?.data?.pagination?.nextToken}
             previousToken={data?.data?.pagination?.previousToken}
           /> */}
+          <CustomPagination />
         </main>
       )}
     </section>

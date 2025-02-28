@@ -6,8 +6,14 @@ import { BsArrowDown, BsArrowUp } from "react-icons/bs";
 import Image from "next/image";
 import { FaCheckCircle } from "react-icons/fa";
 import CustomDatePicker from "./CustomDatePicker";
+import { Product } from "./Dashboard";
 
-const SalesStats = ({ product }) => {
+interface BuyBoxItem {
+  seller: string;
+  timestamp: string;
+}
+
+const SalesStats = ({ product }: { product: Product }) => {
   const [open, setOpen] = useState(false);
 
   const salesStats = product.sales_statistics;
@@ -165,9 +171,11 @@ const SalesStats = ({ product }) => {
               <span className="flex items-center gap-5 justify-between">
                 <p className="text-[#595959]">Date First Available</p>
                 <p className="font-semibold">
-                  {new Date(
-                    salesStats?.date_first_available
-                  ).toLocaleDateString()}
+                  {salesStats?.date_first_available
+                    ? new Date(
+                        salesStats.date_first_available
+                      ).toLocaleDateString()
+                    : "N/A"}
                 </p>
               </span>
               <span className="flex items-center gap-5 justify-between">
@@ -184,7 +192,7 @@ const SalesStats = ({ product }) => {
             </p>
 
             <div className="flex flex-col gap-4">
-              {buyboxTimeline.map((item, index) => (
+              {buyboxTimeline.map((item: BuyBoxItem, index: number) => (
                 <div key={index} className="flex gap-3 items-start">
                   <FaCheckCircle
                     className={`size-4 mt-1 ${
