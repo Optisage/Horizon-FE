@@ -107,19 +107,19 @@ const Dashboard = () => {
 
   // Transform API response to match your Product interface
   const products =
-    data?.data?.items?.map((item: any) => {
-      return {
-        asin: item.basic_details.asin,
-        image: item.basic_details.product_image,
-        title: item.basic_details.product_name,
-        rating: item.basic_details.rating.stars,
-        reviews: item.basic_details.rating.count,
-        category: item.basic_details.category,
-        vendor: item.basic_details.vendor,
-        sales_statistics: item.sales_statistics,
-        buybox_timeline: item.buybox_timeline,
-      };
-    }) || [];
+    debouncedSearch && data?.data?.items
+      ? data.data.items.map((item: any) => ({
+          asin: item.basic_details.asin,
+          image: item.basic_details.product_image,
+          title: item.basic_details.product_name,
+          rating: item.basic_details.rating.stars,
+          reviews: item.basic_details.rating.count,
+          category: item.basic_details.category,
+          vendor: item.basic_details.vendor,
+          sales_statistics: item.sales_statistics,
+          buybox_timeline: item.buybox_timeline,
+        }))
+      : [];
 
   return (
     <section className="flex flex-col gap-8 min-h-[50dvh] md:min-h-[80dvh]">
@@ -135,7 +135,7 @@ const Dashboard = () => {
         </div>
       )}
 
-      {!debouncedSearch && !isLoading && !error && (
+      {(!debouncedSearch || products.length === 0) && !isLoading && !error && (
         <div className="flex flex-col gap-6 justify-center items-center my-auto">
           <Image
             src={UFO}
