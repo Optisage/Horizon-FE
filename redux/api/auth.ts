@@ -21,14 +21,14 @@ export const authApi = createApi({
           .then((apiResponse) => {
             //console.log("API Response:", apiResponse.data?.data?.token); // Log the entire response
             dispatch(setUser(apiResponse.data?.data.user));
-            // Set the token in cookies with a 7-day expiration, accessible on all paths, secure, and SameSite set to 'Strict'
-            Cookies.set("token", apiResponse.data?.data.token, {
-              expires: 7,
+            // Set the token in cookies with a 6-hours expiration, accessible on all paths, secure, and SameSite set to 'Strict'
+            Cookies.set("optisage-token", apiResponse.data?.data.token, {
+              expires: new Date(new Date().getTime() + 6 * 60 * 60 * 1000), // 6 hours from now
               path: "/", // Accessible on all paths
               //secure: true, // Only sent over HTTPS
-              //sameSite: 'Strict' // Cookie is not sent with cross-site requests
+              sameSite: 'Strict' // Cookie is not sent with cross-site requests
             });
-            console.log("Stored Token:", Cookies.get("token"));
+            //console.log("Stored Token:", Cookies.get("token"));
             //sessionStorage.setItem("token", apiResponse.data?.token);
           })
           .catch((error) => {
@@ -75,8 +75,10 @@ export const authApi = createApi({
     }),
 
     getProfile: builder.query({
-      query: () => "me",
-      providesTags: ["Profile"],
+      query: () => ({
+        url: "customer/profile",
+        method: "GET",
+      }),
     }),
     getPricing: builder.query<any, {}>({
       query: () => ({
@@ -93,7 +95,7 @@ export const authApi = createApi({
 export const {
   useLoginMutation,
   useSignupMutation,
-  useGetProfileQuery,
+  useLazyGetProfileQuery,
   useLogoutQuery,
   useCreatePasswordMutation,
   useForgetPasswordMutation,

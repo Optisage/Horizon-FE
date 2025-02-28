@@ -6,13 +6,97 @@ import {
   CustomPasswordInput,
 } from "@/lib/AntdComponents";
 import { IoMdInformationCircleOutline } from "react-icons/io";
+import { useUpdateSettingsMutation } from "@/redux/api/user";
+import { Button, message } from "antd";
 
-const UserDetails = () => {
+
+
+interface UserData {
+  email: string;
+  password:string,
+  misc_fee: string;
+  misc_fee_percentage: string;
+  inbound_shipping: string;
+  prep_fee: string;
+  vat: {
+    flat_rate: { rate: number };
+    standard_rate: { rate: number; reduced_rate: number };
+  };
+}
+
+interface UserDetailsProps {
+  userData: {
+    email: string;
+    password:string,
+    misc_fee: string,
+    misc_fee_percentage: string,
+    inbound_shipping: string,
+prep_fee: string,
+    vat: {
+      flat_rate: { rate: number };
+      standard_rate: { rate: number; reduced_rate: number };
+    };
+  };
+}
+
+const UserDetails = ({ userData }: UserDetailsProps) => {
   const [vatEnabled, setVatEnabled] = useState(true);
   const [vatType, setVatType] = useState<"standard" | "flat">("standard");
+const [saveSettings,{isLoading}] = useUpdateSettingsMutation()
+  const [formData, setFormData] = useState<UserData>(userData);
+  const [messageApi, contextHolder] = message.useMessage();
+
+  // Handle Input Change
+  const handleChange = (field: string, value: string | number) => {
+    setFormData((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
+  };
+
+  
+
+  // Handle VAT Change
+  const handleVatChange = (field: string, value: number) => {
+    setFormData((prev) => ({
+      ...prev,
+      vat: {
+        ...prev.vat,
+        [vatType === "standard" ? "standard_rate" : "flat_rate"]: {
+          ...prev.vat[vatType === "standard" ? "standard_rate" : "flat_rate"],
+          [field]: value,
+        },
+      },
+    }));
+  };
+
+  const handleSaveUser = () => {
+    const updatedFields: Partial<UserData> = {};
+
+    Object.keys(formData).forEach((key) => {
+      const typedKey = key as keyof UserData;
+      if (JSON.stringify(formData[typedKey]) !== JSON.stringify(userData[typedKey])) {
+        (updatedFields[typedKey] as unknown) = formData[typedKey];
+      }
+    });
+  
+    if (Object.keys(updatedFields).length === 0) {
+      messageApi.info("No changes detected.");
+      return;
+    }
+  
+    saveSettings(updatedFields).unwrap()
+      .then(() => {
+        messageApi.success("Your User Details Saved.");
+      })
+      .catch(() => {
+        messageApi.error("Failed to Save Details");
+      });
+  };
 
   return (
     <div className="flex flex-col gap-6">
+      {contextHolder}
       {/* Email Address */}
       <div className="flex flex-col sm:flex-row gap-4 sm:gap-8 justify-between sm:items-center">
         <span className="flex flex-col gap-1 sm:min-w-[400px] max-w-[412px] text-[#C2C2CE]">
@@ -33,6 +117,8 @@ const UserDetails = () => {
           type="email"
           placeholder="Tunde@yahoo.com"
           className="px-3 py-2"
+          value={formData?.email}
+          onChange={(e) => handleChange("email", e.target.value)}
         />
       </div>
 
@@ -52,6 +138,8 @@ const UserDetails = () => {
           id="password"
           placeholder="******"
           className="px-3 py-2"
+          value={formData?.password}
+          onChange={(e) => handleChange("password", e.target.value)}
         />
       </div>
 
@@ -112,6 +200,10 @@ const UserDetails = () => {
                     id="standard-rates"
                     defaultValue="10%"
                     className="px-3 py-2"
+                    value={`${formData?.vat?.standard_rate.rate ?? 0}`}
+                    onChange={(e) =>
+                      handleVatChange("rate", parseFloat(e.target.value))
+                    }
                   />
                 </span>
                 <span className="flex flex-col gap-4">
@@ -122,9 +214,13 @@ const UserDetails = () => {
                     Reduced Rate
                   </label>
                   <Input
-                    id="reduced-rates"
+                    id="reduced-rate{{s"
                     defaultValue="0.00%"
                     className="px-3 py-2"
+                    value={`${formData?.vat?.standard_rate?.reduced_rate ?? 0}`}
+                    onChange={(e) =>
+                      handleVatChange("reduced_rate", parseFloat(e.target.value))
+                    }
                   />
                 </span>
               </div>
@@ -138,8 +234,12 @@ const UserDetails = () => {
                   </label>
                   <Input
                     id="flat-rate"
-                    defaultValue="10%"
+                    defaultValue="0.00%"
                     className="px-3 py-2"
+                    value={`${formData?.vat?.flat_rate?.rate ?? 0}`}
+                  onChange={(e) =>
+                    handleVatChange("rate", parseFloat(e.target.value))
+                  }
                   />
                 </span>
               </div>
@@ -167,7 +267,9 @@ const UserDetails = () => {
             </p>
           </span>
 
-          <Input id="prep-fee" defaultValue="$0.00" className="px-3 py-2" />
+          <Input id="prep-fee" defaultValue="$0.00" className="px-3 py-2" 
+          value={`${formData?.prep_fee ?? 0}`}
+          onChange={(e) => handleChange("prep_fee", e.target.value)} />
         </div>
 
         <div className="flex flex-col sm:flex-row gap-4 sm:gap-8 justify-between sm:items-center">
@@ -187,7 +289,9 @@ const UserDetails = () => {
             </p>
           </span>
 
-          <Input id="misc-fee" defaultValue="$0.00" className="px-3 py-2" />
+          <Input id="misc-fee" defaultValue="$0.00" className="px-3 py-2" 
+          value={`${formData?.misc_fee ?? 0}`}
+          onChange={(e) => handleChange("misc_fee", e.target.value)} />
         </div>
 
         <div className="flex flex-col sm:flex-row gap-4 sm:gap-8 justify-between sm:items-center">
@@ -210,6 +314,8 @@ const UserDetails = () => {
             id="misc-fee-percent"
             defaultValue="$0.00"
             className="px-3 py-2"
+            value={`${formData?.misc_fee_percentage }%`}
+            onChange={(e) => handleChange("misc_fee_percentage", e.target.value)}
           />
         </div>
 
@@ -234,16 +340,20 @@ const UserDetails = () => {
             id="inbound-shipping"
             defaultValue="$0.00"
             className="px-3 py-2"
+            value={`${formData?.inbound_shipping ?? 0}`}
+            onChange={(e) => handleChange("inbound_shipping", e.target.value)}
           />
         </div>
 
         <div>
-          <button
-            type="submit"
-            className="px-6 py-2 bg-primary hover:bg-primary-hover rounded-xl text-white text-sm font-medium"
+          <Button
+            htmlType="submit"
+            className="px-6 py-2 bg-primary border-none hover:!bg-primary-hover rounded-xl !text-white text-sm font-medium"
+            loading={isLoading}
+            onClick={handleSaveUser}
           >
             Save
-          </button>
+          </Button>
         </div>
       </div>
     </div>

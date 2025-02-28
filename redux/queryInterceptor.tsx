@@ -9,7 +9,7 @@ import {
 
 import { setNotAuthorized, setServerError, updateIdleTimeOut } from './slice/authSlice'
 
-
+import Cookies from "js-cookie";
 export const baseUrl = process.env.NEXT_PUBLIC_BASE_URL
 
 export const baseQueryWithOutToken = fetchBaseQuery({
@@ -23,7 +23,8 @@ export const baseQueryWithOutToken = fetchBaseQuery({
 export const baseQuery = fetchBaseQuery({
     baseUrl: `${baseUrl}`,
     prepareHeaders: (headers) => {
-        const token = sessionStorage.getItem('token')
+        //const token = sessionStorage.getItem('token')
+        const token = Cookies.get('optisage-token');
         if (token) {
             headers.set('authorization', `Bearer ${token}`)
         }
