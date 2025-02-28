@@ -2,7 +2,7 @@
 
 import { useLazyGetPricingQuery } from "@/redux/api/auth";
 import { setSubScriptionId } from "@/redux/slice/globalSlice";
-import { useRouter,useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { FaCheckCircle } from "react-icons/fa";
 import { useDispatch } from "react-redux";
@@ -20,11 +20,11 @@ const Pricing = () => {
     getPricing({});
 
     // Get the ref parameter from URL
-    const refCode = searchParams.get('ref');
+    const refCode = searchParams.get("ref");
     if (refCode) {
       // Store the referral code in sessionStorage
-      sessionStorage.setItem('referralCode', refCode);
-      console.log('Referral code stored:', refCode);
+      sessionStorage.setItem("referralCode", refCode);
+      console.log("Referral code stored:", refCode);
     }
   }, [getPricing, searchParams]);
 
@@ -59,7 +59,7 @@ const Pricing = () => {
           return {
             key: item.id,
             title: item.name,
-            price: item.name === "Pro" ? "35" : item.price,
+            price: item.price,
             subTitle: "Retail Arbitrage + Mobile + Web + Chrome Ext.",
             subItems: sharedFeatures,
           };
@@ -92,16 +92,16 @@ const Pricing = () => {
         {subInfo.map((item, index) => (
           <div
             className={`${
-              item.title === "Premium" ? "border-2 border-green-500" : ""
+              item.title === "premium" ? "border-2 border-green-500" : ""
             } h-fit bg-white p-6 rounded-xl shadow-md flex flex-col gap-4 relative`}
             key={index}
           >
-            {item.title === "Premium" && (
+            {item.title === "premium" && (
               <span className="absolute top-2 right-2 bg-green-600 text-white px-3 py-1 text-sm rounded-lg">
                 Most Popular
               </span>
             )}
-            <h3 className="text-xl font-semibold">{item.title}</h3>
+            <h3 className="text-xl font-semibold capitalize">{item.title}</h3>
             <p className="text-3xl font-bold">
               ${item.price}
               <span className="text-lg">/mo</span>
