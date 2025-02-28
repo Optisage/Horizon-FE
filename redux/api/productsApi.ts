@@ -9,7 +9,7 @@ export const productsApi = createApi({
   endpoints: (builder) => ({
     searchItems: builder.query({
       query: ({ q, marketplaceId }) => ({
-        url: "catalog/products",
+        url: "catalog",
         method: "GET",
         params: { q, marketplaceId },
       }),
