@@ -35,6 +35,8 @@ import AlertsDrawer from "./AlertsDrawer";
 import { useRouter } from "next/navigation";
 import CustomDatePicker from "./CustomDatePicker";
 import { IoMdRefresh } from "react-icons/io";
+import { HiOutlineUsers } from "react-icons/hi";
+import { MdOutlineInsertChartOutlined } from "react-icons/md";
 
 const pieData = [
   { name: "The Beauty Center", value: 35, color: "#0000FF" },
@@ -80,6 +82,7 @@ const ProductDetails = () => {
   const [activeTab2, setActiveTab2] = useState("Price");
   const [activeTab3, setActiveTab3] = useState("Yearly");
   const [activeTab4, setActiveTab4] = useState("Current");
+  const [activeTab5, setActiveTab5] = useState("offers");
 
   const getDataForTab = () => {
     switch (activeTab2.toLowerCase()) {
@@ -153,6 +156,47 @@ const ProductDetails = () => {
       estimatedSales: "500+/mo",
       estTimeToSale: "Not enough data",
     },
+  };
+
+  const sellerFeedbackData = [
+    {
+      id: 1,
+      seller: "Madelyn Herwitz",
+      avgPrice: "$52.95",
+      won: "100%",
+      lastWon: "Just now",
+      rating: 5,
+    },
+    {
+      id: 2,
+      seller: "Erin Korsgaard",
+      avgPrice: "$52.95",
+      won: "100%",
+      lastWon: "Just now",
+      rating: 5,
+    },
+    {
+      id: 3,
+      seller: "Haylie George",
+      avgPrice: "$52.95",
+      won: "100%",
+      lastWon: "Just now",
+      rating: 5,
+    },
+  ];
+
+  interface RenderStarsProps {
+    rating: number;
+  }
+
+  const renderStars = (rating: RenderStarsProps["rating"]) => {
+    return Array(rating)
+      .fill("★")
+      .map((star: string, index: number) => (
+        <span key={index} className="text-[#FFD700] text-lg">
+          {star}
+        </span>
+      ));
   };
 
   return (
@@ -504,50 +548,109 @@ const ProductDetails = () => {
           <div className="flex flex-col gap-5">
             {/* Offers Section */}
             <div className="border border-border flex flex-col rounded-xl">
-              <div className="flex items-center space-x-2 font-semibold text-gray-700 p-3">
-                <span className="text-lg">Offers</span>
+              <div className="flex items-center gap-6 font-semibold text-gray-700 p-3">
+                <button
+                  type="button"
+                  className={`text-lg flex gap-1 items-center border-b-2 ${
+                    activeTab5 === "offers"
+                      ? "border-black"
+                      : "border-transparent"
+                  }`}
+                  onClick={() => setActiveTab5("offers")}
+                >
+                  <HiOutlineUsers className="size-5" /> Offers
+                </button>
+                <button
+                  type="button"
+                  className={`text-lg flex gap-1 items-center border-b-2 ${
+                    activeTab5 === "feedback"
+                      ? "border-black"
+                      : "border-transparent"
+                  }`}
+                  onClick={() => setActiveTab5("feedback")}
+                >
+                  <MdOutlineInsertChartOutlined className="size-5" /> Seller
+                  Feedback
+                </button>
               </div>
-              <table className="w-full border-collapse text-sm">
-                <thead>
-                  <tr className="border-b text-left bg-[#F7F7F7]">
-                    <th className="p-3">S/N</th>
-                    <th className="p-3">Seller</th>
-                    <th className="p-3">Stock</th>
-                    <th className="p-3">Price</th>
-                    <th className="p-3">Buybox Share</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {offersData.offers.map((offer) => (
-                    <tr key={offer.id} className="border-b">
-                      <td className="p-3">{offer.id}</td>
-                      <td className="p-3">
-                        <div
-                          onClick={() => router.push("/seller")}
-                          className="cursor-pointer"
-                        >
-                          {offer.seller}
-                          {offer.leader && (
-                            <span className="text-xs text-primary block">
-                              BuyBox Leader
-                            </span>
-                          )}
-                        </div>
-                      </td>
-                      <td className="p-3">{offer.stock}</td>
-                      <td className="p-3">{offer.price}</td>
-                      <td className="p-3">
-                        <div className="relative w-20 h-2 bg-gray-200 rounded-full">
-                          <div
-                            className="absolute top-0 left-0 h-2 bg-green-500 rounded-full"
-                            style={{ width: offer.buyboxShare }}
-                          ></div>
-                        </div>
-                      </td>
+
+              {activeTab5 === "offers" ? (
+                <table className="w-full border-collapse text-sm">
+                  <thead>
+                    <tr className="border-b text-left bg-[#F7F7F7]">
+                      <th className="p-3">S/N</th>
+                      <th className="p-3">Seller</th>
+                      <th className="p-3">Stock</th>
+                      <th className="p-3">Price</th>
+                      <th className="p-3">Buybox Share</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {offersData.offers.map((offer) => (
+                      <tr key={offer.id} className="border-b">
+                        <td className="p-3">{offer.id}</td>
+                        <td className="p-3">
+                          <div
+                            onClick={() => router.push("/seller")}
+                            className="cursor-pointer"
+                          >
+                            {offer.seller}
+                            {offer.leader && (
+                              <span className="text-xs text-primary block">
+                                BuyBox Leader
+                              </span>
+                            )}
+                          </div>
+                        </td>
+                        <td className="p-3">{offer.stock}</td>
+                        <td className="p-3">{offer.price}</td>
+                        <td className="p-3 flex gap-1 items-center">
+                          {offer.buyboxShare}
+                          <div className="relative w-20 h-2 bg-gray-200 rounded-full">
+                            <div
+                              className="absolute top-0 left-0 h-2 bg-green-500 rounded-full"
+                              style={{ width: offer.buyboxShare }}
+                            />
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              ) : (
+                <table className="w-full border-collapse text-sm">
+                  <thead>
+                    <tr className="border-b text-left bg-[#F7F7F7]">
+                      <th className="p-3">S/N</th>
+                      <th className="p-3">Seller</th>
+                      <th className="p-3">Avg. Price</th>
+                      <th className="p-3">Won</th>
+                      <th className="p-3">Last Won</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {sellerFeedbackData.map((seller) => (
+                      <tr key={seller.id} className="border-b">
+                        <td className="p-3">{seller.id}</td>
+                        <td className="p-3">
+                          <div
+                            onClick={() => router.push("/seller")}
+                            className="cursor-pointer"
+                          >
+                            {seller.seller}
+                            <div className="flex">
+                              {renderStars(seller.rating)}
+                            </div>
+                          </div>
+                        </td>
+                        <td className="p-3">{seller.avgPrice}</td>
+                        <td className="p-3">{seller.won}</td>
+                        <td className="p-3">{seller.lastWon}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
             </div>
 
             {/* Ranks & Prices Section */}
@@ -720,11 +823,11 @@ const ProductDetails = () => {
                 {/* Legend */}
                 <div className="flex items-center gap-4">
                   <div className="flex items-center gap-2">
-                    <span className="size-3 rounded-lg bg-[#FF0080]"></span>
+                    <span className="size-3 rounded-lg bg-[#FF0080]" />
                     <span>Amazon</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="size-3 rounded-lg bg-[#00E4E4]"></span>
+                    <span className="size-3 rounded-lg bg-[#00E4E4]" />
                     <span>Buy Box</span>
                   </div>
                 </div>
