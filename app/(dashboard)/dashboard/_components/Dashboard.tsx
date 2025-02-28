@@ -4,7 +4,12 @@ import { useState, useEffect } from "react";
 import { CustomPagination, SearchInput } from "../../_components";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-
+import UFO from "@/public/assets/svg/ufo.svg";
+import SalesStats from "./SalesStats";
+import {
+  useSearchItemsQuery,
+  useFetchMarketplacesQuery,
+} from "@/redux/api/productsApi";
 interface Product {
   asin: string;
   image?: string;
@@ -12,14 +17,57 @@ interface Product {
   rating?: number;
   reviews?: number;
   category?: string;
+  brand?: string;
+  modelNumber?: string;
+  vendor?: string;
+  size?: string;
+  color?: string;
+  dimensions?: {
+    height: { value: number; unit: string };
+    length: { value: number; unit: string };
+    weight: { value: number; unit: string };
+    width: { value: number; unit: string };
+  };
+  classifications?: {
+    displayName: string;
+    classificationId: string;
+  }[];
+  sales_statistics?: {
+    estimated_sales_per_month: {
+      currency: string;
+      amount: number;
+    };
+    number_of_sellers: number;
+    sales_analytics: {
+      net_revenue: {
+        amount: number;
+        percentage: number;
+      };
+      price: {
+        amount: number;
+        percentage: number;
+      };
+      monthly_units_sold: {
+        amount: number;
+        percentage: number;
+      };
+      daily_units_sold: {
+        amount: number;
+        percentage: number;
+      };
+      monthly_revenue: {
+        amount: number;
+        percentage: number;
+      };
+    };
+    date_first_available: string;
+    seller_type: string;
+  };
+  buybox_timeline?: {
+    seller: string;
+    timestamp: string;
+  }[];
 }
-
-import UFO from "@/public/assets/svg/ufo.svg";
-import SalesStats from "./SalesStats";
-import {
-  useSearchItemsQuery,
-  useFetchMarketplacesQuery,
-} from "@/redux/api/productsApi";
 
 const Dashboard = () => {
   const [searchValue, setSearchValue] = useState("");
@@ -35,15 +83,19 @@ const Dashboard = () => {
   // Fetch products
   const { data, error, isLoading } = useSearchItemsQuery(
     debouncedSearch
-      ? { q: debouncedSearch, marketplaceId: "ATVPDKIKX0DER" }
+      ? {
+          q: debouncedSearch,
+          marketplaceId: "ATVPDKIKX0DER",
+          // itemAsin: debouncedSearch,
+        }
       : undefined,
     { skip: !debouncedSearch }
   );
 
   const {
     data: marketPlaces,
-    error: marketPlacesError,
-    isLoading: isLoadingMarketPlaces,
+    // error: marketPlacesError,
+    // isLoading: isLoadingMarketPlaces,
   } = useFetchMarketplacesQuery({});
 
   const marketPlacesData =
@@ -51,9 +103,23 @@ const Dashboard = () => {
       (mp: { marketplaceId: string }) => mp.marketplaceId
     ) || [];
 
-  const products = data?.products || [];
-
   console.log("market places:", marketPlacesData);
+
+  // Transform API response to match your Product interface
+  const products =
+    data?.data?.items?.map((item: any) => {
+      return {
+        asin: item.basic_details.asin,
+        image: item.basic_details.product_image,
+        title: item.basic_details.product_name,
+        rating: item.basic_details.rating.stars,
+        reviews: item.basic_details.rating.count,
+        category: item.basic_details.category,
+        vendor: item.basic_details.vendor,
+        sales_statistics: item.sales_statistics,
+        buybox_timeline: item.buybox_timeline,
+      };
+    }) || [];
 
   return (
     <section className="flex flex-col gap-8 min-h-[50dvh] md:min-h-[80dvh]">
@@ -129,8 +195,9 @@ const Dashboard = () => {
                     <span className="font-bold">({product.reviews || 0})</span>
                   </p>
                   <p className="text-sm">By ASIN: {product.asin}</p>
+
                   <p className="text-sm">
-                    {product.category} | <SalesStats />
+                    {product.category} | <SalesStats product={product} />
                   </p>
                 </div>
               </div>
@@ -138,7 +205,10 @@ const Dashboard = () => {
           </div>
 
           {/* pagination (if needed) */}
-          <CustomPagination />
+          {/* <CustomPagination
+            nextToken={data?.data?.pagination?.nextToken}
+            previousToken={data?.data?.pagination?.previousToken}
+          /> */}
         </main>
       )}
     </section>
