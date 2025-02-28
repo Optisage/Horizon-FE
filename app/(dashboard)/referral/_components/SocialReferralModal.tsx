@@ -10,7 +10,7 @@ const SocialReferralModal = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const {username} = useAppSelector((state) => state.api?.user) || {};
   
-  const referralLink = `https://optisage.com/pricing?ref=${username}`; // Replace with dynamic link generation later
+  const referralLink = `https://staging.optisage.ai/pricing?ref=${username}`; // Replace with dynamic link generation later
   const [copied, setCopied] = useState(false);
 
   const handleShare = (platform: string) => {

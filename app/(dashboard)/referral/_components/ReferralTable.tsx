@@ -116,7 +116,7 @@ const ReferralTable = ({tableData, tableLoading}: { tableData: Referral[]; table
         <div className="rounded-xl px-4 py-2 border border-border">
           <p className="text-[#4B4B62] text-sm font-bold">
             Your referral link:{" "}
-            <span className="font-normal">https://optisage.ai/pricing?ref={username}</span>
+            <span className="font-normal">https://staging.optisage.ai/pricing?ref={username}</span>
           </p>
         </div>
       </div>
