@@ -3,6 +3,7 @@ import authReducer from "./slice/authSlice";
 import globalReducer from "./slice/globalSlice";
 import { authApi } from './api/auth';
 import { subscriptionApi } from './api/subscriptionApi';
+import { productsApi } from './api/productsApi';
 import { persistReducer, persistStore } from 'redux-persist';
 import storage from "redux-persist/lib/storage";
 import { userApi } from './api/user';
@@ -13,6 +14,7 @@ const rootReducer = combineReducers({
   [authApi.reducerPath]: authApi.reducer,
   [userApi.reducerPath]: userApi.reducer,
   [subscriptionApi.reducerPath]: subscriptionApi.reducer,
+  [productsApi.reducerPath]: productsApi.reducer,
 });
 
 const persistConfig = {
