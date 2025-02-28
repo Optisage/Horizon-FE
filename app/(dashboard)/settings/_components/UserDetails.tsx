@@ -314,7 +314,7 @@ const [saveSettings,{isLoading}] = useUpdateSettingsMutation()
             id="misc-fee-percent"
             defaultValue="$0.00"
             className="px-3 py-2"
-            value={`${formData?.misc_fee_percentage }%`}
+            value={`${formData?.misc_fee_percentage ?? 0}`}
             onChange={(e) => handleChange("misc_fee_percentage", e.target.value)}
           />
         </div>
@@ -348,7 +348,7 @@ const [saveSettings,{isLoading}] = useUpdateSettingsMutation()
         <div>
           <Button
             htmlType="submit"
-            className="px-6 py-2 bg-primary border-none hover:!bg-primary-hover rounded-xl !text-white text-sm font-medium"
+            className="!px-6 !py-2 !bg-primary !border-none hover:!bg-primary-hover !rounded-xl !text-white !text-sm !font-medium"
             loading={isLoading}
             onClick={handleSaveUser}
           >
