@@ -149,7 +149,7 @@ const BuyingCriteria = ({ buyingCriteria }: BuyingCriteriaProps)  => {
       <div>
         <Button
           htmlType="submit"
-          className="px-6 py-2 bg-primary border-none hover:!bg-primary-hover rounded-xl !text-white text-sm font-medium"
+          className="px-6 py-2 !bg-primary border-none hover:!bg-primary-hover rounded-xl !text-white text-sm font-medium"
           onClick={handleSaveSettings}
           loading={isLoading}
         >
