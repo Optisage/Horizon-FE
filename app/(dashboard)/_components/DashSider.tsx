@@ -146,10 +146,11 @@ const DashSider = () => {
                 src="https://avatar.iran.liara.run/public/38"
                 alt="Avatar"
                 className="size-10 rounded-full"
-                width={40}
-                height={40}
+                width={50}
+                height={50}
                 quality={90}
                 priority
+                unoptimized
               />
             </div>
 
