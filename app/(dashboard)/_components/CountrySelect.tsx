@@ -32,6 +32,7 @@ const CountrySelect = () => {
             height={16}
             quality={90}
             priority
+            unoptimized
           />
         ) : (
           <span className="w-6 h-4 flex items-center justify-center text-lg">
@@ -64,6 +65,7 @@ const CountrySelect = () => {
                   height={16}
                   quality={90}
                   priority
+                  unoptimized
                 />
               ) : (
                 <span className="w-6 h-4 flex items-center justify-center text-lg">

@@ -1,8 +1,48 @@
 import { Table, Checkbox } from "antd";
+import { useEffect, useState } from "react";
 import { AiOutlineDownload } from "react-icons/ai";
 import { FaFilePdf } from "react-icons/fa";
 
-const SubscriptionHistoryTable = () => {
+
+interface SubscriptionHistoryTableProps {
+  tableData: {
+   data:{
+    data: {
+      id: number;
+      plan: string;
+      date: string;
+      amount: string;
+      status: string;
+    }[];
+   }
+  };
+  loading: boolean;
+}
+
+interface SubscriptionData {
+  key: string;
+  invoice: string;
+  date: string;
+  plan: string;
+  amount: string;
+}
+
+const SubscriptionHistoryTable: React.FC<SubscriptionHistoryTableProps> = ({ tableData, loading }) => {
+  const [data, setData] = useState<SubscriptionData[]>([]);
+
+  useEffect(() => {
+    if (tableData?.data) {
+      const transformedData = tableData?.data?.data?.map((item) => ({
+        key: item.id?.toString(),
+        invoice: `Invoice ${String(item.id).padStart(4, "0")}`,
+        date: item.date,
+        plan: item.plan,
+        amount: item.amount,
+      }));
+      setData(transformedData);
+    }
+  }, [tableData]);
+
   const columns = [
     {
       title: <Checkbox />,
@@ -14,7 +54,7 @@ const SubscriptionHistoryTable = () => {
       title: "Invoice History",
       dataIndex: "invoice",
       key: "invoice",
-      render: (text: string) => (
+      render: (text: string) => ( 
         <div className="flex items-center gap-2">
           <FaFilePdf className="text-lg text-gray-500" />
           <span className="text-gray-600">{text}</span>
@@ -46,19 +86,11 @@ const SubscriptionHistoryTable = () => {
     },
   ];
 
-  const data = [
-    {
-      key: "1",
-      invoice: "Invoice 0012",
-      date: "28/12/2023",
-      plan: "Free",
-      amount: "$0",
-    },
-  ];
+ 
 
   return (
     <div className="overflow-x-scroll">
-      <Table columns={columns} dataSource={data} pagination={false} />
+      <Table columns={columns} dataSource={data} pagination={false} loading={loading} />
     </div>
   );
 };
