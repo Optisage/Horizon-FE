@@ -8,10 +8,26 @@ import CountrySelect from "./CountrySelect";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAppSelector } from "@/redux/hooks";
+import { useEffect, useState } from "react";
 
 const DashNav = () => {
   const router = useRouter();
-  const {subscription_type} = useAppSelector((state) => state.api?.user) || {};
+  const [remainingDays, setRemainingDays] = useState<number | null>(null);
+  const {subscription_type, created_at} = useAppSelector((state) => state.api?.user) || {};
+
+  useEffect(() => {
+    if (created_at) {
+      const verifiedDate = new Date(created_at);
+      const trialEndDate = new Date(verifiedDate);
+      trialEndDate.setDate(trialEndDate.getDate() + 7); // Add 7 days
+
+      const today = new Date();
+      const timeDiff = trialEndDate.getTime() - today.getTime();
+      const daysLeft = Math.max(Math.ceil(timeDiff / (1000 * 60 * 60 * 24)), 0);
+
+      setRemainingDays(daysLeft);
+    }
+  }, [created_at]);
 
   return (
     <nav className="flex items-center justify-between px-5 py-3 md:py-4 lg:px-6 sticky top-0 bg-white lg:shadow-sm lg:border-transparent border-b border-gray-200 z-40">
@@ -27,7 +43,11 @@ const DashNav = () => {
 
       <div className="hidden lg:flex items-center gap-3">
         <p className="text-sm font-medium text-[#090F0D]">
-          6 days left on your free trial
+        {
+          remainingDays !== null && remainingDays > 0
+            ? `${remainingDays} days left on your free trial`
+            : "Your free trial has expired."
+        }
         </p>
         <button
           onClick={() => router.push("/subscriptions")}

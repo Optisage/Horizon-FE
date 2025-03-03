@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import SubscriptionHistoryTable from "./SubscriptionHistoryTable";
 import { Heading } from "@/app/(dashboard)/_components";
 import { useLazyGetSubscriptionsQuery } from "@/redux/api/user";
+import { useAppSelector } from "@/redux/hooks";
 
 const Subscriptions = () => {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -11,21 +12,20 @@ const Subscriptions = () => {
   const monthlyPrice = 35;
   const annualPrice = monthlyPrice * 12;
 
-  const [getSubscription, {data}] = useLazyGetSubscriptionsQuery()
-
+  const [getSubscription, {data:subData, isLoading}] = useLazyGetSubscriptionsQuery()
+  const {subscription_type} = useAppSelector((state) => state.api?.user) || {};
 
   useEffect(()=>{
     getSubscription({})
     /* eslint-disable-next-line react-hooks/exhaustive-deps */
   },[])
 
-  console.log(data)
 
   return (
     <section className="flex flex-col gap-8 min-h-[50dvh] md:min-h-[80dvh]">
       <Heading
         title="Subscription Plan"
-        subtitle="You are currently on the Free Plan."
+        subtitle={`You are currently on the ${subscription_type} Plan.`}
       />
 
       {/* plans */}
@@ -115,7 +115,7 @@ const Subscriptions = () => {
           </p>
         </span>
 
-        <SubscriptionHistoryTable />
+        <SubscriptionHistoryTable tableData={subData} loading={isLoading} />
       </div>
     </section>
   );
