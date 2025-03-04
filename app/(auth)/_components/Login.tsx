@@ -29,9 +29,9 @@ const Login: React.FC = () => {
     } catch (error) {
       messageApi.error("Login Failed");
       console.log(error)
-  
+      const errorMessage = (error as { message?: string; data?: { message?: string } })?.data?.message || "An error occurred";
       // Ensure this properly sets the field error
-      setFieldError("password", "Invalid Login details");
+      setFieldError("password", errorMessage);
     }
   };
 
