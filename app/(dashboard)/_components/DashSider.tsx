@@ -151,6 +151,7 @@ const DashSider = () => {
                   height={40}
                   quality={90}
                   priority
+                  unoptimized
                 />
               </div>
 
