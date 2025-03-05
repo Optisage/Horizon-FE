@@ -45,12 +45,12 @@ const DashSider = () => {
   const [activePath, setActivePath] = useState("");
   const [openModal, setOpenModal] = useState(false);
   const router = useRouter();
-  const {first_name, email} = useAppSelector((state) => state.api?.user) || {};
+  const { first_name, email } =
+    useAppSelector((state) => state.api?.user) || {};
   const handleLogout = () => {
     // Clear the token cookie
     Cookies.remove("optisage-token");
     router.push("/");
-    
   };
 
   useLayoutEffect(() => {
@@ -141,24 +141,26 @@ const DashSider = () => {
 
           {/* Profile Section */}
           <div className="flex gap-3 items-center p-4 mt-auto">
-            <div className="size-10 overflow-hidden">
-              <Image
-                src="https://avatar.iran.liara.run/public/38"
-                alt="Avatar"
-                className="size-10 rounded-full"
-                width={50}
-                height={50}
-                quality={90}
-                priority
-                unoptimized
-              />
-            </div>
+            <div className="flex gap-3 items-center flex-1">
+              <div className="size-10 rounded-full overflow-hidden">
+                <Image
+                  src="https://avatar.iran.liara.run/public/38"
+                  alt="Avatar"
+                  className="size-10 object-cover rounded-full"
+                  width={40}
+                  height={40}
+                  quality={90}
+                  priority
+                />
+              </div>
 
-            <div className="text-sm flex-1">
-              <p className="font-medium flex items-center gap-1">
-                {first_name} <RiVerifiedBadgeFill className="text-primary size-4" />
-              </p>
-              <p className="text-[#787891] text-xs">{email}</p>
+              <div className="text-sm">
+                <p className="font-medium flex items-center gap-1">
+                  {first_name}{" "}
+                  <RiVerifiedBadgeFill className="text-primary size-4" />
+                </p>
+                <p className="text-[#787891] text-xs">{email}</p>
+              </div>
             </div>
 
             <button

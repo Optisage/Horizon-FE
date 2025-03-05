@@ -184,6 +184,7 @@ const Dashboard = () => {
                   height={64}
                   quality={90}
                   priority
+                  unoptimized
                 />
                 <div className="flex flex-col gap-1 text-[#09090B]">
                   <p
