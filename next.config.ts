@@ -13,6 +13,11 @@ const nextConfig: NextConfig = {
       hostname: "flagcdn.com",
       port: "",
       pathname: "/**"
+    }, {
+      protocol: "https",
+      hostname: "m.media-amazon.com",
+      port: "",
+      pathname: "/**"
     }]
   },
 };

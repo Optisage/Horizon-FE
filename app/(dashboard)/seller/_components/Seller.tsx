@@ -4,9 +4,9 @@ import { CustomPagination } from "../../_components";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 
-import { products } from "../../dashboard/_components/Dashboard";
-import SalesStats from "../../dashboard/_components/SalesStats";
+// import SalesStats from "../../dashboard/_components/SalesStats";
 import { RiAttachment2 } from "react-icons/ri";
+import { products } from "../../history/_components/History";
 
 const Seller = () => {
   const router = useRouter();
@@ -167,7 +167,8 @@ const Seller = () => {
                 </p>
                 <p className="text-sm">By ASIN: {product.asin}</p>
                 <p className="text-sm">
-                  {product.category} | <SalesStats />
+                  {/* {product.category} | <SalesStats /> */}
+                  {product.category} |
                 </p>
               </div>
             </div>

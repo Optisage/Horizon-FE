@@ -1,11 +1,12 @@
-import { combineReducers, configureStore } from '@reduxjs/toolkit'
+import { combineReducers, configureStore } from "@reduxjs/toolkit";
 import authReducer from "./slice/authSlice";
 import globalReducer from "./slice/globalSlice";
-import { authApi } from './api/auth';
-import { subscriptionApi } from './api/subscriptionApi';
-import { persistReducer, persistStore } from 'redux-persist';
+import { authApi } from "./api/auth";
+import { subscriptionApi } from "./api/subscriptionApi";
+import { productsApi } from "./api/productsApi";
+import { persistReducer, persistStore } from "redux-persist";
 import storage from "redux-persist/lib/storage";
-import { userApi } from './api/user';
+import { userApi } from "./api/user";
 
 const rootReducer = combineReducers({
   api: authReducer,
@@ -13,18 +14,19 @@ const rootReducer = combineReducers({
   [authApi.reducerPath]: authApi.reducer,
   [userApi.reducerPath]: userApi.reducer,
   [subscriptionApi.reducerPath]: subscriptionApi.reducer,
+  [productsApi.reducerPath]: productsApi.reducer,
 });
 
 const persistConfig = {
   key: "root",
   storage,
-  whitelist: ['api','global'], // Whitelist the reducers you want to persist
+  whitelist: ["api", "global"], // Whitelist the reducers you want to persist
 };
 const persistedReducer = persistReducer(persistConfig, rootReducer);
 
 export const store = configureStore({
   reducer: persistedReducer,
-  
+
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
       serializableCheck: false,
@@ -32,8 +34,7 @@ export const store = configureStore({
       authApi.middleware,
       subscriptionApi.middleware,
       userApi.middleware,
-     
-      
+      productsApi.middleware,
     ]),
 });
 

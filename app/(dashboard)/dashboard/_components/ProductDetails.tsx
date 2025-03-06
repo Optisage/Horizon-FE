@@ -44,7 +44,7 @@ const pieData = [
   { name: "T&D Supplies", value: 30, color: "#00E4E4" },
 ];
 
-const marketData = {
+const priceData = {
   price: [
     { date: "Jan 1", amazon: 6000, buyBox: 3500 },
     { date: "Jan 10", amazon: 6500, buyBox: 3400 },
@@ -52,22 +52,6 @@ const marketData = {
     { date: "Jan 20", amazon: 6300, buyBox: 3800 },
     { date: "Feb 10", amazon: 6800, buyBox: 4900 },
     { date: "Feb 25", amazon: 7000, buyBox: 4200 },
-  ],
-  volume: [
-    { date: "Jan 1", amazon: 1200, buyBox: 800 },
-    { date: "Jan 10", amazon: 1400, buyBox: 900 },
-    { date: "Jan 15", amazon: 1600, buyBox: 1100 },
-    { date: "Jan 20", amazon: 1300, buyBox: 950 },
-    { date: "Feb 10", amazon: 1500, buyBox: 1200 },
-    { date: "Feb 25", amazon: 1700, buyBox: 1300 },
-  ],
-  reviews: [
-    { date: "Jan 1", amazon: 450, buyBox: 280 },
-    { date: "Jan 10", amazon: 480, buyBox: 300 },
-    { date: "Jan 15", amazon: 520, buyBox: 350 },
-    { date: "Jan 20", amazon: 490, buyBox: 320 },
-    { date: "Feb 10", amazon: 550, buyBox: 380 },
-    { date: "Feb 25", amazon: 600, buyBox: 400 },
   ],
 };
 
@@ -79,23 +63,8 @@ const ProductDetails = () => {
   const [costPrice, setCostPrice] = useState(40000);
   const [salePrice, setSalePrice] = useState(40000);
   const [storageMonths, setStorageMonths] = useState(0);
-  const [activeTab2, setActiveTab2] = useState("Price");
-  const [activeTab3, setActiveTab3] = useState("Yearly");
   const [activeTab4, setActiveTab4] = useState("Current");
   const [activeTab5, setActiveTab5] = useState("offers");
-
-  const getDataForTab = () => {
-    switch (activeTab2.toLowerCase()) {
-      case "price":
-        return marketData.price;
-      case "volume":
-        return marketData.volume;
-      case "reviews":
-        return marketData.reviews;
-      default:
-        return marketData.price;
-    }
-  };
 
   const router = useRouter();
 
@@ -749,23 +718,7 @@ const ProductDetails = () => {
             {/* Buy Box Analysis */}
             <div className="p-6 border rounded-lg">
               <h2 className="text-lg font-semibold">Buy Box Analysis</h2>
-              <div className="flex items-center gap-4 mt-4 justify-between">
-                <div className="flex items-center gap-1">
-                  {["Yearly", "Monthly", "Weekly", "Daily"].map((tab) => (
-                    <button
-                      key={tab}
-                      className={`px-3 py-1 rounded-full text-black border ${
-                        tab === activeTab3
-                          ? "bg-[#E7EBFE] border-transparent"
-                          : "bg-transparent border-border"
-                      }`}
-                      onClick={() => setActiveTab3(tab)}
-                    >
-                      {tab}
-                    </button>
-                  ))}
-                </div>
-
+              <div className="mt-4">
                 {/* Date Picker */}
                 <CustomDatePicker />
               </div>
@@ -803,21 +756,7 @@ const ProductDetails = () => {
                 <CustomDatePicker />
               </div>
 
-              <div className="flex items-center gap-1 mt-4">
-                {["Price", "Volume", "Reviews"].map((tab) => (
-                  <button
-                    key={tab}
-                    className={`px-3 py-1 rounded-full text-black border ${
-                      tab === activeTab2
-                        ? "bg-[#E7EBFE] border-transparent"
-                        : "bg-transparent border-border"
-                    }`}
-                    onClick={() => setActiveTab2(tab)}
-                  >
-                    {tab}
-                  </button>
-                ))}
-              </div>
+              <p className="mt-4 text-black">Price</p>
 
               <div className="mt-6 flex flex-col gap-4">
                 {/* Legend */}
@@ -833,7 +772,7 @@ const ProductDetails = () => {
                 </div>
 
                 <ResponsiveContainer width="100%" height={300}>
-                  <LineChart data={getDataForTab()}>
+                  <LineChart data={priceData.price}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="date" />
                     <YAxis />

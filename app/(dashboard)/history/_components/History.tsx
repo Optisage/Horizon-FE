@@ -4,10 +4,68 @@ import { useState } from "react";
 import { CustomPagination, SearchInput } from "@/app/(dashboard)/_components";
 import { useRouter } from "next/navigation";
 
-import SalesStats from "../../dashboard/_components/SalesStats";
+// import SalesStats from "../../dashboard/_components/SalesStats";
 
-import { products } from "../../dashboard/_components/Dashboard";
 import { GoArrowUpRight } from "react-icons/go";
+
+import Product1 from "@/public/assets/images/product-1.png";
+import Product2 from "@/public/assets/images/product-2.png";
+import Product3 from "@/public/assets/images/product-3.png";
+import Product4 from "@/public/assets/images/product-4.png";
+import Product5 from "@/public/assets/images/product-5.png";
+
+export const products = [
+  {
+    id: 1,
+    image: Product1,
+    title:
+      "Bear Paws Banana Bread Cookies - Soft Cookie Snack Packs, Made With Real Banana, Family Pack, 480g, 12 Pouches",
+    rating: 4,
+    reviews: 5292,
+    asin: "B0881KNMSS",
+    category: "Grocery & Gourmet Food",
+  },
+  {
+    id: 2,
+    image: Product2,
+    title:
+      "Bear Paws Banana Bread Cookies (Pack of 6) - Family Size, Peanut Free School Snacks, 6x480g, 72 pouches",
+    rating: 5,
+    reviews: 5294,
+    asin: "B0DHDC557Y",
+    category: "Grocery & Gourmet Food",
+  },
+  {
+    id: 3,
+    image: Product3,
+    title:
+      "Bear Paws Banana Bread Cookies - Soft Cookie Snack Packs, Peanut Free, 240g, 6 Pouches",
+    rating: 3,
+    reviews: 5294,
+    asin: "B07DMQJ621",
+    category: "Grocery & Gourmet Food",
+  },
+  {
+    id: 4,
+    image: Product4,
+    title:
+      "APTRO Men's Swim Trunks Quick Dry Swim Shorts Bathing Suit Board Shorts HW022 Banana L",
+    rating: 3,
+    reviews: 3148,
+    asin: "B08TTBD5DS",
+    category: "Grocery & Gourmet Food",
+  },
+  {
+    id: 5,
+    image: Product5,
+    title:
+      "CLIF BAR - Energy Bars - Peanut Butter Banana- (68 Gram Protein Bars, 12 Count) Packaging May Vary",
+    rating: 3,
+    reviews: 457,
+    asin: "B07JC42PZP",
+    category: "Grocery & Gourmet Food",
+  },
+];
 
 const History = () => {
   const [searchValue, setSearchValue] = useState("");
@@ -56,7 +114,8 @@ const History = () => {
                 </p>
                 <p className="text-sm">By ASIN: {product.asin}</p>
                 <p className="text-sm">
-                  {product.category} | <SalesStats />
+                  {/* {product.category} | <SalesStats /> */}
+                  {product.category} |
                 </p>
               </div>
             </div>
@@ -88,7 +147,8 @@ const History = () => {
                 </p>
                 <p className="text-sm">By ASIN: {product.asin}</p>
                 <p className="text-sm">
-                  {product.category} | <SalesStats />
+                  {/* {product.category} | <SalesStats /> */}
+                  {product.category} |
                 </p>
               </div>
             </div>
