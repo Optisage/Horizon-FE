@@ -70,6 +70,7 @@ const SubscriptionCheckoutForm = () => {
         pricing_id: subScriptionId,
         referral_code:referralCode
       }).unwrap();
+    
 
       // Handle SCA if required
       if (res.clientSecret) {
@@ -87,7 +88,7 @@ const SubscriptionCheckoutForm = () => {
       showModal();
     } catch (err: unknown) {
       setMessage(
-        (err as { data?: { error?: string } })?.data?.error ||
+        (err as { message?: string  })?.message ||
           "An unexpected error occurred. Please try again."
       );
     } finally {
