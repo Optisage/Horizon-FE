@@ -270,6 +270,9 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
                     className="size-[150px] object-cover"
                     width={150}
                     height={150}
+                    quality={90}
+                    priority
+                    unoptimized
                   />
                 </div>
 
