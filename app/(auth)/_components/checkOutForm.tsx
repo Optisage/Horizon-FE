@@ -6,6 +6,17 @@ import { Modal } from "antd";
 import Image from "next/image";
 import sub from "@/public/assets/images/sub.jpg";
 
+
+
+interface ApiError {
+  data?: {
+    errors?: {
+      email?: string[];
+    };
+    message?: string;
+  };
+}
+
 const SubscriptionCheckoutForm = () => {
   const stripe = useStripe();
   const elements = useElements();
@@ -70,6 +81,7 @@ const SubscriptionCheckoutForm = () => {
         pricing_id: subScriptionId,
         referral_code:referralCode
       }).unwrap();
+    
 
       // Handle SCA if required
       if (res.clientSecret) {
@@ -86,10 +98,13 @@ const SubscriptionCheckoutForm = () => {
       setMessage("Subscription successful! Thank you.");
       showModal();
     } catch (err: unknown) {
-      setMessage(
-        (err as { data?: { error?: string } })?.data?.error ||
-          "An unexpected error occurred. Please try again."
-      );
+      // Handle API error response
+      const errorData = (err as ApiError).data; // Use the defined ApiError type
+      if (errorData?.errors?.email) {
+        setMessage(errorData.errors.email[0]); // Display "The email has already been taken."
+      } else {
+        setMessage(errorData?.message || "An unexpected error occurred.");
+      }
     } finally {
       setLoading(false);
     }
