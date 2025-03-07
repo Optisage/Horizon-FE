@@ -6,6 +6,17 @@ import { Modal } from "antd";
 import Image from "next/image";
 import sub from "@/public/assets/images/sub.jpg";
 
+
+
+interface ApiError {
+  data?: {
+    errors?: {
+      email?: string[];
+    };
+    message?: string;
+  };
+}
+
 const SubscriptionCheckoutForm = () => {
   const stripe = useStripe();
   const elements = useElements();
@@ -88,15 +99,11 @@ const SubscriptionCheckoutForm = () => {
       showModal();
     } catch (err: unknown) {
       // Handle API error response
-      if (typeof err === "object" && err !== null && "data" in err) {
-        const errorData = (err as { data?: any }).data;
-        if (errorData?.errors?.email) {
-          setMessage(errorData.errors.email[0]); // Display "The email has already been taken."
-        } else {
-          setMessage(errorData?.message || "An unexpected error occurred.");
-        }
+      const errorData = (err as ApiError).data; // Use the defined ApiError type
+      if (errorData?.errors?.email) {
+        setMessage(errorData.errors.email[0]); // Display "The email has already been taken."
       } else {
-        setMessage("An unexpected error occurred. Please try again.");
+        setMessage(errorData?.message || "An unexpected error occurred.");
       }
     } finally {
       setLoading(false);
