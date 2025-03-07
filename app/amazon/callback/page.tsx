@@ -25,9 +25,9 @@ export default function CallbackPage() {
           },
           body: new URLSearchParams({
             grant_type: "authorization_code",
-            code: spapiOauthCode,
-            client_id: process.env.NEXT_SPAPI_CLIENT_ID!,
-            client_secret: process.env.NEXT_SPAPI_CLIENT_SECRET!,
+            spapi_oauth_code: spapiOauthCode,
+            client_id: "amzn1.application-oa2-client.d59a0a95a8b6495fabd9dcc456446b81",
+            client_secret: "amzn1.oa2-cs.v1.f14b202a4c9046a9e1dee178efa6039dbf2dc57314aa254ac828f6038d78f532",
           }).toString(),
         });
 
