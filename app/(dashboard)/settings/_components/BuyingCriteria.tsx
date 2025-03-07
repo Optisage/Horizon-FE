@@ -8,7 +8,7 @@ import { IoMdInformationCircleOutline } from "react-icons/io";
 interface BuyingCriteriaProps {
   buyingCriteria: {
     maximum_bsr_percentage: number;
-    maximum_roi_percentage: number;
+    minimum_roi_percentage: number;
     minimum_bsr_percentage: number;
     minimum_profit_percentage: number;
   };
@@ -141,8 +141,8 @@ const BuyingCriteria = ({ buyingCriteria }: BuyingCriteriaProps)  => {
 
         <Input id="minimum-roi" 
         defaultValue="$0.00" className="px-3 py-2" 
-        value={`$ ${formData?.maximum_roi_percentage.toString()}`}
-        onChange={(e) => handleInputChange('maximum_roi_percentage', e.target.value)}
+        value={`$ ${formData?.minimum_roi_percentage.toString()}`}
+        onChange={(e) => handleInputChange('minimum_roi_percentage', e.target.value)}
         />
       </div>
 
