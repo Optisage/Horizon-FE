@@ -1,13 +1,20 @@
 "use client";
 
 import { useEffect, useState } from "react";
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { useRouter, useSearchParams } from "next/navigation";
 
 export default function CallbackPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
+  //const searchParams = useSearchParams();
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [loading, setLoading] = useState(true);
 
+useEffect(()=>{
+  router.push('/dashboard')
+// eslint-disable-next-line react-hooks/exhaustive-deps
+},[])
+  /** 
   useEffect(() => {
     const fetchToken = async () => {
       const spapiOauthCode = searchParams.get("spapi_oauth_code");
@@ -51,7 +58,7 @@ export default function CallbackPage() {
 
     fetchToken();
   }, [router, searchParams]);
-
+*/
   return (
     <div className="flex items-center justify-center min-h-screen">
       {loading ? (
