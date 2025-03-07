@@ -38,24 +38,33 @@ import { IoMdRefresh } from "react-icons/io";
 import { HiOutlineUsers } from "react-icons/hi";
 import { MdOutlineInsertChartOutlined } from "react-icons/md";
 
-const pieData = [
-  { name: "The Beauty Center", value: 35, color: "#0000FF" },
-  { name: "Devine Makeup", value: 35, color: "#FF0080" },
-  { name: "T&D Supplies", value: 30, color: "#00E4E4" },
-];
+import {
+  useGetItemQuery,
+  useGetBuyboxInfoQuery,
+  useGetRankingsAndPricesQuery,
+} from "@/redux/api/productsApi";
 
-const priceData = {
-  price: [
-    { date: "Jan 1", amazon: 6000, buyBox: 3500 },
-    { date: "Jan 10", amazon: 6500, buyBox: 3400 },
-    { date: "Jan 15", amazon: 7500, buyBox: 4200 },
-    { date: "Jan 20", amazon: 6300, buyBox: 3800 },
-    { date: "Feb 10", amazon: 6800, buyBox: 4900 },
-    { date: "Feb 25", amazon: 7000, buyBox: 4200 },
-  ],
-};
+interface ProductDetailsProps {
+  asin: string;
+  marketplaceId: string;
+}
 
-const ProductDetails = () => {
+interface BuyboxItem {
+  seller: string;
+  seller_id: string;
+  rating: number;
+  listing_price: number;
+  weight_percentage: number;
+  stock_quantity: number;
+  is_buybox_winner: boolean;
+  currency: string;
+  seller_feedback: {
+    avg_price: number;
+    percentage_won: number;
+    last_won: string;
+  };
+}
+const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
   const [searchValue, setSearchValue] = useState("");
 
   const [fulfillmentType, setFulfillmentType] = useState("FBA");
@@ -63,10 +72,65 @@ const ProductDetails = () => {
   const [costPrice, setCostPrice] = useState(40000);
   const [salePrice, setSalePrice] = useState(40000);
   const [storageMonths, setStorageMonths] = useState(0);
-  const [activeTab4, setActiveTab4] = useState("Current");
+  const [activeTab4, setActiveTab4] = useState<
+    "current" | "30" | "90" | "180" | "all"
+  >("current");
   const [activeTab5, setActiveTab5] = useState("offers");
 
   const router = useRouter();
+
+  const { data: buyboxData, isLoading: isLoadingBuybox } =
+    useGetBuyboxInfoQuery({
+      marketplaceId,
+      itemAsin: asin,
+    });
+
+  const { data: rankingsData, isLoading: isLoadingRankings } =
+    useGetRankingsAndPricesQuery({
+      marketplaceId,
+      itemAsin: asin,
+      period: activeTab4, // Pass the selected period
+    });
+
+  const { data, error, isLoading } = useGetItemQuery({
+    marketplaceId,
+    itemAsin: asin,
+  });
+
+  if (isLoading) return <div>Loading...</div>;
+  if (error) return <div>Error loading product details</div>;
+
+  const product = data?.data;
+  const buybox: BuyboxItem[] = buyboxData?.data?.buybox ?? [];
+  const extra = buyboxData?.data?.extra;
+  const rankings = rankingsData?.data?.[activeTab4.toLowerCase()] ?? {};
+
+  // const pieData =
+  //   buybox?.map((seller) => ({
+  //     name: seller.seller_id,
+  //     value: seller.weight_percentage,
+  //     color: `#${Math.floor(Math.random() * 16777215).toString(16)}`,
+  //   })) || [];
+
+  // To have more colors
+  const colorPalette = ["#FF5733", "#33FF57", "#3357FF", "#FF33A1", "#A133FF"];
+  const pieData =
+    buybox?.map((seller, index) => ({
+      name: seller.seller_id,
+      value: seller.weight_percentage,
+      color: colorPalette[index % colorPalette.length], // Cycles through predefined colors
+    })) || [];
+
+  const priceData = {
+    price: [
+      { date: "Jan 1", amazon: 6000, buyBox: 3500 },
+      { date: "Jan 10", amazon: 6500, buyBox: 3400 },
+      { date: "Jan 15", amazon: 7500, buyBox: 4200 },
+      { date: "Jan 20", amazon: 6300, buyBox: 3800 },
+      { date: "Feb 10", amazon: 6800, buyBox: 4900 },
+      { date: "Feb 25", amazon: 7000, buyBox: 4200 },
+    ],
+  };
 
   const fees = {
     referralFee: 9.69,
@@ -87,85 +151,66 @@ const ProductDetails = () => {
   const breakEvenPrice = 28.72;
   const estimatedPayout = 13.18;
 
-  const offersData = {
-    offers: [
-      {
-        id: 1,
-        seller: "Madelyn Herwitz",
-        stock: 20,
-        price: "$400",
-        buyboxShare: "40%",
-        leader: true,
-      },
-      {
-        id: 2,
-        seller: "Erin Korsgaard",
-        stock: 12,
-        price: "$49,960",
-        buyboxShare: "35%",
-        leader: false,
-      },
-      {
-        id: 3,
-        seller: "Haylie George",
-        stock: 123,
-        price: "$39,467",
-        buyboxShare: "93%",
-        leader: false,
-      },
-    ],
-    ranks: {
-      netBBPriceChanges: 23,
-      changePercent: "7.3%",
-      buyBox: "$28.87",
-      amazon: "$28.87",
-      lowestFBA: "$28.82",
-      lowestFBM: "-",
-      keepaBSRDrops: 35,
-      estimatedSales: "500+/mo",
-      estTimeToSale: "Not enough data",
-    },
+  const ranks = {
+    netBBPriceChanges: rankings?.net_bb_price_changes?.price ?? "-",
+    changePercent: rankings?.net_bb_price_changes?.percentage
+      ? `${rankings.net_bb_price_changes.percentage}%`
+      : "-",
+    buyBox: rankings?.buybox ? `$${rankings.buybox.toFixed(2)}` : "-",
+    amazon: rankings?.amazon ? `$${rankings.amazon.toFixed(2)}` : "-",
+    lowestFBA: rankings?.lowest_fba
+      ? `$${rankings.lowest_fba.toFixed(2)}`
+      : "-",
+    lowestFBM: rankings?.lowest_fbm
+      ? `$${rankings.lowest_fbm.toFixed(2)}`
+      : "-",
+    keepaBSRDrops: rankings?.keepa_bsr_drops ?? "N/A",
+    estimatedSales: rankings?.estimated_sales ?? "N/A",
+    estTimeToSale: rankings?.estimated_time_to_sale ?? "N/A",
   };
 
-  const sellerFeedbackData = [
-    {
-      id: 1,
-      seller: "Madelyn Herwitz",
-      avgPrice: "$52.95",
-      won: "100%",
-      lastWon: "Just now",
-      rating: 5,
-    },
-    {
-      id: 2,
-      seller: "Erin Korsgaard",
-      avgPrice: "$52.95",
-      won: "100%",
-      lastWon: "Just now",
-      rating: 5,
-    },
-    {
-      id: 3,
-      seller: "Haylie George",
-      avgPrice: "$52.95",
-      won: "100%",
-      lastWon: "Just now",
-      rating: 5,
-    },
-  ];
+  const offersData = {
+    offers: buybox.map((offer: BuyboxItem, index: number) => ({
+      id: index + 1,
+      seller: offer.seller,
+      stock: offer.stock_quantity,
+      price: `${offer.currency}${offer.listing_price.toFixed(2)}`,
+      buyboxShare: `${offer.weight_percentage}%`,
+      leader: offer.is_buybox_winner,
+    })),
+  };
 
-  interface RenderStarsProps {
-    rating: number;
+  const sellerFeedbackData = buybox.map(
+    (seller: BuyboxItem, index: number) => ({
+      id: index + 1,
+      seller: seller.seller,
+      rating: seller.rating,
+      avgPrice: `${seller.currency}${
+        seller.seller_feedback?.avg_price?.toFixed(2) ?? "N/A"
+      }`,
+      won: `${seller.seller_feedback?.percentage_won ?? 0}%`,
+      lastWon: seller.seller_feedback?.last_won
+        ? new Date(seller.seller_feedback.last_won).toLocaleString()
+        : "N/A",
+    })
+  );
+
+  if (isLoadingBuybox) {
+    return <p>Loading buybox data...</p>;
   }
 
-  const renderStars = (rating: RenderStarsProps["rating"]) => {
-    return Array(rating)
-      .fill("★")
-      .map((star: string, index: number) => (
-        <span key={index} className="text-[#FFD700] text-lg">
-          {star}
-        </span>
-      ));
+  const renderStars = (rating: number | undefined) => {
+    const validRating = Math.floor(rating ?? 0);
+
+    if (validRating <= 0) {
+      return <span className="text-gray-400">N/A</span>;
+    }
+
+    return Array.from({ length: validRating }, (_, index) => (
+      <span key={index} className="text-[#FFD700] text-lg">
+        ★
+      </span>
+    ));
   };
 
   return (
@@ -214,12 +259,12 @@ const ProductDetails = () => {
         <div className="grid md:grid-cols-2 gap-5">
           {/* left */}
           <div className="flex flex-col gap-5">
+            {/* product details */}
             <div className="border border-border px-4 pt-4 rounded-xl flex flex-col gap-4">
-              {/* <div className="flex flex-col md:flex-row md:items-center gap-3"> */}
               <div className="grid md:grid-cols-[2fr_5fr] gap-3">
                 <div className="size-[150px] overflow-hidden rounded-lg">
                   <Image
-                    src={ProductThumbnail}
+                    src={product?.product_image || ProductThumbnail}
                     alt="thumbnail"
                     className="size-[150px] object-cover"
                     width={150}
@@ -229,12 +274,11 @@ const ProductDetails = () => {
 
                 <div className="text-[#595959]">
                   <h2 className="text-[#252525] font-semibold text-lg md:text-xl">
-                    TIOSEBON Women&apos;s Slip On Walking Shoes Lightweight
-                    Sneakers Slip Resistant Athletic Shoes
+                    {product?.product_name}
                   </h2>
-                  <p>Beauty & Personal Care</p>
-                  <p>ASIN: B09TQLC5TK</p>
-                  <p>⭐⭐⭐⭐⭐ 5/5</p>
+                  <p>{product?.category}</p>
+                  <p>ASIN: {product?.asin}</p>
+                  <p>⭐⭐⭐⭐⭐ {product?.rating?.stars}/5</p>
                 </div>
               </div>
 
@@ -446,69 +490,53 @@ const ProductDetails = () => {
               </div>
             </div>
 
-            {/* stats grid */}
+            {/* extra stats grid */}
             <div className="border border-border p-4 rounded-xl flex flex-col gap-5">
               <div className="grid grid-cols-2 gap-3">
-                <div className="flex flex-col sm:flex-row gap-2 sm:items-center">
-                  <span className="bg-[#F0FFF0] size-12 rounded-lg flex items-center justify-center">
-                    <PriceTagIcon />
-                  </span>
-                  <span className="text-black text-sm">
-                    <p>Buy Box Price</p>
-                    <p className="text-xl font-semibold">$40,000</p>
-                  </span>
-                </div>
-                <div className="flex flex-col sm:flex-row gap-2 sm:items-center">
-                  <span className="bg-[#F0F0FF] size-12 rounded-lg flex items-center justify-center">
-                    <ProductSalesIcon />
-                  </span>
-                  <span className="text-black text-sm">
-                    <p>Estimated Product sales</p>
-                    <p className="text-xl font-semibold">800/month</p>
-                  </span>
-                </div>
+                <InfoCard
+                  icon={<PriceTagIcon />}
+                  title="Buy Box Price"
+                  value={`$${extra?.buybox_price ?? "-"}`}
+                  bgColor="#F0FFF0"
+                />
+                <InfoCard
+                  icon={<ProductSalesIcon />}
+                  title="Estimated Product Sales"
+                  value={`${extra?.monthly_est_product_sales ?? "-"}/month`}
+                  bgColor="#F0F0FF"
+                />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
-                <div className="flex flex-col sm:flex-row gap-2 sm:items-center">
-                  <span className="bg-[#FFF0FF] size-12 rounded-lg flex items-center justify-center">
-                    <BSRIcon />
-                  </span>
-                  <span className="text-black text-sm">
-                    <p>BSR</p>
-                    <p className="text-xl font-semibold">300</p>
-                  </span>
-                </div>
-                <div className="flex flex-col sm:flex-row gap-2 sm:items-center">
-                  <span className="bg-[#FFF0F3] size-12 rounded-lg flex items-center justify-center">
-                    <MaximumCostIcon />
-                  </span>
-                  <span className="text-black text-sm">
-                    <p>Maximum Cost</p>
-                    <p className="text-xl font-semibold">$40,000</p>
-                  </span>
-                </div>
+                <InfoCard
+                  icon={<BSRIcon />}
+                  title="BSR"
+                  value={extra?.bsr ?? "-"}
+                  bgColor="#FFF0FF"
+                />
+                <InfoCard
+                  icon={<MaximumCostIcon />}
+                  title="Maximum Cost"
+                  value={`$${extra?.max_cost ?? "-"}`}
+                  bgColor="#FFF0F3"
+                />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
-                <div className="flex flex-col sm:flex-row gap-2 sm:items-center">
-                  <span className="bg-[#F5EBFF] size-12 rounded-lg flex items-center justify-center">
-                    <ROIIcon />
-                  </span>
-                  <span className="text-black text-sm">
-                    <p>ROI</p>
-                    <p className="text-xl font-semibold">64.10%</p>
-                  </span>
-                </div>
-                <div className="flex flex-col sm:flex-row gap-2 sm:items-center">
-                  <span className="bg-[#EBFFFE] size-12 rounded-lg flex items-center justify-center">
-                    <PriceTagIcon />
-                  </span>
-                  <span className="text-black text-sm">
-                    <p>Profit</p>
-                    <p className="text-xl font-semibold">$4.61 (29%)</p>
-                  </span>
-                </div>
+                <InfoCard
+                  icon={<ROIIcon />}
+                  title="ROI"
+                  value={`${extra?.roi ?? "-"}%`}
+                  bgColor="#F5EBFF"
+                />
+                <InfoCard
+                  icon={<PriceTagIcon />}
+                  title="Profit"
+                  value={`$${extra?.profit ?? "-"} (${
+                    extra?.profit_percentage ?? "-"
+                  }%)`}
+                  bgColor="#EBFFFE"
+                />
               </div>
             </div>
           </div>
@@ -633,15 +661,19 @@ const ProductDetails = () => {
               </div>
 
               <div className="flex items-center gap-1 mt-4">
-                {["Current", "30", "90", "180", "All"].map((tab) => (
+                {["current", "30", "90", "180", "all"].map((tab) => (
                   <button
                     key={tab}
-                    className={`px-3 py-1 rounded-full text-black border ${
+                    className={`px-3 py-1 rounded-full text-black border capitalize ${
                       tab === activeTab4
                         ? "bg-[#E7EBFE] border-transparent"
                         : "bg-transparent border-border"
                     }`}
-                    onClick={() => setActiveTab4(tab)}
+                    onClick={() =>
+                      setActiveTab4(
+                        tab as "current" | "30" | "90" | "180" | "all"
+                      )
+                    }
                   >
                     {tab}
                   </button>
@@ -655,7 +687,7 @@ const ProductDetails = () => {
                   </span>
                   <span>
                     <p className="text-black font-semibold">
-                      {offersData.ranks.netBBPriceChanges}
+                      {ranks.netBBPriceChanges}
                     </p>
                     <p>Net BB Price Changes</p>
                   </span>
@@ -663,7 +695,7 @@ const ProductDetails = () => {
 
                 <div className="text-black text-xs bg-[#E7EBFE] rounded-full px-1 flex items-center gap-1">
                   <BsArrowUp className="text-primary size-3" />{" "}
-                  {offersData.ranks.changePercent}
+                  {ranks.changePercent}
                 </div>
               </div>
 
@@ -671,43 +703,43 @@ const ProductDetails = () => {
                 <div className="flex justify-between py-1">
                   <span>Buy Box</span>
                   <span className="font-semibold text-black">
-                    {offersData.ranks.buyBox}
+                    {ranks.buyBox}
                   </span>
                 </div>
                 <div className="flex justify-between py-1">
                   <span>Amazon</span>
                   <span className="font-semibold text-black">
-                    {offersData.ranks.amazon}
+                    {ranks.amazon}
                   </span>
                 </div>
                 <div className="flex justify-between py-1">
                   <span>Lowest FBA</span>
                   <span className="font-semibold text-black">
-                    {offersData.ranks.lowestFBA}
+                    {ranks.lowestFBA}
                   </span>
                 </div>
                 <div className="flex justify-between py-1">
                   <span>Lowest FBM</span>
                   <span className="font-semibold text-black">
-                    {offersData.ranks.lowestFBM}
+                    {ranks.lowestFBM}
                   </span>
                 </div>
                 <div className="flex justify-between py-1">
                   <span>Keepa BSR Drops</span>
                   <span className="font-semibold text-black">
-                    {offersData.ranks.keepaBSRDrops}
+                    {ranks.keepaBSRDrops}
                   </span>
                 </div>
                 <div className="flex justify-between py-1">
                   <span>Estimated Sales</span>
                   <span className="font-semibold text-black">
-                    {offersData.ranks.estimatedSales}
+                    {ranks.estimatedSales}
                   </span>
                 </div>
                 <div className="flex justify-between py-1">
                   <span>Est. Time to Sale</span>
                   <span className="font-semibold text-black">
-                    {offersData.ranks.estTimeToSale}
+                    {ranks.estTimeToSale}
                   </span>
                 </div>
               </div>
@@ -719,7 +751,6 @@ const ProductDetails = () => {
             <div className="p-6 border rounded-lg">
               <h2 className="text-lg font-semibold">Buy Box Analysis</h2>
               <div className="mt-4">
-                {/* Date Picker */}
                 <CustomDatePicker />
               </div>
 
@@ -741,7 +772,7 @@ const ProductDetails = () => {
                         className="size-3 rounded-lg"
                         style={{ backgroundColor: entry.color }}
                       ></span>
-                      {entry.name} &nbsp; -{entry.value}%
+                      {entry.name} &nbsp; - {entry.value}%
                     </li>
                   ))}
                 </ul>
@@ -799,5 +830,30 @@ const ProductDetails = () => {
     </section>
   );
 };
+
+const InfoCard = ({
+  icon,
+  title,
+  value,
+  bgColor,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  value: string | number;
+  bgColor: string;
+}) => (
+  <div className="flex flex-col sm:flex-row gap-2 sm:items-center">
+    <span
+      className="size-12 rounded-lg flex items-center justify-center"
+      style={{ backgroundColor: bgColor }}
+    >
+      {icon}
+    </span>
+    <span className="text-black text-sm">
+      <p>{title}</p>
+      <p className="text-xl font-semibold">{value}</p>
+    </span>
+  </div>
+);
 
 export default ProductDetails;
