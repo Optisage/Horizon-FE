@@ -16,20 +16,22 @@ export const productsApi = createApi({
     }),
 
     getItem: builder.query({
-      query: ({ marketplaceId, itemAsin }) => ({
-        url: "catalog/products",
-        method: "GET",
-        params: { marketplaceId, asin: itemAsin }, 
-      }),
+      query: ({ marketplaceId, itemAsin }) => {
+        // console.log("Fetching item with params:", { marketplaceId, itemAsin });
+        return {
+          url: "catalog/products",
+          method: "GET",
+          params: { marketplaceId, itemAsin },
+        };
+      },
     }),
 
     getRankingsAndPrices: builder.query({
-      query: ({ marketplaceId, itemAsin }) => ({
+      query: ({ marketplaceId, itemAsin, period = "current" }) => ({
         url: "catalog/products/rankings",
         method: "GET",
-        params: { marketplaceId, asin: itemAsin },
+        params: { marketplaceId, asin: itemAsin, period },
       }),
-      // https://api.optisage.test/api/catalog/products/rankings?marketplaceId=ATVPDKIKX0DER&asin=B00V5DG6IQ
     }),
 
     getBuyboxInfo: builder.query({
@@ -42,10 +44,19 @@ export const productsApi = createApi({
 
     getProductFees: builder.query({
       query: ({ marketplaceId, itemAsin }) => ({
-        url: `catalog/products/fees/${itemAsin}`, 
+        url: `catalog/products/fees/${itemAsin}`,
         method: "GET",
-        params: { marketplaceId }, 
+        params: { marketplaceId, asin: itemAsin },
         // https://api.optisage.test/api/catalog/products/fees/:asin
+      }),
+    }),
+
+    calculateProfitablility: builder.mutation({
+      query: ({ body }) => ({
+        url: "catalog/products/profitability",
+        method: "POST",
+        body,
+        // https://api-staging.optisage.ai/api/catalog/products/profitability
       }),
     }),
 
@@ -53,11 +64,11 @@ export const productsApi = createApi({
       query: ({ marketplaceId, itemAsin, startDate, endDate }) => ({
         url: "catalog/products/sales-statistics",
         method: "GET",
-        params: { 
-          marketplaceId, 
-          asin: itemAsin, 
-          startDate, 
-          endDate 
+        params: {
+          marketplaceId,
+          asin: itemAsin,
+          startDate,
+          endDate,
         },
         // https://api.optisage.test/api/catalog/products/sales-statistics?asin=B07N4M94X4&marketplaceId=ATVPDKIKX0DER&startDate=2019-08-01T00:00-07:00&endDate=2018-08-03T00:00-07:00
       }),
@@ -72,12 +83,13 @@ export const productsApi = createApi({
   }),
 });
 
-export const { 
-  useSearchItemsQuery, 
-  useFetchMarketplacesQuery, 
+export const {
+  useSearchItemsQuery,
+  useFetchMarketplacesQuery,
   useGetItemQuery,
   useGetRankingsAndPricesQuery,
   useGetBuyboxInfoQuery,
   useGetProductFeesQuery,
-  useGetOrderMetricsQuery
+  useCalculateProfitablilityMutation,
+  useGetOrderMetricsQuery,
 } = productsApi;
