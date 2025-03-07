@@ -24,7 +24,7 @@ const Login: React.FC = () => {
     try {
       const response = await login(values).unwrap();
       messageApi.success("Login Successful");
-      router.push("/dashboard");
+      router.push("/connect-amazon");
       console.log(response)
     } catch (error) {
       messageApi.error("Login Failed");
