@@ -15,7 +15,6 @@ interface PricingPlan {
 }
 
 const Subscriptions = () => {
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [isMonthly, setIsMonthly] = useState(true);
   const [pricingData, setPricingData] = useState<PricingPlan[]>([]);
 

@@ -85,6 +85,7 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
       itemAsin: asin,
     });
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { data: rankingsData, isLoading: isLoadingRankings } =
     useGetRankingsAndPricesQuery({
       marketplaceId,
