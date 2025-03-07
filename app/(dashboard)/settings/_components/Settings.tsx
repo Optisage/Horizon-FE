@@ -18,9 +18,7 @@ const Settings = () => {
   useEffect(() => {
     getSettings({});
   }, [getSettings]);
-  console.log(settingsData);
-
-
+ 
 
   return (
     <section className="flex flex-col gap-8 min-h-[50dvh] md:min-h-[80dvh]">
