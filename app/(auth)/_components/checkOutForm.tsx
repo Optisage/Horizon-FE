@@ -87,10 +87,17 @@ const SubscriptionCheckoutForm = () => {
       setMessage("Subscription successful! Thank you.");
       showModal();
     } catch (err: unknown) {
-      setMessage(
-        (err as { message?: string  })?.message ||
-          "An unexpected error occurred. Please try again."
-      );
+      // Handle API error response
+      if (typeof err === "object" && err !== null && "data" in err) {
+        const errorData = (err as { data?: any }).data;
+        if (errorData?.errors?.email) {
+          setMessage(errorData.errors.email[0]); // Display "The email has already been taken."
+        } else {
+          setMessage(errorData?.message || "An unexpected error occurred.");
+        }
+      } else {
+        setMessage("An unexpected error occurred. Please try again.");
+      }
     } finally {
       setLoading(false);
     }
