@@ -76,6 +76,7 @@ const Seller = () => {
                   width={80}
                   height={80}
                   quality={90}
+                  unoptimized
                 />
 
                 <div className="flex flex-col gap-4">
@@ -224,6 +225,7 @@ const Seller = () => {
                       height={64}
                       quality={90}
                       priority
+                      unoptimized
                     />
                     <div className="flex flex-col gap-1 text-[#09090B]">
                       <p
