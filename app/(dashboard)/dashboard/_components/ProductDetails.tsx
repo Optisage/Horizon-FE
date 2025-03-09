@@ -178,6 +178,7 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
       price: `${offer.currency}${offer.listing_price.toFixed(2)}`,
       buyboxShare: `${offer.weight_percentage}%`,
       leader: offer.is_buybox_winner,
+      seller_id: offer.seller_id
     })),
   };
 
@@ -592,7 +593,7 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
                         <td className="p-3">{offer.id}</td>
                         <td className="p-3">
                           <div
-                            onClick={() => router.push("/seller")}
+                            onClick={() => router.push(`/seller/${offer.seller_id}`)}
                             className="cursor-pointer"
                           >
                             {offer.seller}
