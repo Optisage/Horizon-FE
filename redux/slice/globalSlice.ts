@@ -1,11 +1,13 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 
-interface LoadingState {
+interface globalState {
   subScriptionId: any;
+  marketplaceId: string
 }
 
-const initialState: LoadingState = {
-    subScriptionId: null
+const initialState: globalState = {
+    subScriptionId: null,
+    marketplaceId: ""
 };
 
 const globalSlice = createSlice({
@@ -16,9 +18,15 @@ const globalSlice = createSlice({
         console.log("Dispatching setSubScriptionId with payload:", action.payload);
       state.subScriptionId = action.payload; // Set loading state
     },
+    setMarketPlaceId: (state, action: PayloadAction<string>)=>{
+      state.marketplaceId = action.payload;
+    }
    
   },
 });
 
-export const { setSubScriptionId } = globalSlice.actions;
+export const {
+   setSubScriptionId ,
+   setMarketPlaceId
+  } = globalSlice.actions;
 export default globalSlice.reducer;

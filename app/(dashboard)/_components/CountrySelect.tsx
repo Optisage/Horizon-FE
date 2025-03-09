@@ -1,21 +1,55 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import Image from "next/image";
-import React, { useState } from "react";
-import { BiChevronDown } from "react-icons/bi";
+import { useLazyFetchMarketplacesQuery } from "@/redux/api/productsApi";
+import { useDispatch } from "react-redux";
 
-const countries = [
-  { code: "", name: "Switch Marketplace Country", flag: "" },
-  { code: "US", name: "United States", flag: "us" },
-  { code: "CA", name: "Canada", flag: "ca" },
-  { code: "GB", name: "United Kingdom", flag: "gb" },
-  { code: "AU", name: "Australia", flag: "au" },
-  { code: "DE", name: "Germany", flag: "de" },
-];
+import Image from "next/image";
+import React, { useEffect, useState } from "react";
+import { BiChevronDown } from "react-icons/bi";
+import { setMarketPlaceId } from "@/redux/slice/globalSlice";
 
 const CountrySelect = () => {
-  const [selectedCountry, setSelectedCountry] = useState(countries[0]);
+  const dispatch = useDispatch();
+  const [selectedCountry, setSelectedCountry] = useState({
+    code: "",
+    name: "Switch Marketplace Country",
+    flag: "",
+    marketplaceId: "",
+  });
+
   const [isOpen, setIsOpen] = useState(false);
+  const [marketPlace, { data }] = useLazyFetchMarketplacesQuery();
+  const [countries, setCountries] = useState([
+    { code: "", name: "Switch Marketplace Country", flag: "", marketplaceId: "" },
+  ]);
+
+  useEffect(() => {
+    marketPlace({});
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    if (data) {
+      const formattedCountries = data?.data?.map((item: any) => ({
+        code: item.countryCode,
+        name: item.country,
+        flag: item.countryCode.toLowerCase(),
+        marketplaceId: item.marketplaceId, // Store marketplaceId
+      }));
+
+      setCountries([
+        { code: "", name: "Switch Marketplace Country", flag: "", marketplaceId: "" },
+        ...formattedCountries,
+      ]);
+    }
+  }, [data]);
+
+  const handleSelect = (country: any) => {
+    setSelectedCountry(country);
+    dispatch(setMarketPlaceId(country.marketplaceId)); // Dispatch marketplaceId to Redux
+    setIsOpen(false);
+  };
 
   return (
     <div className="relative inline-block w-64">
@@ -23,7 +57,7 @@ const CountrySelect = () => {
         onClick={() => setIsOpen(!isOpen)}
         className="flex items-center gap-2 w-full p-3 border rounded-full bg-[#F3F5F7]"
       >
-        {selectedCountry.flag.length === 2 ? (
+        {selectedCountry.flag ? (
           <Image
             src={`https://flagcdn.com/w40/${selectedCountry.flag}.png`}
             alt={selectedCountry.name}
@@ -35,9 +69,7 @@ const CountrySelect = () => {
             unoptimized
           />
         ) : (
-          <span className="w-6 h-4 flex items-center justify-center text-lg">
-            🌍
-          </span>
+          <span className="w-6 h-4 flex items-center justify-center text-lg">🌍</span>
         )}
         <span className="flex-1 flex justify-start text-xs font-medium text-[#171717]">
           {selectedCountry.name}
@@ -50,13 +82,10 @@ const CountrySelect = () => {
           {countries.map((country) => (
             <li
               key={country.code}
-              onClick={() => {
-                setSelectedCountry(country);
-                setIsOpen(false);
-              }}
+              onClick={() => handleSelect(country)}
               className="flex items-center p-2 px-3 hover:bg-gray-100 cursor-pointer"
             >
-              {country.flag.length === 2 ? (
+              {country.flag ? (
                 <Image
                   src={`https://flagcdn.com/w40/${country.flag}.png`}
                   alt={country.name}
@@ -68,9 +97,7 @@ const CountrySelect = () => {
                   unoptimized
                 />
               ) : (
-                <span className="w-6 h-4 flex items-center justify-center text-lg">
-                  🌍
-                </span>
+                <span className="w-6 h-4 flex items-center justify-center text-lg">🌍</span>
               )}
               <span className="text-sm ml-2">{country.name}</span>
             </li>

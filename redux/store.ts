@@ -9,6 +9,7 @@ import storage from "redux-persist/lib/storage";
 import { userApi } from "./api/user";
 import { sellerApi } from "./api/sellerApi";
 
+
 const rootReducer = combineReducers({
   api: authReducer,
   global: globalReducer,
@@ -17,6 +18,7 @@ const rootReducer = combineReducers({
   [subscriptionApi.reducerPath]: subscriptionApi.reducer,
   [productsApi.reducerPath]: productsApi.reducer,
   [sellerApi.reducerPath]: sellerApi.reducer,
+
 });
 
 const persistConfig = {
@@ -38,6 +40,7 @@ export const store = configureStore({
       userApi.middleware,
       productsApi.middleware,
       sellerApi.middleware,
+     
     ]),
 });
 
