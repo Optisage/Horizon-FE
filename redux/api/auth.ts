@@ -80,6 +80,13 @@ export const authApi = createApi({
         method: "GET",
       }),
     }),
+    amazonAuth: builder.query({
+      query: (data) => ({
+        url: "amazon/exchange-token",
+        method: "POST",
+        body:data
+      }),
+    }),
     getPricing: builder.query<any, {}>({
       query: () => ({
         url: "pricing",
@@ -102,4 +109,5 @@ export const {
   useLazyGetPricingQuery,
   useSetPasswordMutation,
   useResetPasswordMutation,
+  useLazyAmazonAuthQuery
 } = authApi;

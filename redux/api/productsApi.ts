@@ -86,6 +86,7 @@ export const productsApi = createApi({
 export const {
   useSearchItemsQuery,
   useFetchMarketplacesQuery,
+  useLazyFetchMarketplacesQuery,
   useGetItemQuery,
   useGetRankingsAndPricesQuery,
   useGetBuyboxInfoQuery,

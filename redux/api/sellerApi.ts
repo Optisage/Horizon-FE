@@ -7,19 +7,19 @@ export const sellerApi = createApi({
   refetchOnReconnect: true,
   refetchOnMountOrArgChange: 10,
   baseQuery: baseQueryForAuth,
-  tagTypes: ["Profile"],
+  tagTypes: [""],
   endpoints: (builder) => ({
 
    
     getSellerDetails: builder.query({
-      query: () => ({
-        url: `sellers/A3DJR8M9Y3OUPG`,
+      query: (seller_id) => ({
+        url: `sellers/${seller_id}`,
         method: "GET",
       }),
     }),
     getSellerProducts: builder.query({
-      query: () => ({
-        url: `catalog?marketplaceId=ATVPDKIKX0DER&sellerId=A3DJR8M9Y3OUPG`,
+      query: ({marketplaceId,sellerId}) => ({
+        url: `catalog?marketplaceId=${marketplaceId}&sellerId=${sellerId}`,
         method: "GET",
       }),
     }),

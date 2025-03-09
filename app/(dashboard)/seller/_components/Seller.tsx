@@ -2,7 +2,7 @@
 
 import { CustomPagination } from "../../_components";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 
 // import SalesStats from "../../dashboard/_components/SalesStats";
 import { RiAttachment2 } from "react-icons/ri";
@@ -10,7 +10,8 @@ import {
   useLazyGetSellerDetailsQuery,
   useLazyGetSellerProductsQuery,
 } from "@/redux/api/sellerApi";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { useAppSelector } from "@/redux/hooks";
 
 // Define the Product interface
 interface Product {
@@ -42,17 +43,22 @@ interface Category {
 
 const Seller = () => {
   const router = useRouter();
-
+  const params = useParams();
+  const sellerId = params?.seller_id;
+  const { marketplaceId } = useAppSelector((state) => state?.global);
   const [getSellerDetails, { data, isLoading: detailsLoading }] =
     useLazyGetSellerDetailsQuery();
   const [getSellerProducts, { data: productsData, isLoading: productLoading }] =
     useLazyGetSellerProductsQuery();
+    const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    getSellerDetails({});
-    getSellerProducts({});
-
-  }, [getSellerProducts, getSellerDetails]);
+    useEffect(() => {
+      setLoading(true); // Start loading
+      Promise.all([
+        getSellerDetails(sellerId),
+        getSellerProducts({ marketplaceId: marketplaceId, sellerId: sellerId }),
+      ]).finally(() => setLoading(false)); // Stop loading when both fetches complete
+    }, [getSellerProducts, getSellerDetails, sellerId, marketplaceId]);
 
   // Extract seller details safely
   const seller = data?.data;
@@ -60,7 +66,7 @@ const Seller = () => {
 
   return (
     <section className="flex flex-col gap-8 min-h-[50dvh] md:min-h-[80dvh]">
-      {detailsLoading && productLoading ? (
+      {detailsLoading && productLoading || loading ? (
         <div className=" mx-auto animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-primary"></div>
       ) : (
         <>
@@ -178,22 +184,24 @@ const Seller = () => {
                 <span className="">Count</span>
               </div>
               <div className="">
-                {seller?.top_categories?.map((category: Category, index:number) => (
-                  <div
-                    key={index}
-                    className="grid grid-cols-[3fr_2fr] text-center p-3 hover:bg-gray-50"
-                  >
-                    <a
-                      href={category.amazon_link}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="underline"
+                {seller?.top_categories?.map(
+                  (category: Category, index: number) => (
+                    <div
+                      key={index}
+                      className="grid grid-cols-[3fr_2fr] text-center p-3 hover:bg-gray-50"
                     >
-                      {category.category_name}
-                    </a>
-                    <p>{category.count}</p>
-                  </div>
-                ))}
+                      <a
+                        href={category.amazon_link}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="underline"
+                      >
+                        {category.category_name}
+                      </a>
+                      <p>{category.count}</p>
+                    </div>
+                  )
+                )}
               </div>
             </div>
           </div>
