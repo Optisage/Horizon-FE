@@ -16,19 +16,21 @@ const Pricing = () => {
   const [getPricing, { data, isLoading }] = useLazyGetPricingQuery();
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
   const [showModal, setShowModal] = useState(false);
+  const [refCode, setRefCode] = useState<string | null>(null);
 
   // Get the ref parameter from URL
-  const refCode = searchParams.get("ref");
   useEffect(() => {
     getPricing({});
-
-    
-    if (refCode) {
-      // Store the referral code in sessionStorage
-      sessionStorage.setItem("referralCode", refCode);
-      console.log("Referral code stored:", refCode);
+  }, [getPricing]); // Only runs once when the component mounts
+  
+  useEffect(() => {
+    const ref = searchParams.get("ref");
+    if (ref) {
+      setRefCode(ref);
+      sessionStorage.setItem("referralCode", ref);
+      console.log("Referral code stored:", ref);
     }
-  }, [getPricing, searchParams, refCode]);
+  }, [searchParams]);
 
   interface PricingData {
     id: string;
