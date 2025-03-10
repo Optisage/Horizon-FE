@@ -2,14 +2,15 @@
 
 import { useLazyGetPricingQuery } from "@/redux/api/auth";
 import { setSubScriptionId } from "@/redux/slice/globalSlice";
-import { useRouter, useSearchParams } from "next/navigation";
+import Link from "next/link";
+import {  useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { FaCheckCircle } from "react-icons/fa";
 import { useDispatch } from "react-redux";
 
 const Pricing = () => {
   const dispatch = useDispatch();
-  const router = useRouter();
+  //const router = useRouter();
   const searchParams = useSearchParams(); // Add this hook
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [getPricing, { data, isLoading }] = useLazyGetPricingQuery();
@@ -75,7 +76,7 @@ const Pricing = () => {
   const confirmSubscription = () => {
     if (selectedPlan) {
       dispatch(setSubScriptionId(parseInt(selectedPlan)));
-      router.push("/checkout");
+      //router.push("/checkout");
     }
   };
 
@@ -114,12 +115,14 @@ const Pricing = () => {
                 </li>
               ))}
             </ul>
+            
             <button
               className="mt-4 bg-green-500 text-white px-4 py-2 rounded-lg w-full"
               onClick={() => handleGetStarted(item.key)}
             >
               Start Free Trial
             </button>
+            
           </div>
         ))}
       </div>
@@ -140,12 +143,14 @@ const Pricing = () => {
               >
                 Cancel
               </button>
+              <Link href="/checkout" target="_top">
               <button
                 className="px-4 py-2 bg-green-500 text-white rounded-lg"
                 onClick={confirmSubscription}
               >
                 Continue to Checkout
               </button>
+              </Link>
             </div>
           </div>
         </div>
