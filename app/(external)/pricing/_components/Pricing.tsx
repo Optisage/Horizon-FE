@@ -16,6 +16,7 @@ const Pricing = () => {
   const [getPricing, { data, isLoading }] = useLazyGetPricingQuery();
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
   const [showModal, setShowModal] = useState(false);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [refCode, setRefCode] = useState<string | null>(null);
 
   // Get the ref parameter from URL
@@ -84,7 +85,7 @@ const Pricing = () => {
   };
 
   return (
-    <section className="py-12 px-4 bg-gray-100 h-dvh flex flex-col gap-12">
+    <section className="py-12 px-4 bg-white h-dvh flex flex-col gap-12">
       <div className="max-w-4xl mx-auto text-center">
         <h2 className="text-3xl font-bold">Our Pricing</h2>
         <p className="text-gray-600 mt-2">
@@ -146,7 +147,7 @@ const Pricing = () => {
               >
                 Cancel
               </button>
-              <Link href={`/checkout?ref=${refCode}`} target="_top">
+              <Link href={`/checkout`} target="_top">
               <button
                 className="px-4 py-2 bg-green-500 text-white rounded-lg"
                 onClick={confirmSubscription}
