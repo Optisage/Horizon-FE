@@ -12,8 +12,8 @@ export const sellerApi = createApi({
 
    
     getSellerDetails: builder.query({
-      query: (seller_id) => ({
-        url: `sellers/${seller_id}`,
+      query: ({seller_id,id}) => ({
+        url: `sellers/${seller_id}?marketplaceId=${id}`,
         method: "GET",
       }),
     }),
