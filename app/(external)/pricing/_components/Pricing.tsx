@@ -17,17 +17,18 @@ const Pricing = () => {
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
   const [showModal, setShowModal] = useState(false);
 
+  // Get the ref parameter from URL
+  const refCode = searchParams.get("ref");
   useEffect(() => {
     getPricing({});
 
-    // Get the ref parameter from URL
-    const refCode = searchParams.get("ref");
+    
     if (refCode) {
       // Store the referral code in sessionStorage
       sessionStorage.setItem("referralCode", refCode);
       console.log("Referral code stored:", refCode);
     }
-  }, [getPricing, searchParams]);
+  }, [getPricing, searchParams, refCode]);
 
   interface PricingData {
     id: string;
@@ -143,7 +144,7 @@ const Pricing = () => {
               >
                 Cancel
               </button>
-              <Link href="/checkout" target="_top">
+              <Link href={`/checkout?ref=${refCode}`} target="_top">
               <button
                 className="px-4 py-2 bg-green-500 text-white rounded-lg"
                 onClick={confirmSubscription}
