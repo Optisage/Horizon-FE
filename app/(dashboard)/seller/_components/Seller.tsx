@@ -44,7 +44,7 @@ interface Category {
 const Seller = () => {
   const router = useRouter();
   const params = useParams();
-  const sellerId = params?.seller_id;
+  const sellerId = params?.sellerId;
   const { marketplaceId } = useAppSelector((state) => state?.global);
   const [getSellerDetails, { data, isLoading: detailsLoading }] =
     useLazyGetSellerDetailsQuery();
@@ -55,7 +55,7 @@ const Seller = () => {
     useEffect(() => {
       setLoading(true); // Start loading
       Promise.all([
-        getSellerDetails(sellerId),
+        getSellerDetails({seller_id:sellerId, id:marketplaceId}),
         getSellerProducts({ marketplaceId: marketplaceId, sellerId: sellerId }),
       ]).finally(() => setLoading(false)); // Stop loading when both fetches complete
     }, [getSellerProducts, getSellerDetails, sellerId, marketplaceId]);
@@ -224,7 +224,7 @@ const Seller = () => {
                   >
                     <Image
                       onClick={() =>
-                        router.push(`/dashboard/product/${product.id}`)
+                        router.push(`/dashboard/product/${basic_details?.asin}`)
                       }
                       src={basic_details.product_image}
                       alt={basic_details.product_name}
@@ -238,7 +238,7 @@ const Seller = () => {
                     <div className="flex flex-col gap-1 text-[#09090B]">
                       <p
                         onClick={() =>
-                          router.push(`/dashboard/product/${product.id}`)
+                          router.push(`/dashboard/product/${basic_details?.asin}`)
                         }
                         className="font-bold hover:underline duration-100"
                       >

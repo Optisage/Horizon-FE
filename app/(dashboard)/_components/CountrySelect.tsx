@@ -8,6 +8,7 @@ import Image from "next/image";
 import React, { useEffect, useState } from "react";
 import { BiChevronDown } from "react-icons/bi";
 import { setMarketPlaceId } from "@/redux/slice/globalSlice";
+import { useAppSelector } from "@/redux/hooks";
 
 const CountrySelect = () => {
   const dispatch = useDispatch();
@@ -23,6 +24,7 @@ const CountrySelect = () => {
   const [countries, setCountries] = useState([
     { code: "", name: "Switch Marketplace Country", flag: "", marketplaceId: "" },
   ]);
+  const { marketplaceId } = useAppSelector((state) => state?.global);
 
   useEffect(() => {
     marketPlace({});
@@ -44,6 +46,18 @@ const CountrySelect = () => {
       ]);
     }
   }, [data]);
+   // Automatically update selectedCountry when marketplaceId changes
+   useEffect(() => {
+    if (marketplaceId && countries.length > 1) {
+      const matchedCountry = countries.find(
+        (country) => country.marketplaceId === String(marketplaceId)
+      );
+
+      if (matchedCountry) {
+        setSelectedCountry(matchedCountry);
+      }
+    }
+  }, [marketplaceId, countries]);
 
   const handleSelect = (country: any) => {
     setSelectedCountry(country);

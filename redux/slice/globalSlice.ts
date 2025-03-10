@@ -2,12 +2,12 @@ import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 
 interface globalState {
   subScriptionId: any;
-  marketplaceId: string
+  marketplaceId: number
 }
 
 const initialState: globalState = {
     subScriptionId: null,
-    marketplaceId: ""
+    marketplaceId: 1
 };
 
 const globalSlice = createSlice({
@@ -18,7 +18,7 @@ const globalSlice = createSlice({
         console.log("Dispatching setSubScriptionId with payload:", action.payload);
       state.subScriptionId = action.payload; // Set loading state
     },
-    setMarketPlaceId: (state, action: PayloadAction<string>)=>{
+    setMarketPlaceId: (state, action: PayloadAction<number>)=>{
       state.marketplaceId = action.payload;
     }
    
