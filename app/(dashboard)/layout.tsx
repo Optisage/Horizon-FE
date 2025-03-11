@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { message, Modal } from "antd";
 import { useDispatch } from "react-redux";
 import { setUser } from "@/redux/slice/authSlice";
-import { useAppSelector } from "@/redux/hooks";
+
 import { GoAlert } from "react-icons/go";
 import { useRouter } from "next/navigation";
 import Cookies from "js-cookie";
@@ -18,7 +18,6 @@ export default function DashboardLayout({
   const [getProfile, {  }] = useLazyGetProfileQuery();
   const [messageApi, contextHolder] = message.useMessage();
   const dispatch = useDispatch();
-  const { is_subscribed, is_trial_expired } = useAppSelector((state) => state?.api?.user);
   const router = useRouter();
 // State to manage modal visibility
 const [isModalVisible, setIsModalVisible] = useState(false);
@@ -34,15 +33,17 @@ const handleLogout = () => {
       .unwrap()
       .then((res) => {
         dispatch(setUser(res));
-        if (!is_subscribed && is_trial_expired) {
+         
+        if (!res?.data?.is_subscribed && res?.data?.is_trial_expired) {
           setIsModalVisible(true);
         }
+          
       })
       .catch(() => {
         messageApi.error("failed to get Profile");
       });
       /* eslint-disable-next-line react-hooks/exhaustive-deps */
-  }, [is_subscribed, is_trial_expired, setIsModalVisible]);
+  }, [ setIsModalVisible]);
   return (
     <div className="drawer lg:drawer-open text-black mx-auto max-w-screen-2xl 2xl:border">
       {contextHolder}
