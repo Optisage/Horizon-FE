@@ -6,10 +6,17 @@ import SubscriptionHistoryTable from "./SubscriptionHistoryTable";
 import { Heading } from "@/app/(dashboard)/_components";
 import { useLazyGetSubscriptionsQuery } from "@/redux/api/user";
 import { useAppSelector } from "@/redux/hooks";
-import { useLazyGetPricingQuery, useLazyGetProfileQuery } from "@/redux/api/auth";
+import {
+  useLazyGetPricingQuery,
+  useLazyGetProfileQuery,
+} from "@/redux/api/auth";
 import { Button, message, Modal } from "antd";
 import { GoAlert } from "react-icons/go";
-import { useChangeSubscriptionMutation } from "@/redux/api/subscriptionApi";
+import {
+  useCancelSubscriptionMutation,
+  useChangeSubscriptionMutation,
+} from "@/redux/api/subscriptionApi";
+import useCurrencyConverter from "@/utils/currencyConverter";
 
 interface PricingPlan {
   id: string;
@@ -21,6 +28,7 @@ const Subscriptions = () => {
   const [isMonthly, setIsMonthly] = useState(true);
   const [pricingData, setPricingData] = useState<PricingPlan[]>([]);
   const [isModalVisible, setIsModalVisible] = useState(false);
+  const [isCancelVisible, setIsCancelVisible] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<PricingPlan | null>(null);
   const monthlyPrice = 35;
   const annualPrice = monthlyPrice * 12;
@@ -29,12 +37,19 @@ const Subscriptions = () => {
     useLazyGetSubscriptionsQuery();
   const { subscription_type } =
     useAppSelector((state) => state.api?.user) || {};
+  const { currencyCode, currencySymbol } =
+    useAppSelector((state) => state.global) || {};
 
   const [getPricing, { data, isLoading: isLoadingPricing }] =
     useLazyGetPricingQuery();
-    const [changeSubscription, {isLoading:changeLoading}] = useChangeSubscriptionMutation();
-    const [getProfile] =useLazyGetProfileQuery()
-    const [messageApi, contextHolder] = message.useMessage();
+  const [changeSubscription, { isLoading: changeLoading }] =
+    useChangeSubscriptionMutation();
+  const [getProfile] = useLazyGetProfileQuery();
+  const [messageApi, contextHolder] = message.useMessage();
+  const [cancelSubscription, { isLoading: cancelLoading }] =
+    useCancelSubscriptionMutation();
+
+  const { convertPrice } = useCurrencyConverter(currencyCode);
 
   useEffect(() => {
     getSubscription({});
@@ -46,26 +61,47 @@ const Subscriptions = () => {
     /* eslint-disable-next-line react-hooks/exhaustive-deps */
   }, []);
 
-  const handleSubscriptionChange=(planId:string)=>{
-    changeSubscription({pricing_id:planId}).unwrap()
-    .then(()=>{
-      messageApi.success("Changed Subscription Successfully")
-      getProfile({});
-      getSubscription({});
-      setIsModalVisible(false)
+  const handleCancelSubscription = () => {
+    cancelSubscription({})
+    .unwrap()
+    .then(() => {
+      messageApi.success("Cancelled Subscription Successfully");
+      setIsCancelVisible(false);
     })
-    .catch(()=>{
-      messageApi.error("Failed to change Subscription")
-    })
-  }
+    .catch(() => {
+      messageApi.error("Failed to Cancel Subscription");
+    });
+  };
+
+  const handleSubscriptionChange = (planId: string) => {
+    changeSubscription({ pricing_id: planId })
+      .unwrap()
+      .then(() => {
+        messageApi.success("Changed Subscription Successfully");
+        getProfile({});
+        getSubscription({});
+        setIsModalVisible(false);
+      })
+      .catch(() => {
+        messageApi.error("Failed to change Subscription");
+      });
+  };
 
   return (
     <section className="flex flex-col gap-8 min-h-[50dvh] md:min-h-[80dvh]">
       {contextHolder}
-      <Heading
-        title="Subscription Plan"
-        subtitle={`You are currently on the ${subscription_type} Plan.`}
-      />
+      <div className=" flex items-center justify-between">
+        <Heading
+          title="Subscription Plan"
+          subtitle={`You are currently on the ${subscription_type} Plan.`}
+        />
+        <button
+          className=" bg-red-500 hover:bg-red-500/90 text-white p-2 rounded-lg"
+          onClick={() => setIsCancelVisible(true)}
+        >
+          Cancel Subscription
+        </button>
+      </div>
 
       {/* plans */}
       <div className="flex flex-col gap-12">
@@ -110,9 +146,13 @@ const Subscriptions = () => {
               <span className="flex flex-col gap-5">
                 <h3 className="capitalize">{plan.name}</h3>
                 <p>
-                  <span className="text-xl sm:text-2xl font-semibold">$</span>
+                  <span className="text-xl sm:text-2xl font-semibold">
+                    {currencySymbol}
+                  </span>
                   <span className="text-[#01011D] text-xl sm:text-2xl font-semibold">
-                    {isMonthly ? plan.price : parseFloat(plan.price) * 12}
+                    {isMonthly
+                      ? convertPrice(plan.price)
+                      : convertPrice(parseFloat(plan.price) * 12)}
                   </span>{" "}
                   &nbsp;
                   <span>/</span> {isMonthly ? "per month" : "per year"}
@@ -130,10 +170,12 @@ const Subscriptions = () => {
                     ? "border-transparent text-white bg-primary hover:bg-primary-hover"
                     : "border-[#EDEDEE] hover:bg-gray-50"
                 }`}
+                /** 
                 onClick={() => {
                   setIsModalVisible(true);
                   setSelectedPlan(plan);
                 }}
+                  */
               >
                 Switch to {plan.name}
               </button>
@@ -153,9 +195,14 @@ const Subscriptions = () => {
           </p>
         </span>
 
-        <SubscriptionHistoryTable tableData={subData} loading={isLoading} />
+        <SubscriptionHistoryTable
+          tableData={subData}
+          loading={isLoading}
+          convertPrice={convertPrice}
+        />
       </div>
 
+      {/** 
       <Modal
         title="Change Subscription"
         open={isModalVisible}
@@ -193,6 +240,48 @@ const Subscriptions = () => {
             onClick={()=>handleSubscriptionChange(selectedPlan ? selectedPlan.name : "")}
             >
               Switch Subscription Now
+            </Button>
+          </div>
+        </div>
+      </Modal>
+      */}
+
+      <Modal
+        title="Cancel Subscription"
+        open={isCancelVisible}
+        footer={null}
+        maskClosable={false}
+        closable={false}
+        centered={true}
+      >
+        <div className=" space-y-5">
+          <div className=" flex justify-center">
+            <GoAlert size={60} color="orange" />
+          </div>
+
+          <div className=" text-center">
+            <h1 className=" font-semibold">
+              Please be informed that you are about to cancel your active
+              subscription. Your current plan will still be active until its
+              expiry date after which there will be no further charge to your
+              card.
+            </h1>
+          </div>
+          <div className=" grid grid-cols-2 gap-10">
+            <button
+              className="px-4 py-2 bg-gray-300 rounded-lg font-bold !h-[40px]"
+              onClick={() => setIsCancelVisible(false)}
+            >
+              Cancel
+            </button>
+
+            <Button
+              loading={cancelLoading}
+              disabled={cancelLoading}
+              className="px-4 py-2 !bg-green-500 !text-white !rounded-lg !font-bold !h-[40px] border-none"
+              onClick={() => handleCancelSubscription()}
+            >
+              Cancel Subscription Now
             </Button>
           </div>
         </div>

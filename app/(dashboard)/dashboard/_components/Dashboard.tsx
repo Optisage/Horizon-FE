@@ -10,6 +10,7 @@ import {
   useSearchItemsQuery,
   useFetchMarketplacesQuery,
 } from "@/redux/api/productsApi";
+import { useAppSelector } from "@/redux/hooks";
 export interface Product {
   asin: string;
   image?: string;
@@ -76,6 +77,7 @@ const Dashboard = () => {
   const [searchValue, setSearchValue] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const router = useRouter();
+  const { marketplaceId } = useAppSelector((state) => state?.global);
 
   // Debounce input to prevent excessive API calls
   useEffect(() => {
@@ -88,7 +90,7 @@ const Dashboard = () => {
     debouncedSearch
       ? {
           q: debouncedSearch,
-          marketplaceId: "ATVPDKIKX0DER",
+          marketplaceId: marketplaceId,
           // itemAsin: debouncedSearch,
         }
       : undefined,
