@@ -18,6 +18,8 @@ import LogoutModal from "./LogoutModal";
 import { BiChevronRight } from "react-icons/bi";
 import { RiVerifiedBadgeFill } from "react-icons/ri";
 import { useAppSelector } from "@/redux/hooks";
+import { useDispatch } from "react-redux";
+import { logout } from "@/redux/slice/authSlice";
 
 // Sidebar data
 const menuData = [
@@ -42,6 +44,7 @@ const billingMenu = [
 
 const DashSider = () => {
   const pathName = usePathname();
+  const dispatch = useDispatch();
   const [activePath, setActivePath] = useState("");
   const [openModal, setOpenModal] = useState(false);
   const router = useRouter();
@@ -51,6 +54,7 @@ const DashSider = () => {
     // Clear the token cookie
     Cookies.remove("optisage-token");
     router.push("/");
+    dispatch(logout())
   };
 
   useLayoutEffect(() => {

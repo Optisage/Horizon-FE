@@ -6,7 +6,10 @@ import SubscriptionHistoryTable from "./SubscriptionHistoryTable";
 import { Heading } from "@/app/(dashboard)/_components";
 import { useLazyGetSubscriptionsQuery } from "@/redux/api/user";
 import { useAppSelector } from "@/redux/hooks";
-import { useLazyGetPricingQuery } from "@/redux/api/auth";
+import { useLazyGetPricingQuery, useLazyGetProfileQuery } from "@/redux/api/auth";
+import { Button, message, Modal } from "antd";
+import { GoAlert } from "react-icons/go";
+import { useChangeSubscriptionMutation } from "@/redux/api/subscriptionApi";
 
 interface PricingPlan {
   id: string;
@@ -17,7 +20,8 @@ interface PricingPlan {
 const Subscriptions = () => {
   const [isMonthly, setIsMonthly] = useState(true);
   const [pricingData, setPricingData] = useState<PricingPlan[]>([]);
-
+  const [isModalVisible, setIsModalVisible] = useState(false);
+  const [selectedPlan, setSelectedPlan] = useState<PricingPlan | null>(null);
   const monthlyPrice = 35;
   const annualPrice = monthlyPrice * 12;
 
@@ -28,6 +32,9 @@ const Subscriptions = () => {
 
   const [getPricing, { data, isLoading: isLoadingPricing }] =
     useLazyGetPricingQuery();
+    const [changeSubscription, {isLoading:changeLoading}] = useChangeSubscriptionMutation();
+    const [getProfile] =useLazyGetProfileQuery()
+    const [messageApi, contextHolder] = message.useMessage();
 
   useEffect(() => {
     getSubscription({});
@@ -39,8 +46,22 @@ const Subscriptions = () => {
     /* eslint-disable-next-line react-hooks/exhaustive-deps */
   }, []);
 
+  const handleSubscriptionChange=(planId:string)=>{
+    changeSubscription({pricing_id:planId}).unwrap()
+    .then(()=>{
+      messageApi.success("Changed Subscription Successfully")
+      getProfile({});
+      getSubscription({});
+      setIsModalVisible(false)
+    })
+    .catch(()=>{
+      messageApi.error("Failed to change Subscription")
+    })
+  }
+
   return (
     <section className="flex flex-col gap-8 min-h-[50dvh] md:min-h-[80dvh]">
+      {contextHolder}
       <Heading
         title="Subscription Plan"
         subtitle={`You are currently on the ${subscription_type} Plan.`}
@@ -109,10 +130,12 @@ const Subscriptions = () => {
                     ? "border-transparent text-white bg-primary hover:bg-primary-hover"
                     : "border-[#EDEDEE] hover:bg-gray-50"
                 }`}
+                onClick={() => {
+                  setIsModalVisible(true);
+                  setSelectedPlan(plan);
+                }}
               >
-                {plan.name.toLowerCase() === "pro"
-                  ? "Switch to Premium"
-                  : "Switch to Pro"}
+                Switch to {plan.name}
               </button>
             </div>
           ))}
@@ -132,6 +155,48 @@ const Subscriptions = () => {
 
         <SubscriptionHistoryTable tableData={subData} loading={isLoading} />
       </div>
+
+      <Modal
+        title="Change Subscription"
+        open={isModalVisible}
+        footer={null}
+        maskClosable={false}
+        closable={false}
+        centered={true}
+      >
+        <div className=" space-y-5">
+          <div className=" flex justify-center">
+            <GoAlert size={60} color="orange" />
+          </div>
+
+          <div className=" text-center">
+            <h1 className=" font-semibold">
+              Please be informed that you are about to switch your subscription
+              to{" "}
+              <span className=" font-bold">
+                {selectedPlan ? selectedPlan.name : ""} Plan
+              </span>
+            </h1>
+          </div>
+          <div className=" grid grid-cols-2 gap-10">
+            <button
+              className="px-4 py-2 bg-gray-300 rounded-lg font-bold !h-[40px]"
+              onClick={() => setIsModalVisible(false)}
+            >
+              Cancel
+            </button>
+
+            <Button 
+            loading={changeLoading}
+            disabled={changeLoading}
+            className="px-4 py-2 !bg-green-500 !text-white !rounded-lg !font-bold !h-[40px] border-none"
+            onClick={()=>handleSubscriptionChange(selectedPlan ? selectedPlan.name : "")}
+            >
+              Switch Subscription Now
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </section>
   );
 };

@@ -79,6 +79,15 @@ export const authApi = createApi({
         url: "customer/profile",
         method: "GET",
       }),
+      onQueryStarted(_, { dispatch, queryFulfilled }) {
+        queryFulfilled
+          .then((apiResponse) => {
+            dispatch(setUser(apiResponse?.data));
+          })
+          .catch((error) => {
+            console.log(error);
+          });
+      },
     }),
     amazonAuth: builder.query({
       query: (data) => ({
