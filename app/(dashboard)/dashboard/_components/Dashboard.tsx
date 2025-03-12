@@ -1,3 +1,4 @@
+// app/dashboard/page.tsx
 "use client";
 
 import { useState, useEffect } from "react";
@@ -6,10 +7,9 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import UFO from "@/public/assets/svg/ufo.svg";
 import SalesStats from "./SalesStats";
-import {
-  useSearchItemsQuery,
-  useFetchMarketplacesQuery,
-} from "@/redux/api/productsApi";
+import { useSearchItemsQuery } from "@/redux/api/productsApi";
+import { useAppSelector } from "@/redux/hooks";
+
 export interface Product {
   asin: string;
   image?: string;
@@ -75,7 +75,14 @@ export interface Product {
 const Dashboard = () => {
   const [searchValue, setSearchValue] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(6);
+
   const router = useRouter();
+
+  const { marketplaceId } = useAppSelector((state) => state?.global);
+
+  // console.log("marketplaceId: ", marketplaceId);
 
   // Debounce input to prevent excessive API calls
   useEffect(() => {
@@ -88,27 +95,16 @@ const Dashboard = () => {
     debouncedSearch
       ? {
           q: debouncedSearch,
-          marketplaceId: "ATVPDKIKX0DER",
-          // itemAsin: debouncedSearch,
+          marketplaceId: marketplaceId,
+          page: currentPage,
+          perPage: itemsPerPage,
         }
       : undefined,
     { skip: !debouncedSearch }
   );
 
-  const {
-    data: marketPlaces,
-    // error: marketPlacesError,
-    // isLoading: isLoadingMarketPlaces,
-  } = useFetchMarketplacesQuery({});
+  const totalResults = data?.data?.pagination?.number_of_results || 0;
 
-  const marketPlacesData =
-    marketPlaces?.data?.map(
-      (mp: { marketplaceId: string }) => mp.marketplaceId
-    ) || [];
-
-  console.log("market places:", marketPlacesData);
-
-  // Transform API response to match your Product interface
   const products =
     debouncedSearch && data?.data?.items
       ? // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -128,6 +124,7 @@ const Dashboard = () => {
   return (
     <section className="flex flex-col gap-8 min-h-[50dvh] md:min-h-[80dvh]">
       <SearchInput value={searchValue} onChange={setSearchValue} />
+      {/* <h2>Selected Marketplace ID: {marketplaceId || "N/A"}</h2> */}
 
       {isLoading && (
         <div className="text-center text-gray-500 mt-4">Loading...</div>
@@ -209,12 +206,16 @@ const Dashboard = () => {
             ))}
           </div>
 
-          {/* pagination (if needed) */}
-          {/* <CustomPagination
-            nextToken={data?.data?.pagination?.nextToken}
-            previousToken={data?.data?.pagination?.previousToken}
-          /> */}
-          <CustomPagination />
+          <CustomPagination
+            currentPage={currentPage}
+            totalResults={totalResults}
+            itemsPerPage={itemsPerPage}
+            onPageChange={(page) => setCurrentPage(page)}
+            onItemsPerPageChange={(value) => {
+              setItemsPerPage(value);
+              setCurrentPage(1); // Reset to first page on change
+            }}
+          />
         </main>
       )}
     </section>
