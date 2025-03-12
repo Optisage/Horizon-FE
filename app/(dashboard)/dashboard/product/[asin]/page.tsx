@@ -2,16 +2,18 @@
 
 import { useParams } from "next/navigation";
 import ProductDetails from "../../_components/ProductDetails";
+import { useAppSelector } from "@/redux/hooks";
 
 export interface ProductDetailsProps {
   asin: string;
-  marketplaceId: string;
+  marketplaceId: number;
 }
 
 const ProductPage = () => {
   const params = useParams();
   const asin = params?.asin as string;
-  const marketplaceId = "ATVPDKIKX0DER";
+  const { marketplaceId } = useAppSelector((state) => state?.global);
+  //const marketplaceId = "1";
 
   // console.log("Params:", { asin });
   // console.log("Marketplace ID:", marketplaceId);

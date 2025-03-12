@@ -14,16 +14,23 @@ interface BuyingCriteriaProps {
   };
   
 }
+// Default values for the form
+const DEFAULT_BUYING_CRITERIA = {
+  maximum_bsr_percentage: 0,
+  minimum_roi_percentage: 0,
+  minimum_bsr_percentage: 0,
+  minimum_profit_percentage: 0,
+};
 
 const BuyingCriteria = ({ buyingCriteria }: BuyingCriteriaProps)  => {
   const [saveSettings,{isLoading}] = useUpdateSettingsMutation()
-  const [formData, setFormData] = useState(buyingCriteria);
+  const [formData, setFormData] = useState(buyingCriteria || DEFAULT_BUYING_CRITERIA);
   const [messageApi, contextHolder] = message.useMessage();
 
 
   const handleInputChange = (field: keyof typeof buyingCriteria, value: string) => {
     // Remove '$' and spaces, then convert to a number
-    const cleanValue = Number(value.replace(/[$\s]/g, ''));
+    const cleanValue = Number(value.replace(/[$\s/%\s]/g, ''));
   
     // Ensure valid number, default to 0 if NaN
     setFormData(prev => ({
@@ -78,7 +85,7 @@ const BuyingCriteria = ({ buyingCriteria }: BuyingCriteriaProps)  => {
 
         <Input id="mimimum-bsr"
          defaultValue="$0.00" className="px-3 py-2"
-         value={`$ ${formData?.minimum_bsr_percentage.toString()}`}
+         value={`% ${formData?.minimum_bsr_percentage.toString()}`}
          onChange={(e) => handleInputChange('minimum_bsr_percentage', e.target.value)}
           />
       </div>
@@ -98,7 +105,7 @@ const BuyingCriteria = ({ buyingCriteria }: BuyingCriteriaProps)  => {
 
         <Input id="maximum-bsr" 
         defaultValue="$0.00" className="px-3 py-2" 
-        value={`$ ${formData?.maximum_bsr_percentage.toString()}`}
+        value={`% ${formData?.maximum_bsr_percentage.toString()}`}
         onChange={(e) => handleInputChange('maximum_bsr_percentage', e.target.value)}
         />
       </div>

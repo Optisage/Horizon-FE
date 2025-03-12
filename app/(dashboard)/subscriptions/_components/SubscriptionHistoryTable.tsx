@@ -17,7 +17,9 @@ interface SubscriptionHistoryTableProps {
    }
   };
   loading: boolean;
+  convertPrice: (price: string) => string; 
 }
+
 
 interface SubscriptionData {
   key: string;
@@ -27,21 +29,29 @@ interface SubscriptionData {
   amount: string;
 }
 
-const SubscriptionHistoryTable: React.FC<SubscriptionHistoryTableProps> = ({ tableData, loading }) => {
+const SubscriptionHistoryTable: React.FC<SubscriptionHistoryTableProps> = ({ tableData, loading,convertPrice }) => {
   const [data, setData] = useState<SubscriptionData[]>([]);
+  const stripCurrencySymbols = (amount: string) => {
+    return amount.replace(/[^0-9.-]/g, ""); // Remove all non-numeric characters except `.` and `-`
+  };
 
   useEffect(() => {
     if (tableData?.data) {
-      const transformedData = tableData?.data?.data?.map((item) => ({
-        key: item.id?.toString(),
-        invoice: `Invoice ${String(item.id).padStart(4, "0")}`,
-        date: item.date,
-        plan: item.plan,
-        amount: item.amount,
-      }));
+      const transformedData = tableData?.data?.data?.map((item) => {
+        const strippedAmount = stripCurrencySymbols(item.amount); // Strip currency symbols
+        const convertedAmount = strippedAmount ? convertPrice(strippedAmount) : "0.00"; // Convert the stripped amount
+
+        return {
+          key: item.id?.toString(),
+          invoice: `Invoice ${String(item.id).padStart(4, "0")}`,
+          date: item.date,
+          plan: item.plan,
+          amount: convertedAmount, // Use the converted amount
+        };
+      });
       setData(transformedData);
     }
-  }, [tableData]);
+  }, [tableData, convertPrice]);
 
   const columns = [
     {
