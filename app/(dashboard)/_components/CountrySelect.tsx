@@ -16,13 +16,13 @@ const CountrySelect = () => {
     code: "",
     name: "Switch Marketplace Country",
     flag: "",
-    marketplaceId: "",
+    marketplaceId: 0,
   });
 
   const [isOpen, setIsOpen] = useState(false);
   const [marketPlace, { data }] = useLazyFetchMarketplacesQuery();
   const [countries, setCountries] = useState([
-    { code: "", name: "Switch Marketplace Country", flag: "", marketplaceId: "" },
+    { code: "", name: "Switch Marketplace Country", flag: "", marketplaceId: 0 },
   ]);
   const { marketplaceId } = useAppSelector((state) => state?.global);
 
@@ -50,7 +50,7 @@ const CountrySelect = () => {
    useEffect(() => {
     if (marketplaceId && countries.length > 1) {
       const matchedCountry = countries.find(
-        (country) => country.marketplaceId === String(marketplaceId)
+        (country) => Number(country.marketplaceId) === marketplaceId
       );
 
       if (matchedCountry) {
