@@ -1,15 +1,17 @@
 "use client";
 
 import { useLazyGetPricingQuery } from "@/redux/api/auth";
-import { setSubScriptionId } from "@/redux/slice/globalSlice";
-import Link from "next/link";
-import {  useSearchParams } from "next/navigation";
+import { useCreateStripeSubscriptionMutation } from "@/redux/api/subscriptionApi";
+//import { setSubScriptionId } from "@/redux/slice/globalSlice";
+import { Button } from "antd";
+//import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { FaCheckCircle } from "react-icons/fa";
-import { useDispatch } from "react-redux";
+//import { useDispatch } from "react-redux";
 
 const Pricing = () => {
-  const dispatch = useDispatch();
+  //const dispatch = useDispatch();
   //const router = useRouter();
   const searchParams = useSearchParams(); // Add this hook
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -18,18 +20,17 @@ const Pricing = () => {
   const [showModal, setShowModal] = useState(false);
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [refCode, setRefCode] = useState<string | null>(null);
+  const [subscribe, {isLoading:subscribeLoading}] = useCreateStripeSubscriptionMutation();
 
   // Get the ref parameter from URL
   useEffect(() => {
     getPricing({});
   }, [getPricing]); // Only runs once when the component mounts
-  
+
   useEffect(() => {
     const ref = searchParams.get("ref");
     if (ref) {
       setRefCode(ref);
-      sessionStorage.setItem("referralCode", ref);
-      console.log("Referral code stored:", ref);
     }
   }, [searchParams]);
 
@@ -78,10 +79,34 @@ const Pricing = () => {
   };
 
   const confirmSubscription = () => {
+    /** 
+     * 
     if (selectedPlan) {
       dispatch(setSubScriptionId(parseInt(selectedPlan)));
       //router.push("/checkout");
     }
+      */
+
+    if (!selectedPlan) {
+      console.error("No plan selected");
+      return;
+    }
+    subscribe({
+      pricing_id: selectedPlan,
+      referral_code: refCode || "",
+    })
+      .unwrap()
+      .then((res) => {
+        if (res?.data?.url) {
+          window.location.href = res?.data?.url; // Redirect to checkout URL
+        } else {
+          console.error("No checkout URL returned");
+        }
+        console.log(res);
+      })
+      .catch((err) => {
+        console.log(err);
+      });
   };
 
   return (
@@ -119,14 +144,13 @@ const Pricing = () => {
                 </li>
               ))}
             </ul>
-            
+
             <button
               className="mt-4 bg-green-500 text-white px-4 py-2 rounded-lg w-full"
               onClick={() => handleGetStarted(item.key)}
             >
               Start Free Trial
             </button>
-            
           </div>
         ))}
       </div>
@@ -147,14 +171,17 @@ const Pricing = () => {
               >
                 Cancel
               </button>
-              <Link href={`/checkout`} target="_top">
-              <button
-                className="px-4 py-2 bg-green-500 text-white rounded-lg"
-                onClick={confirmSubscription}
-              >
-                Continue to Checkout
-              </button>
-              </Link>
+              
+                <Button
+                  className="!px-4 !py-2 !bg-green-500 border-none !h-[40px] !text-white !rounded-lg"
+                  onClick={confirmSubscription}
+                  loading={subscribeLoading}
+                  disabled={subscribeLoading}
+                  
+                >
+                  Continue to Checkout
+                </Button>
+             
             </div>
           </div>
         </div>

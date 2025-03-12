@@ -26,7 +26,41 @@ export const subscriptionApi = createApi({
         body,
       }),
     }),
+    createStripeSubscription: builder.mutation({
+      query: (params) => ({
+        url: `customer/stripe/checkout`,
+        method: 'GET',
+        params,
+      }),
+    }),
+    verifyStripeSubscription: builder.mutation({
+      query: (body) => ({
+        url: `customer/stripe/verify`,
+        method: 'POST',
+        body
+      }),
+    }),
+    changeSubscription: builder.mutation({
+      query: (body) => ({
+        url: 'customer/stripe/change-plan',
+        method: 'PUT',
+        body,
+      }),
+    }),
+    renewSubscription: builder.mutation({
+      query: (body) => ({
+        url: 'customer/stripe/resume',
+        method: 'PUT',
+        body,
+      }),
+    }),
   }),
 });
 
-export const { useCreateSubscriptionMutation } = subscriptionApi; 
+export const {
+   useCreateSubscriptionMutation,
+   useCreateStripeSubscriptionMutation ,
+   useVerifyStripeSubscriptionMutation,
+   useChangeSubscriptionMutation,
+   useRenewSubscriptionMutation
+  } = subscriptionApi; 

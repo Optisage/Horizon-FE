@@ -3,8 +3,8 @@ import { useLazyGetProfileQuery } from "@/redux/api/auth";
 import { DashNav, DashSider } from "./_components";
 import { useEffect, useState } from "react";
 import { message, Modal } from "antd";
-import { useDispatch } from "react-redux";
-import { setUser } from "@/redux/slice/authSlice";
+//import { useDispatch } from "react-redux";
+//import { setUser } from "@/redux/slice/authSlice";
 
 import { GoAlert } from "react-icons/go";
 import { useRouter } from "next/navigation";
@@ -17,7 +17,7 @@ export default function DashboardLayout({
 }>) {
   const [getProfile, {  }] = useLazyGetProfileQuery();
   const [messageApi, contextHolder] = message.useMessage();
-  const dispatch = useDispatch();
+  //const dispatch = useDispatch();
   const router = useRouter();
 // State to manage modal visibility
 const [isModalVisible, setIsModalVisible] = useState(false);
@@ -32,7 +32,6 @@ const handleLogout = () => {
     getProfile({})
       .unwrap()
       .then((res) => {
-        dispatch(setUser(res));
          
         if (!res?.data?.is_subscribed && res?.data?.is_trial_expired) {
           setIsModalVisible(true);
