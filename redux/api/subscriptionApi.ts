@@ -54,6 +54,13 @@ export const subscriptionApi = createApi({
         body,
       }),
     }),
+    cancelSubscription: builder.mutation({
+      query: (body) => ({
+        url: 'customer/stripe/cancel',
+        method: 'PUT',
+        body,
+      }),
+    }),
   }),
 });
 
@@ -62,5 +69,6 @@ export const {
    useCreateStripeSubscriptionMutation ,
    useVerifyStripeSubscriptionMutation,
    useChangeSubscriptionMutation,
-   useRenewSubscriptionMutation
+   useRenewSubscriptionMutation,
+   useCancelSubscriptionMutation
   } = subscriptionApi; 

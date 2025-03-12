@@ -2,12 +2,16 @@ import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 
 interface globalState {
   subScriptionId: any;
-  marketplaceId: number
+  marketplaceId: number;
+  currencyCode:string;
+  currencySymbol:string
 }
 
 const initialState: globalState = {
     subScriptionId: null,
-    marketplaceId: 1
+    marketplaceId: 1,
+    currencyCode: "USD",
+    currencySymbol:"$"
 };
 
 const globalSlice = createSlice({
@@ -20,13 +24,22 @@ const globalSlice = createSlice({
     },
     setMarketPlaceId: (state, action: PayloadAction<number>)=>{
       state.marketplaceId = action.payload;
-    }
+    },
+    setCurrencyCode: (state, action: PayloadAction<string>)=>{
+      state.currencyCode = action.payload;
+    },
+    setCurrencySymbol: (state, action: PayloadAction<string>)=>{
+      console.log("Dispatching setCurrencyCode with payload:", action.payload);
+      state.currencySymbol = action.payload;
+    },
    
   },
 });
 
 export const {
    setSubScriptionId ,
-   setMarketPlaceId
+   setMarketPlaceId,
+   setCurrencyCode,
+   setCurrencySymbol
   } = globalSlice.actions;
 export default globalSlice.reducer;

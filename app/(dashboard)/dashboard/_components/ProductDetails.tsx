@@ -43,10 +43,11 @@ import {
   useGetBuyboxInfoQuery,
   useGetRankingsAndPricesQuery,
 } from "@/redux/api/productsApi";
+import Loader from "@/utils/loader";
 
 interface ProductDetailsProps {
   asin: string;
-  marketplaceId: string;
+  marketplaceId: number;
 }
 
 interface BuyboxItem {
@@ -98,7 +99,7 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
     itemAsin: asin,
   });
 
-  if (isLoading) return <div>Loading...</div>;
+  if (isLoading) return <Loader/>;
   if (error) return <div>Error loading product details</div>;
 
   const product = data?.data;
