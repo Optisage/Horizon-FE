@@ -98,7 +98,11 @@ const Pricing = () => {
       .unwrap()
       .then((res) => {
         if (res?.data?.url) {
-          window.location.href = res?.data?.url; // Redirect to checkout URL
+          if (window.top) {
+            window.top.location.href = res?.data?.url; // Navigate the parent window
+          } else {
+            window.open(res?.data?.url, "_blank"); // Fallback to current window
+          }
         } else {
           console.error("No checkout URL returned");
         }
