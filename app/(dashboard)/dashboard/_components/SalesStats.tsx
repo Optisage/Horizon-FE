@@ -51,6 +51,8 @@ const SalesStats = ({ product }: { product: Product }) => {
                     className="size-12 object-cover"
                     width={48}
                     height={48}
+                    priority
+                    unoptimized
                   />
                 </span>
               </span>
