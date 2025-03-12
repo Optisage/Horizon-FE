@@ -25,8 +25,12 @@ export default function StripeCheckout() {
           setLoading(false);
         })
         .catch(() => {
+          setLoading(false);
           setFailed(true);
         });
+    }else{
+      setLoading(false);
+      setFailed(true);
     }
   }, [searchParams, verifySubscription]);
   return (
