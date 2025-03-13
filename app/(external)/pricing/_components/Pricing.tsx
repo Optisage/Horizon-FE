@@ -9,7 +9,7 @@ import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { FaCheckCircle } from "react-icons/fa";
 //import { useDispatch } from "react-redux";
-
+import { FaDollarSign } from "react-icons/fa6";
 const Pricing = () => {
   //const dispatch = useDispatch();
   //const router = useRouter();
@@ -115,33 +115,46 @@ const Pricing = () => {
           <div
             className={`${
               item.title === "premium" ? "border-2 border-green-500" : ""
-            }  bg-white p-6 rounded-xl shadow-md flex flex-col gap-4 relative`}
+            }  bg-white p-6 rounded-xl shadow-md flex flex-col gap-4 relative morope-font border`}
             key={index}
           >
-            {item.title === "premium" && (
+            {item.title !== "STARTER (PRO)" && (
               <span className="absolute top-2 right-2 bg-green-600 text-white px-3 py-1 text-sm rounded-lg">
-                Most Popular
+               Coming Soon
               </span>
             )}
-            <h3 className="text-xl font-semibold capitalize">{item.title}</h3>
-            <p className="text-3xl font-bold">
-              ${item.price}
-              <span className="text-lg">/mo</span>
+            <h3 className=" text-xl font-semibold capitalize">{item.title}</h3>
+            <div className="flex items-baseline">
+              <div className="">
+              <FaDollarSign size={25} className=" -mb-2"/>
+              </div>
+            <p className="text-4xl font-semibold">
+              {item.price}
             </p>
-            <p className="text-gray-600">{item.subTitle}</p>
-            <ul className="mt-4 text-left space-y-2">
+            <div className=" -mb-5">
+            <span className="text-lg font-semibold">/mo</span>
+            </div>
+            </div>
+            <p className="text-gray-600 text-sm">{item.subTitle}</p>
+            <ul className="mt-4 text-left space-y-2 border-t pt-4">
               {item.subItems.map((subItem, index) => (
-                <li className="flex gap-2 items-center" key={index}>
-                  <FaCheckCircle className="size-5 text-green-700" /> {subItem}
+                <li className="flex gap-2 items-center " key={index}>
+                  <div>
+                  <FaCheckCircle className="size-5 text-green-700 !h-[20px] !w-[20px]" />
+                  </div> {subItem}
                 </li>
               ))}
             </ul>
 
             <button
-              className="mt-4 bg-green-500 text-white px-4 py-2 rounded-lg w-full"
+              className="mt-4 bg-green-500 text-white px-4 py-2 rounded-lg w-full disabled:bg-slate-300"
               onClick={() => handleGetStarted(item.key)}
+              disabled={item.title !== "STARTER (PRO)"}
             >
-              Start Free Trial
+              {
+                item.title !== "STARTER (PRO)" ? "Unavailable" : "Start Free Trial"
+              }
+              
             </button>
           </div>
         ))}
