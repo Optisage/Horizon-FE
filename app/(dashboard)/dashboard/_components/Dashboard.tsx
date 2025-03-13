@@ -100,7 +100,6 @@ const Dashboard = () => {
     { skip: !debouncedSearch }
   );
 
-  // const totalResults = data?.data?.pagination?.number_of_results || 0;
   const totalResults = data?.data?.pagination?.total || 0;
 
   const products =
