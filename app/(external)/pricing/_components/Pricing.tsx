@@ -34,11 +34,7 @@ const Pricing = () => {
     }
   }, [searchParams]);
 
-  interface PricingData {
-    id: string;
-    name: string;
-    price: string;
-  }
+  
 
   interface SubInfoItem {
     key: string;
@@ -50,6 +46,7 @@ const Pricing = () => {
 
 
   const subInfo: SubInfoItem[] = data?.data
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   ? data.data.map((item: any) => {
       // Extract features from API response or fallback to empty array
       const features = item.meta_data?.features || [];
