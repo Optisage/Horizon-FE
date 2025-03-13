@@ -50,6 +50,7 @@ import {
   // useGetProductFeesQuery,
   // useCalculateProfitablilityMutation,
 } from "@/redux/api/productsApi";
+import Loader from "@/utils/loader";
 
 interface ProductDetailsProps {
   asin: string;
@@ -110,30 +111,8 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
     itemAsin: asin,
   });
 
-  // Fetch products
-  const {
-    data: searchData,
-    error: searchError,
-    isLoading: isLoadingSearch,
-  } = useSearchItemsQuery(
-    debouncedSearch
-      ? {
-          q: debouncedSearch,
-          marketplaceId: marketplaceId,
-          pageSize: itemsPerPage,
-          pageToken: (currentPage - 1) * itemsPerPage,
-        }
-      : undefined,
-    { skip: !debouncedSearch }
-  );
-
-  // Debounce input to prevent excessive API calls
-  useEffect(() => {
-    const handler = setTimeout(() => setDebouncedSearch(searchValue), 500);
-    return () => clearTimeout(handler);
-  }, [searchValue]);
-
-  if (isLoadingBuybox || isLoading || isLoadingRankings) return <Loader />;
+  if (isLoading) return <Loader />;
+  if (error) return <div>Error loading product details</div>;
 
   const product = data?.data;
   const buybox: BuyboxItem[] = buyboxData?.data?.buybox ?? [];
@@ -186,12 +165,8 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
       : "-",
     buyBox: rankings?.buybox ? `$${rankings.buybox.toFixed(2)}` : "-",
     amazon: rankings?.amazon ? `$${rankings.amazon.toFixed(2)}` : "-",
-    lowestFBA: rankings?.lowest_fba
-      ? `$${rankings.lowest_fba.toFixed(2)}`
-      : "-",
-    lowestFBM: rankings?.lowest_fbm
-      ? `$${rankings.lowest_fbm.toFixed(2)}`
-      : "-",
+    lowestFBA: rankings?.lowest_fba ? `${rankings.lowest_fba.toFixed(2)}` : "-",
+    lowestFBM: rankings?.lowest_fbm ? `${rankings.lowest_fbm.toFixed(2)}` : "-",
     keepaBSRDrops: rankings?.keepa_bsr_drops ?? "N/A",
     estimatedSales: rankings?.estimated_sales ?? "N/A",
     estTimeToSale: rankings?.estimated_time_to_sale ?? "N/A",
@@ -202,7 +177,7 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
       id: index + 1,
       seller: offer.seller,
       stock: offer.stock_quantity,
-      price: `${offer.currency}${offer.listing_price.toFixed(2)}`,
+      price: `${offer.listing_price.toFixed(2)}`,
       buyboxShare: `${offer.weight_percentage}%`,
       leader: offer.is_buybox_winner,
       seller_id: offer.seller_id,
