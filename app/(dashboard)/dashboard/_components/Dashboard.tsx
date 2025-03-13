@@ -111,7 +111,7 @@ const Dashboard = () => {
           title: item.basic_details.product_name,
           rating: item.basic_details.rating.stars,
           reviews: item.basic_details.rating.count,
-          category: item.basic_details.category,
+          category: item.basic_details.category || "N/A",
           vendor: item.basic_details.vendor,
           sales_statistics: item.sales_statistics,
           buybox_timeline: item.buybox_timeline,
