@@ -18,9 +18,9 @@ const Pricing = () => {
   const [getPricing, { data, isLoading }] = useLazyGetPricingQuery();
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
   const [showModal, setShowModal] = useState(false);
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [refCode, setRefCode] = useState<string | null>(null);
-  const [subscribe, {isLoading:subscribeLoading}] = useCreateStripeSubscriptionMutation();
+  const [subscribe, { isLoading: subscribeLoading }] =
+    useCreateStripeSubscriptionMutation();
 
   // Get the ref parameter from URL
   useEffect(() => {
@@ -34,8 +34,6 @@ const Pricing = () => {
     }
   }, [searchParams]);
 
-  
-
   interface SubInfoItem {
     key: string;
     title: string;
@@ -44,26 +42,25 @@ const Pricing = () => {
     subItems: string[];
   }
 
-
   const subInfo: SubInfoItem[] = data?.data
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  ? data.data.map((item: any) => {
-      // Extract features from API response or fallback to empty array
-      const features = item.meta_data?.features || [];
-      // Use first feature as subtitle, remaining as list items
-      const subTitle = features[0] || '';
-      const subItems = features.slice(1);
-      
-      return {
-        key: item.id.toString(),
-        title: item.name,
-        price: item.price,
-        subTitle: subTitle,
-        subItems: subItems,
-      };
-    })
-  : [];
-  
+    ? // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      data.data.map((item: any) => {
+        // Extract features from API response or fallback to empty array
+        const features = item.meta_data?.features || [];
+        // Use first feature as subtitle, remaining as list items
+        const subTitle = features[0] || "";
+        const subItems = features.slice(1);
+
+        return {
+          key: item.id.toString(),
+          title: item.name,
+          price: item.price,
+          subTitle: subTitle,
+          subItems: subItems,
+        };
+      })
+    : [];
+
   const handleGetStarted = (planId: string) => {
     setSelectedPlan(planId);
     setShowModal(true);
@@ -166,17 +163,15 @@ const Pricing = () => {
               >
                 Cancel
               </button>
-              
-                <Button
-                  className="!px-4 !py-2 !bg-green-500 border-none !h-[40px] !text-white !rounded-lg"
-                  onClick={confirmSubscription}
-                  loading={subscribeLoading}
-                  disabled={subscribeLoading}
-                  
-                >
-                  Continue to Checkout
-                </Button>
-             
+
+              <Button
+                className="!px-4 !py-2 !bg-green-500 border-none !h-[40px] !text-white !rounded-lg"
+                onClick={confirmSubscription}
+                loading={subscribeLoading}
+                disabled={subscribeLoading}
+              >
+                Continue to Checkout
+              </Button>
             </div>
           </div>
         </div>
