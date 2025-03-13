@@ -12,6 +12,7 @@ import {
 } from "@/redux/api/sellerApi";
 import { useEffect, useState } from "react";
 import { useAppSelector } from "@/redux/hooks";
+import { message } from "antd";
 
 // Define the Product interface
 interface Product {
@@ -51,6 +52,7 @@ const Seller = () => {
   const [getSellerProducts, { data: productsData, isLoading: productLoading }] =
     useLazyGetSellerProductsQuery();
   const [loading, setLoading] = useState(true);
+  const [messageApi, contextHolder] = message.useMessage();
 
   useEffect(() => {
     setLoading(true); // Start loading
@@ -64,8 +66,21 @@ const Seller = () => {
   const seller = data?.data;
   const products: Product[] = productsData?.data?.items || [];
 
+
+  const copyToClipboard = async (text:string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      messageApi.success("Link copied to clipboard")
+      console.log('Text copied to clipboard');
+    } catch (err) {
+      messageApi.error("Failed to copy to clipboard")
+      console.error('Failed to copy text: ', err);
+    }
+  };
+
   return (
     <section className="flex flex-col gap-8 min-h-[50dvh] md:min-h-[80dvh]">
+      {contextHolder}
       {(detailsLoading && productLoading) || loading ? (
         <div className=" mx-auto animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-primary"></div>
       ) : (
@@ -108,14 +123,17 @@ const Seller = () => {
 
               <div className="p-3 border border-border rounded-xl flex gap-3 items-center justify-between">
                 <span className="flex items-center gap-3 text-[#787891]">
+                  <div onClick={()=>copyToClipboard(seller?.amazon_link)} className=" cursor-pointer">
                   <RiAttachment2 className="size-5" />
+                  </div>
                   <p className="text-[#787891] text-sm">
                     {" "}
                     {seller?.amazon_link || "N/A"}
                   </p>
                 </span>
 
-                <button type="button" aria-label="Download">
+
+                <a href={seller?.amazon_link || ""} aria-label="Download" target="_blank">
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     width="20"
@@ -138,7 +156,7 @@ const Seller = () => {
                       strokeLinejoin="round"
                     />
                   </svg>
-                </button>
+                </a>
               </div>
             </div>
 
