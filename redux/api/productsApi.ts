@@ -8,10 +8,10 @@ export const productsApi = createApi({
   baseQuery: baseQueryForAuth,
   endpoints: (builder) => ({
     searchItems: builder.query({
-      query: ({ q, marketplaceId }) => ({
+      query: ({ q, marketplaceId, pageSize = 5, pageToken }) => ({
         url: "catalog",
         method: "GET",
-        params: { q, marketplaceId },
+        params: { q, marketplaceId, pageSize, ...(pageToken && { pageToken }) },
       }),
     }),
 
@@ -60,7 +60,7 @@ export const productsApi = createApi({
       }),
     }),
 
-    getOrderMetrics: builder.query({
+    getSalesStatistics: builder.query({
       query: ({ marketplaceId, itemAsin, startDate, endDate }) => ({
         url: "catalog/products/sales-statistics",
         method: "GET",
@@ -92,5 +92,5 @@ export const {
   useGetBuyboxInfoQuery,
   useGetProductFeesQuery,
   useCalculateProfitablilityMutation,
-  useGetOrderMetricsQuery,
+  useGetSalesStatisticsQuery,
 } = productsApi;
