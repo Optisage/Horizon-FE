@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { useRouter, useSearchParams } from "next/navigation";
 import { useLazyAmazonAuthQuery } from "@/redux/api/auth";
 
@@ -10,22 +9,22 @@ export default function CallbackPage() {
   const searchParams = useSearchParams();
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [loading, setLoading] = useState(true);
-  const [amazonVerify] =useLazyAmazonAuthQuery()
+  const [amazonVerify] = useLazyAmazonAuthQuery();
   const spapiOauthCode = searchParams.get("spapi_oauth_code");
 
-useEffect(()=>{
-  router.push('/dashboard')
+  useEffect(() => {
+    router.push("/dashboard");
 
-
-amazonVerify({spapi_oauth_code: spapiOauthCode}).unwrap()
-.then((res)=>{
-console.log(res)
-})
-.catch((err)=>{
-  console.log(err)
-})
-// eslint-disable-next-line react-hooks/exhaustive-deps
-},[searchParams])
+    amazonVerify({ spapi_oauth_code: spapiOauthCode })
+      .unwrap()
+      .then((res) => {
+        console.log(res);
+      })
+      .catch((err) => {
+        console.log(err);
+      });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
   /** 
   useEffect(() => {
     const fetchToken = async () => {
@@ -76,7 +75,9 @@ console.log(res)
       {loading ? (
         <div className="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-primary"></div>
       ) : (
-        <p className="text-red-500">Failed to authenticate. Please try again.</p>
+        <p className="text-red-500">
+          Failed to authenticate. Please try again.
+        </p>
       )}
     </div>
   );

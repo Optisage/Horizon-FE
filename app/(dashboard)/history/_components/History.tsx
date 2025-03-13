@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { CustomPagination, SearchInput } from "@/app/(dashboard)/_components";
 import { useRouter } from "next/navigation";
 
@@ -155,7 +156,7 @@ const History = () => {
           ))}
         </div>
 
-        <CustomPagination />
+        {/* <CustomPagination /> */}
       </main>
     </section>
   );

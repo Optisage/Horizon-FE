@@ -1,6 +1,6 @@
 "use client";
 
-import { CustomPagination } from "../../_components";
+// import { CustomPagination } from "../../_components";
 import Image from "next/image";
 import { useParams, useRouter } from "next/navigation";
 
@@ -50,15 +50,15 @@ const Seller = () => {
     useLazyGetSellerDetailsQuery();
   const [getSellerProducts, { data: productsData, isLoading: productLoading }] =
     useLazyGetSellerProductsQuery();
-    const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(true);
 
-    useEffect(() => {
-      setLoading(true); // Start loading
-      Promise.all([
-        getSellerDetails({seller_id:sellerId, id:marketplaceId}),
-        getSellerProducts({ marketplaceId: marketplaceId, sellerId: sellerId }),
-      ]).finally(() => setLoading(false)); // Stop loading when both fetches complete
-    }, [getSellerProducts, getSellerDetails, sellerId, marketplaceId]);
+  useEffect(() => {
+    setLoading(true); // Start loading
+    Promise.all([
+      getSellerDetails({ seller_id: sellerId, id: marketplaceId }),
+      getSellerProducts({ marketplaceId: marketplaceId, sellerId: sellerId }),
+    ]).finally(() => setLoading(false)); // Stop loading when both fetches complete
+  }, [getSellerProducts, getSellerDetails, sellerId, marketplaceId]);
 
   // Extract seller details safely
   const seller = data?.data;
@@ -66,7 +66,7 @@ const Seller = () => {
 
   return (
     <section className="flex flex-col gap-8 min-h-[50dvh] md:min-h-[80dvh]">
-      {detailsLoading && productLoading || loading ? (
+      {(detailsLoading && productLoading) || loading ? (
         <div className=" mx-auto animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-primary"></div>
       ) : (
         <>
@@ -238,7 +238,9 @@ const Seller = () => {
                     <div className="flex flex-col gap-1 text-[#09090B]">
                       <p
                         onClick={() =>
-                          router.push(`/dashboard/product/${basic_details?.asin}`)
+                          router.push(
+                            `/dashboard/product/${basic_details?.asin}`
+                          )
                         }
                         className="font-bold hover:underline duration-100"
                       >
@@ -262,7 +264,7 @@ const Seller = () => {
             </div>
 
             {/* pagination */}
-            <CustomPagination />
+            {/* <CustomPagination /> */}
           </main>
         </>
       )}
