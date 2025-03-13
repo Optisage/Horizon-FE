@@ -48,31 +48,25 @@ const Pricing = () => {
     subItems: string[];
   }
 
-  const sharedFeatures = [
-    "Real time Alerts (Buy Box, Price Drops, Stock)",
-    "Profitability Calculator",
-    "Competitor Analysis (Storefront Stalking)",
-    "Insights Dashboard (Sales Estimator)",
-    "Individual Scanner",
-    "Basic Reporting",
-    "IP alert",
-    "Reward Dashboard",
-  ];
 
   const subInfo: SubInfoItem[] = data?.data
-    ? (data.data as PricingData[])
-        .map((item) => {
-          return {
-            key: item.id,
-            title: item.name,
-            price: item.price,
-            subTitle: "Retail Arbitrage + Mobile + Web + Chrome Ext.",
-            subItems: sharedFeatures,
-          };
-        })
-        .filter((item): item is SubInfoItem => item !== null)
-    : [];
-
+  ? data.data.map((item: any) => {
+      // Extract features from API response or fallback to empty array
+      const features = item.meta_data?.features || [];
+      // Use first feature as subtitle, remaining as list items
+      const subTitle = features[0] || '';
+      const subItems = features.slice(1);
+      
+      return {
+        key: item.id.toString(),
+        title: item.name,
+        price: item.price,
+        subTitle: subTitle,
+        subItems: subItems,
+      };
+    })
+  : [];
+  
   const handleGetStarted = (planId: string) => {
     setSelectedPlan(planId);
     setShowModal(true);
@@ -122,12 +116,12 @@ const Pricing = () => {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-6xl mx-auto font-medium">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-6xl mx-auto font-medium">
         {subInfo.map((item, index) => (
           <div
             className={`${
               item.title === "premium" ? "border-2 border-green-500" : ""
-            } h-fit bg-white p-6 rounded-xl shadow-md flex flex-col gap-4 relative`}
+            }  bg-white p-6 rounded-xl shadow-md flex flex-col gap-4 relative`}
             key={index}
           >
             {item.title === "premium" && (
