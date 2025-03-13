@@ -79,7 +79,6 @@ const Dashboard = () => {
   const [itemsPerPage, setItemsPerPage] = useState(6);
 
   const router = useRouter();
-
   const { marketplaceId } = useAppSelector((state) => state?.global);
 
   // console.log("marketplaceId: ", marketplaceId);

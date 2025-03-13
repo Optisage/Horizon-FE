@@ -7,7 +7,7 @@ import { useDispatch } from "react-redux";
 import Image from "next/image";
 import React, { useEffect, useState } from "react";
 import { BiChevronDown } from "react-icons/bi";
-import { setMarketPlaceId } from "@/redux/slice/globalSlice";
+import { setCurrencyCode, setCurrencySymbol, setMarketPlaceId } from "@/redux/slice/globalSlice";
 import { useAppSelector } from "@/redux/hooks";
 
 const CountrySelect = () => {
@@ -17,12 +17,14 @@ const CountrySelect = () => {
     name: "Switch Marketplace Country",
     flag: "",
     marketplaceId: 0,
+    currencyCode:"",
+    currencySymbol:""
   });
 
   const [isOpen, setIsOpen] = useState(false);
   const [marketPlace, { data }] = useLazyFetchMarketplacesQuery();
   const [countries, setCountries] = useState([
-    { code: "", name: "Switch Marketplace Country", flag: "", marketplaceId: 0 },
+    { code: "", name: "Switch Marketplace Country", flag: "", marketplaceId: 0, currencyCode:"",currencySymbol:"" },
   ]);
   const { marketplaceId } = useAppSelector((state) => state?.global);
 
@@ -38,10 +40,12 @@ const CountrySelect = () => {
         name: item.country,
         flag: item.countryCode.toLowerCase(),
         marketplaceId: item.marketplaceId, // Store marketplaceId
+        currencyCode: item.currencyCode,
+        currencySymbol: item.currencySymbol
       }));
 
       setCountries([
-        { code: "", name: "Switch Marketplace Country", flag: "", marketplaceId: "" },
+        { code: "", name: "Switch Marketplace Country", flag: "", marketplaceId: "", currencyCode:"", currencySymbol:"" },
         ...formattedCountries,
       ]);
     }
@@ -62,6 +66,8 @@ const CountrySelect = () => {
   const handleSelect = (country: any) => {
     setSelectedCountry(country);
     dispatch(setMarketPlaceId(country.marketplaceId)); // Dispatch marketplaceId to Redux
+    dispatch(setCurrencyCode(country.currencyCode)); // Dispatch marketplaceId to Redux
+    dispatch(setCurrencySymbol(country.currencySymbol)); // Dispatch marketplaceId to Redux
     setIsOpen(false);
   };
 
