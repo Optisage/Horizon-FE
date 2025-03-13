@@ -50,7 +50,8 @@ import {
   // useGetProductFeesQuery,
   // useCalculateProfitablilityMutation,
 } from "@/redux/api/productsApi";
-import Loader from "@/utils/loader";
+import useCurrencyConverter from "@/utils/currencyConverter";
+import { useAppSelector } from "@/redux/hooks";
 
 interface ProductDetailsProps {
   asin: string;
@@ -93,6 +94,10 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
 
   const router = useRouter();
 
+  const { currencyCode, currencySymbol } =
+    useAppSelector((state) => state.global) || {};
+  const { convertPrice } = useCurrencyConverter(currencyCode);
+
   const { data: buyboxData, isLoading: isLoadingBuybox } =
     useGetBuyboxInfoQuery({
       marketplaceId,
@@ -111,8 +116,30 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
     itemAsin: asin,
   });
 
-  if (isLoading) return <Loader />;
-  if (error) return <div>Error loading product details</div>;
+  // Fetch products
+  const {
+    data: searchData,
+    error: searchError,
+    isLoading: isLoadingSearch,
+  } = useSearchItemsQuery(
+    debouncedSearch
+      ? {
+          q: debouncedSearch,
+          marketplaceId: marketplaceId,
+          pageSize: itemsPerPage,
+          pageToken: (currentPage - 1) * itemsPerPage,
+        }
+      : undefined,
+    { skip: !debouncedSearch }
+  );
+
+  // Debounce input to prevent excessive API calls
+  useEffect(() => {
+    const handler = setTimeout(() => setDebouncedSearch(searchValue), 500);
+    return () => clearTimeout(handler);
+  }, [searchValue]);
+
+  if (isLoadingBuybox || isLoading || isLoadingRankings) return <Loader />;
 
   const product = data?.data;
   const buybox: BuyboxItem[] = buyboxData?.data?.buybox ?? [];
@@ -165,8 +192,12 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
       : "-",
     buyBox: rankings?.buybox ? `$${rankings.buybox.toFixed(2)}` : "-",
     amazon: rankings?.amazon ? `$${rankings.amazon.toFixed(2)}` : "-",
-    lowestFBA: rankings?.lowest_fba ? `${rankings.lowest_fba.toFixed(2)}` : "-",
-    lowestFBM: rankings?.lowest_fbm ? `${rankings.lowest_fbm.toFixed(2)}` : "-",
+    lowestFBA: rankings?.lowest_fba
+      ? `$${rankings.lowest_fba.toFixed(2)}`
+      : "-",
+    lowestFBM: rankings?.lowest_fbm
+      ? `$${rankings.lowest_fbm.toFixed(2)}`
+      : "-",
     keepaBSRDrops: rankings?.keepa_bsr_drops ?? "N/A",
     estimatedSales: rankings?.estimated_sales ?? "N/A",
     estTimeToSale: rankings?.estimated_time_to_sale ?? "N/A",
@@ -177,7 +208,7 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
       id: index + 1,
       seller: offer.seller,
       stock: offer.stock_quantity,
-      price: `${offer.listing_price.toFixed(2)}`,
+      price: `${offer.currency}${offer.listing_price.toFixed(2)}`,
       buyboxShare: `${offer.weight_percentage}%`,
       leader: offer.is_buybox_winner,
       seller_id: offer.seller_id,
@@ -233,6 +264,16 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
 
   if (isLoadingBuybox || isLoading || isLoadingRankings || isLoadingSearch)
     return <Loader />;
+
+  if (error)
+    return (
+      <div className="h-[400px] flex flex-col items-center justify-center">
+        <h2 className="font-semibold">Error loading product details</h2>
+        <p className=" text-sm">
+          Product might not be available in the selected country
+        </p>
+      </div>
+    );
 
   return (
     <section className="flex flex-col gap-8 min-h-[50dvh] md:min-h-[80dvh]">
@@ -807,25 +848,29 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
                   <div className="flex justify-between py-1">
                     <span>Buy Box</span>
                     <span className="font-semibold text-black">
-                      {ranks.buyBox}
+                      {currencySymbol}
+                      {convertPrice(ranks.buyBox)}
                     </span>
                   </div>
                   <div className="flex justify-between py-1">
                     <span>Amazon</span>
                     <span className="font-semibold text-black">
-                      {ranks.amazon}
+                      {currencySymbol}
+                      {convertPrice(ranks.amazon)}
                     </span>
                   </div>
                   <div className="flex justify-between py-1">
                     <span>Lowest FBA</span>
                     <span className="font-semibold text-black">
-                      {ranks.lowestFBA}
+                      {currencySymbol}
+                      {convertPrice(ranks.lowestFBA)}
                     </span>
                   </div>
                   <div className="flex justify-between py-1">
                     <span>Lowest FBM</span>
                     <span className="font-semibold text-black">
-                      {ranks.lowestFBM}
+                      {currencySymbol}
+                      {convertPrice(ranks.lowestFBM)}
                     </span>
                   </div>
                   <div className="flex justify-between py-1">
