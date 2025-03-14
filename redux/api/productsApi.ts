@@ -15,6 +15,24 @@ export const productsApi = createApi({
       }),
     }),
 
+    getSearchHistory: builder.query({
+      query: ({ marketplaceId, pageSize = 5, pageToken }) => ({
+        url: "catalog/search-history",
+        method: "GET",
+        params: { marketplaceId, pageSize, ...(pageToken && { pageToken }) },
+        // https://api-staging.optisage.ai/api/catalog/search-history?marketplaceId=1&q=tv&perPage=5
+      }),
+    }),
+
+    searchProductsHistory: builder.query({
+      query: ({ q, marketplaceId, perPage = 5, page = 1 }) => ({
+        url: "catalog/products/search",
+        method: "GET",
+        params: { q, marketplaceId, perPage, page },
+        // https://api-staging.optisage.ai/api/catalog/products/search?perPage=10&page=3'
+      }),
+    }),
+
     getItem: builder.query({
       query: ({ marketplaceId, itemAsin }) => {
         // console.log("Fetching item with params:", { marketplaceId, itemAsin });
@@ -85,6 +103,8 @@ export const productsApi = createApi({
 
 export const {
   useSearchItemsQuery,
+  useGetSearchHistoryQuery,
+  useSearchProductsHistoryQuery,
   useFetchMarketplacesQuery,
   useLazyFetchMarketplacesQuery,
   useGetItemQuery,
