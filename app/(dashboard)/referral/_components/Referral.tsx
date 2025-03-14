@@ -12,6 +12,8 @@ import ReferralTable from "./ReferralTable";
 import SocialReferralModal from "./SocialReferralModal";
 import { useLazyGetReferralsQuery } from "@/redux/api/user";
 import { useEffect } from "react";
+import useCurrencyConverter from "@/utils/currencyConverter";
+import { useAppSelector } from "@/redux/hooks";
 
 
 interface ReferralData {
@@ -34,6 +36,10 @@ const Referral = () => {
     getRef({})
   /* eslint-disable-next-line react-hooks/exhaustive-deps */
   },[])
+  const { currencyCode, currencySymbol } =
+      useAppSelector((state) => state.global) || {};
+  const { convertPrice } = useCurrencyConverter(currencyCode);
+ 
 
   const referralData = refData?.data as ReferralData;
 
@@ -156,7 +162,7 @@ const Referral = () => {
                   Earnings this Week
                 </h5>
                 <p className="text-[#01011D] font-semibold text-xl md:text-2xl">
-                {referralData?.week_earnings || 0}
+                {currencySymbol}{convertPrice(referralData?.week_earnings) || 0}
                 </p>
               </span>
 

@@ -75,13 +75,13 @@ const CountrySelect = () => {
     <div className="relative inline-block w-64">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-2 w-full p-3 border rounded-full bg-[#F3F5F7]"
+        className="flex items-center gap-2 w-full p-2 border rounded-full bg-[#F3F5F7]"
       >
         {selectedCountry.flag ? (
           <Image
             src={`https://flagcdn.com/w40/${selectedCountry.flag}.png`}
             alt={selectedCountry.name}
-            className="w-6 h-4 rounded-sm object-cover"
+            className="w-6 h-6 rounded-full object-cover"
             width={24}
             height={16}
             quality={90}
@@ -109,7 +109,7 @@ const CountrySelect = () => {
                 <Image
                   src={`https://flagcdn.com/w40/${country.flag}.png`}
                   alt={country.name}
-                  className="w-6 h-4 rounded-sm object-cover"
+                  className="w-6 h-6  object-cover rounded-full"
                   width={24}
                   height={16}
                   quality={90}
