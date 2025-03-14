@@ -11,6 +11,7 @@ import { Button, message } from "antd";
 
 
 
+
 interface UserData {
   email: string;
   password:string,
@@ -57,6 +58,7 @@ const UserDetails = ({ userData }: UserDetailsProps) => {
 const [saveSettings,{isLoading}] = useUpdateSettingsMutation()
   //const [formData, setFormData] = useState<UserData>(userData);
   const [messageApi, contextHolder] = message.useMessage();
+ 
 
   const [formData, setFormData] = useState<UserData>({
     ...defaultUserData,
@@ -100,14 +102,16 @@ const [saveSettings,{isLoading}] = useUpdateSettingsMutation()
 
   // Handle VAT Change
   const handleVatChange = (field: string, value: string) => {
+    // Remove unwanted characters and convert to number
+    const cleanValue = Number(value.replace(/[$\s/%]/g, ''));
+    
     setFormData((prev) => ({
       ...prev,
       vat: {
         ...prev.vat,
         [vatType === "standard" ? "standard_rate" : "flat_rate"]: {
-          // Add fallback empty object if the rate is undefined
           ...(prev.vat[vatType === "standard" ? "standard_rate" : "flat_rate"] || {}),
-          [field]: value === "" ? 0 : parseFloat(value),
+          [field]: isNaN(cleanValue) ? 0 : Math.min(Math.max(cleanValue, 0), 100),
         },
       },
     }));
@@ -248,7 +252,7 @@ const [saveSettings,{isLoading}] = useUpdateSettingsMutation()
                     id="standard-rates"
                     defaultValue="10%"
                     className="px-3 py-2"
-                    value={`${formData?.vat?.standard_rate?.rate ?? ""}`}
+                    value={`${formData?.vat?.standard_rate?.rate ?? ""}%`}
                     onChange={(e) =>
                       handleVatChange("rate", e.target.value)
                     }
@@ -265,7 +269,7 @@ const [saveSettings,{isLoading}] = useUpdateSettingsMutation()
                     id="reduced-rate"
                     defaultValue="0.00%"
                     className="px-3 py-2"
-                    value={`${formData?.vat?.standard_rate?.reduced_rate ?? ""}`}
+                    value={`${formData?.vat?.standard_rate?.reduced_rate ?? ""}%`}
                     onChange={(e) =>
                       handleVatChange("reduced_rate", e.target.value)
                     }
@@ -284,7 +288,7 @@ const [saveSettings,{isLoading}] = useUpdateSettingsMutation()
                     id="flat-rate"
                     defaultValue="0.00%"
                     className="px-3 py-2"
-                    value={`${formData?.vat?.flat_rate?.rate ?? ""}`}
+                    value={`${formData?.vat?.flat_rate?.rate ?? ""}%`}
                   onChange={(e) =>
                     handleVatChange("rate", e.target.value)
                   }
@@ -316,7 +320,7 @@ const [saveSettings,{isLoading}] = useUpdateSettingsMutation()
           </span>
 
           <Input id="prep-fee" defaultValue="$0.00" className="px-3 py-2" 
-          value={`${formData?.prep_fee ?? ""}`}
+          value={`${(formData?.prep_fee) ?? ""}`}
           onChange={(e) => handleChange("prep_fee", e.target.value)} />
         </div>
 

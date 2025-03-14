@@ -13,6 +13,7 @@ import {
 import { useEffect, useState } from "react";
 import { useAppSelector } from "@/redux/hooks";
 import { message } from "antd";
+import CustomPagination from "../../_components/CustomPagination";
 
 // Define the Product interface
 interface Product {
@@ -47,6 +48,8 @@ const Seller = () => {
   const params = useParams();
   const sellerId = params?.sellerId;
   const { marketplaceId } = useAppSelector((state) => state?.global);
+  const [currentPage, setCurrentPage] = useState(1);
+const [itemsPerPage, setItemsPerPage] = useState(5);
   const [getSellerDetails, { data, isLoading: detailsLoading }] =
     useLazyGetSellerDetailsQuery();
   const [getSellerProducts, { data: productsData, isLoading: productLoading }] =
@@ -57,10 +60,36 @@ const Seller = () => {
   useEffect(() => {
     setLoading(true); // Start loading
     Promise.all([
-      getSellerDetails({ seller_id: sellerId, id: marketplaceId }),
       getSellerProducts({ marketplaceId: marketplaceId, sellerId: sellerId }),
     ]).finally(() => setLoading(false)); // Stop loading when both fetches complete
-  }, [getSellerProducts, getSellerDetails, sellerId, marketplaceId]);
+  }, [getSellerProducts, sellerId, marketplaceId]);
+
+  useEffect(() => {
+    if (sellerId && marketplaceId) {
+      getSellerDetails({ seller_id: sellerId, id: marketplaceId });
+    }
+  }, [sellerId, marketplaceId, getSellerDetails]);
+
+  // Fetch products with pagination (runs when pagination changes)
+useEffect(() => {
+  if (sellerId && marketplaceId) {
+    setLoading(true);
+    getSellerProducts({
+      marketplaceId: marketplaceId,
+      sellerId: sellerId,
+      page: currentPage,
+      per_page: itemsPerPage
+    }).finally(() => setLoading(false));
+  }
+}, [currentPage, itemsPerPage, sellerId, marketplaceId, getSellerProducts]);
+
+useEffect(() => {
+  if (productsData?.data?.pagination) {
+    setCurrentPage(productsData.data.pagination.current_page);
+    setItemsPerPage(productsData.data.pagination.per_page);
+  }
+}, [productsData]);
+
 
   // Extract seller details safely
   const seller = data?.data;
@@ -282,7 +311,18 @@ const Seller = () => {
             </div>
 
             {/* pagination */}
-            {/* <CustomPagination /> */}
+            
+             <CustomPagination 
+              currentPage={currentPage}
+              totalResults={productsData?.data?.pagination?.total || 0}
+              itemsPerPage={itemsPerPage}
+              onPageChange={(page) => setCurrentPage(page)}
+              onItemsPerPageChange={(value) => {
+                setItemsPerPage(value);
+                setCurrentPage(1); // Reset to first page when items per page changes
+              }}
+             /> 
+             
           </main>
         </>
       )}

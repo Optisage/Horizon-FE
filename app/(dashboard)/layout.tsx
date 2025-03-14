@@ -9,6 +9,7 @@ import { message, Modal } from "antd";
 import { GoAlert } from "react-icons/go";
 import { useRouter } from "next/navigation";
 import Cookies from "js-cookie";
+import Link from "next/link";
 
 export default function DashboardLayout({
   children,
@@ -33,7 +34,7 @@ const handleLogout = () => {
       .unwrap()
       .then((res) => {
          
-        if (!res?.data?.is_subscribed && res?.data?.is_trial_expired) {
+        if (res?.data?.is_subscribed === false && res?.data?.is_trial_expired === true) {
           setIsModalVisible(true);
         }
           
@@ -42,7 +43,7 @@ const handleLogout = () => {
         messageApi.error("failed to get Profile");
       });
       /* eslint-disable-next-line react-hooks/exhaustive-deps */
-  }, [ setIsModalVisible]);
+  }, [ setIsModalVisible, getProfile]);
   return (
     <div className="drawer lg:drawer-open text-black mx-auto max-w-screen-2xl 2xl:border">
       {contextHolder}
@@ -77,9 +78,9 @@ const handleLogout = () => {
                 Log Out
               </button>
 
-              <button className="px-4 py-2 bg-green-500 text-white rounded-lg font-bold">
+              <Link href={"/renewSubscription"} className=" hover:text-white text-center px-4 py-2 bg-green-500 text-white rounded-lg font-bold">
                 Subscribe Now
-              </button>
+              </Link>
             </div>
             </div>
           </Modal>
