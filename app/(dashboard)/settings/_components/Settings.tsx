@@ -17,7 +17,7 @@ const Settings = () => {
 
   useEffect(() => {
     getSettings({});
-  }, [getSettings]);
+  }, []);
  
 
   return (
@@ -63,9 +63,9 @@ const Settings = () => {
           <div className="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-primary"></div>
           </div>
         ) : activeTab === "userDetails" ? (
-          <UserDetails userData={settingsData?.data} />
+          <UserDetails userData={settingsData?.data || {}} />
         ) : (
-          <BuyingCriteria buyingCriteria={settingsData?.data} />
+          <BuyingCriteria buyingCriteria={settingsData?.data || {}} />
         )}
       </div>
     </section>

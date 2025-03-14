@@ -138,7 +138,7 @@ const Subscriptions = () => {
             <div
               key={plan.id}
               className={`border border-[#EBEBEB] hover:border-primary duration-200 rounded-3xl p-6 flex flex-col gap-6 text-[#787891] ${
-                plan.name.toLowerCase() === "premium"
+                plan.name === "STARTER (PRO)"
                   ? "bg-[url(/assets/images/pricing-bg.png)] bg-no-repeat bg-cover bg-top"
                   : "hover:bg-primary/5"
               }`}
@@ -159,16 +159,17 @@ const Subscriptions = () => {
                 </p>
               </span>
               <p className="">
-                {plan.name.toLowerCase() === "pro"
+                {plan.name === "STARTER (PRO)"
                   ? "Getting Started"
                   : "Getting Serious"}
               </p>
               <button
                 type="button"
+                disabled={plan.name !== "STARTER (PRO)"}
                 className={`px-6 py-2.5 text-sm border rounded-xl font-medium duration-200 ${
-                  plan.name.toLowerCase() === "premium"
+                  plan.name === "STARTER (PRO)"
                     ? "border-transparent text-white bg-primary hover:bg-primary-hover"
-                    : "border-[#EDEDEE] hover:bg-gray-50"
+                    : "border-[#EDEDEE] hover:bg-gray-50 disabled:bg-slate-300"
                 }`}
                 /** 
                 onClick={() => {

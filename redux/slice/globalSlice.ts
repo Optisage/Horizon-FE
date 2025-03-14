@@ -10,7 +10,7 @@ interface globalState {
 const initialState: globalState = {
     subScriptionId: null,
     marketplaceId: 1,
-    currencyCode: "USD",
+    currencyCode: "CAD",
     currencySymbol:"$"
 };
 
@@ -29,7 +29,6 @@ const globalSlice = createSlice({
       state.currencyCode = action.payload;
     },
     setCurrencySymbol: (state, action: PayloadAction<string>)=>{
-      console.log("Dispatching setCurrencyCode with payload:", action.payload);
       state.currencySymbol = action.payload;
     },
    
