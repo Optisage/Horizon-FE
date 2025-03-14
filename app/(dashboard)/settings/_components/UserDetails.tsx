@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import {
   CustomSwitch as Switch,
@@ -39,12 +39,39 @@ prep_fee: number,
   };
 }
 
+const defaultUserData: UserData = {
+  email: '',
+  password: '',
+  misc_fee: 0,
+  misc_fee_percentage: 0,
+  inbound_shipping: 0,
+  prep_fee: 0,
+  vat: {
+    flat_rate: { rate: 0 },
+    standard_rate: { rate: 0, reduced_rate: 0 },
+  },
+};
 const UserDetails = ({ userData }: UserDetailsProps) => {
   const [vatEnabled, setVatEnabled] = useState(true);
   const [vatType, setVatType] = useState<"standard" | "flat">("standard");
 const [saveSettings,{isLoading}] = useUpdateSettingsMutation()
-  const [formData, setFormData] = useState<UserData>(userData);
+  //const [formData, setFormData] = useState<UserData>(userData);
   const [messageApi, contextHolder] = message.useMessage();
+
+  const [formData, setFormData] = useState<UserData>({
+    ...defaultUserData,
+    ...userData,
+    vat: {
+      flat_rate: {
+        ...defaultUserData.vat.flat_rate,
+        ...(userData?.vat?.flat_rate || {}),
+      },
+      standard_rate: {
+        ...defaultUserData.vat.standard_rate,
+        ...(userData?.vat?.standard_rate || {}),
+      },
+    },
+  });
 
   // Handle Input Change
   const handleChange = (field: string, value: string) => {
@@ -54,6 +81,21 @@ const [saveSettings,{isLoading}] = useUpdateSettingsMutation()
     }));
   };
 
+  useEffect(() => {
+    if (userData) {
+      setFormData(prev => ({
+        ...prev,
+        ...userData,
+        vat: {
+          flat_rate: { ...prev.vat.flat_rate, ...userData?.vat?.flat_rate },
+          standard_rate: { 
+            ...prev.vat.standard_rate, 
+            ...userData?.vat?.standard_rate 
+          }
+        }
+      }));
+    }
+  }, [userData]);
   
 
   // Handle VAT Change
@@ -63,8 +105,9 @@ const [saveSettings,{isLoading}] = useUpdateSettingsMutation()
       vat: {
         ...prev.vat,
         [vatType === "standard" ? "standard_rate" : "flat_rate"]: {
-          ...prev.vat[vatType === "standard" ? "standard_rate" : "flat_rate"],
-          [field]: value === "" ? 0 : parseFloat(value), // Ensure it's a valid number
+          // Add fallback empty object if the rate is undefined
+          ...(prev.vat[vatType === "standard" ? "standard_rate" : "flat_rate"] || {}),
+          [field]: value === "" ? 0 : parseFloat(value),
         },
       },
     }));
@@ -72,9 +115,13 @@ const [saveSettings,{isLoading}] = useUpdateSettingsMutation()
 
   const handleSaveUser = () => {
     const updatedFields: Partial<UserData> = {};
-
+  
     Object.keys(formData).forEach((key) => {
       const typedKey = key as keyof UserData;
+      
+      // Skip empty password fields
+      if (typedKey === "password" && !formData.password) return;
+  
       if (JSON.stringify(formData[typedKey]) !== JSON.stringify(userData[typedKey])) {
         (updatedFields[typedKey] as unknown) = formData[typedKey];
       }
@@ -85,7 +132,8 @@ const [saveSettings,{isLoading}] = useUpdateSettingsMutation()
       return;
     }
   
-    saveSettings(updatedFields).unwrap()
+    saveSettings(updatedFields)
+      .unwrap()
       .then(() => {
         messageApi.success("Your User Details Saved.");
       })
@@ -200,7 +248,7 @@ const [saveSettings,{isLoading}] = useUpdateSettingsMutation()
                     id="standard-rates"
                     defaultValue="10%"
                     className="px-3 py-2"
-                    value={`${formData?.vat?.standard_rate.rate ?? ""}`}
+                    value={`${formData?.vat?.standard_rate?.rate ?? ""}`}
                     onChange={(e) =>
                       handleVatChange("rate", e.target.value)
                     }

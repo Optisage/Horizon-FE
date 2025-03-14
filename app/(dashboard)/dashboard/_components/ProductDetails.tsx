@@ -230,13 +230,13 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
     changePercent: rankings?.net_bb_price_changes?.percentage
       ? `${rankings.net_bb_price_changes.percentage}%`
       : "-",
-    buyBox: rankings?.buybox ? `$${rankings.buybox.toFixed(2)}` : "-",
-    amazon: rankings?.amazon ? `$${rankings.amazon.toFixed(2)}` : "-",
+    buyBox: rankings?.buybox ? `${rankings.buybox.toFixed(2)}` : "-",
+    amazon: rankings?.amazon ? `${rankings.amazon.toFixed(2)}` : "-",
     lowestFBA: rankings?.lowest_fba
-      ? `$${rankings.lowest_fba.toFixed(2)}`
+      ? `${rankings.lowest_fba.toFixed(2)}`
       : "-",
     lowestFBM: rankings?.lowest_fbm
-      ? `$${rankings.lowest_fbm.toFixed(2)}`
+      ? `${rankings.lowest_fbm.toFixed(2)}`
       : "-",
     keepaBSRDrops: rankings?.keepa_bsr_drops ?? "N/A",
     estimatedSales: rankings?.estimated_sales ?? "N/A",
@@ -248,7 +248,7 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
       id: index + 1,
       seller: offer.seller,
       stock: offer.stock_quantity,
-      price: `${offer.currency}${offer.listing_price.toFixed(2)}`,
+      price: `${offer.listing_price.toFixed(2)}`,
       buyboxShare: `${offer.weight_percentage}%`,
       leader: offer.is_buybox_winner,
       seller_id: offer.seller_id,
@@ -260,7 +260,7 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
       id: index + 1,
       seller: seller.seller,
       rating: seller.rating,
-      avgPrice: `${seller.currency}${
+      avgPrice: `${
         seller.seller_feedback?.avg_price?.toFixed(2) ?? "N/A"
       }`,
       won: `${seller.seller_feedback?.percentage_won ?? 0}%`,
@@ -581,16 +581,16 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
                                 .replace(/^./, (str) => str.toUpperCase())}
                             </span>
                             <span className="font-semibold text-black">
-                              $
+                              {currencySymbol}
                               {typeof value === "number"
-                                ? value.toFixed(2)
+                                ? convertPrice(value.toFixed(2))
                                 : value}
                             </span>
                           </div>
                         ))}
                         <div className="border-t pt-2 font-semibold flex justify-between">
                           <span>Total Fees</span>
-                          <span>${totalFees.toFixed(2)}</span>
+                          <span>{currencySymbol}{convertPrice(totalFees.toFixed(2))}</span>
                         </div>
                       </div>
                     )}
@@ -602,13 +602,13 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
                   <div className="flex justify-between text-sm">
                     <span>VAT on Fees</span>
                     <span className="font-semibold text-black">
-                      ${vatOnFees.toFixed(2)}
+                      {currencySymbol}{convertPrice(vatOnFees.toFixed(2))}
                     </span>
                   </div>
                   <div className="flex justify-between text-sm">
                     <span>Discount</span>
                     <span className="font-semibold text-black">
-                      ${discount.toFixed(2)}
+                      {currencySymbol}{convertPrice(discount.toFixed(2))}
                     </span>
                   </div>
                   <div className="flex justify-between text-sm">
@@ -620,13 +620,13 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
                   <div className="flex justify-between text-sm">
                     <span>Breakeven Sale Price</span>
                     <span className="font-semibold text-black">
-                      ${breakEvenPrice.toFixed(2)}
+                      {currencySymbol}{convertPrice(breakEvenPrice.toFixed(2))}
                     </span>
                   </div>
                   <div className="flex justify-between text-sm">
                     <span>Estimated Amz. Payout</span>
                     <span className="font-semibold text-black">
-                      ${estimatedPayout.toFixed(2)}
+                    {currencySymbol}{convertPrice(estimatedPayout.toFixed(2))}
                     </span>
                   </div>
                 </div>
@@ -638,7 +638,7 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
                   <InfoCard
                     icon={<PriceTagIcon />}
                     title="Buy Box Price"
-                    value={`$${extra?.buybox_price ?? "-"}`}
+                    value={`${currencySymbol}${convertPrice(extra?.buybox_price )?? "-"}`}
                     bgColor="#F0FFF0"
                   />
                   <InfoCard
@@ -659,7 +659,7 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
                   <InfoCard
                     icon={<MaximumCostIcon />}
                     title="Maximum Cost"
-                    value={`$${extra?.max_cost ?? "-"}`}
+                    value={`${currencySymbol}${convertPrice(extra?.max_cost) ?? "-"}`}
                     bgColor="#FFF0F3"
                   />
                 </div>
@@ -674,7 +674,7 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
                   <InfoCard
                     icon={<PriceTagIcon />}
                     title="Profit"
-                    value={`$${extra?.profit ?? "-"} (${
+                    value={`${currencySymbol}${convertPrice(extra?.profit) ?? "-"} (${
                       extra?.profit_percentage ?? "-"
                     }%)`}
                     bgColor="#EBFFFE"
@@ -744,7 +744,7 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
                             </div>
                           </td>
                           <td className="p-3">{offer.stock}</td>
-                          <td className="p-3">{offer.price}</td>
+                          <td className="p-3">{currencySymbol}{convertPrice(offer.price)}</td>
                           <td className="p-3 flex gap-1 items-center">
                             {offer.buyboxShare}
                             <div className="relative w-20 h-2 bg-gray-200 rounded-full">
@@ -784,7 +784,7 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
                               </div>
                             </div>
                           </td>
-                          <td className="p-3">{seller.avgPrice}</td>
+                          <td className="p-3">{currencySymbol}{convertPrice(seller.avgPrice)}</td>
                           <td className="p-3">{seller.won}</td>
                           <td className="p-3">{seller.lastWon}</td>
                         </tr>
