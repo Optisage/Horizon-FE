@@ -1,4 +1,3 @@
-// app/dashboard/page.tsx
 "use client";
 
 import { useState, useEffect } from "react";
@@ -9,6 +8,7 @@ import UFO from "@/public/assets/svg/ufo.svg";
 import SalesStats from "./SalesStats";
 import { useSearchItemsQuery } from "@/redux/api/productsApi";
 import { useAppSelector } from "@/redux/hooks";
+import Loader from "@/utils/loader";
 
 export interface Product {
   asin: string;
@@ -81,8 +81,6 @@ const Dashboard = () => {
   const router = useRouter();
   const { marketplaceId } = useAppSelector((state) => state?.global);
 
-  // console.log("marketplaceId: ", marketplaceId);
-
   // Debounce input to prevent excessive API calls
   useEffect(() => {
     const handler = setTimeout(() => setDebouncedSearch(searchValue), 500);
@@ -95,14 +93,14 @@ const Dashboard = () => {
       ? {
           q: debouncedSearch,
           marketplaceId: marketplaceId,
-          page: currentPage,
-          perPage: itemsPerPage,
+          pageSize: itemsPerPage,
+          pageToken: (currentPage - 1) * itemsPerPage,
         }
       : undefined,
     { skip: !debouncedSearch }
   );
 
-  const totalResults = data?.data?.pagination?.number_of_results || 0;
+  const totalResults = data?.data?.pagination?.total || 0;
 
   const products =
     debouncedSearch && data?.data?.items
@@ -113,7 +111,7 @@ const Dashboard = () => {
           title: item.basic_details.product_name,
           rating: item.basic_details.rating.stars,
           reviews: item.basic_details.rating.count,
-          category: item.basic_details.category,
+          category: item.basic_details.category || "N/A",
           vendor: item.basic_details.vendor,
           sales_statistics: item.sales_statistics,
           buybox_timeline: item.buybox_timeline,
@@ -125,9 +123,7 @@ const Dashboard = () => {
       <SearchInput value={searchValue} onChange={setSearchValue} />
       {/* <h2>Selected Marketplace ID: {marketplaceId || "N/A"}</h2> */}
 
-      {isLoading && (
-        <div className="text-center text-gray-500 mt-4">Loading...</div>
-      )}
+      {isLoading && <Loader />}
 
       {error && (
         <div className="text-center text-red-500 mt-4">

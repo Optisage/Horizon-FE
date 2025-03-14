@@ -8,10 +8,28 @@ export const productsApi = createApi({
   baseQuery: baseQueryForAuth,
   endpoints: (builder) => ({
     searchItems: builder.query({
-      query: ({ q, marketplaceId }) => ({
+      query: ({ q, marketplaceId, pageSize = 5, pageToken }) => ({
         url: "catalog",
         method: "GET",
-        params: { q, marketplaceId },
+        params: { q, marketplaceId, pageSize, ...(pageToken && { pageToken }) },
+      }),
+    }),
+
+    getSearchHistory: builder.query({
+      query: ({ marketplaceId, pageSize = 5, pageToken }) => ({
+        url: "catalog/search-history",
+        method: "GET",
+        params: { marketplaceId, pageSize, ...(pageToken && { pageToken }) },
+        // https://api-staging.optisage.ai/api/catalog/search-history?marketplaceId=1&q=tv&perPage=5
+      }),
+    }),
+
+    searchProductsHistory: builder.query({
+      query: ({ q, marketplaceId, perPage = 5, page = 1 }) => ({
+        url: "catalog/products/search",
+        method: "GET",
+        params: { q, marketplaceId, perPage, page },
+        // https://api-staging.optisage.ai/api/catalog/products/search?perPage=10&page=3'
       }),
     }),
 
@@ -60,7 +78,7 @@ export const productsApi = createApi({
       }),
     }),
 
-    getOrderMetrics: builder.query({
+    getSalesStatistics: builder.query({
       query: ({ marketplaceId, itemAsin, startDate, endDate }) => ({
         url: "catalog/products/sales-statistics",
         method: "GET",
@@ -85,6 +103,8 @@ export const productsApi = createApi({
 
 export const {
   useSearchItemsQuery,
+  useGetSearchHistoryQuery,
+  useSearchProductsHistoryQuery,
   useFetchMarketplacesQuery,
   useLazyFetchMarketplacesQuery,
   useGetItemQuery,
@@ -92,5 +112,5 @@ export const {
   useGetBuyboxInfoQuery,
   useGetProductFeesQuery,
   useCalculateProfitablilityMutation,
-  useGetOrderMetricsQuery,
+  useGetSalesStatisticsQuery,
 } = productsApi;

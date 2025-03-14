@@ -15,9 +15,6 @@ const ProductPage = () => {
   const { marketplaceId } = useAppSelector((state) => state?.global);
   //const marketplaceId = "1";
 
-  // console.log("Params:", { asin });
-  // console.log("Marketplace ID:", marketplaceId);
-
   return <ProductDetails asin={asin} marketplaceId={marketplaceId} />;
 };
 

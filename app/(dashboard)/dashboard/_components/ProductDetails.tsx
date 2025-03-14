@@ -1,23 +1,10 @@
 "use client";
 
-import { SetStateAction, useState } from "react";
-import { SearchInput } from "@/app/(dashboard)/_components";
+import { SetStateAction, useEffect, useState } from "react";
+import { CustomPagination, SearchInput } from "@/app/(dashboard)/_components";
 import Image from "next/image";
-import { InputNumber } from "antd";
+import { message } from "antd";
 import { CustomSlider as Slider } from "@/lib/AntdComponents";
-
-import { RxArrowTopRight } from "react-icons/rx";
-import ProductThumbnail from "@/public/assets/images/women-shoes.png";
-import Illustration from "@/public/assets/svg/illustration.svg";
-import {
-  BSRIcon,
-  PriceTagIcon,
-  ProductSalesIcon,
-  MaximumCostIcon,
-  ROIIcon,
-} from "./icons";
-import { BsArrowUp } from "react-icons/bs";
-
 import {
   PieChart,
   Pie,
@@ -34,6 +21,22 @@ import {
 import AlertsDrawer from "./AlertsDrawer";
 import { useRouter } from "next/navigation";
 import CustomDatePicker from "./CustomDatePicker";
+import Loader from "@/utils/loader";
+import SalesStats from "./SalesStats";
+import { Product } from "./Dashboard";
+
+import ProductThumbnail from "@/public/assets/images/women-shoes.png";
+import Illustration from "@/public/assets/svg/illustration.svg";
+import UFO from "@/public/assets/svg/ufo.svg";
+import {
+  BSRIcon,
+  PriceTagIcon,
+  ProductSalesIcon,
+  MaximumCostIcon,
+  ROIIcon,
+} from "./icons";
+import { BsArrowUp } from "react-icons/bs";
+import { RxArrowTopRight } from "react-icons/rx";
 import { IoMdRefresh } from "react-icons/io";
 import { HiOutlineUsers } from "react-icons/hi";
 import { MdOutlineInsertChartOutlined } from "react-icons/md";
@@ -42,8 +45,11 @@ import {
   useGetItemQuery,
   useGetBuyboxInfoQuery,
   useGetRankingsAndPricesQuery,
+  useSearchItemsQuery,
+  // useGetSalesStatisticsQuery,
+  // useGetProductFeesQuery,
+  // useCalculateProfitablilityMutation,
 } from "@/redux/api/productsApi";
-import Loader from "@/utils/loader";
 import useCurrencyConverter from "@/utils/currencyConverter";
 import { useAppSelector } from "@/redux/hooks";
 
@@ -69,21 +75,28 @@ interface BuyboxItem {
 }
 const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
   const [searchValue, setSearchValue] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(6);
 
-  const [fulfillmentType, setFulfillmentType] = useState("FBA");
   const [activeTab, setActiveTab] = useState("totalFees");
+  const [fulfillmentType, setFulfillmentType] = useState("FBA");
   const [costPrice, setCostPrice] = useState(40000);
   const [salePrice, setSalePrice] = useState(40000);
+  const [costPrice2, setCostPrice2] = useState(0);
+  const [salePrice2, setSalePrice2] = useState(0);
   const [storageMonths, setStorageMonths] = useState(0);
+
   const [activeTab4, setActiveTab4] = useState<
     "current" | "30" | "90" | "180" | "all"
   >("current");
   const [activeTab5, setActiveTab5] = useState("offers");
 
   const router = useRouter();
-   const { currencyCode, currencySymbol } =
-      useAppSelector((state) => state.global) || {};
-   const { convertPrice } = useCurrencyConverter(currencyCode);
+
+  const { currencyCode, currencySymbol } =
+    useAppSelector((state) => state.global) || {};
+  const { convertPrice } = useCurrencyConverter(currencyCode);
 
   const { data: buyboxData, isLoading: isLoadingBuybox } =
     useGetBuyboxInfoQuery({
@@ -91,12 +104,11 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
       itemAsin: asin,
     });
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { data: rankingsData, isLoading: isLoadingRankings } =
     useGetRankingsAndPricesQuery({
       marketplaceId,
       itemAsin: asin,
-      period: activeTab4, // Pass the selected period
+      period: activeTab4,
     });
 
   const { data, error, isLoading } = useGetItemQuery({
@@ -104,31 +116,41 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
     itemAsin: asin,
   });
 
-  if (isLoading) return <Loader/>;
-  if (error) return (
-    <>
-  <div className=" font-semibold">Error loading product details</div>
-  <p className=" text-sm">Product might not be available in the selected country</p>
-  </>
-);
+  // Fetch products
+  const {
+    data: searchData,
+    error: searchError,
+    isLoading: isLoadingSearch,
+  } = useSearchItemsQuery(
+    debouncedSearch
+      ? {
+          q: debouncedSearch,
+          marketplaceId: marketplaceId,
+          pageSize: itemsPerPage,
+          pageToken: (currentPage - 1) * itemsPerPage,
+        }
+      : undefined,
+    { skip: !debouncedSearch }
+  );
+
+  // Debounce input to prevent excessive API calls
+  useEffect(() => {
+    const handler = setTimeout(() => setDebouncedSearch(searchValue), 500);
+    return () => clearTimeout(handler);
+  }, [searchValue]);
+
+  if (isLoadingBuybox || isLoading || isLoadingRankings) return <Loader />;
 
   const product = data?.data;
   const buybox: BuyboxItem[] = buyboxData?.data?.buybox ?? [];
   const extra = buyboxData?.data?.extra;
   const rankings = rankingsData?.data?.[activeTab4.toLowerCase()] ?? {};
 
-  // const pieData =
-  //   buybox?.map((seller) => ({
-  //     name: seller.seller_id,
-  //     value: seller.weight_percentage,
-  //     color: `#${Math.floor(Math.random() * 16777215).toString(16)}`,
-  //   })) || [];
-
   // To have more colors
   const colorPalette = ["#FF5733", "#33FF57", "#3357FF", "#FF33A1", "#A133FF"];
   const pieData =
     buybox?.map((seller, index) => ({
-      name: seller.seller_id,
+      name: seller.seller,
       value: seller.weight_percentage,
       color: colorPalette[index % colorPalette.length], // Cycles through predefined colors
     })) || [];
@@ -168,13 +190,13 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
     changePercent: rankings?.net_bb_price_changes?.percentage
       ? `${rankings.net_bb_price_changes.percentage}%`
       : "-",
-    buyBox: rankings?.buybox ? `${rankings.buybox.toFixed(2)}` : "-",
-    amazon: rankings?.amazon ? `${rankings.amazon.toFixed(2)}` : "-",
+    buyBox: rankings?.buybox ? `$${rankings.buybox.toFixed(2)}` : "-",
+    amazon: rankings?.amazon ? `$${rankings.amazon.toFixed(2)}` : "-",
     lowestFBA: rankings?.lowest_fba
-      ? `${rankings.lowest_fba.toFixed(2)}`
+      ? `$${rankings.lowest_fba.toFixed(2)}`
       : "-",
     lowestFBM: rankings?.lowest_fbm
-      ? `${rankings.lowest_fbm.toFixed(2)}`
+      ? `$${rankings.lowest_fbm.toFixed(2)}`
       : "-",
     keepaBSRDrops: rankings?.keepa_bsr_drops ?? "N/A",
     estimatedSales: rankings?.estimated_sales ?? "N/A",
@@ -186,10 +208,10 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
       id: index + 1,
       seller: offer.seller,
       stock: offer.stock_quantity,
-      price: `${offer.listing_price.toFixed(2)}`,
+      price: `${offer.currency}${offer.listing_price.toFixed(2)}`,
       buyboxShare: `${offer.weight_percentage}%`,
       leader: offer.is_buybox_winner,
-      seller_id: offer.seller_id
+      seller_id: offer.seller_id,
     })),
   };
 
@@ -198,7 +220,7 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
       id: index + 1,
       seller: seller.seller,
       rating: seller.rating,
-      avgPrice: `${
+      avgPrice: `${seller.currency}${
         seller.seller_feedback?.avg_price?.toFixed(2) ?? "N/A"
       }`,
       won: `${seller.seller_feedback?.percentage_won ?? 0}%`,
@@ -207,10 +229,6 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
         : "N/A",
     })
   );
-
-  if (isLoadingBuybox) {
-    return <p>Loading buybox data...</p>;
-  }
 
   const renderStars = (rating: number | undefined) => {
     const validRating = Math.floor(rating ?? 0);
@@ -226,623 +244,826 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
     ));
   };
 
+  const totalResults = searchData?.data?.pagination?.total || 0;
+
+  const products =
+    debouncedSearch && searchData?.data?.items
+      ? // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        searchData.data.items.map((item: any) => ({
+          asin: item.basic_details.asin,
+          image: item.basic_details.product_image,
+          title: item.basic_details.product_name,
+          rating: item.basic_details.rating.stars,
+          reviews: item.basic_details.rating.count,
+          category: item.basic_details.category,
+          vendor: item.basic_details.vendor,
+          sales_statistics: item.sales_statistics,
+          buybox_timeline: item.buybox_timeline,
+        }))
+      : [];
+
+  if (isLoadingBuybox || isLoading || isLoadingRankings || isLoadingSearch)
+    return <Loader />;
+
+  if (error)
+    return (
+      <div className="h-[400px] flex flex-col items-center justify-center">
+        <h2 className="font-semibold">Error loading product details</h2>
+        <p className=" text-sm">
+          Product might not be available in the selected country
+        </p>
+      </div>
+    );
+
   return (
     <section className="flex flex-col gap-8 min-h-[50dvh] md:min-h-[80dvh]">
       <SearchInput value={searchValue} onChange={setSearchValue} />
 
-      <main className="flex flex-col gap-5">
-        {/* WorkTools */}
-        <div className="flex flex-wrap gap-2 md:gap-4 items-center">
-          <p className="font-semibold">Your WorkTools</p>
-
-          <button
-            type="button"
-            className="border border-border text-primary px-3 py-2 rounded-xl flex gap-1 items-center font-semibold hover:bg-gray-50 active:scale-95 duration-200 text-sm md:text-base"
-          >
-            Export Data on Google Sheets
-            <RxArrowTopRight className="size-5" />
-          </button>
-
-          <button
-            type="button"
-            className="border border-border text-primary px-3 py-2 rounded-xl flex gap-1 items-center font-semibold hover:bg-gray-50 active:scale-95 duration-200 text-sm md:text-base"
-          >
-            Find Supplier
-            <RxArrowTopRight className="size-5" />
-          </button>
-
-          <button
-            type="button"
-            className="border border-border text-primary px-3 py-2 rounded-xl flex gap-1 items-center font-semibold hover:bg-gray-50 active:scale-95 duration-200 text-sm md:text-base"
-          >
-            See this Product on Amazon
-            <RxArrowTopRight className="size-5" />
-          </button>
-
-          <button
-            type="button"
-            className="border border-border text-primary px-3 py-2 rounded-xl flex gap-1 items-center font-semibold hover:bg-gray-50 active:scale-95 duration-200 text-sm md:text-base"
-          >
-            Export Competitor Data
-            <RxArrowTopRight className="size-5" />
-          </button>
+      {searchError && (
+        <div className="text-center text-red-500 mt-4">
+          Failed to load products.
         </div>
+      )}
 
-        {/* grid */}
-        <div className="grid md:grid-cols-2 gap-5">
-          {/* left */}
-          <div className="flex flex-col gap-5">
-            {/* product details */}
-            <div className="border border-border px-4 pt-4 rounded-xl flex flex-col gap-4">
-              <div className="grid md:grid-cols-[2fr_5fr] gap-3">
-                <div className="size-[150px] overflow-hidden rounded-lg">
-                  <Image
-                    src={product?.product_image || ProductThumbnail}
-                    alt="thumbnail"
-                    className="size-[150px] object-cover"
-                    width={150}
-                    height={150}
-                    quality={90}
-                    priority
-                    unoptimized
-                  />
+      {/* Show product details when there's no search */}
+      {!debouncedSearch && !isLoading && !error && (
+        <main className="flex flex-col gap-5">
+          {/* WorkTools */}
+          <div className="flex flex-wrap gap-2 md:gap-4 items-center">
+            <p className="font-semibold">Your WorkTools</p>
+
+            <button
+              type="button"
+              className="border border-border text-primary px-3 py-2 rounded-xl flex gap-1 items-center font-semibold hover:bg-gray-50 active:scale-95 duration-200 text-sm md:text-base"
+            >
+              Export Data on Google Sheets
+              <RxArrowTopRight className="size-5" />
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                const query = encodeURIComponent(
+                  `${product?.product_name} supplier`
+                );
+                window.open(
+                  `https://www.google.com/search?q=${query}`,
+                  "_blank"
+                );
+              }}
+              className="border border-border text-primary px-3 py-2 rounded-xl flex gap-1 items-center font-semibold hover:bg-gray-50 active:scale-95 duration-200 text-sm md:text-base"
+            >
+              Find Supplier
+              <RxArrowTopRight className="size-5" />
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                if (product?.asin) {
+                  window.open(
+                    `https://www.amazon.com/dp/${product.asin}`,
+                    "_blank"
+                  );
+                } else {
+                  message.warning("ASIN not available.");
+                }
+              }}
+              className="border border-border text-primary px-3 py-2 rounded-xl flex gap-1 items-center font-semibold hover:bg-gray-50 active:scale-95 duration-200 text-sm md:text-base"
+            >
+              See this Product on Amazon
+              <RxArrowTopRight className="size-5" />
+            </button>
+          </div>
+
+          {/* grid */}
+          <div className="grid md:grid-cols-2 gap-5">
+            {/* left */}
+            <div className="flex flex-col gap-5">
+              {/* product details */}
+              <div className="border border-border px-4 pt-4 rounded-xl flex flex-col gap-4">
+                <div className="grid md:grid-cols-[2fr_5fr] gap-3">
+                  <div className="size-[150px] overflow-hidden rounded-lg">
+                    <Image
+                      src={product?.product_image || ProductThumbnail}
+                      alt="thumbnail"
+                      className="size-[150px] object-cover"
+                      width={150}
+                      height={150}
+                      quality={90}
+                      priority
+                      unoptimized
+                    />
+                  </div>
+
+                  <div className="text-[#595959]">
+                    <h2 className="text-[#252525] font-semibold text-lg md:text-xl">
+                      {product?.product_name}
+                    </h2>
+                    <p>{product?.category}</p>
+                    <p>ASIN: {product?.asin}</p>
+                    <p>⭐⭐⭐⭐⭐ {product?.rating?.stars}/5</p>
+                  </div>
                 </div>
 
-                <div className="text-[#595959]">
-                  <h2 className="text-[#252525] font-semibold text-lg md:text-xl">
-                    {product?.product_name}
-                  </h2>
-                  <p>{product?.category}</p>
-                  <p>ASIN: {product?.asin}</p>
-                  <p>⭐⭐⭐⭐⭐ {product?.rating?.stars}/5</p>
-                </div>
-              </div>
+                <div className="p-6 bg-[#F5F3FF] rounded-t-lg flex items-center gap-4 justify-between">
+                  <div className="flex flex-col gap-4">
+                    <span className="flex flex-col gap-2">
+                      <p className="text-lg md:text-xl text-[#09090B] font-semibold">
+                        This product is eligible to sell
+                      </p>
+                      <p className="text-red-500 text-sm">There are 2 issues</p>
+                    </span>
 
-              <div className="p-6 bg-[#F5F3FF] rounded-t-lg flex items-center gap-4 justify-between">
-                <div className="flex flex-col gap-4">
-                  <span className="flex flex-col gap-2">
-                    <p className="text-lg md:text-xl text-[#09090B] font-semibold">
-                      This product is eligible to sell
-                    </p>
-                    <p className="text-red-500 text-sm">There are 2 issues</p>
-                  </span>
+                    <div>
+                      <AlertsDrawer />
+                    </div>
+                  </div>
 
                   <div>
-                    <AlertsDrawer />
-                  </div>
-                </div>
-
-                <div>
-                  <Image
-                    src={Illustration}
-                    alt="illustration"
-                    className="w-[144px] object-cover"
-                    width={144}
-                    height={138}
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Profitablility Calculator */}
-            <div className="flex flex-col gap-4">
-              <div className="flex flex-col gap-2">
-                <h2 className="font-semibold">Profitability Calculator</h2>
-
-                {/* Fulfillment Type Buttons */}
-                <div className="flex flex-col sm:flex-row gap-4 md:items-center justify-between p-3 rounded-xl bg-[#FAFAFA]">
-                  <h2 className="font-semibold text-black">Fulfilment Type</h2>
-
-                  <div className="flex gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setFulfillmentType("FBA")}
-                      className={`px-3 py-1 rounded-full text-black border border-transparent ${
-                        fulfillmentType === "FBA"
-                          ? "bg-[#E7EBFE]"
-                          : "bg-transparent border-border"
-                      }`}
-                    >
-                      FBA
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setFulfillmentType("FBM")}
-                      className={`px-3 py-1 rounded-full text-black border border-transparent ${
-                        fulfillmentType === "FBM"
-                          ? "bg-[#E7EBFE]"
-                          : "bg-transparent border-border"
-                      }`}
-                    >
-                      FBM
-                    </button>
+                    <Image
+                      src={Illustration}
+                      alt="illustration"
+                      className="w-[144px] object-cover"
+                      width={144}
+                      height={138}
+                    />
                   </div>
                 </div>
               </div>
 
-              {/* Price Inputs */}
-              <div className="grid grid-cols-2 gap-4">
+              {/* Profitablility Calculator */}
+              <div className="flex flex-col gap-4">
                 <div className="flex flex-col gap-2">
-                  <label className="text-sm text-gray-600">Cost Price</label>
-                  <InputNumber
-                    value={costPrice}
-                    onChange={(value) => setCostPrice(value || 0)}
-                    className="px-4 py-1.5 !w-full"
-                    prefix="$"
-                    min={0}
-                  />
-                </div>
-                <div className="flex flex-col gap-2">
-                  <label className="text-sm text-gray-600">Sale Price</label>
-                  <InputNumber
-                    value={salePrice}
-                    onChange={(value) => setSalePrice(value || 0)}
-                    className="px-4 py-1.5 !w-full"
-                    prefix="$"
-                    min={0}
-                  />
-                </div>
-              </div>
+                  <h2 className="font-semibold">Profitability Calculator</h2>
 
-              {/* Storage Months Slider */}
-              <div className="flex flex-col gap-2">
-                <label className="text-sm text-gray-600">
-                  Storage (Months)
-                </label>
-                <Slider
-                  value={storageMonths}
-                  onChange={(value: SetStateAction<number>) =>
-                    setStorageMonths(value)
-                  }
-                  max={12}
-                  step={1}
-                />
-                <div className="flex justify-between text-sm text-gray-500">
-                  <span>0</span>
-                  <span>12</span>
-                </div>
-              </div>
+                  {/* Fulfillment Type Buttons */}
+                  <div className="flex flex-col sm:flex-row gap-4 md:items-center justify-between p-3 rounded-xl bg-[#FAFAFA]">
+                    <h2 className="font-semibold text-black">
+                      Fulfilment Type
+                    </h2>
 
-              {/* Fees Section with Tabs */}
-              <div className="flex flex-col gap-2">
-                <div className="bg-[#F7F7F7] rounded-[10px] p-1 flex items-center gap-2 w-max mx-auto">
-                  <button
-                    type="button"
-                    onClick={() => setActiveTab("maximumCost")}
-                    className={`text-sm font-medium p-1.5 rounded-md border ${
-                      activeTab === "maximumCost"
-                        ? "border-border bg-white"
-                        : "border-transparent text-[#787891]"
-                    }`}
-                  >
-                    Maximum Cost
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setActiveTab("totalFees")}
-                    className={`text-sm font-medium p-1.5 rounded-md border ${
-                      activeTab === "totalFees"
-                        ? "border-border bg-white"
-                        : "border-transparent text-[#787891]"
-                    }`}
-                  >
-                    Total Fees
-                  </button>
-                </div>
-
-                <div className="bg-[#F4F4F5] rounded-xl p-2">
-                  {activeTab === "maximumCost" && (
-                    <div className="space-y-2">
-                      <div className="flex justify-between text-sm">
-                        <span className="text-[#595959]">Min. ROI</span>
-                        <span className="font-semibold text-black">25%</span>
-                      </div>
-                      <div className="flex justify-between text-sm">
-                        <span className="text-[#595959]">Min. Profit</span>
-                        <span className="font-semibold text-black">{currencySymbol}{convertPrice(3.00)}</span>
-                      </div>
-                      <div className="border-t pt-2 font-semibold flex justify-between">
-                        <span>Maximum Cost</span>
-                        <span>{currencySymbol}{convertPrice(26.60)}</span>
-                      </div>
+                    <div className="flex gap-2 mb-4">
+                      <button
+                        type="button"
+                        onClick={() => setFulfillmentType("FBA")}
+                        className={`px-3 py-1 rounded-full text-black border border-transparent ${
+                          fulfillmentType === "FBA"
+                            ? "bg-[#E7EBFE]"
+                            : "bg-transparent border-border"
+                        }`}
+                      >
+                        FBA
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setFulfillmentType("FBM")}
+                        className={`px-3 py-1 rounded-full text-black border border-transparent ${
+                          fulfillmentType === "FBM"
+                            ? "bg-[#E7EBFE]"
+                            : "bg-transparent border-border"
+                        }`}
+                      >
+                        FBM
+                      </button>
                     </div>
-                  )}
+                  </div>
+                </div>
 
-                  {activeTab === "totalFees" && (
-                    <div className="space-y-2">
-                      {Object.entries(fees).map(([key, value]) => (
-                        <div key={key} className="flex justify-between text-sm">
-                          <span className="text-[#595959]">
-                            {key
-                              .replace(/([A-Z])/g, " $1")
-                              .replace(/^./, (str) => str.toUpperCase())}
-                          </span>
+                {/* Price Inputs */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="flex flex-col gap-2">
+                    <label className="text-sm text-gray-600">Cost Price</label>
+                    <input
+                      aria-label="cost price"
+                      type="number"
+                      value={costPrice}
+                      onChange={(e) =>
+                        setCostPrice(Number(e.target.value) || 0)
+                      }
+                      className="px-4 py-1.5 w-full border rounded"
+                    />
+                  </div>
+                  <div className="flex flex-col gap-2">
+                    <label className="text-sm text-gray-600">Sale Price</label>
+                    <input
+                      aria-label="sale price"
+                      type="number"
+                      value={salePrice}
+                      onChange={(e) =>
+                        setSalePrice(Number(e.target.value) || 0)
+                      }
+                      className="px-4 py-1.5 w-full border rounded"
+                    />
+                  </div>
+                </div>
+                <div className="mt-4 grid grid-cols-2 gap-4">
+                  <div className="flex flex-col gap-2">
+                    <label className="text-sm text-gray-600">
+                      Cost Price 2
+                    </label>
+                    <input
+                      aria-label="cost price"
+                      type="number"
+                      value={costPrice2}
+                      onChange={(e) =>
+                        setCostPrice2(Number(e.target.value) || 0)
+                      }
+                      className="px-4 py-1.5 w-full border rounded"
+                    />
+                  </div>
+                  <div className="flex flex-col gap-2">
+                    <label className="text-sm text-gray-600">
+                      Sale Price 2
+                    </label>
+                    <input
+                      aria-label="sale price"
+                      type="number"
+                      value={salePrice2}
+                      onChange={(e) =>
+                        setSalePrice2(Number(e.target.value) || 0)
+                      }
+                      className="px-4 py-1.5 w-full border rounded"
+                    />
+                  </div>
+                </div>
+                <div className="mt-4 flex flex-col gap-2">
+                  <label className="text-sm text-gray-600">
+                    Storage (Months)
+                  </label>
+                  <input
+                    aria-label="storage months"
+                    type="range"
+                    value={storageMonths}
+                    onChange={(e) => setStorageMonths(Number(e.target.value))}
+                    max={12}
+                    step={1}
+                    className="w-full"
+                  />
+                  <div className="flex justify-between text-sm text-gray-500">
+                    <span>0</span>
+                    <span>12</span>
+                  </div>
+                </div>
+
+                {/* Storage Months Slider */}
+                <div className="flex flex-col gap-2">
+                  <label className="text-sm text-gray-600">
+                    Storage (Months)
+                  </label>
+                  <Slider
+                    value={storageMonths}
+                    onChange={(value: SetStateAction<number>) =>
+                      setStorageMonths(value)
+                    }
+                    max={12}
+                    step={1}
+                  />
+                  <div className="flex justify-between text-sm text-gray-500">
+                    <span>0</span>
+                    <span>12</span>
+                  </div>
+                </div>
+
+                {/* Fees Section with Tabs */}
+                <div className="flex flex-col gap-2">
+                  <div className="bg-[#F7F7F7] rounded-[10px] p-1 flex items-center gap-2 w-max mx-auto">
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab("maximumCost")}
+                      className={`text-sm font-medium p-1.5 rounded-md border ${
+                        activeTab === "maximumCost"
+                          ? "border-border bg-white"
+                          : "border-transparent text-[#787891]"
+                      }`}
+                    >
+                      Maximum Cost
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab("totalFees")}
+                      className={`text-sm font-medium p-1.5 rounded-md border ${
+                        activeTab === "totalFees"
+                          ? "border-border bg-white"
+                          : "border-transparent text-[#787891]"
+                      }`}
+                    >
+                      Total Fees
+                    </button>
+                  </div>
+
+                  <div className="bg-[#F4F4F5] rounded-xl p-2">
+                    {activeTab === "maximumCost" && (
+                      <div className="space-y-2">
+                        <div className="flex justify-between text-sm">
+                          <span className="text-[#595959]">Min. ROI</span>
+                          <span className="font-semibold text-black">25%</span>
+                        </div>
+                        <div className="flex justify-between text-sm">
+                          <span className="text-[#595959]">Min. Profit</span>
                           <span className="font-semibold text-black">
-                            {currencySymbol}{convertPrice(value.toFixed(2))}
+                            $3.00
                           </span>
                         </div>
-                      ))}
-                      <div className="border-t pt-2 font-semibold flex justify-between">
-                        <span>Total Fees</span>
-                        <span>{currencySymbol}{convertPrice(totalFees.toFixed(2))}</span>
+                        <div className="border-t pt-2 font-semibold flex justify-between">
+                          <span>Maximum Cost</span>
+                          <span>$26.60</span>
+                        </div>
                       </div>
-                    </div>
-                  )}
-                </div>
-              </div>
+                    )}
 
-              {/* Summary Items */}
-              <div className="flex flex-col gap-2 text-[#595959]">
-                <div className="flex justify-between text-sm">
-                  <span>VAT on Fees</span>
-                  <span className="font-semibold text-black">
-                    {currencySymbol}{convertPrice(vatOnFees.toFixed(2))}
-                  </span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span>Discount</span>
-                  <span className="font-semibold text-black">
-                    {currencySymbol}{convertPrice(discount.toFixed(2))}
-                  </span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span>Profit Margin</span>
-                  <span className="font-semibold text-black">
-                    {(profitMargin * 100).toFixed(2)}%
-                  </span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span>Breakeven Sale Price</span>
-                  <span className="font-semibold text-black">
-                    {currencySymbol}{convertPrice(breakEvenPrice.toFixed(2))}
-                  </span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span>Estimated Amz. Payout</span>
-                  <span className="font-semibold text-black">
-                  {currencySymbol}{convertPrice(estimatedPayout.toFixed(2))}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* extra stats grid */}
-            <div className="border border-border p-4 rounded-xl flex flex-col gap-5">
-              <div className="grid grid-cols-2 gap-3">
-                <InfoCard
-                  icon={<PriceTagIcon />}
-                  title="Buy Box Price"
-                  value={`${currencySymbol}${convertPrice(extra?.buybox_price) ?? "-"}`}
-                  bgColor="#F0FFF0"
-                />
-                <InfoCard
-                  icon={<ProductSalesIcon />}
-                  title="Estimated Product Sales"
-                  value={`${extra?.monthly_est_product_sales ?? "-"}/month`}
-                  bgColor="#F0F0FF"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <InfoCard
-                  icon={<BSRIcon />}
-                  title="BSR"
-                  value={extra?.bsr ?? "-"}
-                  bgColor="#FFF0FF"
-                />
-                <InfoCard
-                  icon={<MaximumCostIcon />}
-                  title="Maximum Cost"
-                  value={`${currencySymbol}${convertPrice(extra?.max_cost) ?? "-"}`}
-                  bgColor="#FFF0F3"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <InfoCard
-                  icon={<ROIIcon />}
-                  title="ROI"
-                  value={`${extra?.roi ?? "-"}%`}
-                  bgColor="#F5EBFF"
-                />
-                <InfoCard
-                  icon={<PriceTagIcon />}
-                  title="Profit"
-                  value={`${currencySymbol}${convertPrice(extra?.profit) ?? "-"} (${
-                    convertPrice(extra?.profit_percentage) ?? "-"
-                  }%)`}
-                  bgColor="#EBFFFE"
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* right */}
-          <div className="flex flex-col gap-5">
-            {/* Offers Section */}
-            <div className="border border-border flex flex-col rounded-xl">
-              <div className="flex items-center gap-6 font-semibold text-gray-700 p-3">
-                <button
-                  type="button"
-                  className={`text-lg flex gap-1 items-center border-b-2 ${
-                    activeTab5 === "offers"
-                      ? "border-black"
-                      : "border-transparent"
-                  }`}
-                  onClick={() => setActiveTab5("offers")}
-                >
-                  <HiOutlineUsers className="size-5" /> Offers
-                </button>
-                <button
-                  type="button"
-                  className={`text-lg flex gap-1 items-center border-b-2 ${
-                    activeTab5 === "feedback"
-                      ? "border-black"
-                      : "border-transparent"
-                  }`}
-                  onClick={() => setActiveTab5("feedback")}
-                >
-                  <MdOutlineInsertChartOutlined className="size-5" /> Seller
-                  Feedback
-                </button>
-              </div>
-
-              {activeTab5 === "offers" ? (
-                <table className="w-full border-collapse text-sm">
-                  <thead>
-                    <tr className="border-b text-left bg-[#F7F7F7]">
-                      <th className="p-3">S/N</th>
-                      <th className="p-3">Seller</th>
-                      <th className="p-3">Stock</th>
-                      <th className="p-3">Price</th>
-                      <th className="p-3">Buybox Share</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {offersData.offers.map((offer) => (
-                      <tr key={offer.id} className="border-b">
-                        <td className="p-3">{offer.id}</td>
-                        <td className="p-3">
+                    {activeTab === "totalFees" && (
+                      <div className="space-y-2">
+                        {Object.entries(fees).map(([key, value]) => (
                           <div
-                            onClick={() => router.push(`/seller/${offer.seller_id}`)}
-                            className="cursor-pointer"
+                            key={key}
+                            className="flex justify-between text-sm"
                           >
-                            {offer.seller}
-                            {offer.leader && (
-                              <span className="text-xs text-primary block">
-                                BuyBox Leader
-                              </span>
-                            )}
+                            <span className="text-[#595959]">
+                              {key
+                                .replace(/([A-Z])/g, " $1")
+                                .replace(/^./, (str) => str.toUpperCase())}
+                            </span>
+                            <span className="font-semibold text-black">
+                              ${value.toFixed(2)}
+                            </span>
                           </div>
-                        </td>
-                        <td className="p-3">{offer.stock}</td>
-                        <td className="p-3">{currencySymbol}{convertPrice(offer.price)}</td>
-                        <td className="p-3 flex gap-1 items-center">
-                          {offer.buyboxShare}
-                          <div className="relative w-20 h-2 bg-gray-200 rounded-full">
-                            <div
-                              className="absolute top-0 left-0 h-2 bg-green-500 rounded-full"
-                              style={{ width: offer.buyboxShare }}
-                            />
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              ) : (
-                <table className="w-full border-collapse text-sm">
-                  <thead>
-                    <tr className="border-b text-left bg-[#F7F7F7]">
-                      <th className="p-3">S/N</th>
-                      <th className="p-3">Seller</th>
-                      <th className="p-3">Avg. Price</th>
-                      <th className="p-3">Won</th>
-                      <th className="p-3">Last Won</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {sellerFeedbackData.map((seller) => (
-                      <tr key={seller.id} className="border-b">
-                        <td className="p-3">{seller.id}</td>
-                        <td className="p-3">
-                          <div
-                            onClick={() => router.push("/seller")}
-                            className="cursor-pointer"
-                          >
-                            {seller.seller}
-                            <div className="flex">
-                              {renderStars(seller.rating)}
-                            </div>
-                          </div>
-                        </td>
-                        <td className="p-3">{currencySymbol}{convertPrice(seller.avgPrice)}</td>
-                        <td className="p-3">{seller.won}</td>
-                        <td className="p-3">{seller.lastWon}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              )}
-            </div>
+                        ))}
+                        <div className="border-t pt-2 font-semibold flex justify-between">
+                          <span>Total Fees</span>
+                          <span>${totalFees.toFixed(2)}</span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
 
-            {/* Ranks & Prices Section */}
-            <div className="border border-border p-4 flex flex-col gap-2 rounded-xl">
-              <div className="flex gap-4 items-center justify-between">
-                <h2 className="text-lg font-semibold">Ranks & Prices</h2>
-                <button type="button" className="flex gap-1.5 items-center">
-                  <IoMdRefresh className="size-5" />
-                  Refresh
-                </button>
+                {/* Summary Items */}
+                <div className="flex flex-col gap-2 text-[#595959]">
+                  <div className="flex justify-between text-sm">
+                    <span>VAT on Fees</span>
+                    <span className="font-semibold text-black">
+                      ${vatOnFees.toFixed(2)}
+                    </span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span>Discount</span>
+                    <span className="font-semibold text-black">
+                      ${discount.toFixed(2)}
+                    </span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span>Profit Margin</span>
+                    <span className="font-semibold text-black">
+                      {(profitMargin * 100).toFixed(2)}%
+                    </span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span>Breakeven Sale Price</span>
+                    <span className="font-semibold text-black">
+                      ${breakEvenPrice.toFixed(2)}
+                    </span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span>Estimated Amz. Payout</span>
+                    <span className="font-semibold text-black">
+                      ${estimatedPayout.toFixed(2)}
+                    </span>
+                  </div>
+                </div>
               </div>
 
-              <div className="flex items-center gap-1 mt-4">
-                {["current", "30", "90", "180", "all"].map((tab) => (
+              {/* extra stats grid */}
+              <div className="border border-border p-4 rounded-xl flex flex-col gap-5">
+                <div className="grid grid-cols-2 gap-3">
+                  <InfoCard
+                    icon={<PriceTagIcon />}
+                    title="Buy Box Price"
+                    value={`$${extra?.buybox_price ?? "-"}`}
+                    bgColor="#F0FFF0"
+                  />
+                  <InfoCard
+                    icon={<ProductSalesIcon />}
+                    title="Estimated Product Sales"
+                    value={`${extra?.monthly_est_product_sales ?? "-"}/month`}
+                    bgColor="#F0F0FF"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <InfoCard
+                    icon={<BSRIcon />}
+                    title="BSR"
+                    value={extra?.bsr ?? "-"}
+                    bgColor="#FFF0FF"
+                  />
+                  <InfoCard
+                    icon={<MaximumCostIcon />}
+                    title="Maximum Cost"
+                    value={`$${extra?.max_cost ?? "-"}`}
+                    bgColor="#FFF0F3"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <InfoCard
+                    icon={<ROIIcon />}
+                    title="ROI"
+                    value={`${extra?.roi ?? "-"}%`}
+                    bgColor="#F5EBFF"
+                  />
+                  <InfoCard
+                    icon={<PriceTagIcon />}
+                    title="Profit"
+                    value={`$${extra?.profit ?? "-"} (${
+                      extra?.profit_percentage ?? "-"
+                    }%)`}
+                    bgColor="#EBFFFE"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* right */}
+            <div className="flex flex-col gap-5">
+              {/* Offers Section */}
+              <div className="border border-border flex flex-col rounded-xl max-h-[375px] overflow-scroll">
+                <div className="flex items-center gap-6 font-semibold text-gray-700 p-3">
                   <button
-                    key={tab}
-                    className={`px-3 py-1 rounded-full text-black border capitalize ${
-                      tab === activeTab4
-                        ? "bg-[#E7EBFE] border-transparent"
-                        : "bg-transparent border-border"
+                    type="button"
+                    className={`text-lg flex gap-1 items-center border-b-2 ${
+                      activeTab5 === "offers"
+                        ? "border-black"
+                        : "border-transparent"
                     }`}
-                    onClick={() =>
-                      setActiveTab4(
-                        tab as "current" | "30" | "90" | "180" | "all"
-                      )
-                    }
+                    onClick={() => setActiveTab5("offers")}
                   >
-                    {tab}
+                    <HiOutlineUsers className="size-5" /> Offers
                   </button>
-                ))}
-              </div>
-
-              <div className="p-3 bg-[#F6FEFC] rounded-2xl flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span className="size-12 rounded-2xl bg-[#CEF8F5] text-[#08DCCF] flex items-center justify-center">
-                    <BsArrowUp className="size-6" />
-                  </span>
-                  <span>
-                    <p className="text-black font-semibold">
-                      {ranks.netBBPriceChanges}
-                    </p>
-                    <p>Net BB Price Changes</p>
-                  </span>
+                  <button
+                    type="button"
+                    className={`text-lg flex gap-1 items-center border-b-2 ${
+                      activeTab5 === "feedback"
+                        ? "border-black"
+                        : "border-transparent"
+                    }`}
+                    onClick={() => setActiveTab5("feedback")}
+                  >
+                    <MdOutlineInsertChartOutlined className="size-5" /> Seller
+                    Feedback
+                  </button>
                 </div>
 
-                <div className="text-black text-xs bg-[#E7EBFE] rounded-full px-1 flex items-center gap-1">
-                  <BsArrowUp className="text-primary size-3" />{" "}
-                  {ranks.changePercent}
-                </div>
-              </div>
-
-              <div className="mt-2 text-sm text-[#595959]">
-                <div className="flex justify-between py-1">
-                  <span>Buy Box</span>
-                  <span className="font-semibold text-black">
-                    {currencySymbol}{convertPrice(ranks.buyBox)}
-                  </span>
-                </div>
-                <div className="flex justify-between py-1">
-                  <span>Amazon</span>
-                  <span className="font-semibold text-black">
-                    {currencySymbol}{convertPrice(ranks.amazon)}
-                  </span>
-                </div>
-                <div className="flex justify-between py-1">
-                  <span>Lowest FBA</span>
-                  <span className="font-semibold text-black">
-                    {currencySymbol}{convertPrice(ranks.lowestFBA)}
-                  </span>
-                </div>
-                <div className="flex justify-between py-1">
-                  <span>Lowest FBM</span>
-                  <span className="font-semibold text-black">
-                    {currencySymbol}{convertPrice(ranks.lowestFBM)}
-                  </span>
-                </div>
-                <div className="flex justify-between py-1">
-                  <span>Keepa BSR Drops</span>
-                  <span className="font-semibold text-black">
-                    {ranks.keepaBSRDrops}
-                  </span>
-                </div>
-                <div className="flex justify-between py-1">
-                  <span>Estimated Sales</span>
-                  <span className="font-semibold text-black">
-                    {ranks.estimatedSales}
-                  </span>
-                </div>
-                <div className="flex justify-between py-1">
-                  <span>Est. Time to Sale</span>
-                  <span className="font-semibold text-black">
-                    {ranks.estTimeToSale}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/*  */}
-
-            {/* Buy Box Analysis */}
-            <div className="p-6 border rounded-lg">
-              <h2 className="text-lg font-semibold">Buy Box Analysis</h2>
-              <div className="mt-4">
-                <CustomDatePicker />
-              </div>
-
-              <div className="flex justify-between items-center mt-6">
-                <ResponsiveContainer width={250} height={250}>
-                  <PieChart>
-                    <Pie data={pieData} dataKey="value" outerRadius={80}>
-                      {pieData.map((entry, index) => (
-                        <Cell key={index} fill={entry.color} />
+                {activeTab5 === "offers" ? (
+                  <table className="w-full border-collapse text-sm">
+                    <thead>
+                      <tr className="border-b text-left bg-[#F7F7F7]">
+                        <th className="p-3">S/N</th>
+                        <th className="p-3">Seller</th>
+                        <th className="p-3">Stock</th>
+                        <th className="p-3">Price</th>
+                        <th className="p-3">Buybox Share</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {offersData.offers.map((offer) => (
+                        <tr key={offer.id} className="border-b">
+                          <td className="p-3">{offer.id}</td>
+                          <td className="p-3">
+                            <div
+                              onClick={() =>
+                                router.push(`/seller/${offer.seller_id}`)
+                              }
+                              className="cursor-pointer"
+                            >
+                              {offer.seller}
+                              {offer.leader && (
+                                <span className="text-xs text-primary block">
+                                  BuyBox Leader
+                                </span>
+                              )}
+                            </div>
+                          </td>
+                          <td className="p-3">{offer.stock}</td>
+                          <td className="p-3">{offer.price}</td>
+                          <td className="p-3 flex gap-1 items-center">
+                            {offer.buyboxShare}
+                            <div className="relative w-20 h-2 bg-gray-200 rounded-full">
+                              <div
+                                className="absolute top-0 left-0 h-2 bg-green-500 rounded-full"
+                                style={{ width: offer.buyboxShare }}
+                              />
+                            </div>
+                          </td>
+                        </tr>
                       ))}
-                    </Pie>
-                  </PieChart>
-                </ResponsiveContainer>
+                    </tbody>
+                  </table>
+                ) : (
+                  <table className="w-full border-collapse text-sm">
+                    <thead>
+                      <tr className="border-b text-left bg-[#F7F7F7]">
+                        <th className="p-3">S/N</th>
+                        <th className="p-3">Seller</th>
+                        <th className="p-3">Avg. Price</th>
+                        <th className="p-3">Won</th>
+                        <th className="p-3">Last Won</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {sellerFeedbackData.map((seller) => (
+                        <tr key={seller.id} className="border-b">
+                          <td className="p-3">{seller.id}</td>
+                          <td className="p-3">
+                            <div
+                              onClick={() => router.push("/seller")}
+                              className="cursor-pointer"
+                            >
+                              {seller.seller}
+                              <div className="flex">
+                                {renderStars(seller.rating)}
+                              </div>
+                            </div>
+                          </td>
+                          <td className="p-3">{seller.avgPrice}</td>
+                          <td className="p-3">{seller.won}</td>
+                          <td className="p-3">{seller.lastWon}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )}
+              </div>
 
-                <ul>
-                  {pieData.map((entry, index) => (
-                    <li key={index} className="flex items-center gap-2">
-                      <span
-                        className="size-3 rounded-lg"
-                        style={{ backgroundColor: entry.color }}
-                      ></span>
-                      {entry.name} &nbsp; - {entry.value}%
-                    </li>
+              {/* Ranks & Prices Section */}
+              <div className="border border-border p-4 flex flex-col gap-2 rounded-xl">
+                <div className="flex gap-4 items-center justify-between">
+                  <h2 className="text-lg font-semibold">Ranks & Prices</h2>
+                  <button type="button" className="flex gap-1.5 items-center">
+                    <IoMdRefresh className="size-5" />
+                    Refresh
+                  </button>
+                </div>
+
+                <div className="flex items-center gap-1 mt-4">
+                  {["current", "30", "90", "180", "all"].map((tab) => (
+                    <button
+                      key={tab}
+                      className={`px-3 py-1 rounded-full text-black border capitalize ${
+                        tab === activeTab4
+                          ? "bg-[#E7EBFE] border-transparent"
+                          : "bg-transparent border-border"
+                      }`}
+                      onClick={() =>
+                        setActiveTab4(
+                          tab as "current" | "30" | "90" | "180" | "all"
+                        )
+                      }
+                    >
+                      {tab}
+                    </button>
                   ))}
-                </ul>
-              </div>
-            </div>
+                </div>
 
-            {/* Market Analysis */}
-            <div className="p-6 border rounded-lg">
-              <div className="flex justify-between items-center">
-                <h2 className="text-lg font-semibold">Market Analysis</h2>
-                {/* Date Picker */}
-                <CustomDatePicker />
-              </div>
-
-              <p className="mt-4 text-black">Price</p>
-
-              <div className="mt-6 flex flex-col gap-4">
-                {/* Legend */}
-                <div className="flex items-center gap-4">
+                <div className="p-3 bg-[#F6FEFC] rounded-2xl flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <span className="size-3 rounded-lg bg-[#FF0080]" />
-                    <span>Amazon</span>
+                    <span className="size-12 rounded-2xl bg-[#CEF8F5] text-[#08DCCF] flex items-center justify-center">
+                      <BsArrowUp className="size-6" />
+                    </span>
+                    <span>
+                      <p className="text-black font-semibold">
+                        {ranks.netBBPriceChanges}
+                      </p>
+                      <p>Net BB Price Changes</p>
+                    </span>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <span className="size-3 rounded-lg bg-[#00E4E4]" />
-                    <span>Buy Box</span>
+
+                  <div className="text-black text-xs bg-[#E7EBFE] rounded-full px-1 flex items-center gap-1">
+                    <BsArrowUp className="text-primary size-3" />{" "}
+                    {ranks.changePercent}
                   </div>
                 </div>
 
-                <ResponsiveContainer width="100%" height={300}>
-                  <LineChart data={priceData.price}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="date" />
-                    <YAxis />
-                    <Tooltip />
-                    <Line
-                      type="monotone"
-                      dataKey="amazon"
-                      stroke="#FF0080"
-                      strokeWidth={2}
-                    />
-                    <Line
-                      type="monotone"
-                      dataKey="buyBox"
-                      stroke="#00E4E4"
-                      strokeWidth={2}
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
+                <div className="mt-2 text-sm text-[#595959]">
+                  <div className="flex justify-between py-1">
+                    <span>Buy Box</span>
+                    <span className="font-semibold text-black">
+                      {currencySymbol}
+                      {convertPrice(ranks.buyBox)}
+                    </span>
+                  </div>
+                  <div className="flex justify-between py-1">
+                    <span>Amazon</span>
+                    <span className="font-semibold text-black">
+                      {currencySymbol}
+                      {convertPrice(ranks.amazon)}
+                    </span>
+                  </div>
+                  <div className="flex justify-between py-1">
+                    <span>Lowest FBA</span>
+                    <span className="font-semibold text-black">
+                      {currencySymbol}
+                      {convertPrice(ranks.lowestFBA)}
+                    </span>
+                  </div>
+                  <div className="flex justify-between py-1">
+                    <span>Lowest FBM</span>
+                    <span className="font-semibold text-black">
+                      {currencySymbol}
+                      {convertPrice(ranks.lowestFBM)}
+                    </span>
+                  </div>
+                  <div className="flex justify-between py-1">
+                    <span>Keepa BSR Drops</span>
+                    <span className="font-semibold text-black">
+                      {ranks.keepaBSRDrops}
+                    </span>
+                  </div>
+                  <div className="flex justify-between py-1">
+                    <span>Estimated Sales</span>
+                    <span className="font-semibold text-black">
+                      {ranks.estimatedSales}
+                    </span>
+                  </div>
+                  <div className="flex justify-between py-1">
+                    <span>Est. Time to Sale</span>
+                    <span className="font-semibold text-black">
+                      {ranks.estTimeToSale}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/*  */}
+
+              {/* Buy Box Analysis */}
+              <div className="p-6 border rounded-lg">
+                <h2 className="text-lg font-semibold">Buy Box Analysis</h2>
+                <div className="mt-4">
+                  <CustomDatePicker />
+                </div>
+
+                <div className="flex justify-between items-center mt-6">
+                  <ResponsiveContainer width={250} height={250}>
+                    <PieChart>
+                      <Pie data={pieData} dataKey="value" outerRadius={80}>
+                        {pieData.map((entry, index) => (
+                          <Cell key={index} fill={entry.color} />
+                        ))}
+                      </Pie>
+                    </PieChart>
+                  </ResponsiveContainer>
+
+                  <ul>
+                    {pieData.map((entry, index) => (
+                      <li key={index} className="flex items-center gap-2">
+                        <span
+                          className="size-3 rounded-lg"
+                          style={{ backgroundColor: entry.color }}
+                        ></span>
+                        {entry.name} &nbsp; - {entry.value}%
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+
+              {/* Market Analysis */}
+              <div className="p-6 border rounded-lg">
+                <div className="flex justify-between items-center">
+                  <h2 className="text-lg font-semibold">Market Analysis</h2>
+                  {/* Date Picker */}
+                  <CustomDatePicker />
+                </div>
+
+                <p className="mt-4 text-black">Price</p>
+
+                <div className="mt-6 flex flex-col gap-4">
+                  {/* Legend */}
+                  <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-2">
+                      <span className="size-3 rounded-lg bg-[#FF0080]" />
+                      <span>Amazon</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="size-3 rounded-lg bg-[#00E4E4]" />
+                      <span>Buy Box</span>
+                    </div>
+                  </div>
+
+                  <ResponsiveContainer width="100%" height={300}>
+                    <LineChart data={priceData.price}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="date" />
+                      <YAxis />
+                      <Tooltip />
+                      <Line
+                        type="monotone"
+                        dataKey="amazon"
+                        stroke="#FF0080"
+                        strokeWidth={2}
+                      />
+                      <Line
+                        type="monotone"
+                        dataKey="buyBox"
+                        stroke="#00E4E4"
+                        strokeWidth={2}
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      </main>
+        </main>
+      )}
+
+      {/* Show search results when there's a search and results */}
+      {debouncedSearch && searchData?.data?.items?.length > 0 && (
+        <main className="flex flex-col gap-20 justify-between h-full">
+          <div className="p-2 rounded-lg border border-border flex flex-col divide-y divide-[#E4E4E7]">
+            <span className="bg-[#FAFAFA] px-4 py-3.5">
+              <h4 className="text-neutral-900 font-medium text-base md:text-lg">
+                Product
+              </h4>
+            </span>
+
+            {products.map((product: Product) => (
+              <div
+                key={product.asin}
+                className="hover:bg-gray-50 duration-200 cursor-pointer px-4 py-3.5 flex flex-col sm:flex-row sm:items-center gap-4"
+              >
+                <Image
+                  onClick={() =>
+                    router.push(`/dashboard/product/${product.asin}`)
+                  }
+                  src={product.image || UFO}
+                  alt="product"
+                  className="size-16 rounded-lg object-cover"
+                  width={64}
+                  height={64}
+                  quality={90}
+                  priority
+                  unoptimized
+                />
+                <div className="flex flex-col gap-1 text-[#09090B]">
+                  <p
+                    onClick={() =>
+                      router.push(`/dashboard/product/${product.asin}`)
+                    }
+                    className="font-bold hover:underline duration-100"
+                  >
+                    {product.title}
+                  </p>
+                  <p>
+                    {"⭐".repeat(product.rating || 0)}{" "}
+                    <span className="font-bold">({product.reviews || 0})</span>
+                  </p>
+                  <p className="text-sm">By ASIN: {product.asin}</p>
+
+                  <p className="text-sm">
+                    {product.category} | <SalesStats product={product} />
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <CustomPagination
+            currentPage={currentPage}
+            totalResults={totalResults}
+            itemsPerPage={itemsPerPage}
+            onPageChange={(page) => setCurrentPage(page)}
+            onItemsPerPageChange={(value) => {
+              setItemsPerPage(value);
+              setCurrentPage(1); // Reset to first page on change
+            }}
+          />
+        </main>
+      )}
+
+      {/* Show "no results" when there's a search but no results */}
+      {debouncedSearch &&
+        searchData?.data?.items?.length === 0 &&
+        !isLoadingSearch && (
+          <div className="flex flex-col gap-6 justify-center items-center py-16">
+            <Image
+              src={UFO}
+              alt="UFO"
+              className="sm:size-[200px]"
+              width={200}
+              height={200}
+            />
+            <span className="text-center space-y-1">
+              <h4 className="text-neutral-900 font-bold text-xl md:text-2xl">
+                No products found for &quot;{debouncedSearch}&quot;
+              </h4>
+              <p className="text-[#52525B] text-sm">
+                Try a different search term.
+              </p>
+            </span>
+          </div>
+        )}
     </section>
   );
 };
