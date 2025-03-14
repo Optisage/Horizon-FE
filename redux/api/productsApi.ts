@@ -26,7 +26,7 @@ export const productsApi = createApi({
 
     searchProductsHistory: builder.query({
       query: ({ q, marketplaceId, perPage = 5, page = 1 }) => ({
-        url: "catalog/products/search",
+        url: "catalog/search-history",
         method: "GET",
         params: { q, marketplaceId, perPage, page },
         // https://api-staging.optisage.ai/api/catalog/products/search?perPage=10&page=3'

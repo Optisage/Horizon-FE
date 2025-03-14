@@ -1,6 +1,6 @@
 "use client";
 
-import { SetStateAction, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { CustomPagination, SearchInput } from "@/app/(dashboard)/_components";
 import Image from "next/image";
 import { message } from "antd";
@@ -46,9 +46,7 @@ import {
   useGetBuyboxInfoQuery,
   useGetRankingsAndPricesQuery,
   useSearchItemsQuery,
-  // useGetSalesStatisticsQuery,
-  // useGetProductFeesQuery,
-  // useCalculateProfitablilityMutation,
+  useCalculateProfitablilityMutation,
 } from "@/redux/api/productsApi";
 import useCurrencyConverter from "@/utils/currencyConverter";
 import { useAppSelector } from "@/redux/hooks";
@@ -79,13 +77,74 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(6);
 
-  const [activeTab, setActiveTab] = useState("totalFees");
-  const [fulfillmentType, setFulfillmentType] = useState("FBA");
-  const [costPrice, setCostPrice] = useState(40000);
-  const [salePrice, setSalePrice] = useState(40000);
-  const [costPrice2, setCostPrice2] = useState(0);
-  const [salePrice2, setSalePrice2] = useState(0);
+  const [costPrice, setCostPrice] = useState(0);
+  const [salePrice, setSalePrice] = useState(0);
   const [storageMonths, setStorageMonths] = useState(0);
+  const [fulfillmentType, setFulfillmentType] = useState("FBM");
+  const [activeTab, setActiveTab] = useState("maximumCost");
+
+  const [fees, setFees] = useState({
+    referralFee: 0,
+    fulfillmentType: "FBM",
+    fullfillmentFee: 0,
+    closingFee: 0,
+    storageFee: 0,
+    prepFee: 0,
+    shippingFee: 0,
+    digitalServicesFee: 0,
+    miscFee: 0,
+  });
+  const [totalFees, setTotalFees] = useState(0);
+  const [vatOnFees, setVatOnFees] = useState(0);
+  const [discount, setDiscount] = useState(0);
+  const [profitMargin, setProfitMargin] = useState(0);
+  const [breakEvenPrice, setBreakEvenPrice] = useState(0);
+  const [estimatedPayout, setEstimatedPayout] = useState(0);
+
+  const [calculateProfitability, { isLoading: isLoadingProfitability }] =
+    useCalculateProfitablilityMutation();
+
+  // calculating profitability
+  const handleCalculateProfitability = async () => {
+    const body = {
+      asin: asin,
+      marketplaceId: `${marketplaceId}`,
+      isAmazonFulfilled: fulfillmentType === "FBA",
+      currencyCode: currencyCode,
+      // {currencySymbol}
+      costPrice: costPrice,
+      salePrice: salePrice,
+      pointsNumber: 0,
+      pointsAmount: 0,
+    };
+
+    try {
+      const response = await calculateProfitability({ body }).unwrap();
+      if (response.status === 200) {
+        // Update state with the response data
+        setFees({
+          referralFee: response.data.referralFee,
+          fulfillmentType: response.data.fulfillmentType,
+          fullfillmentFee: response.data.fullfillmentFee,
+          closingFee: response.data.closingFee,
+          storageFee: response.data.storageFee,
+          prepFee: parseFloat(response.data.prepFee),
+          shippingFee: parseFloat(response.data.shippingFee),
+          digitalServicesFee: response.data.digitalServicesFee,
+          miscFee: parseFloat(response.data.miscFee),
+        });
+        setTotalFees(response.data.totalFees);
+        setVatOnFees(response.data.vatOnFees);
+        setDiscount(response.data.discount);
+        setProfitMargin(response.data.profitMargin);
+        setBreakEvenPrice(response.data.breakevenSalePrice);
+        setEstimatedPayout(response.data.estimatedAmzPayout);
+      }
+    } catch (error) {
+      console.error("Failed to calculate profitability:", error);
+      message.error("Failed to calculate profitability. Please try again.");
+    }
+  };
 
   const [activeTab4, setActiveTab4] = useState<
     "current" | "30" | "90" | "180" | "all"
@@ -165,25 +224,6 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
       { date: "Feb 25", amazon: 7000, buyBox: 4200 },
     ],
   };
-
-  const fees = {
-    referralFee: 9.69,
-    fulfillmentFBA: 10.59,
-    closingFee: 0.0,
-    storageFee: 2.03,
-    prepFee: 0.0,
-    inboundShipping: 0.0,
-    digitalServicesFee: 0.29,
-    miscFee: 0.0,
-    miscFeePercent: 0.0,
-  };
-
-  const totalFees = Object.values(fees).reduce((a, b) => a + b, 0);
-  const vatOnFees = 0.8;
-  const discount = 0.0;
-  const profitMargin = 0.59;
-  const breakEvenPrice = 28.72;
-  const estimatedPayout = 13.18;
 
   const ranks = {
     netBBPriceChanges: rankings?.net_bb_price_changes?.price ?? "-",
@@ -394,39 +434,37 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
 
               {/* Profitablility Calculator */}
               <div className="flex flex-col gap-4">
-                <div className="flex flex-col gap-2">
-                  <h2 className="font-semibold">Profitability Calculator</h2>
+                {/* Profitability Calculator Header */}
+                <h2 className="font-semibold text-lg">
+                  Profitability Calculator
+                </h2>
 
-                  {/* Fulfillment Type Buttons */}
-                  <div className="flex flex-col sm:flex-row gap-4 md:items-center justify-between p-3 rounded-xl bg-[#FAFAFA]">
-                    <h2 className="font-semibold text-black">
-                      Fulfilment Type
-                    </h2>
-
-                    <div className="flex gap-2 mb-4">
-                      <button
-                        type="button"
-                        onClick={() => setFulfillmentType("FBA")}
-                        className={`px-3 py-1 rounded-full text-black border border-transparent ${
-                          fulfillmentType === "FBA"
-                            ? "bg-[#E7EBFE]"
-                            : "bg-transparent border-border"
-                        }`}
-                      >
-                        FBA
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setFulfillmentType("FBM")}
-                        className={`px-3 py-1 rounded-full text-black border border-transparent ${
-                          fulfillmentType === "FBM"
-                            ? "bg-[#E7EBFE]"
-                            : "bg-transparent border-border"
-                        }`}
-                      >
-                        FBM
-                      </button>
-                    </div>
+                {/* Fulfillment Type Buttons */}
+                <div className="flex flex-col sm:flex-row gap-4 md:items-center justify-between p-3 rounded-xl bg-[#FAFAFA]">
+                  <h2 className="font-semibold text-black">Fulfilment Type</h2>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setFulfillmentType("FBA")}
+                      className={`px-3 py-1 rounded-full text-black border ${
+                        fulfillmentType === "FBA"
+                          ? "bg-[#E7EBFE]"
+                          : "bg-transparent border-border"
+                      }`}
+                    >
+                      FBA
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setFulfillmentType("FBM")}
+                      className={`px-3 py-1 rounded-full text-black border ${
+                        fulfillmentType === "FBM"
+                          ? "bg-[#E7EBFE]"
+                          : "bg-transparent border-border"
+                      }`}
+                    >
+                      FBM
+                    </button>
                   </div>
                 </div>
 
@@ -435,74 +473,22 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
                   <div className="flex flex-col gap-2">
                     <label className="text-sm text-gray-600">Cost Price</label>
                     <input
-                      aria-label="cost price"
+                      aria-label="Cost Price"
                       type="number"
                       value={costPrice}
-                      onChange={(e) =>
-                        setCostPrice(Number(e.target.value) || 0)
-                      }
+                      onChange={(e) => setCostPrice(Number(e.target.value))}
                       className="px-4 py-1.5 w-full border rounded"
                     />
                   </div>
                   <div className="flex flex-col gap-2">
                     <label className="text-sm text-gray-600">Sale Price</label>
                     <input
-                      aria-label="sale price"
+                      aria-label="Sale Price"
                       type="number"
                       value={salePrice}
-                      onChange={(e) =>
-                        setSalePrice(Number(e.target.value) || 0)
-                      }
+                      onChange={(e) => setSalePrice(Number(e.target.value))}
                       className="px-4 py-1.5 w-full border rounded"
                     />
-                  </div>
-                </div>
-                <div className="mt-4 grid grid-cols-2 gap-4">
-                  <div className="flex flex-col gap-2">
-                    <label className="text-sm text-gray-600">
-                      Cost Price 2
-                    </label>
-                    <input
-                      aria-label="cost price"
-                      type="number"
-                      value={costPrice2}
-                      onChange={(e) =>
-                        setCostPrice2(Number(e.target.value) || 0)
-                      }
-                      className="px-4 py-1.5 w-full border rounded"
-                    />
-                  </div>
-                  <div className="flex flex-col gap-2">
-                    <label className="text-sm text-gray-600">
-                      Sale Price 2
-                    </label>
-                    <input
-                      aria-label="sale price"
-                      type="number"
-                      value={salePrice2}
-                      onChange={(e) =>
-                        setSalePrice2(Number(e.target.value) || 0)
-                      }
-                      className="px-4 py-1.5 w-full border rounded"
-                    />
-                  </div>
-                </div>
-                <div className="mt-4 flex flex-col gap-2">
-                  <label className="text-sm text-gray-600">
-                    Storage (Months)
-                  </label>
-                  <input
-                    aria-label="storage months"
-                    type="range"
-                    value={storageMonths}
-                    onChange={(e) => setStorageMonths(Number(e.target.value))}
-                    max={12}
-                    step={1}
-                    className="w-full"
-                  />
-                  <div className="flex justify-between text-sm text-gray-500">
-                    <span>0</span>
-                    <span>12</span>
                   </div>
                 </div>
 
@@ -513,9 +499,7 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
                   </label>
                   <Slider
                     value={storageMonths}
-                    onChange={(value: SetStateAction<number>) =>
-                      setStorageMonths(value)
-                    }
+                    onChange={(value: number) => setStorageMonths(value)}
                     max={12}
                     step={1}
                   />
@@ -524,6 +508,18 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
                     <span>12</span>
                   </div>
                 </div>
+
+                {/* Calculate Button */}
+                <button
+                  type="button"
+                  onClick={handleCalculateProfitability}
+                  disabled={isLoadingProfitability}
+                  className="px-4 py-2 bg-primary text-white rounded hover:bg-primary-hover"
+                >
+                  {isLoadingProfitability
+                    ? "Calculating..."
+                    : "Calculate Profitability"}
+                </button>
 
                 {/* Fees Section with Tabs */}
                 <div className="flex flex-col gap-2">
@@ -585,7 +581,10 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
                                 .replace(/^./, (str) => str.toUpperCase())}
                             </span>
                             <span className="font-semibold text-black">
-                              ${value.toFixed(2)}
+                              $
+                              {typeof value === "number"
+                                ? value.toFixed(2)
+                                : value}
                             </span>
                           </div>
                         ))}
