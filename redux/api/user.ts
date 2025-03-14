@@ -7,7 +7,6 @@ export const userApi = createApi({
   refetchOnReconnect: true,
   refetchOnMountOrArgChange: 10,
   baseQuery: baseQueryForAuth,
-  tagTypes: ["Profile"],
   endpoints: (builder) => ({
 
    

@@ -6,7 +6,7 @@ const useCurrencyConverter = (currencyCode: string) => {
   useEffect(() => {
     const fetchExchangeRate = async () => {
       try {
-        const response = await fetch(`https://api.exchangerate-api.com/v4/latest/USD`);
+        const response = await fetch(`https://api.exchangerate-api.com/v4/latest/CAD`);
         const data = await response.json();
         const rate = data.rates[currencyCode];
         setExchangeRate(rate || 1); // Default to 1 if the currency code is not found

@@ -135,7 +135,7 @@ const Referral = () => {
                   Points Balance
                 </h5>
                 <p className="text-[#01011D] font-semibold text-xl md:text-2xl">
-                  {referralData?.points}pts
+                  {referralData?.points || 0}pts
                 </p>
               </span>
 
@@ -156,7 +156,7 @@ const Referral = () => {
                   Earnings this Week
                 </h5>
                 <p className="text-[#01011D] font-semibold text-xl md:text-2xl">
-                {referralData?.week_earnings}
+                {referralData?.week_earnings || 0}
                 </p>
               </span>
 
