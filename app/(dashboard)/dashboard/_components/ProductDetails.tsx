@@ -217,6 +217,7 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
   const {
     data: rankingsData,
     isLoading: isLoadingRankings,
+    error: rankingsError,
     refetch,
   } = useGetRankingsAndPricesQuery({
     marketplaceId,
@@ -532,7 +533,10 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
                     </span>
 
                     <div>
-                      <AlertsDrawer itemAsin={asin} marketplaceId={marketplaceId} />
+                      <AlertsDrawer
+                        itemAsin={asin}
+                        marketplaceId={marketplaceId}
+                      />
                     </div>
                   </div>
 
@@ -911,7 +915,9 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
                           <td className="p-3">{seller.id}</td>
                           <td className="p-3">
                             <div
-                              onClick={() => router.push(`/seller/${seller.sellerId}`)}
+                              onClick={() =>
+                                router.push(`/seller/${seller.sellerId}`)
+                              }
                               className="cursor-pointer"
                             >
                               {seller.seller}
@@ -968,73 +974,85 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
                   ))}
                 </div>
 
-                <div className="p-3 bg-[#F6FEFC] rounded-2xl flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <span className="size-12 rounded-2xl bg-[#CEF8F5] text-[#08DCCF] flex items-center justify-center">
-                      <BsArrowUp className="size-6" />
-                    </span>
-                    <span>
-                      <p className="text-black font-semibold">
-                        {ranks.netBBPriceChanges}
-                      </p>
-                      <p>Net BB Price Changes</p>
-                    </span>
+                {isLoadingRankings ? (
+                  <div className="h-40 flex items-center justify-center font-medium">
+                    Loading...
                   </div>
+                ) : rankingsError ? (
+                  <div className="h-40 flex items-center justify-center text-red-500 font-medium">
+                    Error fetching ranks
+                  </div>
+                ) : (
+                  <>
+                    <div className="p-3 bg-[#F6FEFC] rounded-2xl flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="size-12 rounded-2xl bg-[#CEF8F5] text-[#08DCCF] flex items-center justify-center">
+                          <BsArrowUp className="size-6" />
+                        </span>
+                        <span>
+                          <p className="text-black font-semibold">
+                            {ranks.netBBPriceChanges}
+                          </p>
+                          <p>Net BB Price Changes</p>
+                        </span>
+                      </div>
 
-                  <div className="text-black text-xs bg-[#E7EBFE] rounded-full px-1 flex items-center gap-1">
-                    <BsArrowUp className="text-primary size-3" />{" "}
-                    {ranks.changePercent}
-                  </div>
-                </div>
+                      <div className="text-black text-xs bg-[#E7EBFE] rounded-full px-1 flex items-center gap-1">
+                        <BsArrowUp className="text-primary size-3" />{" "}
+                        {ranks.changePercent}
+                      </div>
+                    </div>
 
-                <div className="mt-2 text-sm text-[#595959]">
-                  <div className="flex justify-between py-1">
-                    <span>Buy Box</span>
-                    <span className="font-semibold text-black">
-                      {currencySymbol}
-                      {convertPrice(ranks.buyBox)}
-                    </span>
-                  </div>
-                  <div className="flex justify-between py-1">
-                    <span>Amazon</span>
-                    <span className="font-semibold text-black">
-                      {currencySymbol}
-                      {convertPrice(ranks.amazon)}
-                    </span>
-                  </div>
-                  <div className="flex justify-between py-1">
-                    <span>Lowest FBA</span>
-                    <span className="font-semibold text-black">
-                      {currencySymbol}
-                      {convertPrice(ranks.lowestFBA)}
-                    </span>
-                  </div>
-                  <div className="flex justify-between py-1">
-                    <span>Lowest FBM</span>
-                    <span className="font-semibold text-black">
-                      {currencySymbol}
-                      {convertPrice(ranks.lowestFBM)}
-                    </span>
-                  </div>
-                  <div className="flex justify-between py-1">
-                    <span>Keepa BSR Drops</span>
-                    <span className="font-semibold text-black">
-                      {ranks.keepaBSRDrops}
-                    </span>
-                  </div>
-                  <div className="flex justify-between py-1">
-                    <span>Estimated Sales</span>
-                    <span className="font-semibold text-black">
-                      {ranks.estimatedSales}
-                    </span>
-                  </div>
-                  <div className="flex justify-between py-1">
-                    <span>Est. Time to Sale</span>
-                    <span className="font-semibold text-black">
-                      {ranks.estTimeToSale}
-                    </span>
-                  </div>
-                </div>
+                    <div className="mt-2 text-sm text-[#595959]">
+                      <div className="flex justify-between py-1">
+                        <span>Buy Box</span>
+                        <span className="font-semibold text-black">
+                          {currencySymbol}
+                          {convertPrice(ranks.buyBox)}
+                        </span>
+                      </div>
+                      <div className="flex justify-between py-1">
+                        <span>Amazon</span>
+                        <span className="font-semibold text-black">
+                          {currencySymbol}
+                          {convertPrice(ranks.amazon)}
+                        </span>
+                      </div>
+                      <div className="flex justify-between py-1">
+                        <span>Lowest FBA</span>
+                        <span className="font-semibold text-black">
+                          {currencySymbol}
+                          {convertPrice(ranks.lowestFBA)}
+                        </span>
+                      </div>
+                      <div className="flex justify-between py-1">
+                        <span>Lowest FBM</span>
+                        <span className="font-semibold text-black">
+                          {currencySymbol}
+                          {convertPrice(ranks.lowestFBM)}
+                        </span>
+                      </div>
+                      <div className="flex justify-between py-1">
+                        <span>Keepa BSR Drops</span>
+                        <span className="font-semibold text-black">
+                          {ranks.keepaBSRDrops}
+                        </span>
+                      </div>
+                      <div className="flex justify-between py-1">
+                        <span>Estimated Sales</span>
+                        <span className="font-semibold text-black">
+                          {ranks.estimatedSales}
+                        </span>
+                      </div>
+                      <div className="flex justify-between py-1">
+                        <span>Est. Time to Sale</span>
+                        <span className="font-semibold text-black">
+                          {ranks.estTimeToSale}
+                        </span>
+                      </div>
+                    </div>
+                  </>
+                )}
               </div>
 
               {/*  */}
