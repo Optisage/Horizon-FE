@@ -353,6 +353,7 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
       id: index + 1,
       seller: seller.seller,
       rating: seller.rating,
+      sellerId: seller.seller_id,
       avgPrice: `${seller.seller_feedback?.avg_price?.toFixed(2) ?? "N/A"}`,
       won: `${seller.seller_feedback?.percentage_won ?? 0}%`,
       lastWon: seller.seller_feedback?.last_won
