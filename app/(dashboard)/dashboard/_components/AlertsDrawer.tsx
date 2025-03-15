@@ -1,15 +1,30 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Drawer } from "antd";
 import { RxArrowTopRight } from "react-icons/rx";
 import { IoClose } from "react-icons/io5";
+import { useLazyGetIpAlertQuery } from "@/redux/api/productsApi";
 
-const AlertsDrawer = () => {
+
+interface prop{
+  itemAsin:string,
+  marketplaceId: number
+}
+const AlertsDrawer = ({itemAsin, marketplaceId}:prop) => {
   const [open, setOpen] = useState(false);
 
   const showDrawer = () => setOpen(true);
   const onClose = () => setOpen(false);
+
+  const [getIpAlert] =useLazyGetIpAlertQuery()
+
+  useEffect(()=>{
+    if(marketplaceId && itemAsin){
+      getIpAlert({itemAsin,marketplaceId})
+    }
+    
+  },[marketplaceId, itemAsin])
 
   return (
     <>
