@@ -11,6 +11,7 @@ import { useGetSalesStatisticsQuery } from "@/redux/api/productsApi";
 import { useAppSelector } from "@/redux/hooks";
 import Loader from "@/utils/loader";
 import dayjs from "dayjs";
+import { useRouter } from "next/navigation";
 // import useCurrencyConverter from "@/utils/currencyConverter";
 
 interface BuyBoxItem {
@@ -24,6 +25,8 @@ interface DateRange {
 }
 
 const SalesStats = ({ product }: { product: Product }) => {
+  const router = useRouter();
+
   const [open, setOpen] = useState(false);
   const [dateRange, setDateRange] = useState<DateRange>({
     startDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(), // Last 30 days by default
@@ -79,14 +82,14 @@ const SalesStats = ({ product }: { product: Product }) => {
       return (
         <p className="text-green-500 text-sm flex items-center gap-0.5">
           <BsArrowUp className="size-4" />
-          {Math.abs(value)}%
+          {Math.abs(value).toFixed(3)}%
         </p>
       );
     } else if (value < 0) {
       return (
         <p className="text-red-500 text-sm flex items-center gap-0.5">
           <BsArrowDown className="size-4" />
-          {Math.abs(value)}%
+          {Math.abs(value).toFixed(3)}%
         </p>
       );
     } else {
@@ -110,9 +113,9 @@ const SalesStats = ({ product }: { product: Product }) => {
           <span className="p-4 flex flex-col gap-1">
             <p className="text-[#737373] text-xs">Estimated No. of Sales</p>
             <p className="text-xl md:text-2xl font-semibold">
-              {salesStats?.estimated_sales_per_month?.currency ||
-                currencySymbol}
-              {salesStats?.estimated_sales_per_month?.amount || 0} / month
+              {salesStats?.estimated_sales_per_month?.amount.toLocaleString() ||
+                0}{" "}
+              / month
             </p>
           </span>
           <span className="p-4 flex flex-col gap-1">
@@ -141,7 +144,8 @@ const SalesStats = ({ product }: { product: Product }) => {
               <p className="text-base font-semibold">
                 {salesStats?.sales_analytics?.net_revenue?.currency ||
                   currencySymbol}
-                {salesStats?.sales_analytics?.net_revenue?.amount || 0}
+                {salesStats?.sales_analytics?.net_revenue?.amount.toLocaleString() ||
+                  0}
               </p>
             </span>
             {formatPercentage(
@@ -168,7 +172,8 @@ const SalesStats = ({ product }: { product: Product }) => {
               <span className="flex flex-col gap-1">
                 <p className="text-[#737373] text-xs">Monthly Units Sold</p>
                 <p className="text-base font-semibold">
-                  {salesStats?.sales_analytics?.monthly_units_sold?.amount || 0}
+                  {salesStats?.sales_analytics?.monthly_units_sold?.amount.toLocaleString() ||
+                    0}
                 </p>
               </span>
               {formatPercentage(
@@ -304,7 +309,15 @@ const SalesStats = ({ product }: { product: Product }) => {
               </span>
 
               <span className="space-y-1 text-sm">
-                <h3 className="text-base font-bold">{product.title}</h3>
+                <h3
+                  onClick={() =>
+                    router.push(`/dashboard/product/${product.asin}`)
+                  }
+                  className="text-base font-bold hover:underline duration-100 cursor-pointer"
+                >
+                  {product.title}
+                </h3>
+
                 <p>
                   {"⭐".repeat(product.rating || 0)}{" "}
                   <span className="font-bold">({product.reviews || 0})</span>

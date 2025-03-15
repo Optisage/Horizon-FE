@@ -60,6 +60,15 @@ export const productsApi = createApi({
       }),
     }),
 
+    getMarketAnalysis: builder.query({
+      query: ({ marketplaceId, itemAsin, date }) => ({
+        url: `catalog/products/${itemAsin}/market-analysis`,
+        method: "GET",
+        params: { marketplaceId, date },
+        // https://api-staging.optisage.ai/api/catalog/products/:asin/market-analysis?marketplaceId=1&date=2024-12
+      }),
+    }),
+
     getProductFees: builder.query({
       query: ({ marketplaceId, itemAsin }) => ({
         url: `catalog/products/fees/${itemAsin}`,
@@ -102,7 +111,7 @@ export const productsApi = createApi({
       query: (params) => ({
         url: "catalog/ip-alert",
         method: "GET",
-        params
+        params,
       }),
     }),
   }),
@@ -120,5 +129,6 @@ export const {
   useGetProductFeesQuery,
   useCalculateProfitablilityMutation,
   useGetSalesStatisticsQuery,
-  useLazyGetIpAlertQuery
+  useLazyGetIpAlertQuery,
+  useGetMarketAnalysisQuery,
 } = productsApi;
