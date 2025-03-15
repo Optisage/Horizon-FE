@@ -74,8 +74,11 @@ interface BuyboxItem {
 const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
   const [searchValue, setSearchValue] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
-  const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(6);
+  const [previousPageToken, setPreviousPageToken] = useState<string | null>(null);
+  const [currentPageToken, setCurrentPageToken] = useState<string | null>(null);
+  const [isPaginationLoading, setIsPaginationLoading] = useState(false);
+  const [nextPageToken, setNextPageToken] = useState<string | null>(null);
+
 
   const [costPrice, setCostPrice] = useState(0);
   const [salePrice, setSalePrice] = useState(0);
@@ -185,12 +188,27 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
       ? {
           q: debouncedSearch,
           marketplaceId: marketplaceId,
-          pageSize: itemsPerPage,
-          pageToken: (currentPage - 1) * itemsPerPage,
+          //pageSize: itemsPerPage,
+          pageToken: currentPageToken,
         }
       : undefined,
     { skip: !debouncedSearch }
   );
+
+    // Update pagination tokens from API response
+    useEffect(() => {
+      if (searchData?.data?.pagination) {
+        setNextPageToken(searchData.data.pagination.nextPageToken);
+        setPreviousPageToken(searchData.data.pagination.previousPageToken);
+      }
+    }, [searchData]);
+
+   // Reset pagination loading when data changes
+   useEffect(() => {
+    if (searchData || searchError) {
+      setIsPaginationLoading(false);
+    }
+  }, [searchData, searchError]);
 
   // Debounce input to prevent excessive API calls
   useEffect(() => {
@@ -198,7 +216,7 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
     return () => clearTimeout(handler);
   }, [searchValue]);
 
-  if (isLoadingBuybox || isLoading || isLoadingRankings) return <Loader />;
+  if (isLoadingBuybox || isLoading || isLoadingRankings || isPaginationLoading) return <Loader />;
 
   const product = data?.data;
   const buybox: BuyboxItem[] = buyboxData?.data?.buybox ?? [];
@@ -284,7 +302,7 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
     ));
   };
 
-  const totalResults = searchData?.data?.pagination?.total || 0;
+  
 
   const products =
     debouncedSearch && searchData?.data?.items
@@ -1028,16 +1046,20 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
             ))}
           </div>
 
+
           <CustomPagination
-            currentPage={currentPage}
-            totalResults={totalResults}
-            itemsPerPage={itemsPerPage}
-            onPageChange={(page) => setCurrentPage(page)}
-            onItemsPerPageChange={(value) => {
-              setItemsPerPage(value);
-              setCurrentPage(1); // Reset to first page on change
+            onNext={() => {
+              setIsPaginationLoading(true);
+              setCurrentPageToken(nextPageToken);
             }}
+            onPrevious={() => {
+              setIsPaginationLoading(true);
+              setCurrentPageToken(previousPageToken);
+            }}
+            hasNext={!!nextPageToken}
+            hasPrevious={!!previousPageToken}
           />
+        
         </main>
       )}
 

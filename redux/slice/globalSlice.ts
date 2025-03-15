@@ -9,9 +9,9 @@ interface globalState {
 
 const initialState: globalState = {
     subScriptionId: null,
-    marketplaceId: 1,
+    marketplaceId: 6,
     currencyCode: "CAD",
-    currencySymbol:"$"
+    currencySymbol:"C$"
 };
 
 const globalSlice = createSlice({
@@ -19,7 +19,6 @@ const globalSlice = createSlice({
   initialState,
   reducers: {
     setSubScriptionId: (state, action: PayloadAction<number>) => {
-        console.log("Dispatching setSubScriptionId with payload:", action.payload);
       state.subScriptionId = action.payload; // Set loading state
     },
     setMarketPlaceId: (state, action: PayloadAction<number>)=>{
