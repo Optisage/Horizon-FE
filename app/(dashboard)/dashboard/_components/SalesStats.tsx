@@ -11,6 +11,7 @@ import { useGetSalesStatisticsQuery } from "@/redux/api/productsApi";
 import { useAppSelector } from "@/redux/hooks";
 import Loader from "@/utils/loader";
 import dayjs from "dayjs";
+import { useRouter } from "next/navigation";
 // import useCurrencyConverter from "@/utils/currencyConverter";
 
 interface BuyBoxItem {
@@ -24,6 +25,8 @@ interface DateRange {
 }
 
 const SalesStats = ({ product }: { product: Product }) => {
+  const router = useRouter();
+
   const [open, setOpen] = useState(false);
   const [dateRange, setDateRange] = useState<DateRange>({
     startDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(), // Last 30 days by default
@@ -304,7 +307,15 @@ const SalesStats = ({ product }: { product: Product }) => {
               </span>
 
               <span className="space-y-1 text-sm">
-                <h3 className="text-base font-bold">{product.title}</h3>
+                <h3
+                  onClick={() =>
+                    router.push(`/dashboard/product/${product.asin}`)
+                  }
+                  className="text-base font-bold hover:underline duration-100 cursor-pointer"
+                >
+                  {product.title}
+                </h3>
+
                 <p>
                   {"⭐".repeat(product.rating || 0)}{" "}
                   <span className="font-bold">({product.reviews || 0})</span>

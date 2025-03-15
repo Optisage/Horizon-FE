@@ -76,7 +76,9 @@ const Dashboard = () => {
   const [searchValue, setSearchValue] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [nextPageToken, setNextPageToken] = useState<string | null>(null);
-  const [previousPageToken, setPreviousPageToken] = useState<string | null>(null);
+  const [previousPageToken, setPreviousPageToken] = useState<string | null>(
+    null
+  );
   const [currentPageToken, setCurrentPageToken] = useState<string | null>(null);
   const [isPaginationLoading, setIsPaginationLoading] = useState(false);
 
@@ -90,7 +92,7 @@ const Dashboard = () => {
   }, [searchValue]);
 
   // Fetch products
-  const { data, error, isLoading, isFetching  } = useSearchItemsQuery(
+  const { data, error, isLoading, isFetching } = useSearchItemsQuery(
     debouncedSearch
       ? {
           q: debouncedSearch,
@@ -102,8 +104,8 @@ const Dashboard = () => {
     { skip: !debouncedSearch }
   );
 
-   // Reset pagination loading when data changes
-   useEffect(() => {
+  // Reset pagination loading when data changes
+  useEffect(() => {
     if (data || error) {
       setIsPaginationLoading(false);
     }
@@ -126,7 +128,7 @@ const Dashboard = () => {
         }))
       : [];
 
-      // Update pagination tokens from API response
+  // Update pagination tokens from API response
   useEffect(() => {
     if (data?.data?.pagination) {
       setNextPageToken(data.data.pagination.nextPageToken);
@@ -134,8 +136,8 @@ const Dashboard = () => {
     }
   }, [data]);
 
-   // Reset pagination loading when data changes
-  
+  // Reset pagination loading when data changes
+
   return (
     <section className="flex flex-col gap-8 min-h-[50dvh] md:min-h-[80dvh]">
       <SearchInput value={searchValue} onChange={setSearchValue} />
@@ -217,7 +219,7 @@ const Dashboard = () => {
                 </div>
               </div>
             ))}
-            { isPaginationLoading  && <Loader />}
+            {isPaginationLoading && <Loader />}
           </div>
 
           <CustomPagination
