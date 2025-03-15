@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Formik, Form, Field, ErrorMessage } from "formik";
 import { IoEyeOffOutline, IoEyeOutline } from "react-icons/io5";
@@ -7,15 +7,24 @@ import Link from "next/link";
 import { useLoginMutation } from "@/redux/api/auth";
 import { message } from "antd";
 import { email, password } from "@/lib/validationSchema";
+import { useDispatch } from "react-redux";
+import { logout } from "@/redux/slice/authSlice";
+import Cookies from "js-cookie";
 
 const Login: React.FC = () => {
   const router = useRouter();
+   const dispatch = useDispatch();
   const [step, setStep] = useState(1);
   const [showPassword, setShowPassword] = useState(false);
   const [login, { isLoading }] = useLoginMutation();
   const [messageApi, contextHolder] = message.useMessage();
   const [formValues, setFormValues] = useState({ email: "", password: "" });
  
+  useEffect(()=>{
+      // Clear the token cookie
+      Cookies.remove("optisage-token");
+      dispatch(logout())
+  },[dispatch])
 
   const handleSubmit = async (
     values: { email: string; password: string },
