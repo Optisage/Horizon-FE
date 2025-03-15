@@ -48,8 +48,9 @@ const Seller = () => {
   const params = useParams();
   const sellerId = params?.sellerId;
   const { marketplaceId } = useAppSelector((state) => state?.global);
-  const [currentPage, setCurrentPage] = useState(1);
-const [itemsPerPage, setItemsPerPage] = useState(5);
+  const [nextPageToken, setNextPageToken] = useState<string | null>(null);
+  const [previousPageToken, setPreviousPageToken] = useState<string | null>(null);
+  const [currentPageToken, setCurrentPageToken] = useState<string | null>(null);
   const [getSellerDetails, { data, isLoading: detailsLoading }] =
     useLazyGetSellerDetailsQuery();
   const [getSellerProducts, { data: productsData, isLoading: productLoading }] =
@@ -57,12 +58,7 @@ const [itemsPerPage, setItemsPerPage] = useState(5);
   const [loading, setLoading] = useState(true);
   const [messageApi, contextHolder] = message.useMessage();
 
-  useEffect(() => {
-    setLoading(true); // Start loading
-    Promise.all([
-      getSellerProducts({ marketplaceId: marketplaceId, sellerId: sellerId }),
-    ]).finally(() => setLoading(false)); // Stop loading when both fetches complete
-  }, [getSellerProducts, sellerId, marketplaceId]);
+ 
 
   useEffect(() => {
     if (sellerId && marketplaceId) {
@@ -71,24 +67,23 @@ const [itemsPerPage, setItemsPerPage] = useState(5);
   }, [sellerId, marketplaceId, getSellerDetails]);
 
   // Fetch products with pagination (runs when pagination changes)
-useEffect(() => {
-  if (sellerId && marketplaceId) {
-    setLoading(true);
-    getSellerProducts({
-      marketplaceId: marketplaceId,
-      sellerId: sellerId,
-      page: currentPage,
-      per_page: itemsPerPage
-    }).finally(() => setLoading(false));
-  }
-}, [currentPage, itemsPerPage, sellerId, marketplaceId, getSellerProducts]);
+  useEffect(() => {
+    if (sellerId && marketplaceId) {
+      setLoading(true);
+      getSellerProducts({
+        marketplaceId: marketplaceId,
+        sellerId: sellerId,
+        pageToken: currentPageToken
+      }).finally(() => setLoading(false));
+    }
+  }, [currentPageToken, sellerId, marketplaceId, getSellerProducts]);
 
-useEffect(() => {
-  if (productsData?.data?.pagination) {
-    setCurrentPage(productsData.data.pagination.current_page);
-    setItemsPerPage(productsData.data.pagination.per_page);
-  }
-}, [productsData]);
+  useEffect(() => {
+    if (productsData?.data?.pagination) {
+      setNextPageToken(productsData.data.pagination.nextPageToken);
+      setPreviousPageToken(productsData.data.pagination.previousPageToken);
+    }
+  }, [productsData]);
 
 
   // Extract seller details safely
@@ -258,12 +253,12 @@ useEffect(() => {
             <div className="p-2 rounded-lg border border-border flex flex-col divide-y divide-[#E4E4E7]">
               <span className="bg-[#FAFAFA] px-4 py-3.5">
                 <h4 className="text-neutral-900 font-medium text-base md:text-lg">
-                  All Kemfit’s Products
+                  All {seller?.name || "Seller"}&apos;s Products
                 </h4>
               </span>
 
               {products?.map((product, index) => {
-                const { basic_details } = product;
+                 const basicDetails = product?.basic_details || {};
                 return (
                   <div
                     key={index}
@@ -271,10 +266,10 @@ useEffect(() => {
                   >
                     <Image
                       onClick={() =>
-                        router.push(`/dashboard/product/${basic_details?.asin}`)
+                        router.push(`/dashboard/product/${basicDetails?.asin}`)
                       }
-                      src={basic_details.product_image}
-                      alt={basic_details.product_name}
+                      src={basicDetails.product_image}
+                      alt={basicDetails.product_name}
                       className="size-16 rounded-lg object-cover"
                       width={64}
                       height={64}
@@ -286,23 +281,23 @@ useEffect(() => {
                       <p
                         onClick={() =>
                           router.push(
-                            `/dashboard/product/${basic_details?.asin}`
+                            `/dashboard/product/${basicDetails?.asin}`
                           )
                         }
                         className="font-bold hover:underline duration-100"
                       >
-                        {basic_details.product_name}
+                        {basicDetails.product_name}
                       </p>
                       <p>
-                        {"⭐".repeat(basic_details.rating.stars)}{" "}
+                        {"⭐".repeat(basicDetails.rating.stars)}{" "}
                         <span className="font-bold">
-                          {basic_details.rating.count} ( reviews)
+                          {basicDetails.rating.count} ( reviews)
                         </span>
                       </p>
-                      <p className="text-sm">By ASIN: {basic_details.asin}</p>
+                      <p className="text-sm">By ASIN: {basicDetails.asin}</p>
                       <p className="text-sm">
                         {/* {product.category} | <SalesStats /> */}
-                        {basic_details.category} |
+                        {basicDetails.category} |
                       </p>
                     </div>
                   </div>
@@ -312,16 +307,12 @@ useEffect(() => {
 
             {/* pagination */}
             
-             <CustomPagination 
-              currentPage={currentPage}
-              totalResults={productsData?.data?.pagination?.total || 0}
-              itemsPerPage={itemsPerPage}
-              onPageChange={(page) => setCurrentPage(page)}
-              onItemsPerPageChange={(value) => {
-                setItemsPerPage(value);
-                setCurrentPage(1); // Reset to first page when items per page changes
-              }}
-             /> 
+            <CustomPagination 
+            onNext={() => setCurrentPageToken(nextPageToken)}
+            onPrevious={() => setCurrentPageToken(previousPageToken)}
+            hasNext={!!nextPageToken}
+            hasPrevious={!!previousPageToken}
+          />
              
           </main>
         </>

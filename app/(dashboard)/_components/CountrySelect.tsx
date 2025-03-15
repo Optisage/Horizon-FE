@@ -12,13 +12,14 @@ import { useAppSelector } from "@/redux/hooks";
 
 const CountrySelect = () => {
   const dispatch = useDispatch();
+  const { marketplaceId: initialMarketplaceId } = useAppSelector((state) => state?.global);
   const [selectedCountry, setSelectedCountry] = useState({
-    code: "",
-    name: "Switch Marketplace Country",
-    flag: "",
-    marketplaceId: 0,
-    currencyCode:"",
-    currencySymbol:""
+    code: "ca",
+    name: "Canada",
+    flag: "ca",
+    marketplaceId: initialMarketplaceId,
+    currencyCode: "CAD",
+    currencySymbol: "C$"
   });
 
   const [isOpen, setIsOpen] = useState(false);
@@ -26,7 +27,7 @@ const CountrySelect = () => {
   const [countries, setCountries] = useState([
     { code: "", name: "Switch Marketplace Country", flag: "", marketplaceId: 0, currencyCode:"",currencySymbol:"" },
   ]);
-  const { marketplaceId } = useAppSelector((state) => state?.global);
+  
 
   useEffect(() => {
     marketPlace({});
@@ -52,16 +53,16 @@ const CountrySelect = () => {
   }, [data]);
    // Automatically update selectedCountry when marketplaceId changes
    useEffect(() => {
-    if (marketplaceId && countries.length > 1) {
+    if (initialMarketplaceId && countries.length > 1) {
       const matchedCountry = countries.find(
-        (country) => Number(country.marketplaceId) === marketplaceId
+        (country) => Number(country.marketplaceId) === initialMarketplaceId
       );
 
       if (matchedCountry) {
         setSelectedCountry(matchedCountry);
       }
     }
-  }, [marketplaceId, countries]);
+  }, [initialMarketplaceId, countries]);
 
   const handleSelect = (country: any) => {
     setSelectedCountry(country);

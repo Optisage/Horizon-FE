@@ -1,31 +1,80 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { useLazyGetPricingQuery } from "@/redux/api/auth";
 import { useCreateStripeSubscriptionMutation } from "@/redux/api/subscriptionApi";
-//import { setSubScriptionId } from "@/redux/slice/globalSlice";
 import { Button } from "antd";
-//import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { FaCheckCircle } from "react-icons/fa";
-//import { useDispatch } from "react-redux";
 import { FaDollarSign } from "react-icons/fa6";
+
+// Component to handle the dropdown-like list of features with smooth transition
+const FeatureList = ({
+  items,
+  initialCount = 3,
+}: {
+  items: string[];
+  initialCount?: number;
+}) => {
+  const [expanded, setExpanded] = useState(false);
+
+  // Always visible items
+  const initialItems = items.slice(0, initialCount);
+  // Extra items to show/hide with animation
+  const extraItems = items.slice(initialCount);
+
+  return (
+    <>
+      <ul className="mt-1 text-left space-y-2 border-t pt-4">
+        {initialItems.map((subItem, index) => (
+          <li className="flex gap-2 items-center" key={index}>
+            <FaCheckCircle className="text-green-700 !h-[20px] !w-[20px]" />
+            {subItem}
+          </li>
+        ))}
+        {/* Extra items container with smooth height & opacity transition */}
+        {extraItems.length > 0 && (
+          <div
+            className={`overflow-hidden transition-all duration-300 ease-in-out space-y-2 ${
+              expanded ? "max-h-96 opacity-100" : "max-h-0 opacity-0"
+            }`}
+          >
+            {extraItems.map((subItem, index) => (
+              <li className="flex gap-2 items-center" key={index}>
+                <div>
+                <FaCheckCircle className="text-green-700 !h-[20px] !w-[20px]" />
+                </div>
+                {subItem}
+              </li>
+            ))}
+          </div>
+        )}
+      </ul>
+      {extraItems.length > 0 && (
+        <button
+          className="text-primary text-sm mt-1 w-fit"
+          onClick={() => setExpanded(!expanded)}
+        >
+          {expanded ? "See less" : "See details"}
+        </button>
+      )}
+    </>
+  );
+};
+
 const Pricing = () => {
-  //const dispatch = useDispatch();
-  //const router = useRouter();
-  const searchParams = useSearchParams(); // Add this hook
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [getPricing, { data, isLoading }] = useLazyGetPricingQuery();
+  const searchParams = useSearchParams();
+  const [getPricing, { data }] = useLazyGetPricingQuery();
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
   const [showModal, setShowModal] = useState(false);
   const [refCode, setRefCode] = useState<string | null>(null);
   const [subscribe, { isLoading: subscribeLoading }] =
     useCreateStripeSubscriptionMutation();
 
-  // Get the ref parameter from URL
   useEffect(() => {
     getPricing({});
-  }, [getPricing]); // Only runs once when the component mounts
+  }, [getPricing]);
 
   useEffect(() => {
     const ref = searchParams.get("ref");
@@ -43,14 +92,10 @@ const Pricing = () => {
   }
 
   const subInfo: SubInfoItem[] = data?.data
-    ? // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      data.data.map((item: any) => {
-        // Extract features from API response or fallback to empty array
+    ? data.data.map((item: any) => {
         const features = item.meta_data?.features || [];
-        // Use first feature as subtitle, remaining as list items
         const subTitle = features[0] || "";
         const subItems = features.slice(1);
-
         return {
           key: item.id.toString(),
           title: item.name,
@@ -67,14 +112,6 @@ const Pricing = () => {
   };
 
   const confirmSubscription = () => {
-    /** 
-     * 
-    if (selectedPlan) {
-      dispatch(setSubScriptionId(parseInt(selectedPlan)));
-      //router.push("/checkout");
-    }
-      */
-
     if (!selectedPlan) {
       console.error("No plan selected");
       return;
@@ -87,9 +124,9 @@ const Pricing = () => {
       .then((res) => {
         if (res?.data?.url) {
           if (window.top) {
-            window.top.location.href = res?.data?.url; // Navigate the parent window
+            window.top.location.href = res?.data?.url;
           } else {
-            window.open(res?.data?.url, "_blank"); // Fallback to current window
+            window.open(res?.data?.url, "_blank");
           }
         } else {
           console.error("No checkout URL returned");
@@ -110,51 +147,43 @@ const Pricing = () => {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-6xl mx-auto font-medium">
+      <div className="grid grid-cols-1 md:grid-cols-3 w-full gap-6 max-w-6xl mx-auto font-medium">
         {subInfo.map((item, index) => (
           <div
-            className={`${
-              item.title === "premium" ? "border-2 border-green-500" : ""
-            }  bg-white p-6 rounded-xl shadow-md flex flex-col gap-4 relative morope-font border`}
             key={index}
+            className={`
+              ${item.title === "premium" ? "border-2 border-green-500" : ""}
+              bg-white p-6 rounded-xl shadow-md flex flex-col gap-4 relative morope-font border
+              transition-transform duration-300 ease-in-out h-fit
+            `}
           >
             {item.title !== "STARTER (PRO)" && (
               <span className="absolute top-2 right-2 bg-green-600 text-white px-3 py-1 text-sm rounded-lg">
-               Coming Soon
+                Coming Soon
               </span>
             )}
-            <h3 className=" text-xl font-semibold capitalize">{item.title}</h3>
-            <div className="flex items-baseline">
-              <div className="">
-              <FaDollarSign size={25} className=" -mb-2"/>
+            <h3 className="text-xl font-semibold capitalize">{item.title}</h3>
+            <div className="flex items-baseline relative">
+              <div className=" -mb-5">
+              <FaDollarSign size={25}  />
               </div>
-            <p className="text-4xl font-semibold">
-              {item.price}
-            </p>
-            <div className=" -mb-5">
-            <span className="text-lg font-semibold">/mo</span>
-            </div>
+              <p className="text-4xl font-semibold">{item.price}</p>
+              <div className="-mb-5">
+                <span className="text-lg font-semibold">/mo</span>
+              </div>
             </div>
             <p className="text-gray-600 text-sm">{item.subTitle}</p>
-            <ul className="mt-4 text-left space-y-2 border-t pt-4">
-              {item.subItems.map((subItem, index) => (
-                <li className="flex gap-2 items-center " key={index}>
-                  <div>
-                  <FaCheckCircle className="size-5 text-green-700 !h-[20px] !w-[20px]" />
-                  </div> {subItem}
-                </li>
-              ))}
-            </ul>
+            {/* Use the dropdown feature list with smooth animation */}
+            <FeatureList items={item.subItems} initialCount={0} />
 
             <button
-              className="mt-4 bg-green-500 text-white px-4 py-2 rounded-lg w-full disabled:bg-slate-300"
+              className="mt-4 bg-green-500 text-white px-4 py-2 rounded-lg w-full transition duration-300 hover:bg-green-600 disabled:bg-slate-300"
               onClick={() => handleGetStarted(item.key)}
               disabled={item.title !== "STARTER (PRO)"}
             >
-              {
-                item.title !== "STARTER (PRO)" ? "Unavailable" : "Start Free Trial"
-              }
-              
+              {item.title !== "STARTER (PRO)"
+                ? "Unavailable"
+                : "Start Free Trial"}
             </button>
           </div>
         ))}
@@ -165,9 +194,9 @@ const Pricing = () => {
           <div className="bg-white p-6 rounded-lg shadow-lg max-w-96 text-center">
             <h3 className="text-xl font-bold">7-Day Free Trial</h3>
             <p className="text-gray-600 mt-2">
-              You won&apos;t be charged today. Your 7-day free trial begins
-              after you enter your card details, and you can cancel anytime
-              before the trial ends.
+              You won&apos;t be charged today. Your 7-day free trial begins after you
+              enter your card details, and you can cancel anytime before the trial
+              ends.
             </p>
             <div className="mt-4 flex flex-col-reverse sm:flex-row gap-3 justify-center">
               <button
@@ -176,7 +205,6 @@ const Pricing = () => {
               >
                 Cancel
               </button>
-
               <Button
                 className="!px-4 !py-2 !bg-green-500 border-none !h-[40px] !text-white !rounded-lg"
                 onClick={confirmSubscription}

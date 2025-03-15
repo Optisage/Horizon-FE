@@ -75,8 +75,10 @@ export interface Product {
 const Dashboard = () => {
   const [searchValue, setSearchValue] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
-  const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(6);
+  const [nextPageToken, setNextPageToken] = useState<string | null>(null);
+  const [previousPageToken, setPreviousPageToken] = useState<string | null>(null);
+  const [currentPageToken, setCurrentPageToken] = useState<string | null>(null);
+  const [isPaginationLoading, setIsPaginationLoading] = useState(false);
 
   const router = useRouter();
   const { marketplaceId } = useAppSelector((state) => state?.global);
@@ -88,19 +90,25 @@ const Dashboard = () => {
   }, [searchValue]);
 
   // Fetch products
-  const { data, error, isLoading } = useSearchItemsQuery(
+  const { data, error, isLoading, isFetching  } = useSearchItemsQuery(
     debouncedSearch
       ? {
           q: debouncedSearch,
           marketplaceId: marketplaceId,
-          pageSize: itemsPerPage,
-          pageToken: (currentPage - 1) * itemsPerPage,
+          //pageSize: itemsPerPage,
+          pageToken: currentPageToken,
         }
       : undefined,
     { skip: !debouncedSearch }
   );
 
-  const totalResults = data?.data?.pagination?.total || 0;
+   // Reset pagination loading when data changes
+   useEffect(() => {
+    if (data || error) {
+      setIsPaginationLoading(false);
+    }
+  }, [data, error]);
+  //const totalResults = data?.data?.pagination?.total || 0;
 
   const products =
     debouncedSearch && data?.data?.items
@@ -118,12 +126,22 @@ const Dashboard = () => {
         }))
       : [];
 
+      // Update pagination tokens from API response
+  useEffect(() => {
+    if (data?.data?.pagination) {
+      setNextPageToken(data.data.pagination.nextPageToken);
+      setPreviousPageToken(data.data.pagination.previousPageToken);
+    }
+  }, [data]);
+
+   // Reset pagination loading when data changes
+  
   return (
     <section className="flex flex-col gap-8 min-h-[50dvh] md:min-h-[80dvh]">
       <SearchInput value={searchValue} onChange={setSearchValue} />
       {/* <h2>Selected Marketplace ID: {marketplaceId || "N/A"}</h2> */}
 
-      {isLoading && <Loader />}
+      {(isLoading || isFetching) && <Loader />}
 
       {error && (
         <div className="text-center text-red-500 mt-4">
@@ -199,17 +217,20 @@ const Dashboard = () => {
                 </div>
               </div>
             ))}
+            { isPaginationLoading  && <Loader />}
           </div>
 
           <CustomPagination
-            currentPage={currentPage}
-            totalResults={totalResults}
-            itemsPerPage={itemsPerPage}
-            onPageChange={(page) => setCurrentPage(page)}
-            onItemsPerPageChange={(value) => {
-              setItemsPerPage(value);
-              setCurrentPage(1); // Reset to first page on change
+            onNext={() => {
+              setIsPaginationLoading(true);
+              setCurrentPageToken(nextPageToken);
             }}
+            onPrevious={() => {
+              setIsPaginationLoading(true);
+              setCurrentPageToken(previousPageToken);
+            }}
+            hasNext={!!nextPageToken}
+            hasPrevious={!!previousPageToken}
           />
         </main>
       )}

@@ -1,44 +1,35 @@
-import { Pagination, Select } from "antd";
-
+import { IoMdArrowForward } from "react-icons/io";
+import { IoMdArrowBack } from "react-icons/io";
 interface CustomPaginationProps {
-  currentPage: number;
-  totalResults: number;
-  itemsPerPage: number;
-  onPageChange: (page: number) => void;
-  onItemsPerPageChange: (value: number) => void;
+  onNext: () => void;
+  onPrevious: () => void;
+  hasNext: boolean;
+  hasPrevious: boolean;
 }
 
 const CustomPagination: React.FC<CustomPaginationProps> = ({
-  currentPage,
-  totalResults,
-  itemsPerPage,
-  onPageChange,
-  onItemsPerPageChange,
+  onNext,
+  onPrevious,
+  hasNext,
+  hasPrevious,
 }) => {
   return (
-    <div className="p-4 border-t flex flex-col md:flex-row items-center gap-6 justify-between">
-      <p className="text-[#3F3F46]">
-        Page {currentPage} of {Math.ceil(totalResults / itemsPerPage) || 1}
-      </p>
-
-      <Pagination
-        current={currentPage}
-        total={totalResults}
-        pageSize={itemsPerPage}
-        onChange={onPageChange}
-      />
-
-      <Select
-        value={itemsPerPage.toString()}
-        style={{ width: 142 }}
-        onChange={(value) => onItemsPerPageChange(Number(value))}
-        options={[
-          { value: "6", label: "6 Data per row" },
-          { value: "8", label: "8 Data per row" },
-          { value: "10", label: "10 Data per row" },
-          { value: "20", label: "20 Data per row" },
-        ]}
-      />
+    <div className="p-4 border-t flex items-center gap-7 justify-center">
+      <button
+        onClick={onPrevious}
+        disabled={!hasPrevious}
+        className="font-semibold px-4 py-1 border rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 flex gap-1 items-center"
+      >
+        <IoMdArrowBack  size={20}/>
+        Previous 
+      </button>
+      <button
+        onClick={onNext}
+        disabled={!hasNext}
+        className="px-4 py-1 border font-semibold rounded-md disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 flex gap-1 items-center"
+      >
+        Next <IoMdArrowForward size={20} />
+      </button>
     </div>
   );
 };
