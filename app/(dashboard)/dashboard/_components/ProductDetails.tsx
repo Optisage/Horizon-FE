@@ -73,6 +73,33 @@ interface BuyboxItem {
     last_won: string;
   };
 }
+
+interface MarketAnalysisDataPoint {
+  date: string;
+  price: number;
+}
+
+interface BuyboxMarketDataPoint {
+  date: string;
+  buyBox: number;
+}
+
+interface AmazonMarketDataPoint {
+  date: string;
+  amazon: number;
+}
+
+interface MarketAnalysisData {
+  buybox: MarketAnalysisDataPoint[];
+  amazon: MarketAnalysisDataPoint[];
+}
+
+interface MergedDataPoint {
+  date: string;
+  buyBox: number;
+  amazon: number | null;
+}
+
 const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
   const [searchValue, setSearchValue] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
@@ -102,6 +129,9 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
     miscFee: 0,
   });
   const [totalFees, setTotalFees] = useState(0);
+  const [minROI, setMinROI] = useState(0);
+  const [minProfit, setMinProfit] = useState(0);
+  const [maxCost, setMaxCost] = useState(0);
   const [vatOnFees, setVatOnFees] = useState(0);
   const [discount, setDiscount] = useState(0);
   const [profitMargin, setProfitMargin] = useState(0);
@@ -118,7 +148,7 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
       marketplaceId: `${marketplaceId}`,
       isAmazonFulfilled: fulfillmentType === "FBA",
       currencyCode: currencyCode,
-      // {currencySymbol}
+      storage: storageMonths,
       costPrice: costPrice,
       salePrice: salePrice,
       pointsNumber: 0,
@@ -140,6 +170,9 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
           digitalServicesFee: response.data.digitalServicesFee,
           miscFee: parseFloat(response.data.miscFee),
         });
+        setMinROI(response.data.minRoi);
+        setMinProfit(response.data.minProfit);
+        setMaxCost(response.data.maxCost);
         setTotalFees(response.data.totalFees);
         setVatOnFees(response.data.vatOnFees);
         setDiscount(response.data.discount);
@@ -189,29 +222,37 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
   } = useGetMarketAnalysisQuery({
     marketplaceId,
     itemAsin: asin,
-    date: selectedDate.format("YYYY-MM"), // Format the date as required by the API
+    date: selectedDate.format("YYYY-MM"),
   });
 
-  const handleDateChange = (date) => {
-    setSelectedDate(date);
+  const handleDateChange = (date: dayjs.Dayjs | [dayjs.Dayjs, dayjs.Dayjs]) => {
+    if (!Array.isArray(date)) {
+      setSelectedDate(date);
+    }
   };
 
   // Transform the API data to match the chart's expected format
-  const transformData = (data) => {
+  const transformData = (
+    data: MarketAnalysisData | undefined
+  ): MergedDataPoint[] => {
     if (!data) return [];
 
-    const buyboxMarketData = data.buybox.map((item) => ({
-      date: dayjs(item.date).format("MMM D"),
-      buyBox: item.price,
-    }));
+    const buyboxMarketData: BuyboxMarketDataPoint[] = data.buybox.map(
+      (item) => ({
+        date: dayjs(item.date).format("MMM D"),
+        buyBox: item.price,
+      })
+    );
 
-    const amazonMarketData = data.amazon.map((item) => ({
-      date: dayjs(item.date).format("MMM D"),
-      amazon: item.price,
-    }));
+    const amazonMarketData: AmazonMarketDataPoint[] = data.amazon.map(
+      (item: MarketAnalysisDataPoint) => ({
+        date: dayjs(item.date).format("MMM D"),
+        amazon: item.price,
+      })
+    );
 
     // Merge the data by date
-    const mergedData = buyboxMarketData.map((item) => {
+    const mergedData: MergedDataPoint[] = buyboxMarketData.map((item) => {
       const amazonItem = amazonMarketData.find(
         (amazon) => amazon.date === item.date
       );
@@ -280,17 +321,6 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
       value: seller.weight_percentage,
       color: colorPalette[index % colorPalette.length], // Cycles through predefined colors
     })) || [];
-
-  const priceData = {
-    price: [
-      { date: "Jan 1", amazon: 6000, buyBox: 3500 },
-      { date: "Jan 10", amazon: 6500, buyBox: 3400 },
-      { date: "Jan 15", amazon: 7500, buyBox: 4200 },
-      { date: "Jan 20", amazon: 6300, buyBox: 3800 },
-      { date: "Feb 10", amazon: 6800, buyBox: 4900 },
-      { date: "Feb 25", amazon: 7000, buyBox: 4200 },
-    ],
-  };
 
   const ranks = {
     netBBPriceChanges: rankings?.net_bb_price_changes?.price ?? "-",
@@ -612,17 +642,23 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
                       <div className="space-y-2">
                         <div className="flex justify-between text-sm">
                           <span className="text-[#595959]">Min. ROI</span>
-                          <span className="font-semibold text-black">25%</span>
+                          <span className="font-semibold text-black">
+                            {minROI || 0}%
+                          </span>
                         </div>
                         <div className="flex justify-between text-sm">
                           <span className="text-[#595959]">Min. Profit</span>
                           <span className="font-semibold text-black">
-                            $3.00
+                            {currencySymbol}
+                            {convertPrice(minProfit.toFixed(2)) || 0}
                           </span>
                         </div>
                         <div className="border-t pt-2 font-semibold flex justify-between">
                           <span>Maximum Cost</span>
-                          <span>$26.60</span>
+                          <span>
+                            {currencySymbol}
+                            {convertPrice(maxCost.toFixed(2)) || 0}
+                          </span>
                         </div>
                       </div>
                     )}
@@ -1008,7 +1044,7 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
                 <div className="flex justify-between items-center">
                   <h2 className="text-lg font-semibold">Market Analysis</h2>
                   {/* Date Picker */}
-                  <CustomDatePicker />
+                  <CustomDatePicker onChange={handleDateChange} />
                 </div>
 
                 <p className="mt-4 text-black">Price</p>
@@ -1027,11 +1063,13 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
                   </div>
 
                   {isLoadingMarketAnalysis ? (
-                    <div className="h-40 flex items-center justify-center text-xl font-medium">
+                    <div className="h-40 flex items-center justify-center font-medium">
                       Loading...
                     </div>
                   ) : marketAnalysisError ? (
-                    <p>Error loading market analysis data</p>
+                    <div className="h-40 flex items-center justify-center text-red-500 font-medium">
+                      Error loading market analysis data
+                    </div>
                   ) : (
                     <ResponsiveContainer width="100%" height={300}>
                       <LineChart data={chartData}>
