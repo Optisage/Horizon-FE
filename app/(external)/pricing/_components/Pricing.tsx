@@ -13,24 +13,35 @@ import { FaDollarSign } from "react-icons/fa6";
 const FeatureList = ({
   items,
   initialCount = 3,
+  expanded,
+  onExpand,
 }: {
   items: string[];
   initialCount?: number;
+  expanded: boolean;
+  onExpand: (expanded: boolean) => void;
 }) => {
-  const [expanded, setExpanded] = useState(false);
+  //const [expanded, setExpanded] = useState(false);
 
+  const safeInitialCount = Math.max(0, initialCount);
+ 
+ 
   // Always visible items
-  const initialItems = items.slice(0, initialCount);
+  const initialItems = items.slice(0, safeInitialCount);
   // Extra items to show/hide with animation
-  const extraItems = items.slice(initialCount);
+  const extraItems = items.slice(safeInitialCount);
 
   return (
     <>
-      <ul className="mt-1 text-left space-y-2 border-t pt-4">
+      <ul className="mt-1 text-left space-y-2 h-fit border-t pt-4">
         {initialItems.map((subItem, index) => (
           <li className="flex gap-2 items-center" key={index}>
-            <FaCheckCircle className="text-green-700 !h-[20px] !w-[20px]" />
+           <div>
+                <FaCheckCircle className="text-green-700 !h-[20px] !w-[20px]" />
+                </div>
+                <span className={`${expanded ? "" : "truncate"} w-full`}>
             {subItem}
+            </span>
           </li>
         ))}
         {/* Extra items container with smooth height & opacity transition */}
@@ -54,9 +65,9 @@ const FeatureList = ({
       {extraItems.length > 0 && (
         <button
           className="text-primary text-sm mt-1 w-fit"
-          onClick={() => setExpanded(!expanded)}
+          onClick={() => onExpand(!expanded)}
         >
-          {expanded ? "See less" : "See details"}
+          {expanded ? "See less" : "See more details"}
         </button>
       )}
     </>
@@ -67,6 +78,7 @@ const Pricing = () => {
   const searchParams = useSearchParams();
   const [getPricing, { data }] = useLazyGetPricingQuery();
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
+  const [expandedCards, setExpandedCards] = useState<Record<string, boolean>>({});
   const [showModal, setShowModal] = useState(false);
   const [refCode, setRefCode] = useState<string | null>(null);
   const [subscribe, { isLoading: subscribeLoading }] =
@@ -75,6 +87,13 @@ const Pricing = () => {
   useEffect(() => {
     getPricing({});
   }, [getPricing]);
+
+  const handleExpand = (planKey: string, isExpanded: boolean) => {
+    setExpandedCards(prev => ({
+      ...prev,
+      [planKey]: isExpanded
+    }));
+  };
 
   useEffect(() => {
     const ref = searchParams.get("ref");
@@ -152,9 +171,9 @@ const Pricing = () => {
           <div
             key={index}
             className={`
-              ${item.title === "premium" ? "border-2 border-green-500" : ""}
+              
               bg-white p-6 rounded-xl shadow-md flex flex-col gap-4 relative morope-font border
-              transition-transform duration-300 ease-in-out h-fit
+              transition-transform duration-300 ease-in-out h-fit min-w-0
             `}
           >
             {item.title !== "STARTER (PRO)" && (
@@ -162,7 +181,7 @@ const Pricing = () => {
                 Coming Soon
               </span>
             )}
-            <h3 className="text-xl font-semibold capitalize">{item.title}</h3>
+            <h3 className="text-xl font-semibold capitalize truncate w-full max-w-full text-nowrap">{item.title}</h3>
             <div className="flex items-baseline relative">
               <div className=" -mb-5">
               <FaDollarSign size={25}  />
@@ -174,7 +193,12 @@ const Pricing = () => {
             </div>
             <p className="text-gray-600 text-sm">{item.subTitle}</p>
             {/* Use the dropdown feature list with smooth animation */}
-            <FeatureList items={item.subItems} initialCount={0} />
+            <FeatureList 
+        items={item.subItems}
+        initialCount={3}
+        expanded={expandedCards[item.key] || false}
+        onExpand={(isExpanded) => handleExpand(item.key, isExpanded)}
+  />
 
             <button
               className="mt-4 bg-green-500 text-white px-4 py-2 rounded-lg w-full transition duration-300 hover:bg-green-600 disabled:bg-slate-300"
