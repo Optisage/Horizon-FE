@@ -116,6 +116,12 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
   const [fulfillmentType, setFulfillmentType] = useState("FBM");
   const [activeTab, setActiveTab] = useState("maximumCost");
   const [selectedDate, setSelectedDate] = useState(dayjs());
+  const [statStartDate, setStatStartDate] = useState(
+    dayjs().format("YYYY-MM-DD")
+  ); // For date range start
+  const [statEndDate, setStatEndDate] = useState(
+    dayjs().add(1, "month").format("YYYY-MM-DD")
+  ); // For date range end
 
   const [fees, setFees] = useState({
     referralFee: 0,
@@ -197,18 +203,26 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
     useAppSelector((state) => state.global) || {};
   const { convertPrice } = useCurrencyConverter(currencyCode);
 
-  const { data: buyboxData, isLoading: isLoadingBuybox } =
-    useGetBuyboxInfoQuery({
-      marketplaceId,
-      itemAsin: asin,
-    });
+  const {
+    data: buyboxData,
+    isLoading: isLoadingBuybox,
+    error: buyboxError,
+  } = useGetBuyboxInfoQuery({
+    marketplaceId,
+    itemAsin: asin,
+    statStartDate,
+    statEndDate,
+  });
 
-  const { data: rankingsData, isLoading: isLoadingRankings } =
-    useGetRankingsAndPricesQuery({
-      marketplaceId,
-      itemAsin: asin,
-      period: activeTab4,
-    });
+  const {
+    data: rankingsData,
+    isLoading: isLoadingRankings,
+    refetch,
+  } = useGetRankingsAndPricesQuery({
+    marketplaceId,
+    itemAsin: asin,
+    period: activeTab4,
+  });
 
   const { data, error, isLoading } = useGetItemQuery({
     marketplaceId,
@@ -225,8 +239,20 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
     date: selectedDate.format("YYYY-MM"),
   });
 
+  // const handleDateChange = (date: dayjs.Dayjs | [dayjs.Dayjs, dayjs.Dayjs]) => {
+  //   if (!Array.isArray(date)) {
+  //     setSelectedDate(date);
+  //   }
+  // };
+
   const handleDateChange = (date: dayjs.Dayjs | [dayjs.Dayjs, dayjs.Dayjs]) => {
-    if (!Array.isArray(date)) {
+    if (Array.isArray(date)) {
+      // Handle date range selection
+      const [startDate, endDate] = date;
+      setStatStartDate(startDate.format("YYYY-MM-DD"));
+      setStatEndDate(endDate.format("YYYY-MM-DD"));
+    } else {
+      // Handle single date selection
       setSelectedDate(date);
     }
   };
@@ -910,12 +936,17 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
               <div className="border border-border p-4 flex flex-col gap-2 rounded-xl">
                 <div className="flex gap-4 items-center justify-between">
                   <h2 className="text-lg font-semibold">Ranks & Prices</h2>
-                  <button type="button" className="flex gap-1.5 items-center">
+                  <button
+                    type="button"
+                    className="flex gap-1.5 items-center"
+                    onClick={() => refetch()} // Trigger refetch
+                  >
                     <IoMdRefresh className="size-5" />
                     Refresh
                   </button>
                 </div>
 
+                {/* period tabs/filter */}
                 <div className="flex items-center gap-1 mt-4">
                   {["current", "30", "90", "180", "all"].map((tab) => (
                     <button
@@ -1011,19 +1042,29 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
               <div className="p-6 border rounded-lg">
                 <h2 className="text-lg font-semibold">Buy Box Analysis</h2>
                 <div className="mt-4">
-                  <CustomDatePicker />
+                  <CustomDatePicker isRange onChange={handleDateChange} />
                 </div>
 
                 <div className="flex justify-between items-center mt-6">
-                  <ResponsiveContainer width={250} height={250}>
-                    <PieChart>
-                      <Pie data={pieData} dataKey="value" outerRadius={80}>
-                        {pieData.map((entry, index) => (
-                          <Cell key={index} fill={entry.color} />
-                        ))}
-                      </Pie>
-                    </PieChart>
-                  </ResponsiveContainer>
+                  {isLoadingBuybox ? (
+                    <div className="h-40 flex items-center justify-center font-medium">
+                      Loading...
+                    </div>
+                  ) : buyboxError ? (
+                    <div className="h-40 flex items-center justify-center text-red-500 font-medium">
+                      Error loading buybox
+                    </div>
+                  ) : (
+                    <ResponsiveContainer width={250} height={250}>
+                      <PieChart>
+                        <Pie data={pieData} dataKey="value" outerRadius={80}>
+                          {pieData.map((entry, index) => (
+                            <Cell key={index} fill={entry.color} />
+                          ))}
+                        </Pie>
+                      </PieChart>
+                    </ResponsiveContainer>
+                  )}
 
                   <ul>
                     {pieData.map((entry, index) => (

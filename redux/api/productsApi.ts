@@ -53,6 +53,15 @@ export const productsApi = createApi({
     }),
 
     getBuyboxInfo: builder.query({
+      query: ({ marketplaceId, itemAsin, statStartDate, statEndDate }) => ({
+        url: "catalog/products/buybox-details",
+        method: "GET",
+        params: { marketplaceId, asin: itemAsin, statStartDate, statEndDate },
+        // https://api-staging.optisage.ai/api/catalog/products/buybox-details?asin=B0DP3G4GVQ&marketplaceId=1&statStartDate=2025-03-01&statEndDate=2025-03-14
+      }),
+    }),
+
+    getBuyboxInf: builder.query({
       query: ({ marketplaceId, itemAsin }) => ({
         url: "catalog/products/buybox-details",
         method: "GET",
