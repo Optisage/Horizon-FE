@@ -47,9 +47,11 @@ import {
   useGetRankingsAndPricesQuery,
   useSearchItemsQuery,
   useCalculateProfitablilityMutation,
+  useGetMarketAnalysisQuery,
 } from "@/redux/api/productsApi";
 import useCurrencyConverter from "@/utils/currencyConverter";
 import { useAppSelector } from "@/redux/hooks";
+import dayjs from "dayjs";
 
 interface ProductDetailsProps {
   asin: string;
@@ -74,17 +76,19 @@ interface BuyboxItem {
 const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
   const [searchValue, setSearchValue] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
-  const [previousPageToken, setPreviousPageToken] = useState<string | null>(null);
+  const [previousPageToken, setPreviousPageToken] = useState<string | null>(
+    null
+  );
   const [currentPageToken, setCurrentPageToken] = useState<string | null>(null);
   const [isPaginationLoading, setIsPaginationLoading] = useState(false);
   const [nextPageToken, setNextPageToken] = useState<string | null>(null);
-
 
   const [costPrice, setCostPrice] = useState(0);
   const [salePrice, setSalePrice] = useState(0);
   const [storageMonths, setStorageMonths] = useState(0);
   const [fulfillmentType, setFulfillmentType] = useState("FBM");
   const [activeTab, setActiveTab] = useState("maximumCost");
+  const [selectedDate, setSelectedDate] = useState(dayjs());
 
   const [fees, setFees] = useState({
     referralFee: 0,
@@ -178,6 +182,50 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
     itemAsin: asin,
   });
 
+  const {
+    data: marketAnalysisData,
+    error: marketAnalysisError,
+    isLoading: isLoadingMarketAnalysis,
+  } = useGetMarketAnalysisQuery({
+    marketplaceId,
+    itemAsin: asin,
+    date: selectedDate.format("YYYY-MM"), // Format the date as required by the API
+  });
+
+  const handleDateChange = (date) => {
+    setSelectedDate(date);
+  };
+
+  // Transform the API data to match the chart's expected format
+  const transformData = (data) => {
+    if (!data) return [];
+
+    const buyboxMarketData = data.buybox.map((item) => ({
+      date: dayjs(item.date).format("MMM D"),
+      buyBox: item.price,
+    }));
+
+    const amazonMarketData = data.amazon.map((item) => ({
+      date: dayjs(item.date).format("MMM D"),
+      amazon: item.price,
+    }));
+
+    // Merge the data by date
+    const mergedData = buyboxMarketData.map((item) => {
+      const amazonItem = amazonMarketData.find(
+        (amazon) => amazon.date === item.date
+      );
+      return {
+        ...item,
+        amazon: amazonItem ? amazonItem.amazon : null,
+      };
+    });
+
+    return mergedData;
+  };
+
+  const chartData = transformData(marketAnalysisData?.data);
+
   // Fetch products
   const {
     data: searchData,
@@ -195,16 +243,16 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
     { skip: !debouncedSearch }
   );
 
-    // Update pagination tokens from API response
-    useEffect(() => {
-      if (searchData?.data?.pagination) {
-        setNextPageToken(searchData.data.pagination.nextPageToken);
-        setPreviousPageToken(searchData.data.pagination.previousPageToken);
-      }
-    }, [searchData]);
+  // Update pagination tokens from API response
+  useEffect(() => {
+    if (searchData?.data?.pagination) {
+      setNextPageToken(searchData.data.pagination.nextPageToken);
+      setPreviousPageToken(searchData.data.pagination.previousPageToken);
+    }
+  }, [searchData]);
 
-   // Reset pagination loading when data changes
-   useEffect(() => {
+  // Reset pagination loading when data changes
+  useEffect(() => {
     if (searchData || searchError) {
       setIsPaginationLoading(false);
     }
@@ -216,7 +264,8 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
     return () => clearTimeout(handler);
   }, [searchValue]);
 
-  if (isLoadingBuybox || isLoading || isLoadingRankings || isPaginationLoading) return <Loader />;
+  if (isLoadingBuybox || isLoading || isLoadingRankings || isPaginationLoading)
+    return <Loader />;
 
   const product = data?.data;
   const buybox: BuyboxItem[] = buyboxData?.data?.buybox ?? [];
@@ -250,12 +299,8 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
       : "-",
     buyBox: rankings?.buybox ? `${rankings.buybox.toFixed(2)}` : "-",
     amazon: rankings?.amazon ? `${rankings.amazon.toFixed(2)}` : "-",
-    lowestFBA: rankings?.lowest_fba
-      ? `${rankings.lowest_fba.toFixed(2)}`
-      : "-",
-    lowestFBM: rankings?.lowest_fbm
-      ? `${rankings.lowest_fbm.toFixed(2)}`
-      : "-",
+    lowestFBA: rankings?.lowest_fba ? `${rankings.lowest_fba.toFixed(2)}` : "-",
+    lowestFBM: rankings?.lowest_fbm ? `${rankings.lowest_fbm.toFixed(2)}` : "-",
     keepaBSRDrops: rankings?.keepa_bsr_drops ?? "N/A",
     estimatedSales: rankings?.estimated_sales ?? "N/A",
     estTimeToSale: rankings?.estimated_time_to_sale ?? "N/A",
@@ -278,9 +323,7 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
       id: index + 1,
       seller: seller.seller,
       rating: seller.rating,
-      avgPrice: `${
-        seller.seller_feedback?.avg_price?.toFixed(2) ?? "N/A"
-      }`,
+      avgPrice: `${seller.seller_feedback?.avg_price?.toFixed(2) ?? "N/A"}`,
       won: `${seller.seller_feedback?.percentage_won ?? 0}%`,
       lastWon: seller.seller_feedback?.last_won
         ? new Date(seller.seller_feedback.last_won).toLocaleString()
@@ -301,8 +344,6 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
       </span>
     ));
   };
-
-  
 
   const products =
     debouncedSearch && searchData?.data?.items
@@ -608,7 +649,10 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
                         ))}
                         <div className="border-t pt-2 font-semibold flex justify-between">
                           <span>Total Fees</span>
-                          <span>{currencySymbol}{convertPrice(totalFees.toFixed(2))}</span>
+                          <span>
+                            {currencySymbol}
+                            {convertPrice(totalFees.toFixed(2))}
+                          </span>
                         </div>
                       </div>
                     )}
@@ -620,13 +664,15 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
                   <div className="flex justify-between text-sm">
                     <span>VAT on Fees</span>
                     <span className="font-semibold text-black">
-                      {currencySymbol}{convertPrice(vatOnFees.toFixed(2))}
+                      {currencySymbol}
+                      {convertPrice(vatOnFees.toFixed(2))}
                     </span>
                   </div>
                   <div className="flex justify-between text-sm">
                     <span>Discount</span>
                     <span className="font-semibold text-black">
-                      {currencySymbol}{convertPrice(discount.toFixed(2))}
+                      {currencySymbol}
+                      {convertPrice(discount.toFixed(2))}
                     </span>
                   </div>
                   <div className="flex justify-between text-sm">
@@ -638,13 +684,15 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
                   <div className="flex justify-between text-sm">
                     <span>Breakeven Sale Price</span>
                     <span className="font-semibold text-black">
-                      {currencySymbol}{convertPrice(breakEvenPrice.toFixed(2))}
+                      {currencySymbol}
+                      {convertPrice(breakEvenPrice.toFixed(2))}
                     </span>
                   </div>
                   <div className="flex justify-between text-sm">
                     <span>Estimated Amz. Payout</span>
                     <span className="font-semibold text-black">
-                    {currencySymbol}{convertPrice(estimatedPayout.toFixed(2))}
+                      {currencySymbol}
+                      {convertPrice(estimatedPayout.toFixed(2))}
                     </span>
                   </div>
                 </div>
@@ -656,7 +704,9 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
                   <InfoCard
                     icon={<PriceTagIcon />}
                     title="Buy Box Price"
-                    value={`${currencySymbol}${convertPrice(extra?.buybox_price )?? "-"}`}
+                    value={`${currencySymbol}${
+                      convertPrice(extra?.buybox_price) ?? "-"
+                    }`}
                     bgColor="#F0FFF0"
                   />
                   <InfoCard
@@ -677,7 +727,9 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
                   <InfoCard
                     icon={<MaximumCostIcon />}
                     title="Maximum Cost"
-                    value={`${currencySymbol}${convertPrice(extra?.max_cost) ?? "-"}`}
+                    value={`${currencySymbol}${
+                      convertPrice(extra?.max_cost) ?? "-"
+                    }`}
                     bgColor="#FFF0F3"
                   />
                 </div>
@@ -692,9 +744,9 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
                   <InfoCard
                     icon={<PriceTagIcon />}
                     title="Profit"
-                    value={`${currencySymbol}${convertPrice(extra?.profit) ?? "-"} (${
-                      extra?.profit_percentage ?? "-"
-                    }%)`}
+                    value={`${currencySymbol}${
+                      convertPrice(extra?.profit) ?? "-"
+                    } (${extra?.profit_percentage ?? "-"}%)`}
                     bgColor="#EBFFFE"
                   />
                 </div>
@@ -762,7 +814,10 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
                             </div>
                           </td>
                           <td className="p-3">{offer.stock}</td>
-                          <td className="p-3">{currencySymbol}{convertPrice(offer.price)}</td>
+                          <td className="p-3">
+                            {currencySymbol}
+                            {convertPrice(offer.price)}
+                          </td>
                           <td className="p-3 flex gap-1 items-center">
                             {offer.buyboxShare}
                             <div className="relative w-20 h-2 bg-gray-200 rounded-full">
@@ -802,7 +857,10 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
                               </div>
                             </div>
                           </td>
-                          <td className="p-3">{currencySymbol}{convertPrice(seller.avgPrice)}</td>
+                          <td className="p-3">
+                            {currencySymbol}
+                            {convertPrice(seller.avgPrice)}
+                          </td>
                           <td className="p-3">{seller.won}</td>
                           <td className="p-3">{seller.lastWon}</td>
                         </tr>
@@ -968,26 +1026,34 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
                     </div>
                   </div>
 
-                  <ResponsiveContainer width="100%" height={300}>
-                    <LineChart data={priceData.price}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="date" />
-                      <YAxis />
-                      <Tooltip />
-                      <Line
-                        type="monotone"
-                        dataKey="amazon"
-                        stroke="#FF0080"
-                        strokeWidth={2}
-                      />
-                      <Line
-                        type="monotone"
-                        dataKey="buyBox"
-                        stroke="#00E4E4"
-                        strokeWidth={2}
-                      />
-                    </LineChart>
-                  </ResponsiveContainer>
+                  {isLoadingMarketAnalysis ? (
+                    <div className="h-40 flex items-center justify-center text-xl font-medium">
+                      Loading...
+                    </div>
+                  ) : marketAnalysisError ? (
+                    <p>Error loading market analysis data</p>
+                  ) : (
+                    <ResponsiveContainer width="100%" height={300}>
+                      <LineChart data={chartData}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="date" />
+                        <YAxis />
+                        <Tooltip />
+                        <Line
+                          type="monotone"
+                          dataKey="amazon"
+                          stroke="#FF0080"
+                          strokeWidth={2}
+                        />
+                        <Line
+                          type="monotone"
+                          dataKey="buyBox"
+                          stroke="#00E4E4"
+                          strokeWidth={2}
+                        />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  )}
                 </div>
               </div>
             </div>
@@ -1046,7 +1112,6 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
             ))}
           </div>
 
-
           <CustomPagination
             onNext={() => {
               setIsPaginationLoading(true);
@@ -1059,7 +1124,6 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
             hasNext={!!nextPageToken}
             hasPrevious={!!previousPageToken}
           />
-        
         </main>
       )}
 
