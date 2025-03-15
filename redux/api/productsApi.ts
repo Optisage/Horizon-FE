@@ -98,6 +98,13 @@ export const productsApi = createApi({
         method: "GET",
       }),
     }),
+    getIpAlert: builder.query({
+      query: (params) => ({
+        url: "catalog/ip-alert",
+        method: "GET",
+        params
+      }),
+    }),
   }),
 });
 
@@ -113,4 +120,5 @@ export const {
   useGetProductFeesQuery,
   useCalculateProfitablilityMutation,
   useGetSalesStatisticsQuery,
+  useLazyGetIpAlertQuery
 } = productsApi;
