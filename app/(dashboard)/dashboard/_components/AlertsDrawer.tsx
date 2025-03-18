@@ -5,26 +5,51 @@ import { Drawer } from "antd";
 import { RxArrowTopRight } from "react-icons/rx";
 import { IoClose } from "react-icons/io5";
 import { useLazyGetIpAlertQuery } from "@/redux/api/productsApi";
+import { useDispatch } from "react-redux";
+import { setIpAlert, setIpIssues } from "@/redux/slice/globalSlice";
 
-
-interface prop{
-  itemAsin:string,
-  marketplaceId: number
+interface prop {
+  itemAsin: string;
+  marketplaceId: number;
+  productName: string
 }
-const AlertsDrawer = ({itemAsin, marketplaceId}:prop) => {
-  const [open, setOpen] = useState(false);
 
+const AlertsDrawer = ({ itemAsin, marketplaceId,productName  }: prop) => {
+   const dispatch = useDispatch();
+  const [open, setOpen] = useState(false);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [ipAlertData, setIpAlertData] = useState<any>(null);
+  
   const showDrawer = () => setOpen(true);
   const onClose = () => setOpen(false);
 
-  const [getIpAlert] =useLazyGetIpAlertQuery()
+  const [getIpAlert] = useLazyGetIpAlertQuery();
 
-  useEffect(()=>{
-    if(marketplaceId && itemAsin){
-      getIpAlert({itemAsin,marketplaceId})
-    }
-    
-  },[marketplaceId, itemAsin])
+  useEffect(() => {
+    const fetchData = async () => {
+      if (marketplaceId && itemAsin) {
+        try {
+          const response = await getIpAlert({ itemAsin, marketplaceId }).unwrap();
+          setIpAlertData(response.data);
+          dispatch(setIpAlert({
+            setIpIssue: response?.data?.ip_analysis?.issues,
+            eligibility: response?.data?.eligible_to_sell
+          }));
+          
+          dispatch(setIpIssues(response?.data?.ip_analysis?.issues)); 
+        } catch (error) {
+          console.error("Error fetching IP alert:", error);
+        }
+      }
+    };
+    fetchData();
+  }, [marketplaceId, itemAsin, getIpAlert]);
+
+  const getFirstDescription = () => {
+    if (!ipAlertData?.ip_analysis?.description) return "No known IP issues";
+    const descriptions = Object.values(ipAlertData.ip_analysis.description);
+    return descriptions.length > 0 ? descriptions[0] : "No known IP issues";
+  };
 
   return (
     <>
@@ -60,42 +85,60 @@ const AlertsDrawer = ({itemAsin, marketplaceId}:prop) => {
         <div className="p-6">
           <div className="border border-border rounded-xl shadow-sm p-4">
             <h3 className="text-lg font-semibold text-gray-900">
-              Rosemary Mint Scalp & Hair Strengthening Oil Model(399-9243)
+             {productName}
             </h3>
             <p className="text-sm text-gray-500 mt-1">
               ASIN:
-              <span className="font-medium">B09TQLC5TK</span>
+              <span className="font-medium ml-1">{itemAsin}</span>
             </p>
 
-            <h4 className="text-2xl font-semibold mt-4">
-              This Product is Eligible to Sell
-            </h4>
-
-            {/* not eligible */}
-            {/* <div className="mt-4 flex flex-col gap-4">
-              <h4 className="text-2xl font-semibold text-[#FF0000]">
-                This Product is not eligible to sell
+            {ipAlertData?.eligible_to_sell ? (
+              <h4 className="text-2xl font-semibold mt-4">
+                This Product is Eligible to Sell
               </h4>
-
-              <span>
-                <button
-                  type="button"
-                  className="px-6 py-2 bg-primary hover:bg-primary-hover rounded-xl text-white text-sm font-medium"
-                >
-                  Get Approval on Amazon
-                </button>
-              </span>
-            </div> */}
+            ) : (
+              <div className="mt-4 flex flex-col gap-4">
+                <h4 className="text-2xl font-semibold text-[#FF0000]">
+                  This Product is not eligible to sell
+                </h4>
+                <span className=" hidden">
+                  <button
+                    type="button"
+                    className="px-6 py-2 bg-primary hover:bg-primary-hover rounded-xl text-white text-sm font-medium"
+                  >
+                    Get Approval on Amazon
+                  </button>
+                </span>
+              </div>
+            )}
 
             {/* Alert Details */}
             <div className="mt-4 space-y-3">
               {[
-                { label: "Amazon Share Buy Box", value: "Never on Listing" },
-                { label: "Private Label", value: "Unlikely" },
-                { label: "IP Analysis", value: "No known IP issues" },
-                { label: "Size", value: "Standard Size" },
-                { label: "Meltable", value: "No" },
-                { label: "Variations", value: "No" },
+                {
+                  label: "Amazon Share Buy Box",
+                  value: `${ipAlertData?.amazon_share_buybox ?? 0}%`,
+                },
+                {
+                  label: "Private Label",
+                  value: ipAlertData?.private_label ?? "No",
+                },
+                {
+                  label: "IP Analysis",
+                  value: getFirstDescription(),
+                },
+                {
+                  label: "Size",
+                  value: ipAlertData?.size || ipAlertData?.size_text || "N/A",
+                },
+                {
+                  label: "Meltable",
+                  value: ipAlertData?.is_meltable ? "Yes" : "No",
+                },
+                {
+                  label: "Variations",
+                  value: ipAlertData?.has_variations ? "Yes" : "No",
+                },
               ].map((item, index) => (
                 <div
                   key={index}

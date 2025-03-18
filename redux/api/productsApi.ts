@@ -118,7 +118,7 @@ export const productsApi = createApi({
     }),
     getIpAlert: builder.query({
       query: (params) => ({
-        url: "catalog/ip-alert",
+        url: "catalog/products/ip-alert",
         method: "GET",
         params,
       }),
