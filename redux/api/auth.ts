@@ -82,7 +82,7 @@ export const authApi = createApi({
       onQueryStarted(_, { dispatch, queryFulfilled }) {
         queryFulfilled
           .then((apiResponse) => {
-            dispatch(setUser(apiResponse?.data));
+            dispatch(setUser(apiResponse?.data?.data));
           })
           .catch((error) => {
             console.log(error);

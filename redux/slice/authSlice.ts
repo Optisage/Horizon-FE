@@ -13,8 +13,8 @@ export const authSlice = createSlice({
   name: "api",
   initialState,
   reducers: {
-    setUser: (state, action: PayloadAction<{ data:{id: string; name: string; email: string} }>) => {
-      state.user = action.payload.data;
+    setUser: (state, action: PayloadAction<{}>) => {
+      state.user = action.payload;
       state.isAuthenticated = true;
     },
     setAvi: (state, action: PayloadAction<{profileImage: string}>) => {

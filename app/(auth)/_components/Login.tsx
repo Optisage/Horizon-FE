@@ -19,7 +19,8 @@ const Login: React.FC = () => {
   const [login, { isLoading }] = useLoginMutation();
   const [messageApi, contextHolder] = message.useMessage();
   const [formValues, setFormValues] = useState({ email: "", password: "" });
- 
+
+
   useEffect(()=>{
       // Clear the token cookie
       Cookies.remove("optisage-token");
@@ -32,9 +33,14 @@ const Login: React.FC = () => {
   ) => {
     try {
       const response = await login(values).unwrap();
+      if (response?.data?.has_connected_amazon_account === true){
+        router.push("/dashboard");
+      }else{
+        router.push("/connect-amazon");
+      }
       messageApi.success("Login Successful");
-      router.push("/connect-amazon");
-      console.log(response)
+    
+     
     } catch (error) {
       messageApi.error("Login Failed");
       console.log(error)

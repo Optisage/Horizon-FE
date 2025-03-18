@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useLazyAmazonAuthQuery } from "@/redux/api/auth";
 
+
 export default function CallbackPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -11,14 +12,13 @@ export default function CallbackPage() {
   const [loading, setLoading] = useState(true);
   const [amazonVerify] = useLazyAmazonAuthQuery();
   const spapiOauthCode = searchParams.get("spapi_oauth_code");
-
+    
   useEffect(() => {
-    router.push("/dashboard");
-
     amazonVerify({ spapi_oauth_code: spapiOauthCode })
       .unwrap()
-      .then((res) => {
-        console.log(res);
+      .then(() => {
+        router.push("/dashboard");
+        //console.log(res);
       })
       .catch((err) => {
         console.log(err);
