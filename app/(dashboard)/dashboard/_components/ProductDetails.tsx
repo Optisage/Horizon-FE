@@ -138,6 +138,10 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
   const [breakEvenPrice, setBreakEvenPrice] = useState(0);
   const [estimatedPayout, setEstimatedPayout] = useState(0);
 
+  const { setIpIssue, eligibility } = useAppSelector(
+    (state) => state?.global?.ipAlert
+  );
+
   const [calculateProfitability, { isLoading: isLoadingProfitability }] =
     useCalculateProfitablilityMutation();
 
@@ -425,6 +429,7 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
             <button
               type="button"
               className="border border-border text-primary px-3 py-2 rounded-xl flex gap-1 items-center font-semibold hover:bg-gray-50 active:scale-95 duration-200 text-sm md:text-base"
+              onClick={() => ""}
             >
               Export Data on Google Sheets
               <RxArrowTopRight className="size-5" />
@@ -499,14 +504,26 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
                 <div className="p-6 bg-[#F5F3FF] rounded-t-lg flex items-center gap-4 justify-between">
                   <div className="flex flex-col gap-4">
                     <span className="flex flex-col gap-2">
-                      <p className="text-lg md:text-xl text-[#09090B] font-semibold">
-                        This product is eligible to sell
+                      {eligibility ? (
+                        <p className="text-lg md:text-xl text-[#09090B] font-semibold">
+                          This product is eligible to sell
+                        </p>
+                      ) : (
+                        <p className="text-lg md:text-xl text-red-500 font-semibold">
+                          This product is not eligible to sell
+                        </p>
+                      )}
+                      <p className="text-red-500 text-sm">
+                        There are {setIpIssue} issues
                       </p>
-                      <p className="text-red-500 text-sm">There are 2 issues</p>
                     </span>
 
                     <div>
-                      <AlertsDrawer itemAsin={asin} marketplaceId={marketplaceId} />
+                      <AlertsDrawer
+                        itemAsin={asin}
+                        marketplaceId={marketplaceId}
+                        productName={product?.product_name}
+                      />
                     </div>
                   </div>
 
@@ -885,7 +902,9 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
                           <td className="p-3">{seller.id}</td>
                           <td className="p-3">
                             <div
-                              onClick={() => router.push(`/seller/${seller.sellerId}`)}
+                              onClick={() =>
+                                router.push(`/seller/${seller.sellerId}`)
+                              }
                               className="cursor-pointer"
                             >
                               {seller.seller}
