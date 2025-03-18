@@ -145,7 +145,7 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
   const [estimatedPayout, setEstimatedPayout] = useState(0);
 
   const { setIpIssue, eligibility } = useAppSelector(
-    (state) => state?.global?.ipAlert
+    (state) => state?.global?.ipAlert || { setIpIssue: 0, eligibility: false }
   );
 
   const [calculateProfitability, { isLoading: isLoadingProfitability }] =
@@ -541,7 +541,7 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
                         </p>
                       )}
                       <p className="text-red-500 text-sm">
-                        There are {setIpIssue} issues
+                      {setIpIssue ? `There are ${setIpIssue} issues` : "No issues found"}
                       </p>
                     </span>
 
