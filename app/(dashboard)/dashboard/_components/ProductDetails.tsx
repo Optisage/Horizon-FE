@@ -932,9 +932,7 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
                               onClick={() =>
                                 router.push(`/seller/${seller.sellerId}`)
                               }
-                              onClick={() =>
-                                router.push(`/seller/${seller.sellerId}`)
-                              }
+                            
                               className="cursor-pointer"
                             >
                               {seller.seller}
