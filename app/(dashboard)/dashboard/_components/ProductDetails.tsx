@@ -110,8 +110,8 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
   const [isPaginationLoading, setIsPaginationLoading] = useState(false);
   const [nextPageToken, setNextPageToken] = useState<string | null>(null);
 
-  const [costPrice, setCostPrice] = useState(0);
-  const [salePrice, setSalePrice] = useState(0);
+  const [costPrice, setCostPrice] = useState<string>("");
+  const [salePrice, setSalePrice] = useState<string>("");
   const [storageMonths, setStorageMonths] = useState(0);
   const [fulfillmentType, setFulfillmentType] = useState("FBM");
   const [activeTab, setActiveTab] = useState("maximumCost");
@@ -611,9 +611,10 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
                     <input
                       aria-label="Cost Price"
                       type="number"
+                      placeholder="0"
                       value={costPrice}
-                      onChange={(e) => setCostPrice(Number(e.target.value))}
-                      className="px-4 py-1.5 w-full border rounded"
+                      onChange={(e) => setCostPrice(e.target.value)}
+                      className="px-4 py-1.5 w-full border rounded outline-none focus:border-black"
                     />
                   </div>
                   <div className="flex flex-col gap-2">
@@ -621,9 +622,10 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
                     <input
                       aria-label="Sale Price"
                       type="number"
+                      placeholder="0"
                       value={salePrice}
-                      onChange={(e) => setSalePrice(Number(e.target.value))}
-                      className="px-4 py-1.5 w-full border rounded"
+                      onChange={(e) => setSalePrice(e.target.value)}
+                      className="px-4 py-1.5 w-full border rounded outline-none focus:border-black"
                     />
                   </div>
                 </div>
@@ -878,40 +880,51 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
                       </tr>
                     </thead>
                     <tbody>
-                      {offersData.offers.map((offer) => (
-                        <tr key={offer.id} className="border-b">
-                          <td className="p-3">{offer.id}</td>
-                          <td className="p-3">
-                            <div
-                              onClick={() =>
-                                router.push(`/seller/${offer.seller_id}`)
-                              }
-                              className="cursor-pointer"
-                            >
-                              {offer.seller}
-                              {offer.leader && (
-                                <span className="text-xs text-primary block">
-                                  BuyBox Leader
-                                </span>
-                              )}
-                            </div>
-                          </td>
-                          <td className="p-3">{offer.stock}</td>
-                          <td className="p-3">
-                            {currencySymbol}
-                            {convertPrice(offer.price)}
-                          </td>
-                          <td className="p-3 flex gap-1 items-center">
-                            {offer.buyboxShare}
-                            <div className="relative w-20 h-2 bg-gray-200 rounded-full">
+                      {offersData.offers.length > 0 ? (
+                        offersData.offers.map((offer) => (
+                          <tr key={offer.id} className="border-b">
+                            <td className="p-3">{offer.id}</td>
+                            <td className="p-3">
                               <div
-                                className="absolute top-0 left-0 h-2 bg-green-500 rounded-full"
-                                style={{ width: offer.buyboxShare }}
-                              />
-                            </div>
+                                onClick={() =>
+                                  router.push(`/seller/${offer.seller_id}`)
+                                }
+                                className="cursor-pointer"
+                              >
+                                {offer.seller}
+                                {offer.leader && (
+                                  <span className="text-xs text-primary block">
+                                    BuyBox Leader
+                                  </span>
+                                )}
+                              </div>
+                            </td>
+                            <td className="p-3">{offer.stock}</td>
+                            <td className="p-3">
+                              {currencySymbol}
+                              {convertPrice(offer.price)}
+                            </td>
+                            <td className="p-3 flex gap-1 items-center">
+                              {offer.buyboxShare}
+                              <div className="relative w-20 h-2 bg-gray-200 rounded-full">
+                                <div
+                                  className="absolute top-0 left-0 h-2 bg-green-500 rounded-full"
+                                  style={{ width: offer.buyboxShare }}
+                                />
+                              </div>
+                            </td>
+                          </tr>
+                        ))
+                      ) : (
+                        <tr>
+                          <td
+                            colSpan={5}
+                            className="p-3 py-8 text-center text-gray-500"
+                          >
+                            No offers available.
                           </td>
                         </tr>
-                      ))}
+                      )}
                     </tbody>
                   </table>
                 ) : (
@@ -926,30 +939,41 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
                       </tr>
                     </thead>
                     <tbody>
-                      {sellerFeedbackData.map((seller) => (
-                        <tr key={seller.id} className="border-b">
-                          <td className="p-3">{seller.id}</td>
-                          <td className="p-3">
-                            <div
-                              onClick={() =>
-                                router.push(`/seller/${seller.sellerId}`)
-                              }
-                              className="cursor-pointer"
-                            >
-                              {seller.seller}
-                              <div className="flex">
-                                {renderStars(seller.rating)}
+                      {sellerFeedbackData.length > 0 ? (
+                        sellerFeedbackData.map((seller) => (
+                          <tr key={seller.id} className="border-b">
+                            <td className="p-3">{seller.id}</td>
+                            <td className="p-3">
+                              <div
+                                onClick={() =>
+                                  router.push(`/seller/${seller.sellerId}`)
+                                }
+                                className="cursor-pointer"
+                              >
+                                {seller.seller}
+                                <div className="flex">
+                                  {renderStars(seller.rating)}
+                                </div>
                               </div>
-                            </div>
+                            </td>
+                            <td className="p-3">
+                              {currencySymbol}
+                              {convertPrice(seller.avgPrice)}
+                            </td>
+                            <td className="p-3">{seller.won}</td>
+                            <td className="p-3">{seller.lastWon}</td>
+                          </tr>
+                        ))
+                      ) : (
+                        <tr>
+                          <td
+                            colSpan={5}
+                            className="p-3 py-8 text-center text-gray-500"
+                          >
+                            No seller feedback available.
                           </td>
-                          <td className="p-3">
-                            {currencySymbol}
-                            {convertPrice(seller.avgPrice)}
-                          </td>
-                          <td className="p-3">{seller.won}</td>
-                          <td className="p-3">{seller.lastWon}</td>
                         </tr>
-                      ))}
+                      )}
                     </tbody>
                   </table>
                 )}
