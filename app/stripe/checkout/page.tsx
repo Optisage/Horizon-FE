@@ -73,7 +73,7 @@ export default function StripeCheckout() {
                 <h1 className=" font-semibold text-2xl">
                   Subscription Successful.
                 </h1>
-                <p>Please check your mail to complete your registration.</p>
+                <p>Please check your email to complete your registration.</p>
               </div>
             )}
           </div>

@@ -33,7 +33,7 @@ const Login: React.FC = () => {
   ) => {
     try {
       const response = await login(values).unwrap();
-      if (response?.data?.has_connected_amazon_account === true){
+      if (response?.data?.user?.has_connected_amazon_account === true){
         router.push("/dashboard");
       }else{
         router.push("/connect-amazon");
