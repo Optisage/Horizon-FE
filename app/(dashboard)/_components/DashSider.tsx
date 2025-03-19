@@ -129,10 +129,10 @@ const DashSider = () => {
           {/* Invite & Earn */}
           <div className="p-4 border-t border-gray-200 mt-6">
             <p className="text-sm font-medium">
-              Invite & Earn: Share Optisage!
+              Invite & Earn: Share optisage!
             </p>
             <p className="text-xs text-gray-500 mt-1">
-              Invite other sellers to Optisage & help them succeed and unlock
+              Invite other sellers to optisage & help them succeed and unlock
               exclusive perks too!
             </p>
             <button

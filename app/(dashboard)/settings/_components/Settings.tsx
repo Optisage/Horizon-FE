@@ -6,22 +6,45 @@ import { Heading } from "@/app/(dashboard)/_components";
 import UserDetails from "./UserDetails";
 import BuyingCriteria from "./BuyingCriteria";
 import { useLazyGetSettingsQuery } from "@/redux/api/user";
+import { LuDot } from "react-icons/lu";
+import { message } from "antd";
+import CancelModal from "./cancelModal";
+import CancelReason from "./cancelReasons";
+import { useCancelSubscriptionMutation } from "@/redux/api/subscriptionApi";
 
 const Settings = () => {
   const [activeTab, setActiveTab] = useState<"userDetails" | "buyingCriteria">(
     "userDetails"
   );
+  const [isCancelVisible, setIsCancelVisible] = useState(false);
+  const [isReasonVisible, setIsReasonVisible] = useState(false);
+ 
+  const [messageApi, contextHolder] = message.useMessage();
 
   const [getSettings, { isLoading, data: settingsData }] =
     useLazyGetSettingsQuery();
+    const [cancelSubscription, { isLoading: cancelLoading }] =
+    useCancelSubscriptionMutation();
 
   useEffect(() => {
     getSettings({});
   }, []);
- 
+
+  const handleCancelSubscription = () => {
+    cancelSubscription({})
+      .unwrap()
+      .then(() => {
+        messageApi.success("Cancelled Subscription Successfully");
+        //setIsCancelVisible(false);
+      })
+      .catch(() => {
+        messageApi.error("Failed to Cancel Subscription");
+      });
+  };
 
   return (
-    <section className="flex flex-col gap-8 min-h-[50dvh] md:min-h-[80dvh]">
+    <section className="flex flex-col gap-8 min-h-[50dvh] md:min-h-[80dvh] ">
+      {contextHolder}
       <Heading title="Settings" subtitle="Manage your profile" />
 
       <div className="border border-border rounded-xl p-4 flex flex-col gap-6">
@@ -60,7 +83,7 @@ const Settings = () => {
         {/* Tab Content */}
         {isLoading ? (
           <div className=" w-full flex justify-center">
-          <div className="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-primary"></div>
+            <div className="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-primary"></div>
           </div>
         ) : activeTab === "userDetails" ? (
           <UserDetails userData={settingsData?.data || {}} />
@@ -68,6 +91,47 @@ const Settings = () => {
           <BuyingCriteria buyingCriteria={settingsData?.data || {}} />
         )}
       </div>
+      <div className=" space-y-4">
+        <h2 className="text-[#01011D] text-lg font-medium">
+          Subscription Status
+        </h2>
+        <div className=" bg-[#FAFDFC] border border-[#DDE1DF] w-full rounded-xl p-4">
+          <div className=" flex justify-between items-center mt-2">
+            <div>
+              <h5 className=" font-semibold text-[#090F0D] ">Pro User</h5>
+              <h6 className=" flex items-center">
+                <span className=" text-sm text-[#1E6B4F] font-semibold">
+                  Active
+                </span>
+                <LuDot size={20} color="#D9D9D9" />
+                <span className=" text-sm text-[#5F6362]">
+                  Expires on 12/04/2025
+                </span>
+              </h6>
+            </div>
+            <div>
+              <button className=" text-red-500 rounded-xl text-sm py-1 px-3 hover:bg-red-500 hover:text-white" onClick={() => setIsCancelVisible(true)}>
+                Cancel Subscription
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <CancelModal
+      setIsCancelVisible={()=>setIsCancelVisible(false)}
+      isCancelVisible={isCancelVisible}
+      handleReason={()=>{
+        setIsReasonVisible(true);
+        setIsCancelVisible(false);
+      }}
+      />
+      <CancelReason 
+      setIsReasonVisible={()=>setIsReasonVisible(false)}
+      isReasonVisible={isReasonVisible}
+      loading={cancelLoading}
+      handleCancelSubscription={()=>handleCancelSubscription()}
+      />
     </section>
   );
 };

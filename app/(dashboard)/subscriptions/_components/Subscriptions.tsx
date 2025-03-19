@@ -17,19 +17,25 @@ import {
   useChangeSubscriptionMutation,
 } from "@/redux/api/subscriptionApi";
 import useCurrencyConverter from "@/utils/currencyConverter";
+import { MdInfoOutline } from "react-icons/md";
+import { LuDot } from "react-icons/lu";
+import { FaCheckCircle } from "react-icons/fa";
 
 interface PricingPlan {
   id: string;
   name: string;
   price: string;
-  stripe_price_id:string
+  stripe_price_id: string;
+  meta_data?: {
+    features?: string[];
+  };
 }
 
 const Subscriptions = () => {
   const [isMonthly, setIsMonthly] = useState(true);
   const [pricingData, setPricingData] = useState<PricingPlan[]>([]);
   const [isModalVisible, setIsModalVisible] = useState(false);
- 
+
   const [selectedPlan, setSelectedPlan] = useState<PricingPlan | null>(null);
   const monthlyPrice = 35;
   const annualPrice = monthlyPrice * 12;
@@ -48,7 +54,6 @@ const Subscriptions = () => {
   const [getProfile] = useLazyGetProfileQuery();
   const [messageApi, contextHolder] = message.useMessage();
 
-
   const { convertPrice } = useCurrencyConverter(currencyCode);
 
   useEffect(() => {
@@ -60,8 +65,6 @@ const Subscriptions = () => {
     });
     /* eslint-disable-next-line react-hooks/exhaustive-deps */
   }, []);
-
-  
 
   const handleSubscriptionChange = (planId: string) => {
     changeSubscription({ pricing_id: planId })
@@ -85,7 +88,6 @@ const Subscriptions = () => {
           title="Subscription Plan"
           subtitle={`You are currently on the ${subscription_type} Plan.`}
         />
-        
       </div>
 
       {/* plans */}
@@ -119,14 +121,20 @@ const Subscriptions = () => {
         {/* grid */}
         <div className="grid sm:grid-cols-3 gap-6">
           {/* Dynamically render pricing plans */}
-          {pricingData.map((plan) => (
+          {pricingData.map((plan, index) => {
+            const features = plan.meta_data?.features || [];
+            const firstFeature = features[0] || "";
+            const remainingFeatures = features.slice(1, 4);
+            return (
             <div
               key={plan.id}
-              className={`border border-[#EBEBEB] hover:border-primary duration-200 rounded-3xl p-6 flex flex-col gap-6 text-[#787891] ${
-                plan.name === "STARTER (PRO)"
-                  ? "bg-[url(/assets/images/pricing-bg.png)] bg-no-repeat bg-cover bg-top"
-                  : "hover:bg-primary/5"
-              }`}
+              className={`border border-[#EBEBEB] hover:border-primary duration-200 rounded-3xl p-6 flex flex-col gap-6 ${
+                index === 0
+                  ? "bg-[url(/path/to/image1.svg)] text-[#787891]"
+                  : index === 1
+                  ? "bg-[url(/assets/images/pricing-bg.png)] text-[#787891]"
+                  : "bg-[url(/assets/svg/pricing.svg)] text-white"
+              } bg-no-repeat bg-cover bg-top hover:bg-primary/5`}
             >
               <span className="flex flex-col gap-5">
                 <h3 className="capitalize">{plan.name}</h3>
@@ -134,43 +142,91 @@ const Subscriptions = () => {
                   <span className="text-xl sm:text-2xl font-semibold">
                     {currencySymbol}
                   </span>
-                  <span className="text-[#01011D] text-xl sm:text-2xl font-semibold">
+                  <span
+                    className={`text-[#01011D] text-xl sm:text-2xl font-semibold ${
+                      index === 2 ? "text-white" : ""
+                    }`}
+                  >
                     {isMonthly
                       ? convertPrice(plan.price)
                       : convertPrice(parseFloat(plan.price) * 12)}
                   </span>{" "}
                   &nbsp;
-                  <span>/</span> {isMonthly ? "per month" : "per year"}
+                  <span>/</span> {isMonthly ? "mo" : "yr"}
                 </p>
               </span>
-              <p className="">
-                {plan.name === "STARTER (PRO)"
-                  ? "Getting Started"
-                  : "Getting Serious"}
+              <p className=" truncate">
+               {firstFeature}
               </p>
+
+              <ul className=" mt-1 text-left space-y-2 h-fit pt-2">
+                  {remainingFeatures.slice(0, 3).map((feature, idx) => (
+                    <li className="flex gap-2 items-center" key={idx}>
+                      <FaCheckCircle className={`text-green-700 !h-[20px] !w-[20px] ${index === 2? "text-white":""}`} />
+                      <span className="truncate w-full">{feature}</span>
+                    </li>
+                  ))}
+                </ul>
+                
               <button
                 type="button"
-                disabled={plan.name !== "STARTER (PRO)" || plan.name === subscription_type}
-                className={`px-6 py-2.5 text-sm border rounded-xl font-medium duration-200 ${
+                disabled={
+                  plan.name !== "STARTER (PRO)" ||
+                  plan.name === subscription_type
+                }
+                className={`px-6 py-2.5 text-sm  rounded-xl font-medium duration-200 ${
                   plan.name === subscription_type
                     ? "bg-gray-300 text-gray-500 cursor-not-allowed"
                     : plan.name === "STARTER (PRO)"
                     ? "border-transparent text-white bg-primary hover:bg-primary-hover"
-                    : "border-[#EDEDEE] hover:bg-gray-50 cursor-not-allowed"
+                    : " hover:bg-gray-50 text-white cursor-not-allowed bg-primary hover:bg-primary-hover"
                 }`}
-               
                 onClick={() => {
                   setIsModalVisible(true);
                   setSelectedPlan(plan);
                 }}
-                  
               >
-              {plan.name === subscription_type
+                {plan.name === subscription_type
                   ? "Active Plan"
                   : `Upgrade to ${plan.name}`}
               </button>
             </div>
-          ))}
+            )
+})}
+        </div>
+      </div>
+
+      {/**SUBSCRIPTION STATUS */}
+      <div className=" space-y-4">
+        <h2 className="text-[#01011D] text-lg font-medium">
+          Subscription Status
+        </h2>
+        <div className=" bg-[#FAFDFC] border border-[#DDE1DF] w-full rounded-xl p-4">
+          <div className=" flex items-center gap-1 border-[#E6F5F0] border bg-white rounded-xl py-1 px-2">
+            <MdInfoOutline />
+            <span className=" text-sm font-medium">
+              Your subscription will not renew when expired
+            </span>
+          </div>
+          <div className=" flex justify-between items-center mt-2">
+            <div>
+              <h5 className=" font-semibold text-[#090F0D] ">Pro User</h5>
+              <h6 className=" flex items-center">
+                <span className=" text-sm text-[#1E6B4F] font-semibold">
+                  Active
+                </span>
+                <LuDot size={20} color="#D9D9D9" />
+                <span className=" text-sm text-[#5F6362]">
+                  Expires on 12/04/2025
+                </span>
+              </h6>
+            </div>
+            <div>
+              <button className=" bg-primary text-white rounded-xl text-sm py-1 px-3 hover:bg-primary-hover">
+                Renew Subscription
+              </button>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -192,7 +248,6 @@ const Subscriptions = () => {
         />
       </div>
 
-       
       <Modal
         title="Change Subscription"
         open={isModalVisible}
@@ -223,20 +278,19 @@ const Subscriptions = () => {
               Cancel
             </button>
 
-            <Button 
-            loading={changeLoading}
-            disabled={changeLoading}
-            className="px-4 py-2 !bg-green-500 !text-white !rounded-lg !font-bold !h-[40px] border-none"
-            onClick={()=>handleSubscriptionChange(selectedPlan ? selectedPlan.id : "")}
+            <Button
+              loading={changeLoading}
+              disabled={changeLoading}
+              className="px-4 py-2 !bg-green-500 !text-white !rounded-lg !font-bold !h-[40px] border-none"
+              onClick={() =>
+                handleSubscriptionChange(selectedPlan ? selectedPlan.id : "")
+              }
             >
               Switch Subscription Now
             </Button>
           </div>
         </div>
       </Modal>
-     
-
-      
     </section>
   );
 };

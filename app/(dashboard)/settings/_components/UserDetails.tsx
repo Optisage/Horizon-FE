@@ -7,16 +7,12 @@ import {
 } from "@/lib/AntdComponents";
 import { IoMdInformationCircleOutline } from "react-icons/io";
 import { useUpdateSettingsMutation } from "@/redux/api/user";
-import { Button, message, Modal } from "antd";
-import { GoAlert } from "react-icons/go";
-import { useCancelSubscriptionMutation } from "@/redux/api/subscriptionApi";
-
-
+import { Button, message } from "antd";
 
 
 interface UserData {
   email: string;
-  password:string,
+  password: string;
   misc_fee: number;
   misc_fee_percentage: number;
   inbound_shipping: number;
@@ -30,11 +26,11 @@ interface UserData {
 interface UserDetailsProps {
   userData: {
     email: string;
-    password:string,
-    misc_fee: number,
-    misc_fee_percentage: number,
-    inbound_shipping: number,
-prep_fee: number,
+    password: string;
+    misc_fee: number;
+    misc_fee_percentage: number;
+    inbound_shipping: number;
+    prep_fee: number;
     vat: {
       flat_rate: { rate: number };
       standard_rate: { rate: number; reduced_rate: number };
@@ -43,8 +39,8 @@ prep_fee: number,
 }
 
 const defaultUserData: UserData = {
-  email: '',
-  password: '',
+  email: "",
+  password: "",
   misc_fee: 0,
   misc_fee_percentage: 0,
   inbound_shipping: 0,
@@ -56,14 +52,12 @@ const defaultUserData: UserData = {
 };
 const UserDetails = ({ userData }: UserDetailsProps) => {
   const [vatEnabled, setVatEnabled] = useState(true);
-  const [isCancelVisible, setIsCancelVisible] = useState(false);
+
   const [vatType, setVatType] = useState<"standard" | "flat">("standard");
-const [saveSettings,{isLoading}] = useUpdateSettingsMutation()
+  const [saveSettings, { isLoading }] = useUpdateSettingsMutation();
   //const [formData, setFormData] = useState<UserData>(userData);
-    const [cancelSubscription, { isLoading: cancelLoading }] =
-      useCancelSubscriptionMutation();
-  const [messageApi, contextHolder] = message.useMessage();
  
+  const [messageApi, contextHolder] = message.useMessage();
 
   const [formData, setFormData] = useState<UserData>({
     ...defaultUserData,
@@ -90,33 +84,36 @@ const [saveSettings,{isLoading}] = useUpdateSettingsMutation()
 
   useEffect(() => {
     if (userData) {
-      setFormData(prev => ({
+      setFormData((prev) => ({
         ...prev,
         ...userData,
         vat: {
           flat_rate: { ...prev.vat.flat_rate, ...userData?.vat?.flat_rate },
-          standard_rate: { 
-            ...prev.vat.standard_rate, 
-            ...userData?.vat?.standard_rate 
-          }
-        }
+          standard_rate: {
+            ...prev.vat.standard_rate,
+            ...userData?.vat?.standard_rate,
+          },
+        },
       }));
     }
   }, [userData]);
-  
 
   // Handle VAT Change
   const handleVatChange = (field: string, value: string) => {
     // Remove unwanted characters and convert to number
-    const cleanValue = Number(value.replace(/[$\s/%]/g, ''));
-    
+    const cleanValue = Number(value.replace(/[$\s/%]/g, ""));
+
     setFormData((prev) => ({
       ...prev,
       vat: {
         ...prev.vat,
         [vatType === "standard" ? "standard_rate" : "flat_rate"]: {
-          ...(prev.vat[vatType === "standard" ? "standard_rate" : "flat_rate"] || {}),
-          [field]: isNaN(cleanValue) ? 0 : Math.min(Math.max(cleanValue, 0), 100),
+          ...(prev.vat[
+            vatType === "standard" ? "standard_rate" : "flat_rate"
+          ] || {}),
+          [field]: isNaN(cleanValue)
+            ? 0
+            : Math.min(Math.max(cleanValue, 0), 100),
         },
       },
     }));
@@ -124,23 +121,26 @@ const [saveSettings,{isLoading}] = useUpdateSettingsMutation()
 
   const handleSaveUser = () => {
     const updatedFields: Partial<UserData> = {};
-  
+
     Object.keys(formData).forEach((key) => {
       const typedKey = key as keyof UserData;
-      
+
       // Skip empty password fields
       if (typedKey === "password" && !formData.password) return;
-  
-      if (JSON.stringify(formData[typedKey]) !== JSON.stringify(userData[typedKey])) {
+
+      if (
+        JSON.stringify(formData[typedKey]) !==
+        JSON.stringify(userData[typedKey])
+      ) {
         (updatedFields[typedKey] as unknown) = formData[typedKey];
       }
     });
-  
+
     if (Object.keys(updatedFields).length === 0) {
       messageApi.info("No changes detected.");
       return;
     }
-  
+
     saveSettings(updatedFields)
       .unwrap()
       .then(() => {
@@ -151,17 +151,7 @@ const [saveSettings,{isLoading}] = useUpdateSettingsMutation()
       });
   };
 
-  const handleCancelSubscription = () => {
-    cancelSubscription({})
-    .unwrap()
-    .then(() => {
-      messageApi.success("Cancelled Subscription Successfully");
-      setIsCancelVisible(false);
-    })
-    .catch(() => {
-      messageApi.error("Failed to Cancel Subscription");
-    });
-  };
+  
 
   return (
     <div className="flex flex-col gap-6">
@@ -270,9 +260,7 @@ const [saveSettings,{isLoading}] = useUpdateSettingsMutation()
                     defaultValue="10%"
                     className="px-3 py-2"
                     value={`${formData?.vat?.standard_rate?.rate ?? ""}%`}
-                    onChange={(e) =>
-                      handleVatChange("rate", e.target.value)
-                    }
+                    onChange={(e) => handleVatChange("rate", e.target.value)}
                   />
                 </span>
                 <span className="flex flex-col gap-4">
@@ -286,7 +274,9 @@ const [saveSettings,{isLoading}] = useUpdateSettingsMutation()
                     id="reduced-rate"
                     defaultValue="0.00%"
                     className="px-3 py-2"
-                    value={`${formData?.vat?.standard_rate?.reduced_rate ?? ""}%`}
+                    value={`${
+                      formData?.vat?.standard_rate?.reduced_rate ?? ""
+                    }%`}
                     onChange={(e) =>
                       handleVatChange("reduced_rate", e.target.value)
                     }
@@ -306,9 +296,7 @@ const [saveSettings,{isLoading}] = useUpdateSettingsMutation()
                     defaultValue="0.00%"
                     className="px-3 py-2"
                     value={`${formData?.vat?.flat_rate?.rate ?? ""}%`}
-                  onChange={(e) =>
-                    handleVatChange("rate", e.target.value)
-                  }
+                    onChange={(e) => handleVatChange("rate", e.target.value)}
                   />
                 </span>
               </div>
@@ -336,9 +324,13 @@ const [saveSettings,{isLoading}] = useUpdateSettingsMutation()
             </p>
           </span>
 
-          <Input id="prep-fee" defaultValue="$0.00" className="px-3 py-2" 
-          value={`${(formData?.prep_fee) ?? ""}`}
-          onChange={(e) => handleChange("prep_fee", e.target.value)} />
+          <Input
+            id="prep-fee"
+            defaultValue="$0.00"
+            className="px-3 py-2"
+            value={`${formData?.prep_fee ?? ""}`}
+            onChange={(e) => handleChange("prep_fee", e.target.value)}
+          />
         </div>
 
         <div className="flex flex-col sm:flex-row gap-4 sm:gap-8 justify-between sm:items-center">
@@ -358,9 +350,13 @@ const [saveSettings,{isLoading}] = useUpdateSettingsMutation()
             </p>
           </span>
 
-          <Input id="misc-fee" defaultValue="$0.00" className="px-3 py-2" 
-          value={`${formData?.misc_fee ?? ""}`}
-          onChange={(e) => handleChange("misc_fee", e.target.value)} />
+          <Input
+            id="misc-fee"
+            defaultValue="$0.00"
+            className="px-3 py-2"
+            value={`${formData?.misc_fee ?? ""}`}
+            onChange={(e) => handleChange("misc_fee", e.target.value)}
+          />
         </div>
 
         <div className="flex flex-col sm:flex-row gap-4 sm:gap-8 justify-between sm:items-center">
@@ -384,7 +380,9 @@ const [saveSettings,{isLoading}] = useUpdateSettingsMutation()
             defaultValue="$0.00"
             className="px-3 py-2"
             value={`${formData?.misc_fee_percentage ?? ""}`}
-            onChange={(e) => handleChange("misc_fee_percentage", e.target.value)}
+            onChange={(e) =>
+              handleChange("misc_fee_percentage", e.target.value)
+            }
           />
         </div>
 
@@ -423,56 +421,8 @@ const [saveSettings,{isLoading}] = useUpdateSettingsMutation()
           >
             Save
           </Button>
-
-          <button
-          className=" text-sm hover:bg-red-500/90 text-red-500 hover:text-white border border-red-500 p-2 rounded-xl"
-          onClick={() => setIsCancelVisible(true)}
-        >
-          Cancel Subscription
-        </button>
         </div>
       </div>
-
-      <Modal
-        title="Cancel Subscription"
-        open={isCancelVisible}
-        footer={null}
-        maskClosable={false}
-        closable={false}
-        centered={true}
-      >
-        <div className=" space-y-5">
-          <div className=" flex justify-center">
-            <GoAlert size={60} color="orange" />
-          </div>
-
-          <div className=" text-center">
-            <h1 className=" font-semibold">
-              Please be informed that you are about to cancel your active
-              subscription. Your current plan will still be active until its
-              expiry date after which there will be no further charge to your
-              card.
-            </h1>
-          </div>
-          <div className=" grid grid-cols-2 gap-10">
-            <button
-              className="px-4 py-2 bg-gray-300 rounded-lg font-bold !h-[40px]"
-              onClick={() => setIsCancelVisible(false)}
-            >
-              Cancel
-            </button>
-
-            <Button
-              loading={cancelLoading}
-              disabled={cancelLoading}
-              className="px-4 py-2 !bg-green-500 !text-white !rounded-lg !font-bold !h-[40px] border-none"
-              onClick={() => handleCancelSubscription()}
-            >
-              Cancel Subscription Now
-            </Button>
-          </div>
-        </div>
-      </Modal>
     </div>
   );
 };
