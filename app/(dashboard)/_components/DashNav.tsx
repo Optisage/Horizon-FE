@@ -64,7 +64,7 @@ const DashNav = () => {
             href=""
             className="hidden xl:block text-sm font-medium text-[#090F0D]"
           >
-            For better experience, install OptiSage Chrome Extension.
+            For better experience, install optiSage Chrome Extension.
           </Link>
           <CountrySelect />
         </div>

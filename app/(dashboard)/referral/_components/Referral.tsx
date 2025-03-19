@@ -122,10 +122,10 @@ const Referral = () => {
               </span>
               <span className="flex flex-col gap-2">
                 <h4 className="text-[#01011D] text-base font-medium">
-                  Watch Optisage Tutorials
+                  Watch optisage Tutorials
                 </h4>
                 <p className="text-[#4B4B62] text-xs">
-                  Learn how Optisage help track sales, optimize profits, and win
+                  Learn how optisage help track sales, optimize profits, and win
                   the Buy Box.
                 </p>
               </span>
