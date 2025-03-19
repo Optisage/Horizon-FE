@@ -541,7 +541,9 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
                         </p>
                       )}
                       <p className="text-red-500 text-sm">
-                      {setIpIssue ? `There are ${setIpIssue} issues` : "No issues found"}
+                        {setIpIssue
+                          ? `There are ${setIpIssue} issues`
+                          : "No issues found"}
                       </p>
                     </span>
 
@@ -759,7 +761,7 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
                   <div className="flex justify-between text-sm">
                     <span>Profit Margin</span>
                     <span className="font-semibold text-black">
-                      {(profitMargin * 100).toFixed(2)}%
+                      {profitMargin.toFixed(2)}%
                     </span>
                   </div>
                   <div className="flex justify-between text-sm">
@@ -932,7 +934,6 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
                               onClick={() =>
                                 router.push(`/seller/${seller.sellerId}`)
                               }
-                            
                               className="cursor-pointer"
                             >
                               {seller.seller}
