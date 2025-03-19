@@ -7,7 +7,9 @@ import {
 } from "@/lib/AntdComponents";
 import { IoMdInformationCircleOutline } from "react-icons/io";
 import { useUpdateSettingsMutation } from "@/redux/api/user";
-import { Button, message } from "antd";
+import { Button, message, Modal } from "antd";
+import { GoAlert } from "react-icons/go";
+import { useCancelSubscriptionMutation } from "@/redux/api/subscriptionApi";
 
 
 
@@ -54,9 +56,12 @@ const defaultUserData: UserData = {
 };
 const UserDetails = ({ userData }: UserDetailsProps) => {
   const [vatEnabled, setVatEnabled] = useState(true);
+  const [isCancelVisible, setIsCancelVisible] = useState(false);
   const [vatType, setVatType] = useState<"standard" | "flat">("standard");
 const [saveSettings,{isLoading}] = useUpdateSettingsMutation()
   //const [formData, setFormData] = useState<UserData>(userData);
+    const [cancelSubscription, { isLoading: cancelLoading }] =
+      useCancelSubscriptionMutation();
   const [messageApi, contextHolder] = message.useMessage();
  
 
@@ -144,6 +149,18 @@ const [saveSettings,{isLoading}] = useUpdateSettingsMutation()
       .catch(() => {
         messageApi.error("Failed to Save Details");
       });
+  };
+
+  const handleCancelSubscription = () => {
+    cancelSubscription({})
+    .unwrap()
+    .then(() => {
+      messageApi.success("Cancelled Subscription Successfully");
+      setIsCancelVisible(false);
+    })
+    .catch(() => {
+      messageApi.error("Failed to Cancel Subscription");
+    });
   };
 
   return (
@@ -397,7 +414,7 @@ const [saveSettings,{isLoading}] = useUpdateSettingsMutation()
           />
         </div>
 
-        <div>
+        <div className=" flex justify-between items-center">
           <Button
             htmlType="submit"
             className="!px-6 !py-2 !bg-primary !border-none hover:!bg-primary-hover !rounded-xl !text-white !text-sm !font-medium"
@@ -406,8 +423,56 @@ const [saveSettings,{isLoading}] = useUpdateSettingsMutation()
           >
             Save
           </Button>
+
+          <button
+          className=" text-sm hover:bg-red-500/90 text-red-500 hover:text-white border border-red-500 p-2 rounded-xl"
+          onClick={() => setIsCancelVisible(true)}
+        >
+          Cancel Subscription
+        </button>
         </div>
       </div>
+
+      <Modal
+        title="Cancel Subscription"
+        open={isCancelVisible}
+        footer={null}
+        maskClosable={false}
+        closable={false}
+        centered={true}
+      >
+        <div className=" space-y-5">
+          <div className=" flex justify-center">
+            <GoAlert size={60} color="orange" />
+          </div>
+
+          <div className=" text-center">
+            <h1 className=" font-semibold">
+              Please be informed that you are about to cancel your active
+              subscription. Your current plan will still be active until its
+              expiry date after which there will be no further charge to your
+              card.
+            </h1>
+          </div>
+          <div className=" grid grid-cols-2 gap-10">
+            <button
+              className="px-4 py-2 bg-gray-300 rounded-lg font-bold !h-[40px]"
+              onClick={() => setIsCancelVisible(false)}
+            >
+              Cancel
+            </button>
+
+            <Button
+              loading={cancelLoading}
+              disabled={cancelLoading}
+              className="px-4 py-2 !bg-green-500 !text-white !rounded-lg !font-bold !h-[40px] border-none"
+              onClick={() => handleCancelSubscription()}
+            >
+              Cancel Subscription Now
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 };
