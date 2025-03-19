@@ -85,7 +85,7 @@ const BuyingCriteria = ({ buyingCriteria }: BuyingCriteriaProps)  => {
 
         <Input id="mimimum-bsr"
          defaultValue="$0.00" className="px-3 py-2"
-         value={`% ${formData?.minimum_bsr_percentage.toString()}`}
+         value={`% ${formData?.minimum_bsr_percentage}`}
          onChange={(e) => handleInputChange('minimum_bsr_percentage', e.target.value)}
           />
       </div>
@@ -105,7 +105,7 @@ const BuyingCriteria = ({ buyingCriteria }: BuyingCriteriaProps)  => {
 
         <Input id="maximum-bsr" 
         defaultValue="$0.00" className="px-3 py-2" 
-        value={`% ${formData?.maximum_bsr_percentage.toString()}`}
+        value={`% ${formData?.maximum_bsr_percentage}`}
         onChange={(e) => handleInputChange('maximum_bsr_percentage', e.target.value)}
         />
       </div>
@@ -128,7 +128,7 @@ const BuyingCriteria = ({ buyingCriteria }: BuyingCriteriaProps)  => {
 
         <Input id="minimum-profit" 
         defaultValue="$0.00" className="px-3 py-2" 
-        value={`$ ${formData?.minimum_profit_percentage.toString()}`}
+        value={`$ ${formData?.minimum_profit_percentage}`}
         onChange={(e) => handleInputChange('minimum_profit_percentage', e.target.value)}
         />
       </div>
@@ -148,7 +148,7 @@ const BuyingCriteria = ({ buyingCriteria }: BuyingCriteriaProps)  => {
 
         <Input id="minimum-roi" 
         defaultValue="$0.00" className="px-3 py-2" 
-        value={`$ ${formData?.minimum_roi_percentage.toString()}`}
+        value={`$ ${formData?.minimum_roi_percentage}`}
         onChange={(e) => handleInputChange('minimum_roi_percentage', e.target.value)}
         />
       </div>
