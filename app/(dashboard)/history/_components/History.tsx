@@ -56,9 +56,13 @@ const groupByDate = (items: HistoryProduct[]) => {
 const History = () => {
   const [searchValue, setSearchValue] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [nextPageToken, setNextPageToken] = useState<string | null>(null);
+  const [previousPageToken, setPreviousPageToken] = useState<string | null>(
+    null
+  );
+  const [currentPageToken, setCurrentPageToken] = useState<string | null>(null);
   const [isPaginationLoading, setIsPaginationLoading] = useState(false);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
+
   const router = useRouter();
   const { marketplaceId } = useAppSelector((state) => state?.global);
 
@@ -70,11 +74,6 @@ const History = () => {
     return () => clearTimeout(handler);
   }, [searchValue]);
 
-  // Reset to first page when search changes
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [debouncedSearch]);
-
   // Get search history
   const {
     data: historyData,
@@ -83,8 +82,7 @@ const History = () => {
   } = useGetSearchHistoryQuery(
     {
       marketplaceId: marketplaceId || "1",
-      //pageSize: itemsPerPage,
-      page: currentPage,
+      pageToken: currentPageToken,
     },
     { skip: false }
   );
@@ -98,20 +96,19 @@ const History = () => {
     {
       q: debouncedSearch || "",
       marketplaceId: marketplaceId || "1",
-      //perPage: itemsPerPage,
-      page: currentPage,
+      pageToken: currentPageToken,
     },
     { skip: !debouncedSearch }
   );
 
- 
-
-  // Update pagination tokens
+  // Update pagination tokens from API response
   useEffect(() => {
-    const meta = debouncedSearch ? productsData?.meta : historyData?.meta;
-    if (meta) {
-      setTotalPages(meta.last_page);
-      setCurrentPage(meta.current_page);
+    const pagination = debouncedSearch
+      ? productsData?.pagination
+      : historyData?.pagination;
+    if (pagination) {
+      setNextPageToken(pagination.nextPageToken);
+      setPreviousPageToken(pagination.previousPageToken);
     }
   }, [historyData, productsData, debouncedSearch]);
 
@@ -266,14 +263,14 @@ const History = () => {
           <CustomPagination
             onNext={() => {
               setIsPaginationLoading(true);
-              setCurrentPage((prev) => prev + 1);
+              setCurrentPageToken(nextPageToken);
             }}
             onPrevious={() => {
               setIsPaginationLoading(true);
-              setCurrentPage((prev) => prev - 1);
+              setCurrentPageToken(previousPageToken);
             }}
-            hasNext={currentPage < totalPages}
-            hasPrevious={currentPage > 1}
+            hasNext={!!nextPageToken}
+            hasPrevious={!!previousPageToken}
           />
         </main>
       )}
