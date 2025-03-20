@@ -44,6 +44,7 @@ import { MdOutlineInsertChartOutlined } from "react-icons/md";
 import {
   useGetItemQuery,
   useGetBuyboxInfoQuery,
+  useGetBuyboxDetailsQuery,
   useGetRankingsAndPricesQuery,
   useSearchItemsQuery,
   useCalculateProfitablilityMutation,
@@ -222,6 +223,17 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
   });
 
   const {
+    data: buyboxDetailsData,
+    isLoading: isLoadingBuyboxDetails,
+    // error: buyboxDetailsError,
+  } = useGetBuyboxDetailsQuery({
+    marketplaceId,
+    itemAsin: asin,
+    statStartDate,
+    statEndDate,
+  });
+
+  const {
     data: rankingsData,
     isLoading: isLoadingRankings,
     error: rankingsError,
@@ -339,12 +351,19 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
     return () => clearTimeout(handler);
   }, [searchValue]);
 
-  if (isLoadingBuybox || isLoading || isLoadingRankings || isPaginationLoading)
+  if (
+    isLoadingBuybox ||
+    isLoadingBuyboxDetails ||
+    isLoading ||
+    isLoadingRankings ||
+    isPaginationLoading
+  )
     return <Loader />;
 
   const product = data?.data;
   const buybox: BuyboxItem[] = buyboxData?.data?.buybox ?? [];
-  const extra = buyboxData?.data?.extra;
+  const buyboxDetails: BuyboxItem[] = buyboxDetailsData?.data?.buybox ?? [];
+  const extra = buyboxDetailsData?.data?.extra;
   const rankings = rankingsData?.data?.[activeTab4.toLowerCase()] ?? {};
 
   // To have more colors
@@ -371,7 +390,7 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
   };
 
   const offersData = {
-    offers: buybox.map((offer: BuyboxItem, index: number) => ({
+    offers: buyboxDetails.map((offer: BuyboxItem, index: number) => ({
       id: index + 1,
       seller: offer.seller,
       stock: offer.stock_quantity,
@@ -384,9 +403,9 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
 
   // for sales price in calculator
   const buyboxWinnerPrice =
-    buybox.find((offer) => offer.is_buybox_winner)?.listing_price ?? 0;
+    buyboxDetails.find((offer) => offer.is_buybox_winner)?.listing_price ?? 0;
 
-  const sellerFeedbackData = buybox.map(
+  const sellerFeedbackData = buyboxDetails.map(
     (seller: BuyboxItem, index: number) => ({
       id: index + 1,
       seller: seller.seller,
