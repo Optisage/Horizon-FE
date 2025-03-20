@@ -13,6 +13,7 @@ import CancelReason from "./cancelReasons";
 import { useCancelSubscriptionMutation } from "@/redux/api/subscriptionApi";
 import { useAppSelector } from "@/redux/hooks";
 import { formatDate } from "@/utils/dateFormat";
+import { useLazyGetProfileQuery } from "@/redux/api/auth";
 
 const Settings = () => {
   const [activeTab, setActiveTab] = useState<"userDetails" | "buyingCriteria">(
@@ -23,6 +24,7 @@ const Settings = () => {
  const { subscription_type, subscription_canceled, subscription_will_end_at, is_subscribed } =
      useAppSelector((state) => state.api?.user) || {};
   const [messageApi, contextHolder] = message.useMessage();
+  const [getProfile] =useLazyGetProfileQuery()
 
   const [getSettings, { isLoading, data: settingsData }] =
     useLazyGetSettingsQuery();
@@ -38,6 +40,7 @@ const Settings = () => {
       .unwrap()
       .then(() => {
         messageApi.success("Cancelled Subscription Successfully");
+        getProfile({});
         setIsReasonVisible(false);
       })
       .catch(() => {

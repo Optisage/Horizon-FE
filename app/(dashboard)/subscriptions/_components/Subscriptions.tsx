@@ -15,12 +15,14 @@ import { GoAlert } from "react-icons/go";
 import {
   useCancelSubscriptionMutation,
   useChangeSubscriptionMutation,
+  useRenewSubscriptionMutation,
 } from "@/redux/api/subscriptionApi";
 import useCurrencyConverter from "@/utils/currencyConverter";
 import { MdInfoOutline } from "react-icons/md";
 import { LuDot } from "react-icons/lu";
 import { FaCheckCircle } from "react-icons/fa";
 import { formatDate } from "@/utils/dateFormat";
+import RenewSubscriptionModal from "../../_components/renewSubModal";
 
 interface PricingPlan {
   id: string;
@@ -36,14 +38,14 @@ const Subscriptions = () => {
   const [isMonthly, setIsMonthly] = useState(true);
   const [pricingData, setPricingData] = useState<PricingPlan[]>([]);
   const [isModalVisible, setIsModalVisible] = useState(false);
-
+  const [isRenewVisible, setIsRenewVisible] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<PricingPlan | null>(null);
   const monthlyPrice = 35;
   const annualPrice = monthlyPrice * 12;
 
   const [getSubscription, { data: subData, isLoading }] =
     useLazyGetSubscriptionsQuery();
-  const { subscription_type, subscription_canceled, subscription_will_end_at, is_subscribed } =
+  const { subscription_type, subscription_canceled, subscription_will_end_at, is_subscribed,plan_id } =
     useAppSelector((state) => state.api?.user) || {};
   const { currencyCode, currencySymbol } =
     useAppSelector((state) => state.global) || {};
@@ -54,6 +56,8 @@ const Subscriptions = () => {
     useChangeSubscriptionMutation();
   const [getProfile] = useLazyGetProfileQuery();
   const [messageApi, contextHolder] = message.useMessage();
+  const [renewSub, {isLoading: renewLoading}] = useRenewSubscriptionMutation()
+  
 
   const { convertPrice } = useCurrencyConverter(currencyCode);
 
@@ -81,6 +85,18 @@ const Subscriptions = () => {
       });
   };
 
+  const handleRenewSubscription = ()=>{
+    renewSub({pricing_id: plan_id}).unwrap()
+    .then(()=>{
+      messageApi.success("Subscription renewed");
+      getProfile({});
+      setIsRenewVisible(false);
+    })
+    .catch(()=>{
+      messageApi.error("Subscription renewal failed")
+
+    })
+  }
   return (
     <section className="flex flex-col gap-8 min-h-[50dvh] md:min-h-[80dvh]">
       {contextHolder}
@@ -228,7 +244,7 @@ const Subscriptions = () => {
                 </h6>
               </div>
               <div>
-                <button className=" bg-primary text-white rounded-xl text-sm py-1 px-3 hover:bg-primary-hover">
+                <button className=" bg-primary text-white rounded-xl text-sm py-1 px-3 hover:bg-primary-hover" onClick={()=>setIsRenewVisible(true)}>
                   Renew Subscription
                 </button>
               </div>
@@ -298,6 +314,13 @@ const Subscriptions = () => {
           </div>
         </div>
       </Modal>
+
+      <RenewSubscriptionModal 
+      isRenewVisible={isRenewVisible}
+      setIsRenewVisible={()=>setIsRenewVisible(false)}
+      handleRenewSubscription={()=>handleRenewSubscription()}
+      loading={renewLoading}
+      />
     </section>
   );
 };
