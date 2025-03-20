@@ -1,108 +1,66 @@
 import { SubscriptionData } from "@/app/(dashboard)/subscriptions/_components/SubscriptionHistoryTable";
 import jsPDF from "jspdf";
-//import { SubscriptionData } from "./SubscriptionHistoryTable";
 
-export const generateReceiptPdf = (record: SubscriptionData) => {
-  const doc = new jsPDF();
-  let yPos = 20;
+export const generateReceiptPdf = async (record: SubscriptionData) => {
+  const doc = new jsPDF("p", "mm", "a4");
+  
+  // HTML template with inline styles
+  const htmlContent = `
+    <div style="max-width: 800px; margin: 0 auto; padding: 20px;">
+      <h1 style="text-align: center; color: #2c3e50; margin-bottom: 30px;">
+        Payment Receipt
+      </h1>
 
-  // Header
-  doc.setFontSize(18);
-  const pageWidth = doc.internal.pageSize.getWidth();
-  const headerText = "Payment Receipt";
-  const headerWidth = doc.getTextWidth(headerText);
-  doc.text(headerText, (pageWidth - headerWidth) / 2, yPos); // Center header
-  yPos += 15;
+      <div style="margin-bottom: 25px;">
+        <h2 style="color: #34495e; border-bottom: 2px solid #ecf0f1; padding-bottom: 8px;">
+          Transaction Details
+        </h2>
+        
+        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin-top: 15px;">
+          <div>
+            <strong>Transaction ID:</strong> ${record.transaction_id}
+          </div>
+          <div>
+            <strong>Date:</strong> ${record.date_text}
+          </div>
+          <div>
+            <strong>Amount:</strong> ${record.amount}
+          </div>
+          <div>
+            <strong>Status:</strong> ${record.status === "active" ? "Paid" : record.status}
+          </div>
+        </div>
+      </div>
 
-  // Transaction Details
-  // Bold Label + Normal Value
-  doc.setFont("helvetica", "bold");
-  const transactionLabel = "Transaction ID: ";
-  const labelWidth = doc.getTextWidth(transactionLabel);
-  doc.text(transactionLabel, 20, yPos);
+      <div style="margin-bottom: 25px;">
+        <h2 style="color: #34495e; border-bottom: 2px solid #ecf0f1; padding-bottom: 8px;">
+          Payment Information
+        </h2>
+        
+        <div style="margin-top: 15px;">
+          <div><strong>Payment Method:</strong> ${record.card.brand} ending in ${record.card.last4}</div>
+          <div><strong>Customer Email:</strong> ${record.email}</div>
+          <div><strong>Description:</strong> Subscription Plan - ${record.plan}</div>
+        </div>
+      </div>
 
-  doc.setFont("helvetica", "normal");
-  doc.text(record.transaction_id, 20 + labelWidth, yPos);
-  yPos += 11;
-  ///////////////////
-  doc.setFont("helvetica", "bold");
-  const dateLabel = "Date: ";
-  const dateWidth = doc.getTextWidth(dateLabel);
-  doc.text(dateLabel, 20, yPos);
+      <div style="text-align: center; margin-top: 40px; color: #7f8c8d; font-size: 14px;">
+        <p>Thank you for your payment!</p>
+        <p>If you have any questions, please contact support@example.com</p>
+      </div>
+    </div>
+  `;
 
-  doc.setFont("helvetica", "normal");
-  doc.text(record.date_text, 20 + dateWidth, yPos);
-  yPos += 11;
-  //////////////////////
-  doc.setFont("helvetica", "bold");
-  const amountLabel = "Amount: ";
-  const amountWidth = doc.getTextWidth(amountLabel);
-  doc.text(amountLabel, 20, yPos);
-
-  doc.setFont("helvetica", "normal");
-  doc.text(record.amount, 20 + amountWidth, yPos);
-  yPos += 11;
-  ////////////////\
-  doc.setFont("helvetica", "bold");
-  const paymentLabel = "Payment Method: ";
-  const paymentWidth = doc.getTextWidth(paymentLabel);
-  doc.text(paymentLabel, 20, yPos);
-
-  doc.setFont("helvetica", "normal");
-  doc.text(
-    `${record.card.brand} ending in ${record.card.last4}`,
-    20 + paymentWidth,
-    yPos
-  );
-  //doc.text(`Payment Method: ${record.card.brand} ending in ${record.card.last4}`, 20, yPos);
-  yPos += 11;
-  ///////////////////
-  doc.setFont("helvetica", "bold");
-  const statusLabel = "Amount: ";
-  const statusWidth = doc.getTextWidth(statusLabel);
-  doc.text(statusLabel, 20, yPos);
-
-  doc.setFont("helvetica", "normal");
-  doc.text(
-    `${record.status === "active" ? "Paid" : record.status}`,
-    20 + statusWidth,
-    yPos
-  );
-  //doc.text(`Status: ${record.status === "active" ? "Paid" : record.status}`, 20, yPos);
-  yPos += 11;
-  /////////////////
-  doc.setFont("helvetica", "bold");
-  const emailLabel = "Customer Email: ";
-  const emailWidth = doc.getTextWidth(emailLabel);
-  doc.text(emailLabel, 20, yPos);
-
-  doc.setFont("helvetica", "normal");
-  doc.text(record.email, 20 + emailWidth, yPos);
-  //doc.text(`Customer Email: ${record.email}`, 20, yPos);
-  yPos += 11;
-  //////////////////
-  doc.setFont("helvetica", "bold");
-  const palnLabel = "Description: ";
-  const planWidth = doc.getTextWidth(palnLabel);
-  doc.text(palnLabel, 20, yPos);
-
-  doc.setFont("helvetica", "normal");
-  doc.text(`Subscription Plan - ${record.plan}`, 20 + planWidth, yPos);
-  //doc.text(`Description: Subscription Plan - ${record.plan}`, 20, yPos);
-  yPos += 15;
-
-  // Centered Footer
-  doc.setFontSize(14);
-  const thankYouText = "Thank you for your payment!";
-  const thankYouWidth = doc.getTextWidth(thankYouText);
-  doc.text(thankYouText, (pageWidth - thankYouWidth) / 2, yPos);
-  yPos += 8;
-
-  doc.setFontSize(12);
-  const supportText =
-    "If you have any questions, please contact support@example.com";
-  const supportWidth = doc.getTextWidth(supportText);
-  doc.text(supportText, (pageWidth - supportWidth) / 2, yPos);
-
-  doc.save(`receipt_${record.transaction_id}.pdf`);
+  // Generate PDF from HTML
+  await doc.html(htmlContent, {
+    margin: [15, 15, 15, 15],
+    filename: `receipt_${record.transaction_id}`,
+    html2canvas: {
+      scale: 0.8, // Adjust scale for better resolution
+      letterRendering: true,
+    },
+    callback: (doc) => {
+      doc.save(`receipt_${record.transaction_id}.pdf`);
+    }
+  });
 };
