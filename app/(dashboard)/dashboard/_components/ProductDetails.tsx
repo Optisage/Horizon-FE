@@ -111,9 +111,9 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
   const [nextPageToken, setNextPageToken] = useState<string | null>(null);
 
   const [costPrice, setCostPrice] = useState<string>("");
-  const [salePrice, setSalePrice] = useState<string>("");
+  // const [salePrice, setSalePrice] = useState<string>("");
   const [storageMonths, setStorageMonths] = useState(0);
-  const [fulfillmentType, setFulfillmentType] = useState("FBM");
+  const [fulfillmentType, setFulfillmentType] = useState("FBA");
   const [activeTab, setActiveTab] = useState("maximumCost");
   const [selectedDate, setSelectedDate] = useState(dayjs());
   const [statStartDate, setStatStartDate] = useState(
@@ -125,7 +125,7 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
 
   const [fees, setFees] = useState({
     referralFee: 0,
-    fulfillmentType: "FBM",
+    fulfillmentType: "FBA",
     fullfillmentFee: 0,
     closingFee: 0,
     storageFee: 0,
@@ -137,6 +137,7 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
   const [totalFees, setTotalFees] = useState(0);
   const [minROI, setMinROI] = useState(0);
   const [minProfit, setMinProfit] = useState(0);
+  const [profitAmount, setProfitAmount] = useState(0);
   const [maxCost, setMaxCost] = useState(0);
   const [vatOnFees, setVatOnFees] = useState(0);
   const [discount, setDiscount] = useState(0);
@@ -160,7 +161,8 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
       currencyCode: currencyCode,
       storage: storageMonths,
       costPrice: costPrice,
-      salePrice: salePrice,
+      // salePrice: salePrice,
+      salePrice: buyboxWinnerPrice,
       pointsNumber: 0,
       pointsAmount: 0,
     };
@@ -182,6 +184,7 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
         });
         setMinROI(response.data.minRoi);
         setMinProfit(response.data.minProfit);
+        setProfitAmount(response.data.profitAmount);
         setMaxCost(response.data.maxCost);
         setTotalFees(response.data.totalFees);
         setVatOnFees(response.data.vatOnFees);
@@ -379,6 +382,10 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
     })),
   };
 
+  // for sales price in calculator
+  const buyboxWinnerPrice =
+    buybox.find((offer) => offer.is_buybox_winner)?.listing_price ?? 0;
+
   const sellerFeedbackData = buybox.map(
     (seller: BuyboxItem, index: number) => ({
       id: index + 1,
@@ -532,15 +539,19 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
                   <div className="flex flex-col gap-4">
                     <span className="flex flex-col gap-2">
                       {eligibility ? (
-                        <p className="text-lg md:text-xl text-[#09090B] font-semibold">
-                          This product is eligible to sell
+                        <p className="text-green-500 font-semibold">
+                          You are authorised to sell this product
                         </p>
                       ) : (
-                        <p className="text-lg md:text-xl text-red-500 font-semibold">
-                          This product is not eligible to sell
+                        <p className="text-red-500 font-semibold">
+                          You are not authorized to sell this product
                         </p>
                       )}
-                      <p className="text-red-500 text-sm">
+                      <p
+                        className={`text-sm ${
+                          setIpIssue ? "text-red-500" : "text-[#09090B]"
+                        }`}
+                      >
                         {setIpIssue
                           ? `There are ${setIpIssue} issues`
                           : "No issues found"}
@@ -623,8 +634,10 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
                       aria-label="Sale Price"
                       type="number"
                       placeholder="0"
-                      value={salePrice}
-                      onChange={(e) => setSalePrice(e.target.value)}
+                      // value={salePrice}
+                      value={buyboxWinnerPrice}
+                      disabled
+                      // onChange={(e) => setSalePrice(e.target.value)}
                       className="px-4 py-1.5 w-full border rounded outline-none focus:border-black"
                     />
                   </div>
@@ -661,6 +674,7 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
 
                 {/* Fees Section with Tabs */}
                 <div className="flex flex-col gap-2">
+                  {/* mac cost & total fees tabs */}
                   <div className="bg-[#F7F7F7] rounded-[10px] p-1 flex items-center gap-2 w-max mx-auto">
                     <button
                       type="button"
@@ -725,13 +739,15 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
                                 .replace(/^./, (str) => str.toUpperCase())}
                             </span>
                             <span className="font-semibold text-black">
-                              {currencySymbol}
                               {typeof value === "number"
-                                ? convertPrice(value.toFixed(2))
+                                ? `${currencySymbol}${convertPrice(
+                                    value.toFixed(2)
+                                  )}`
                                 : value}
                             </span>
                           </div>
                         ))}
+
                         <div className="border-t pt-2 font-semibold flex justify-between">
                           <span>Total Fees</span>
                           <span>
@@ -790,14 +806,14 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
                     icon={<PriceTagIcon />}
                     title="Buy Box Price"
                     value={`${currencySymbol}${
-                      convertPrice(extra?.buybox_price) ?? "-"
+                      convertPrice(extra?.buybox_price) ?? "0"
                     }`}
                     bgColor="#F0FFF0"
                   />
                   <InfoCard
                     icon={<ProductSalesIcon />}
                     title="Estimated Product Sales"
-                    value={`${extra?.monthly_est_product_sales ?? "-"}/month`}
+                    value={`${extra?.monthly_est_product_sales ?? "0"}/month`}
                     bgColor="#F0F0FF"
                   />
                 </div>
@@ -806,14 +822,15 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
                   <InfoCard
                     icon={<BSRIcon />}
                     title="BSR"
-                    value={extra?.bsr ?? "-"}
+                    value={extra?.bsr ?? "0"}
                     bgColor="#FFF0FF"
                   />
                   <InfoCard
                     icon={<MaximumCostIcon />}
                     title="Maximum Cost"
                     value={`${currencySymbol}${
-                      convertPrice(extra?.max_cost) ?? "-"
+                      // convertPrice(extra?.max_cost) ?? "0"
+                      convertPrice(maxCost) ?? "0"
                     }`}
                     bgColor="#FFF0F3"
                   />
@@ -823,15 +840,18 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
                   <InfoCard
                     icon={<ROIIcon />}
                     title="ROI"
-                    value={`${extra?.roi ?? "-"}%`}
+                    // {minROI || 0}%
+                    value={`${minROI ?? "0"}%`}
                     bgColor="#F5EBFF"
                   />
                   <InfoCard
                     icon={<PriceTagIcon />}
                     title="Profit"
                     value={`${currencySymbol}${
-                      convertPrice(extra?.profit) ?? "-"
-                    } (${extra?.profit_percentage ?? "-"}%)`}
+                      // convertPrice(extra?.profit) ?? "0"
+                      convertPrice(profitAmount) ?? "0"
+                      // } (${extra?.profit_percentage ?? "0"}%)`}
+                    } (${profitMargin.toFixed(0) ?? "0"}%)`}
                     bgColor="#EBFFFE"
                   />
                 </div>
@@ -985,10 +1005,17 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
                   <h2 className="text-lg font-semibold">Ranks & Prices</h2>
                   <button
                     type="button"
-                    className="flex gap-1.5 items-center"
+                    className="flex gap-1.5 items-center px-3 py-1.5 rounded-md hover:bg-gray-100 outline-none active:scale-95 duration-200"
                     onClick={() => refetch()} // Trigger refetch
+                    disabled={isLoadingRankings} // Disable button during loading
                   >
-                    <IoMdRefresh className="size-5" />
+                    {isLoadingRankings ? (
+                      <div className="animate-spin">
+                        <IoMdRefresh className="size-5" />
+                      </div>
+                    ) : (
+                      <IoMdRefresh className="size-5" />
+                    )}
                     Refresh
                   </button>
                 </div>
@@ -1104,39 +1131,45 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
                   <CustomDatePicker isRange onChange={handleDateChange} />
                 </div>
 
-                <div className="flex justify-between items-center mt-6">
-                  {isLoadingBuybox ? (
-                    <div className="h-40 flex items-center justify-center font-medium">
-                      Loading...
-                    </div>
-                  ) : buyboxError ? (
-                    <div className="h-40 flex items-center justify-center text-red-500 font-medium">
-                      Error loading buybox
-                    </div>
-                  ) : (
-                    <ResponsiveContainer width={250} height={250}>
-                      <PieChart>
-                        <Pie data={pieData} dataKey="value" outerRadius={80}>
-                          {pieData.map((entry, index) => (
-                            <Cell key={index} fill={entry.color} />
-                          ))}
-                        </Pie>
-                      </PieChart>
-                    </ResponsiveContainer>
-                  )}
+                {buybox.length > 0 ? (
+                  <div className="flex justify-between items-center mt-6">
+                    {isLoadingBuybox ? (
+                      <div className="h-40 flex items-center justify-center font-medium">
+                        Loading...
+                      </div>
+                    ) : buyboxError ? (
+                      <div className="h-40 flex items-center justify-center text-red-500 font-medium">
+                        Error loading buybox
+                      </div>
+                    ) : (
+                      <ResponsiveContainer width={250} height={250}>
+                        <PieChart>
+                          <Pie data={pieData} dataKey="value" outerRadius={80}>
+                            {pieData.map((entry, index) => (
+                              <Cell key={index} fill={entry.color} />
+                            ))}
+                          </Pie>
+                        </PieChart>
+                      </ResponsiveContainer>
+                    )}
 
-                  <ul>
-                    {pieData.map((entry, index) => (
-                      <li key={index} className="flex items-center gap-2">
-                        <span
-                          className="size-3 rounded-lg"
-                          style={{ backgroundColor: entry.color }}
-                        ></span>
-                        {entry.name} &nbsp; - {entry.value}%
-                      </li>
-                    ))}
-                  </ul>
-                </div>
+                    <ul>
+                      {pieData.map((entry, index) => (
+                        <li key={index} className="flex items-center gap-2">
+                          <span
+                            className="size-3 rounded-lg"
+                            style={{ backgroundColor: entry.color }}
+                          ></span>
+                          {entry.name} &nbsp; - {entry.value}%
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ) : (
+                  <div className="p-3 py-24 text-center text-gray-500">
+                    No buybox data available.
+                  </div>
+                )}
               </div>
 
               {/* Market Analysis */}
@@ -1149,50 +1182,56 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
 
                 <p className="mt-4 text-black">Price</p>
 
-                <div className="mt-6 flex flex-col gap-4">
-                  {/* Legend */}
-                  <div className="flex items-center gap-4">
-                    <div className="flex items-center gap-2">
-                      <span className="size-3 rounded-lg bg-[#FF0080]" />
-                      <span>Amazon</span>
+                {chartData.length > 0 ? (
+                  <div className="mt-6 flex flex-col gap-4">
+                    {/* Legend */}
+                    <div className="flex items-center gap-4">
+                      <div className="flex items-center gap-2">
+                        <span className="size-3 rounded-lg bg-[#FF0080]" />
+                        <span>Amazon</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="size-3 rounded-lg bg-[#00E4E4]" />
+                        <span>Buy Box</span>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <span className="size-3 rounded-lg bg-[#00E4E4]" />
-                      <span>Buy Box</span>
-                    </div>
-                  </div>
 
-                  {isLoadingMarketAnalysis ? (
-                    <div className="h-40 flex items-center justify-center font-medium">
-                      Loading...
-                    </div>
-                  ) : marketAnalysisError ? (
-                    <div className="h-40 flex items-center justify-center text-red-500 font-medium">
-                      Error loading market analysis data
-                    </div>
-                  ) : (
-                    <ResponsiveContainer width="100%" height={300}>
-                      <LineChart data={chartData}>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="date" />
-                        <YAxis />
-                        <Tooltip />
-                        <Line
-                          type="monotone"
-                          dataKey="amazon"
-                          stroke="#FF0080"
-                          strokeWidth={2}
-                        />
-                        <Line
-                          type="monotone"
-                          dataKey="buyBox"
-                          stroke="#00E4E4"
-                          strokeWidth={2}
-                        />
-                      </LineChart>
-                    </ResponsiveContainer>
-                  )}
-                </div>
+                    {isLoadingMarketAnalysis ? (
+                      <div className="h-40 flex items-center justify-center font-medium">
+                        Loading...
+                      </div>
+                    ) : marketAnalysisError ? (
+                      <div className="h-40 flex items-center justify-center text-red-500 font-medium">
+                        Error loading market analysis data
+                      </div>
+                    ) : (
+                      <ResponsiveContainer width="100%" height={300}>
+                        <LineChart data={chartData}>
+                          <CartesianGrid strokeDasharray="3 3" />
+                          <XAxis dataKey="date" />
+                          <YAxis />
+                          <Tooltip />
+                          <Line
+                            type="monotone"
+                            dataKey="amazon"
+                            stroke="#FF0080"
+                            strokeWidth={2}
+                          />
+                          <Line
+                            type="monotone"
+                            dataKey="buyBox"
+                            stroke="#00E4E4"
+                            strokeWidth={2}
+                          />
+                        </LineChart>
+                      </ResponsiveContainer>
+                    )}
+                  </div>
+                ) : (
+                  <div className="p-3 py-24 text-center text-gray-500">
+                    No market analysis data available.
+                  </div>
+                )}
               </div>
             </div>
           </div>
