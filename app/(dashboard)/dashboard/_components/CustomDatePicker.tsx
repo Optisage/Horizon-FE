@@ -77,6 +77,11 @@ const CustomDatePicker: React.FC<CustomDatePickerProps> = ({
     },
   ];
 
+  const disabledDate = (current: dayjs.Dayjs) => {
+    // Disable dates that are after today
+    return current && current > dayjs().endOf("day");
+  };
+
   return (
     <div className="flex items-center">
       <button
@@ -105,6 +110,7 @@ const CustomDatePicker: React.FC<CustomDatePickerProps> = ({
             popupClassName="custom-datepicker-popup"
             renderExtraFooter={() => null}
             presets={rangePresets}
+            disabledDate={disabledDate}
           />
         ) : (
           <DatePicker
@@ -117,6 +123,7 @@ const CustomDatePicker: React.FC<CustomDatePickerProps> = ({
             className="!border-none !rounded-none !shadow-none !p-1 !text-center !w-[93px]"
             popupClassName="custom-datepicker-popup"
             renderExtraFooter={() => null}
+            disabledDate={disabledDate}
           />
         )}
       </span>
