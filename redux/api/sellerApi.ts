@@ -18,9 +18,10 @@ export const sellerApi = createApi({
       }),
     }),
     getSellerProducts: builder.query({
-      query: ({marketplaceId,sellerId}) => ({
-        url: `catalog?marketplaceId=${marketplaceId}&sellerId=${sellerId}`,
+      query: (params) => ({
+        url: `catalog`,
         method: "GET",
+        params
       }),
     }),
 

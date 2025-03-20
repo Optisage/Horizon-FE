@@ -16,6 +16,7 @@ const CustomPagination: React.FC<CustomPaginationProps> = ({
   return (
     <div className="p-4 border-t flex items-center gap-7 justify-center">
       <button
+       type="button" // Add this line
         onClick={onPrevious}
         disabled={!hasPrevious}
         className="font-semibold px-4 py-1 border rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 flex gap-1 items-center"
@@ -24,6 +25,7 @@ const CustomPagination: React.FC<CustomPaginationProps> = ({
         Previous 
       </button>
       <button
+       type="button" // Add this line
         onClick={onNext}
         disabled={!hasNext}
         className="px-4 py-1 border font-semibold rounded-md disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 flex gap-1 items-center"
