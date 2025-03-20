@@ -191,7 +191,7 @@ const Subscriptions = () => {
                   plan.name !== "STARTER (PRO)" ||
                   plan.name === subscription_type
                 }
-                className={`px-6 py-2.5 text-sm  rounded-xl font-medium duration-200 ${
+                className={`px-6 py-2.5 text-sm  rounded-xl font-medium duration-200 disabled:bg-gray-300 disabled:text-gray-500 ${
                   plan.name === subscription_type
                     ? "bg-gray-300 text-gray-500 cursor-not-allowed"
                     : plan.name === "STARTER (PRO)"
