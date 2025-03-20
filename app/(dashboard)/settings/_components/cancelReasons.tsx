@@ -1,11 +1,12 @@
-import { CustomRadio } from "@/lib/AntdComponents";
+import { CustomRadio, CustomRadioGroup } from "@/lib/AntdComponents";
 import { Button, Modal } from "antd";
+import { useState } from "react";
 
 interface modal {
   isReasonVisible: boolean;
   setIsReasonVisible: () => void,
   loading:boolean,
-  handleCancelSubscription:() => void
+  handleCancelSubscription: (reason: string) => void; 
 }
 
 export default function CancelReason({
@@ -14,7 +15,16 @@ export default function CancelReason({
   loading,
   handleCancelSubscription
 }: modal) {
+  const [selectedReason, setSelectedReason] = useState("");
+  const [otherReason, setOtherReason] = useState("");
 
+  const handleProceed = () => {
+    const reason = otherReason.trim() || selectedReason;
+    if (reason) {
+      handleCancelSubscription(reason);
+      //setIsReasonVisible(); // Close modal
+    }
+  };
     
   return (
     <>
@@ -29,16 +39,21 @@ export default function CancelReason({
         centered={true}
       >
         <div className=" space-y-5">
-          <div className=" space-y-2">
+          <div className=" ">
+            <CustomRadioGroup className=" w-full space-y-2"
+            onChange={(e) => setSelectedReason(e.target.value)}
+             value={selectedReason}
+            >
             <div className=" w-full bg-[#F4F4F5] rounded-xl py-2 px-3">
-              <CustomRadio className="">Too expensive</CustomRadio>
+              <CustomRadio className="" value="Too expensive">Too expensive</CustomRadio>
             </div>
             <div className=" w-full bg-[#F4F4F5] rounded-xl py-2 px-3">
-              <CustomRadio>Not using it enough</CustomRadio>
+              <CustomRadio value="Not using it enough">Not using it enough</CustomRadio>
             </div>
             <div className=" w-full bg-[#F4F4F5] rounded-xl py-2 px-3">
-              <CustomRadio>Switching to another service</CustomRadio>
+              <CustomRadio value="Switching to another service">Switching to another service</CustomRadio>
             </div>
+            </CustomRadioGroup>
           </div>
 
           <div>
@@ -46,6 +61,8 @@ export default function CancelReason({
             <textarea 
             className=" h-[50px] resize-none bg-[#F4F4F5] w-full p-2 focus:outline-none rounded-xl"
             placeholder="Please type here..."
+            value={otherReason}
+            onChange={(e) => setOtherReason(e.target.value)}
             />
           </div>
 
@@ -54,7 +71,7 @@ export default function CancelReason({
               className="px-4 py-2 !bg-[#1E6B4F] !text-white !rounded-lg !font-medium !h-[40px] border-none shadow-[0px_4px_8px_0px_#00000029]"
               loading={loading}
               disabled={loading}
-              onClick={handleCancelSubscription}
+              onClick={handleProceed}
             >
               Proceed
             </Button>

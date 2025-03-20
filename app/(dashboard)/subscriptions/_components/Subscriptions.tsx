@@ -20,6 +20,7 @@ import useCurrencyConverter from "@/utils/currencyConverter";
 import { MdInfoOutline } from "react-icons/md";
 import { LuDot } from "react-icons/lu";
 import { FaCheckCircle } from "react-icons/fa";
+import { formatDate } from "@/utils/dateFormat";
 
 interface PricingPlan {
   id: string;
@@ -42,7 +43,7 @@ const Subscriptions = () => {
 
   const [getSubscription, { data: subData, isLoading }] =
     useLazyGetSubscriptionsQuery();
-  const { subscription_type } =
+  const { subscription_type, subscription_canceled, subscription_will_end_at, is_subscribed } =
     useAppSelector((state) => state.api?.user) || {};
   const { currencyCode, currencySymbol } =
     useAppSelector((state) => state.global) || {};
@@ -197,38 +198,46 @@ const Subscriptions = () => {
       </div>
 
       {/**SUBSCRIPTION STATUS */}
-      <div className=" space-y-4">
-        <h2 className="text-[#01011D] text-lg font-medium">
-          Subscription Status
-        </h2>
-        <div className=" bg-[#FAFDFC] border border-[#DDE1DF] w-full rounded-xl p-4">
-          <div className=" flex items-center gap-1 border-[#E6F5F0] border bg-white rounded-xl py-1 px-2">
-            <MdInfoOutline />
-            <span className=" text-sm font-medium">
-              Your subscription will not renew when expired
-            </span>
-          </div>
-          <div className=" flex justify-between items-center mt-2">
-            <div>
-              <h5 className=" font-semibold text-[#090F0D] ">Pro User</h5>
-              <h6 className=" flex items-center">
-                <span className=" text-sm text-[#1E6B4F] font-semibold">
-                  Active
-                </span>
-                <LuDot size={20} color="#D9D9D9" />
-                <span className=" text-sm text-[#5F6362]">
-                  Expires on 12/04/2025
-                </span>
-              </h6>
+      {
+        subscription_canceled && (
+          <div className=" space-y-4">
+          <h2 className="text-[#01011D] text-lg font-medium">
+            Subscription Status
+          </h2>
+          <div className=" bg-[#FAFDFC] border border-[#DDE1DF] w-full rounded-xl p-4">
+            <div className=" flex items-center gap-1 border-[#E6F5F0] border bg-white rounded-xl py-1 px-2">
+              <MdInfoOutline />
+              <span className=" text-sm font-medium">
+                Your subscription will not renew when expired
+              </span>
             </div>
-            <div>
-              <button className=" bg-primary text-white rounded-xl text-sm py-1 px-3 hover:bg-primary-hover">
-                Renew Subscription
-              </button>
+            <div className=" flex justify-between items-center mt-2">
+              <div>
+                <h5 className=" font-semibold text-[#090F0D] ">{subscription_type} User</h5>
+                <h6 className=" flex items-center">
+                  <span className=" text-sm text-[#1E6B4F] font-semibold">
+                    {
+                      is_subscribed ? "Active" :"Inactive"
+                    }
+                    
+                  </span>
+                  <LuDot size={20} color="#D9D9D9" />
+                  <span className=" text-sm text-[#5F6362]">
+                    Expires on {formatDate(subscription_will_end_at)}
+                  </span>
+                </h6>
+              </div>
+              <div>
+                <button className=" bg-primary text-white rounded-xl text-sm py-1 px-3 hover:bg-primary-hover">
+                  Renew Subscription
+                </button>
+              </div>
             </div>
           </div>
         </div>
-      </div>
+        )
+      }
+     
 
       {/* table */}
       <div className="flex flex-col gap-8">

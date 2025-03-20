@@ -7,23 +7,29 @@ import { useEffect, useState } from "react";
 import Logo from "@/public/assets/svg/Optisage Logo.svg";
 import success from "@/public/assets/svg/subSuccess.svg"
 import failedimg from "@/public/assets/svg/subFailed.svg"
+import { useResendVerificationMutation } from "@/redux/api/auth";
+import { Button, message } from "antd";
 export default function StripeCheckout() {
   const searchParams = useSearchParams();
   const status = searchParams.get("status");
   const [loading, setLoading] = useState(false);
   const [failed, setFailed] = useState(status !== "success");
   const [verifySubscription] = useVerifyStripeSubscriptionMutation();
+  const [resendLink, {isLoading}]= useResendVerificationMutation()
+  const [email, setEmail] = useState("")
+   const [messageApi, contextHolder] = message.useMessage();
 
   useEffect(() => {
     const sessionId = searchParams.get("session_id");
     const currentStatus = searchParams.get("status");
-
+    
     if (currentStatus === "success") {
       setLoading(true);
       verifySubscription({ session_id: sessionId })
         .unwrap()
-        .then(() => {
-          setLoading(false);
+        .then((res) => {
+          setEmail(res?.data?.user?.email || "")
+         setLoading(false);
         })
         .catch(() => {
           setLoading(false);
@@ -32,8 +38,18 @@ export default function StripeCheckout() {
     }
   }, [searchParams, verifySubscription]);
 
+  const handleResetLink = () =>{
+    resendLink({email}).unwrap()
+    .then(()=>{
+      messageApi.success("Email sent")
+    })
+    .catch(()=>{
+      messageApi.error("Failed to send email")
+    })
+  }
   return (
     <main>
+      {contextHolder}
       {loading ? (
         <div className=" flex justify-center h-screen items-center">
           <div className="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-primary"></div>
@@ -80,11 +96,14 @@ export default function StripeCheckout() {
                 <h1 className=" font-semibold text-2xl mb-6">
                 Your subscription is successful!
                 </h1>
-                <p>An email has been sent to <span className=" font-semibold">macdonald@gmail.com</span>, Please follow the instructions and set up account</p>
+                <p>An email has been sent to <span className=" font-semibold">{email}</span>, Please follow the instructions and set up account</p>
                 <div className=" mt-1">
-                  <button className=" w-full rounded-md border shadow-[0px_-3px_0px_0px_#00000014_inset] py-2">
+                  <Button className=" w-full rounded-md border shadow-[0px_-3px_0px_0px_#00000014_inset] py-2" onClick={handleResetLink}
+                  loading={isLoading}
+                  disabled={isLoading}
+                  >
                   Resend Email
-                  </button>
+                  </Button>
                 </div>
               </div>
             )}
