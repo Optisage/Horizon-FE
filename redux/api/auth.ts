@@ -96,6 +96,13 @@ export const authApi = createApi({
         body:data
       }),
     }),
+    resendVerification: builder.mutation({
+      query: (data) => ({
+        url: "email/verification-notification",
+        method: "POST",
+        body:data
+      }),
+    }),
     getPricing: builder.query<any, {}>({
       query: () => ({
         url: "pricing",
@@ -118,5 +125,6 @@ export const {
   useLazyGetPricingQuery,
   useSetPasswordMutation,
   useResetPasswordMutation,
-  useLazyAmazonAuthQuery
+  useLazyAmazonAuthQuery,
+  useResendVerificationMutation
 } = authApi;

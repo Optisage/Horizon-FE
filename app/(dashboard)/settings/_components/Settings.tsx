@@ -11,6 +11,8 @@ import { message } from "antd";
 import CancelModal from "./cancelModal";
 import CancelReason from "./cancelReasons";
 import { useCancelSubscriptionMutation } from "@/redux/api/subscriptionApi";
+import { useAppSelector } from "@/redux/hooks";
+import { formatDate } from "@/utils/dateFormat";
 
 const Settings = () => {
   const [activeTab, setActiveTab] = useState<"userDetails" | "buyingCriteria">(
@@ -18,7 +20,8 @@ const Settings = () => {
   );
   const [isCancelVisible, setIsCancelVisible] = useState(false);
   const [isReasonVisible, setIsReasonVisible] = useState(false);
- 
+ const { subscription_type, subscription_canceled, subscription_will_end_at, is_subscribed } =
+     useAppSelector((state) => state.api?.user) || {};
   const [messageApi, contextHolder] = message.useMessage();
 
   const [getSettings, { isLoading, data: settingsData }] =
@@ -30,12 +33,12 @@ const Settings = () => {
     getSettings({});
   }, []);
 
-  const handleCancelSubscription = () => {
-    cancelSubscription({})
+  const handleCancelSubscription = (reason: string) => {
+    cancelSubscription({ reason }) // Adjust based on your API expectations
       .unwrap()
       .then(() => {
         messageApi.success("Cancelled Subscription Successfully");
-        //setIsCancelVisible(false);
+        setIsReasonVisible(false);
       })
       .catch(() => {
         messageApi.error("Failed to Cancel Subscription");
@@ -98,21 +101,29 @@ const Settings = () => {
         <div className=" bg-[#FAFDFC] border border-[#DDE1DF] w-full rounded-xl p-4">
           <div className=" flex justify-between items-center mt-2">
             <div>
-              <h5 className=" font-semibold text-[#090F0D] ">Pro User</h5>
+              <h5 className=" font-semibold text-[#090F0D] ">{subscription_type} User</h5>
               <h6 className=" flex items-center">
                 <span className=" text-sm text-[#1E6B4F] font-semibold">
-                  Active
+                  {
+                    is_subscribed ? "Active" : "Inactive"
+                  }
+                  
                 </span>
                 <LuDot size={20} color="#D9D9D9" />
                 <span className=" text-sm text-[#5F6362]">
-                  Expires on 12/04/2025
+                  Expires on {formatDate(subscription_will_end_at)}
                 </span>
               </h6>
             </div>
             <div>
-              <button className=" text-red-500 rounded-xl text-sm py-1 px-3 hover:bg-red-500 hover:text-white" onClick={() => setIsCancelVisible(true)}>
-                Cancel Subscription
-              </button>
+              {
+                subscription_canceled === false && (
+                  <button className=" text-slate-500 rounded-xl text-sm py-1 px-3 hover:bg-red-500 hover:text-white" onClick={() => setIsCancelVisible(true)}>
+                  Cancel Subscription
+                </button>
+                )
+              }
+            
             </div>
           </div>
         </div>
@@ -130,7 +141,7 @@ const Settings = () => {
       setIsReasonVisible={()=>setIsReasonVisible(false)}
       isReasonVisible={isReasonVisible}
       loading={cancelLoading}
-      handleCancelSubscription={()=>handleCancelSubscription()}
+      handleCancelSubscription={handleCancelSubscription}
       />
     </section>
   );
