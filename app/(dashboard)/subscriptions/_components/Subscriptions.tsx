@@ -237,57 +237,6 @@ const Subscriptions = () => {
         </div>
         )
       }
-
-      <div className=" w-[595px] h-[842px]  bg-[#FEFBF3] px-5 pt-5 pb-14 space-y-5">
-<div className=" place-content-center place-items-center space-y-3 bg-white px-2">
-  <div className=" pb-5 border-b w-[50%] place-items-center">
-  <img src={"/public/assets/images/Optisage Logo.png"} alt="" className=" h-[40px]" />
-  <h4 className=" font-semibold">Transaction Receipt</h4>
-  <h5 className=" text-[#737373] text-2xl font-semibold">Successful</h5>
-  <h6 className=" text-4xl font-bold">$4,000</h6>
-  </div>
-
-  <div className=" flex justify-between items-center w-full">
-    <h6 className=" text-sm text-[#707070]">Ref Number</h6>
-    <h6 className=" text-sm font-semibold">000085752257</h6>
-  </div>
-  <div className=" flex justify-between items-center w-full">
-    <h6 className=" text-sm text-[#707070]">Date and Time</h6>
-    <h6 className=" text-sm font-semibold">25-02-2023, 13:22:16</h6>
-  </div>
-  <div className=" flex justify-between items-center w-full">
-    <h6 className=" text-sm text-[#707070]">Payment Method</h6>
-    <h6 className=" text-sm font-semibold">Bank Transfer</h6>
-  </div>
-  <div className=" flex justify-between items-center w-full">
-    <h6 className=" text-sm text-[#707070]">Customers email</h6>
-    <h6 className=" text-sm font-semibold">maconald@gmail.com</h6>
-  </div>
-  <div className=" flex justify-between items-center w-full">
-    <h6 className=" text-sm text-[#707070]">Transaction ID</h6>
-    <h6 className=" text-sm font-semibold">1234567890</h6>
-  </div>
-  <div className=" flex justify-between items-center w-full">
-    <h6 className=" text-sm text-[#707070]">Description</h6>
-    <h6 className=" text-sm font-semibold">Payment for monthly subscription to Optisage pro</h6>
-  </div>
-</div>
-
-
-<div className=" bg-white p-3">
-  <h6 className=" text-sm text-[#707070]">Disclaimer</h6>
-  <p className=" text-sm font-medium">
-  optisage has completed this transaction successfully; however, the finalization of these transfers may be affected by transmission errors, network disruptions, glitches, and other factors outside of Optisage’s control, for which Optisage cannot be held responsible. If you encounter any problems with your transactions, please reach out to customer support.
-  </p>
-</div>
-
-<div className=" text-xs text-[#5F6362] px-5">
-© 2025 OptiSage delivers real-time insights, historical price trends, and AI-powered recommendations—so you can make data-backed decisions that drive serious revenue.
-15339774 Canada Inc. is registered and regularized by the Canadian Government.
-</div>
-      </div>
-     
-
       {/* table */}
       <div className="flex flex-col gap-8">
         <span className="flex flex-col gap-2">
