@@ -61,7 +61,7 @@ export const productsApi = createApi({
       }),
     }),
 
-    getBuyboxInf: builder.query({
+    getBuyboxDetails: builder.query({
       query: ({ marketplaceId, itemAsin }) => ({
         url: "catalog/products/buybox-details",
         method: "GET",
@@ -135,6 +135,7 @@ export const {
   useGetItemQuery,
   useGetRankingsAndPricesQuery,
   useGetBuyboxInfoQuery,
+  useGetBuyboxDetailsQuery,
   useGetProductFeesQuery,
   useCalculateProfitablilityMutation,
   useGetSalesStatisticsQuery,
