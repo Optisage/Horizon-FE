@@ -150,7 +150,7 @@ const Subscriptions = () => {
                   ? "bg-[url(/path/to/image1.svg)] text-[#787891]"
                   : index === 1
                   ? "bg-[url(/assets/images/pricing-bg.png)] text-[#787891]"
-                  : "bg-[url(/assets/svg/pricing.svg)] text-white"
+                  : "bg-[url(/assets/images/Pricing3.png)] text-white"
               } bg-no-repeat bg-cover bg-top hover:bg-primary/5`}
             >
               <span className="flex flex-col gap-5">
