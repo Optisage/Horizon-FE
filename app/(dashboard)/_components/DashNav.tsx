@@ -13,7 +13,8 @@ import { useEffect, useState } from "react";
 const DashNav = () => {
   const router = useRouter();
   const [remainingDays, setRemainingDays] = useState<number | null>(null);
-  const {subscription_type, created_at} = useAppSelector((state) => state.api?.user) || {};
+  const { subscription_type, created_at } =
+    useAppSelector((state) => state.api?.user) || {};
 
   useEffect(() => {
     if (created_at) {
@@ -43,16 +44,16 @@ const DashNav = () => {
 
       <div className="hidden lg:flex items-center gap-3">
         <p className="text-sm font-medium text-[#090F0D]">
-        {
-          remainingDays !== null && remainingDays > 0
+          {remainingDays !== null && remainingDays > 0
             ? `${remainingDays} days left on your free trial`
-            : "Your free trial has expired."
-        }
+            : "Your free trial has expired."}
         </p>
         <button
           onClick={() => router.push("/subscriptions")}
           type="button"
-          className={`text-sm rounded-xl bg-[#33B28A] hover:bg-[#33B28A]/90 text-white py-2 px-4 active:scale-95 duration-200 font-medium ${subscription_type === 'free'? "block" :"hidden"}`}
+          className={`text-sm rounded-xl bg-[#33B28A] hover:bg-[#33B28A]/90 text-white py-2 px-4 active:scale-95 duration-200 font-medium ${
+            subscription_type === "free" ? "block" : "hidden"
+          }`}
         >
           Subscribe Now
         </button>
@@ -64,7 +65,7 @@ const DashNav = () => {
             href=""
             className="hidden xl:block text-sm font-medium text-[#090F0D]"
           >
-            For better experience, install optiSage Chrome Extension.
+            For better experience, install optisage Chrome Extension.
           </Link>
           <CountrySelect />
         </div>
