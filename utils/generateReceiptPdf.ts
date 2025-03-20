@@ -1,66 +1,87 @@
 import { SubscriptionData } from "@/app/(dashboard)/subscriptions/_components/SubscriptionHistoryTable";
 import jsPDF from "jspdf";
+import html2canvas from 'html2canvas-pro';
 
 export const generateReceiptPdf = async (record: SubscriptionData) => {
-  const doc = new jsPDF("p", "mm", "a4");
-  
-  // HTML template with inline styles
-  const htmlContent = `
-    <div style="max-width: 800px; margin: 0 auto; padding: 20px;">
-      <h1 style="text-align: center; color: #2c3e50; margin-bottom: 30px;">
-        Payment Receipt
-      </h1>
+  const container = document.createElement("div");
+  container.style.width = "595px";
+  container.style.height = "842px";
+  container.style.background = "#FEFBF3";
+  container.style.padding = "20px 20px 56px 20px";
+  container.style.display = "flex";
+  container.style.flexDirection = "column";
+  container.style.gap = "20px";
 
-      <div style="margin-bottom: 25px;">
-        <h2 style="color: #34495e; border-bottom: 2px solid #ecf0f1; padding-bottom: 8px;">
-          Transaction Details
-        </h2>
-        
-        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin-top: 15px;">
-          <div>
-            <strong>Transaction ID:</strong> ${record.transaction_id}
-          </div>
-          <div>
-            <strong>Date:</strong> ${record.date_text}
-          </div>
-          <div>
-            <strong>Amount:</strong> ${record.amount}
-          </div>
-          <div>
-            <strong>Status:</strong> ${record.status === "active" ? "Paid" : record.status}
-          </div>
-        </div>
+  // Format amount as currency
+ 
+  const logoUrl = `${window.location.origin}/assets/images/Optisage Logo.png`;
+
+  container.innerHTML = `
+    <div style="width: 100%; display: flex; flex-direction: column; gap: 20px;">
+    <div style="width: 100%; background: white;">
+      <div style="background: white; padding: 16px; display: flex; flex-direction: column; align-items: center; gap: 12px; border-bottom: 1px solid #E5E5E5; width: 50%; margin: 0 auto;">
+        <img src="${logoUrl}" alt="Optisage Logo" style="height: 40px;"/>
+        <h4 style="font-weight: 600; margin: 0;">Transaction Receipt</h4>
+        <h5 style="color: #737373; font-size: 1.5rem; font-weight: 600; margin: 0;">${record.status === "active" ? "Successful" : record.status}</h5>
+        <h6 style="font-size: 2.25rem; font-weight: 700; margin: 0;">${record.amount}</h6>
       </div>
 
-      <div style="margin-bottom: 25px;">
-        <h2 style="color: #34495e; border-bottom: 2px solid #ecf0f1; padding-bottom: 8px;">
-          Payment Information
-        </h2>
-        
-        <div style="margin-top: 15px;">
-          <div><strong>Payment Method:</strong> ${record.card.brand} ending in ${record.card.last4}</div>
-          <div><strong>Customer Email:</strong> ${record.email}</div>
-          <div><strong>Description:</strong> Subscription Plan - ${record.plan}</div>
+      <div style="background: white; padding: 16px; display: flex; flex-direction: column; gap: 12px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+          <h6 style="color: #707070; font-size: 0.875rem; margin: 0;">Ref Number</h6>
+          <h6 style="font-size: 0.875rem; font-weight: 600; margin: 0;">${record.transaction_id}</h6>
+        </div>
+        <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+          <h6 style="color: #707070; font-size: 0.875rem; margin: 0;">Date and Time</h6>
+          <h6 style="font-size: 0.875rem; font-weight: 600; margin: 0;">${record.date_text}</h6>
+        </div>
+        <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+          <h6 style="color: #707070; font-size: 0.875rem; margin: 0;">Payment Method</h6>
+          <h6 style="font-size: 0.875rem; font-weight: 600; margin: 0;">${record.card.brand} ending in ${record.card.last4}</h6>
+        </div>
+        <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+          <h6 style="color: #707070; font-size: 0.875rem; margin: 0;">Customers email</h6>
+          <h6 style="font-size: 0.875rem; font-weight: 600; margin: 0;">${record.email}</h6>
+        </div>
+        <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+          <h6 style="color: #707070; font-size: 0.875rem; margin: 0;">Transaction ID</h6>
+          <h6 style="font-size: 0.875rem; font-weight: 600; margin: 0;">${record.transaction_id}</h6>
+        </div>
+        <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+          <h6 style="color: #707070; font-size: 0.875rem; margin: 0;">Description</h6>
+          <h6 style="font-size: 0.875rem; font-weight: 600; margin: 0; text-align: right; max-width: 60%;">Payment for monthly subscription to ${record.plan}</h6>
         </div>
       </div>
+      </div>
 
-      <div style="text-align: center; margin-top: 40px; color: #7f8c8d; font-size: 14px;">
-        <p>Thank you for your payment!</p>
-        <p>If you have any questions, please contact support@example.com</p>
+      <div style="background: white; padding: 12px;">
+        <h6 style="color: #707070; font-size: 0.875rem; margin-bottom: 8px;">Disclaimer</h6>
+        <p style="font-size: 0.875rem; font-weight: 500; margin: 0; line-height: 1.5;">
+          Optisage has completed this transaction successfully; however, the finalization of these transfers may be affected by transmission errors, network disruptions, glitches, and other factors outside of Optisage's control, for which Optisage cannot be held responsible. If you encounter any problems with your transactions, please reach out to customer support.
+        </p>
+      </div>
+
+      <div style="color: #5F6362; font-size: 0.75rem; padding: 0 20px; text-align: center; line-height: 1.5;">
+        <p>© 2025 OptiSage delivers real-time insights, historical price trends, and AI-powered recommendations—so you can make data-backed decisions that drive serious revenue.</p>
+        <p>15339774 Canada Inc. is registered and regularized by the Canadian Government.</p>
       </div>
     </div>
   `;
 
-  // Generate PDF from HTML
-  await doc.html(htmlContent, {
-    margin: [15, 15, 15, 15],
-    filename: `receipt_${record.transaction_id}`,
-    html2canvas: {
-      scale: 0.8, // Adjust scale for better resolution
-      letterRendering: true,
-    },
-    callback: (doc) => {
-      doc.save(`receipt_${record.transaction_id}.pdf`);
-    }
+  document.body.appendChild(container);
+
+  const canvas = await html2canvas(container, {
+    scale: 2,
+    useCORS: true,
   });
+
+  const imgData = canvas.toDataURL("image/png");
+  const pdf = new jsPDF("p", "mm", "a4");
+  const imgProps = pdf.getImageProperties(imgData);
+  const pdfWidth = pdf.internal.pageSize.getWidth();
+  const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+
+  pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
+  pdf.save(`receipt_${record.transaction_id}.pdf`);
+  document.body.removeChild(container);
 };
