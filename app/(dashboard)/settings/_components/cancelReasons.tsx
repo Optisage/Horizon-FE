@@ -48,10 +48,22 @@ export default function CancelReason({
               <CustomRadio className="" value="Too expensive">Too expensive</CustomRadio>
             </div>
             <div className=" w-full bg-[#F4F4F5] rounded-xl py-2 px-3">
-              <CustomRadio value="Not using it enough">Not using it enough</CustomRadio>
+              <CustomRadio value="I need more features">I need more features</CustomRadio>
             </div>
             <div className=" w-full bg-[#F4F4F5] rounded-xl py-2 px-3">
-              <CustomRadio value="Switching to another service">Switching to another service</CustomRadio>
+              <CustomRadio value="I found an alternative">I found an alternative</CustomRadio>
+            </div>
+            <div className=" w-full bg-[#F4F4F5] rounded-xl py-2 px-3">
+              <CustomRadio className="" value="I no longer need it">I no longer need it</CustomRadio>
+            </div>
+            <div className=" w-full bg-[#F4F4F5] rounded-xl py-2 px-3">
+              <CustomRadio value="Customer service was less than expected">Customer service was less than expected</CustomRadio>
+            </div>
+            <div className=" w-full bg-[#F4F4F5] rounded-xl py-2 px-3">
+              <CustomRadio value="Ease of use was less than expected">Ease of use was less than expected</CustomRadio>
+            </div>
+            <div className=" w-full bg-[#F4F4F5] rounded-xl py-2 px-3">
+              <CustomRadio value="Quality was less than expected">Quality was less than expected</CustomRadio>
             </div>
             </CustomRadioGroup>
           </div>
