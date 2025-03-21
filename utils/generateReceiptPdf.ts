@@ -40,21 +40,14 @@ export const generateReceiptPdf = async (record: SubscriptionData) => {
           <h6 style="font-size: 0.875rem; font-weight: 600; margin: 0;">${record.email}</h6>
         </div>
         <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
-          <h6 style="color: #707070; font-size: 0.875rem; margin: 0;">Transaction ID</h6>
-          <h6 style="font-size: 0.875rem; font-weight: 600; margin: 0;">${record.transaction_id}</h6>
+          <h6 style="color: #707070; font-size: 0.875rem; margin: 0;">Package Type</h6>
+          <h6 style="font-size: 0.875rem; font-weight: 600; margin: 0;">${record.plan}</h6>
         </div>
         <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
           <h6 style="color: #707070; font-size: 0.875rem; margin: 0;">Description</h6>
           <h6 style="font-size: 0.875rem; font-weight: 600; margin: 0; text-align: right; max-width: 60%;">Payment for monthly subscription to ${record.plan}</h6>
         </div>
       </div>
-      </div>
-
-      <div style="background: white; padding: 12px;">
-        <h6 style="color: #707070; font-size: 0.875rem; margin-bottom: 8px;">Disclaimer</h6>
-        <p style="font-size: 0.875rem; font-weight: 500; margin: 0; line-height: 1.5;">
-          optisage has completed this transaction successfully; however, the finalization of these transfers may be affected by transmission errors, network disruptions, glitches, and other factors outside of optisage's control, for which optisage cannot be held responsible. If you encounter any problems with your transactions, please reach out to customer support.
-        </p>
       </div>
 
       <div style="color: #5F6362; font-size: 0.75rem; padding: 0 20px; text-align: center; line-height: 1.5;">
