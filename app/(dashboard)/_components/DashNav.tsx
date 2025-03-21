@@ -13,7 +13,7 @@ import { useEffect, useState } from "react";
 const DashNav = () => {
   const router = useRouter();
   const [remainingDays, setRemainingDays] = useState<number | null>(null);
-  const { subscription_type, created_at } =
+  const { subscription_type, created_at, billing_status } =
     useAppSelector((state) => state.api?.user) || {};
 
   useEffect(() => {
@@ -43,11 +43,16 @@ const DashNav = () => {
       />
 
       <div className="hidden lg:flex items-center gap-3">
-        <p className="text-sm font-medium text-[#090F0D]">
-          {remainingDays !== null && remainingDays > 0
-            ? `${remainingDays} days left on your free trial`
-            : "Your free trial has expired."}
-        </p>
+        {
+          billing_status !== 'active' && (
+            <p className="text-sm font-medium text-[#090F0D]">
+            {remainingDays !== null && remainingDays > 0
+              ? `${remainingDays} days left on your free trial`
+              : "Your free trial has expired."}
+          </p>
+          )
+        }
+       
         <button
           onClick={() => router.push("/subscriptions")}
           type="button"

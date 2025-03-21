@@ -6,7 +6,7 @@ import "./globals.css";
 import ReduxProvider from "@/redux/provider";
 import { AntdRegistry } from "@ant-design/nextjs-registry";
 import "@ant-design/v5-patch-for-react-19";
-
+import { GoogleOAuthProvider } from '@react-oauth/google';
 const inter = Inter({ subsets: ["latin"] });
 
 /** 
@@ -28,9 +28,13 @@ export default function RootLayout({
   return (
     <html lang="en" data-theme="light">
       <body className={`${inter.className} antialiased`}>
+     
         <AntdRegistry>
+        <GoogleOAuthProvider clientId="249315146305-qg3vng1svlpadsmetmo407077ak3e2ii.apps.googleusercontent.com">
           <ReduxProvider>{children}</ReduxProvider>
+          </GoogleOAuthProvider>
         </AntdRegistry>
+       
       </body>
     </html>
   );

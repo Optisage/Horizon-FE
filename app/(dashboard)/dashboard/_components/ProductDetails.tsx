@@ -17,7 +17,6 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
-
 import AlertsDrawer from "./AlertsDrawer";
 import { useRouter } from "next/navigation";
 import CustomDatePicker from "./CustomDatePicker";
@@ -53,6 +52,7 @@ import {
 import useCurrencyConverter from "@/utils/currencyConverter";
 import { useAppSelector } from "@/redux/hooks";
 import dayjs from "dayjs";
+import ExportToSheetsButton from "@/utils/exportGoogle";
 
 interface ProductDetailsProps {
   asin: string;
@@ -67,6 +67,7 @@ interface BuyboxItem {
   weight_percentage: number;
   stock_quantity: number;
   is_buybox_winner: boolean;
+  fulfillmentType: string;
   currency: string;
   seller_feedback: {
     avg_price: number;
@@ -479,15 +480,46 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
           <div className="flex flex-wrap gap-2 md:gap-4 items-center">
             <p className="font-semibold">Your WorkTools</p>
 
+            <ExportToSheetsButton
+              productData={{
+                asin: product?.asin,
+                title: product?.product_name,
+                brand: product?.vendor,
+                category: product?.category,
+                upcEan: product?.upc || product?.ean,
+                buyBoxPrice: extra?.buybox_price,
+                lowestFBAPrice: rankings?.lowest_fba,
+                lowestFBMPrice: rankings?.lowest_fbm,
+                amazonPrice: rankings?.amazon,
+                monthlySales: extra?.monthly_est_product_sales,
+                roi: minROI,
+                profitMargin: profitMargin * 100,
+                totalProfit: profitAmount,
+                sellerCount: buybox?.length,
+                fbaSellers: buybox?.filter((s) => s.fulfillmentType === "FBA")
+                  .length,
+                fbmSellers: buybox?.filter((s) => s.fulfillmentType === "FBM")
+                  .length,
+                stockLevels: buybox?.reduce(
+                  (sum, seller) => sum + (seller.stock_quantity || 0),
+                  0
+                ),
+                referralFees: fees.referralFee,
+                fbaFees: fees.fullfillmentFee,
+                totalCost: maxCost,
+              }}
+              currencySymbol="$"
+            />
+            {/** 
             <button
               type="button"
               className="border border-border text-primary px-3 py-2 rounded-xl flex gap-1 items-center font-semibold hover:bg-gray-50 active:scale-95 duration-200 text-sm md:text-base"
-              onClick={() => ""}
+              onClick={handleExport}
             >
               Export Data on Google Sheets
               <RxArrowTopRight className="size-5" />
             </button>
-
+*/}
             <button
               type="button"
               onClick={() => {
