@@ -28,10 +28,6 @@ export const generateReceiptPdf = async (record: SubscriptionData) => {
 
       <div style="background: white; padding: 16px; display: flex; flex-direction: column; gap: 12px;">
         <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
-          <h6 style="color: #707070; font-size: 0.875rem; margin: 0;">Ref Number</h6>
-          <h6 style="font-size: 0.875rem; font-weight: 600; margin: 0;">${record.transaction_id}</h6>
-        </div>
-        <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
           <h6 style="color: #707070; font-size: 0.875rem; margin: 0;">Date and Time</h6>
           <h6 style="font-size: 0.875rem; font-weight: 600; margin: 0;">${record.date_text}</h6>
         </div>
@@ -57,12 +53,12 @@ export const generateReceiptPdf = async (record: SubscriptionData) => {
       <div style="background: white; padding: 12px;">
         <h6 style="color: #707070; font-size: 0.875rem; margin-bottom: 8px;">Disclaimer</h6>
         <p style="font-size: 0.875rem; font-weight: 500; margin: 0; line-height: 1.5;">
-          Optisage has completed this transaction successfully; however, the finalization of these transfers may be affected by transmission errors, network disruptions, glitches, and other factors outside of Optisage's control, for which Optisage cannot be held responsible. If you encounter any problems with your transactions, please reach out to customer support.
+          optisage has completed this transaction successfully; however, the finalization of these transfers may be affected by transmission errors, network disruptions, glitches, and other factors outside of optisage's control, for which optisage cannot be held responsible. If you encounter any problems with your transactions, please reach out to customer support.
         </p>
       </div>
 
       <div style="color: #5F6362; font-size: 0.75rem; padding: 0 20px; text-align: center; line-height: 1.5;">
-        <p>© 2025 OptiSage delivers real-time insights, historical price trends, and AI-powered recommendations—so you can make data-backed decisions that drive serious revenue.</p>
+        <p>© 2025 optiSage delivers real-time insights, historical price trends, and AI-powered recommendations—so you can make data-backed decisions that drive serious revenue.</p>
         <p>15339774 Canada Inc. is registered and regularized by the Canadian Government.</p>
       </div>
     </div>
