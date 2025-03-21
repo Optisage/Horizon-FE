@@ -53,6 +53,7 @@ import useCurrencyConverter from "@/utils/currencyConverter";
 import { useAppSelector } from "@/redux/hooks";
 import dayjs from "dayjs";
 import ExportToSheetsButton from "@/utils/exportGoogle";
+import { ImSpinner9 } from "react-icons/im";
 
 interface ProductDetailsProps {
   asin: string;
@@ -62,6 +63,7 @@ interface ProductDetailsProps {
 interface BuyboxItem {
   seller: string;
   seller_id: string;
+  seller_type: string;
   rating: number;
   listing_price: number;
   weight_percentage: number;
@@ -112,6 +114,8 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
   const [isPaginationLoading, setIsPaginationLoading] = useState(false);
   const [nextPageToken, setNextPageToken] = useState<string | null>(null);
 
+  const [itemsToShow, setItemsToShow] = useState(10); // Show 10 items
+  const [loading, setLoading] = useState(false); // Add loading state
   const [costPrice, setCostPrice] = useState<string>("");
   // const [salePrice, setSalePrice] = useState<string>("");
   const [storageMonths, setStorageMonths] = useState(0);
@@ -260,12 +264,6 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
     date: selectedDate.format("YYYY-MM"),
   });
 
-  // const handleDateChange = (date: dayjs.Dayjs | [dayjs.Dayjs, dayjs.Dayjs]) => {
-  //   if (!Array.isArray(date)) {
-  //     setSelectedDate(date);
-  //   }
-  // };
-
   const handleDateChange = (date: dayjs.Dayjs | [dayjs.Dayjs, dayjs.Dayjs]) => {
     if (Array.isArray(date)) {
       // Handle date range selection
@@ -399,6 +397,7 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
       buyboxShare: `${offer.weight_percentage}%`,
       leader: offer.is_buybox_winner,
       seller_id: offer.seller_id,
+      seller_type: offer.seller_type,
     })),
   };
 
@@ -412,6 +411,7 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
       seller: seller.seller,
       rating: seller.rating,
       sellerId: seller.seller_id,
+      seller_type: seller.seller_type,
       avgPrice: `${seller.seller_feedback?.avg_price?.toFixed(2) ?? "N/A"}`,
       won: `${seller.seller_feedback?.percentage_won ?? 0}%`,
       lastWon: seller.seller_feedback?.last_won
@@ -419,6 +419,17 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
         : "N/A",
     })
   );
+
+  const displayedOffers = offersData.offers.slice(0, itemsToShow);
+  const displayedFeedback = sellerFeedbackData.slice(0, itemsToShow);
+
+  const handleLoadMore = () => {
+    setLoading(true); // Start loading
+    setTimeout(() => {
+      setItemsToShow(itemsToShow + 10); // Load more items
+      setLoading(false); // Stop loading
+    }, 2000); // Simulate a 2-second delay
+  };
 
   const renderStars = (rating: number | undefined) => {
     const validRating = Math.floor(rating ?? 0);
@@ -562,7 +573,7 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
             <div className="flex flex-col gap-5">
               {/* product details */}
               <div className="border border-border px-4 pt-4 rounded-xl flex flex-col gap-4">
-                <div className="grid md:grid-cols-[2fr_5fr] gap-3">
+                <div className="grid xl:grid-cols-[2fr_5fr] gap-3">
                   <div className="size-[150px] overflow-hidden rounded-lg">
                     <Image
                       src={product?.product_image || ProductThumbnail}
@@ -913,140 +924,207 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
             <div className="flex flex-col gap-5">
               {/* Offers Section */}
               <div className="border border-border flex flex-col rounded-xl max-h-[375px] overflow-scroll">
-                <div className="flex items-center gap-6 font-semibold text-gray-700 p-3">
-                  <button
-                    type="button"
-                    className={`text-lg flex gap-1 items-center border-b-2 ${
-                      activeTab5 === "offers"
-                        ? "border-black"
-                        : "border-transparent"
-                    }`}
-                    onClick={() => setActiveTab5("offers")}
-                  >
-                    <HiOutlineUsers className="size-5" /> Offers
-                  </button>
-                  <button
-                    type="button"
-                    className={`text-lg flex gap-1 items-center border-b-2 ${
-                      activeTab5 === "feedback"
-                        ? "border-black"
-                        : "border-transparent"
-                    }`}
-                    onClick={() => setActiveTab5("feedback")}
-                  >
-                    <MdOutlineInsertChartOutlined className="size-5" /> Seller
-                    Feedback
-                  </button>
+                <div className="flex items-center gap-x-8 gap-y-3 flex-wrap p-3">
+                  <div className="flex items-center gap-6 font-semibold text-gray-700">
+                    <button
+                      type="button"
+                      className={`text-lg flex gap-1 items-center border-b-2 ${
+                        activeTab5 === "offers"
+                          ? "border-black"
+                          : "border-transparent"
+                      }`}
+                      onClick={() => setActiveTab5("offers")}
+                    >
+                      <HiOutlineUsers className="size-5" /> Offers
+                    </button>
+                    <button
+                      type="button"
+                      className={`text-lg flex gap-1 items-center border-b-2 ${
+                        activeTab5 === "feedback"
+                          ? "border-black"
+                          : "border-transparent"
+                      }`}
+                      onClick={() => setActiveTab5("feedback")}
+                    >
+                      <MdOutlineInsertChartOutlined className="size-5" /> Seller
+                      Feedback
+                    </button>
+                  </div>
+                  {/* Legend */}
+                  <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2 text-sm">
+                      <span className="size-2 rounded-sm bg-black" />
+                      <span>FBA</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm">
+                      <span className="size-2 rounded-sm bg-[#00E4E4]" />
+                      <span>FBM</span>
+                    </div>
+                  </div>
                 </div>
 
                 {activeTab5 === "offers" ? (
-                  <table className="w-full border-collapse text-sm">
-                    <thead>
-                      <tr className="border-b text-left bg-[#F7F7F7]">
-                        <th className="p-3">S/N</th>
-                        <th className="p-3">Seller</th>
-                        <th className="p-3">Stock</th>
-                        <th className="p-3">Price</th>
-                        <th className="p-3">Buybox Share</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {offersData.offers.length > 0 ? (
-                        offersData.offers.map((offer) => (
-                          <tr key={offer.id} className="border-b">
-                            <td className="p-3">{offer.id}</td>
-                            <td className="p-3">
-                              <div
-                                onClick={() =>
-                                  router.push(`/seller/${offer.seller_id}`)
-                                }
-                                className="cursor-pointer"
-                              >
-                                {offer.seller}
-                                {offer.leader && (
-                                  <span className="text-xs text-primary block">
-                                    BuyBox Leader
-                                  </span>
-                                )}
-                              </div>
-                            </td>
-                            <td className="p-3">{offer.stock}</td>
-                            <td className="p-3">
-                              {currencySymbol}
-                              {convertPrice(offer.price)}
-                            </td>
-                            <td className="p-3 flex gap-1 items-center">
-                              {offer.buyboxShare}
-                              <div className="relative w-20 h-2 bg-gray-200 rounded-full">
+                  <>
+                    <table className="w-full border-collapse text-sm">
+                      <thead>
+                        <tr className="border-b text-left bg-[#F7F7F7]">
+                          <th className="p-3">S/N</th>
+                          <th className="p-3">Seller</th>
+                          <th className="p-3">Stock</th>
+                          <th className="p-3">Price</th>
+                          <th className="p-3">Buybox Share</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {displayedOffers.length > 0 ? (
+                          displayedOffers.map((offer) => (
+                            <tr key={offer.id} className="border-b">
+                              <td className="p-3">{offer.id}</td>
+                              <td className="p-3">
                                 <div
-                                  className="absolute top-0 left-0 h-2 bg-green-500 rounded-full"
-                                  style={{ width: offer.buyboxShare }}
-                                />
-                              </div>
-                            </td>
-                          </tr>
-                        ))
-                      ) : (
-                        <tr>
-                          <td
-                            colSpan={5}
-                            className="p-3 py-8 text-center text-gray-500"
-                          >
-                            No offers available.
-                          </td>
-                        </tr>
-                      )}
-                    </tbody>
-                  </table>
-                ) : (
-                  <table className="w-full border-collapse text-sm">
-                    <thead>
-                      <tr className="border-b text-left bg-[#F7F7F7]">
-                        <th className="p-3">S/N</th>
-                        <th className="p-3">Seller</th>
-                        <th className="p-3">Avg. Price</th>
-                        <th className="p-3">Won</th>
-                        <th className="p-3">Last Won</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {sellerFeedbackData.length > 0 ? (
-                        sellerFeedbackData.map((seller) => (
-                          <tr key={seller.id} className="border-b">
-                            <td className="p-3">{seller.id}</td>
-                            <td className="p-3">
-                              <div
-                                onClick={() =>
-                                  router.push(`/seller/${seller.sellerId}`)
-                                }
-                                className="cursor-pointer"
-                              >
-                                {seller.seller}
-                                <div className="flex">
-                                  {renderStars(seller.rating)}
+                                  onClick={() =>
+                                    router.push(`/seller/${offer.seller_id}`)
+                                  }
+                                  className="cursor-pointer flex flex-col gap-2 flex-grow"
+                                >
+                                  <span className="flex items-center gap-1">
+                                    <span
+                                      className={`size-2 rounded-sm ${
+                                        offer.seller_type === "FBA"
+                                          ? "bg-black"
+                                          : "bg-[#00E4E4]"
+                                      }`}
+                                    />
+                                    {offer.seller}
+                                  </span>
+                                  {offer.leader && (
+                                    <span className="text-xs text-primary block">
+                                      BuyBox Leader
+                                    </span>
+                                  )}
                                 </div>
-                              </div>
+                              </td>
+                              <td className="p-3">{offer.stock}</td>
+                              <td className="p-3">
+                                {currencySymbol}
+                                {convertPrice(offer.price)}
+                              </td>
+                              <td className="p-3 flex gap-1 items-center">
+                                {offer.buyboxShare}
+                                <div className="relative w-20 h-2 bg-gray-200 rounded-full">
+                                  <div
+                                    className="absolute top-0 left-0 h-2 bg-green-500 rounded-full"
+                                    style={{ width: offer.buyboxShare }}
+                                  />
+                                </div>
+                              </td>
+                            </tr>
+                          ))
+                        ) : (
+                          <tr>
+                            <td
+                              colSpan={5}
+                              className="p-3 py-8 text-center text-gray-500"
+                            >
+                              No offers available.
                             </td>
-                            <td className="p-3">
-                              {currencySymbol}
-                              {convertPrice(seller.avgPrice)}
-                            </td>
-                            <td className="p-3">{seller.won}</td>
-                            <td className="p-3">{seller.lastWon}</td>
                           </tr>
-                        ))
-                      ) : (
-                        <tr>
-                          <td
-                            colSpan={5}
-                            className="p-3 py-8 text-center text-gray-500"
-                          >
-                            No seller feedback available.
-                          </td>
+                        )}
+                      </tbody>
+                    </table>
+                    {offersData.offers.length > itemsToShow && (
+                      <button
+                        onClick={handleLoadMore}
+                        className="px-4 py-2 bg-primary text-white rounded hover:bg-primary-hover flex items-center justify-center gap-2"
+                        disabled={loading}
+                      >
+                        {loading ? (
+                          <>
+                            <ImSpinner9 className="animate-spin size-5" />
+                            {/* Loading... */}
+                          </>
+                        ) : (
+                          "Load More"
+                        )}
+                      </button>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    <table className="w-full border-collapse text-sm">
+                      <thead>
+                        <tr className="border-b text-left bg-[#F7F7F7]">
+                          <th className="p-3">S/N</th>
+                          <th className="p-3">Seller</th>
+                          <th className="p-3">Avg. Price</th>
+                          <th className="p-3">Won</th>
+                          <th className="p-3">Last Won</th>
                         </tr>
-                      )}
-                    </tbody>
-                  </table>
+                      </thead>
+                      <tbody>
+                        {displayedFeedback.length > 0 ? (
+                          displayedFeedback.map((seller) => (
+                            <tr key={seller.id} className="border-b">
+                              <td className="p-3">{seller.id}</td>
+                              <td className="p-3">
+                                <div
+                                  onClick={() =>
+                                    router.push(`/seller/${seller.sellerId}`)
+                                  }
+                                  className="cursor-pointer flex flex-col gap-1"
+                                >
+                                  <span className="flex items-center gap-1">
+                                    <span
+                                      className={`size-2 rounded-sm ${
+                                        seller.seller_type === "FBA"
+                                          ? "bg-black"
+                                          : "bg-[#00E4E4]"
+                                      }`}
+                                    />
+                                    {seller.seller}
+                                  </span>
+                                  <div className="flex">
+                                    {renderStars(seller.rating)}
+                                  </div>
+                                </div>
+                              </td>
+                              <td className="p-3">
+                                {currencySymbol}
+                                {convertPrice(seller.avgPrice)}
+                              </td>
+                              <td className="p-3">{seller.won}</td>
+                              <td className="p-3">{seller.lastWon}</td>
+                            </tr>
+                          ))
+                        ) : (
+                          <tr>
+                            <td
+                              colSpan={5}
+                              className="p-3 py-8 text-center text-gray-500"
+                            >
+                              No seller feedback available.
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                    {sellerFeedbackData.length > itemsToShow && (
+                      <button
+                        onClick={handleLoadMore}
+                        className="px-4 py-2 bg-primary text-white rounded hover:bg-primary-hover flex items-center justify-center gap-2"
+                        disabled={loading}
+                      >
+                        {loading ? (
+                          <>
+                            <ImSpinner9 className="animate-spin size-5" />
+                            {/* Loading... */}
+                          </>
+                        ) : (
+                          "Load More"
+                        )}
+                      </button>
+                    )}
+                  </>
                 )}
               </div>
 
