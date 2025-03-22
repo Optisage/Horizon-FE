@@ -844,10 +844,12 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
                       Total Fees
                     </button>
                   </div>
+                </div>
 
-                  {isSwitching ? (
-                    <Loader2 />
-                  ) : (
+                {isSwitching ? (
+                  <Loader2 />
+                ) : (
+                  <>
                     <div className="bg-[#F4F4F5] rounded-xl p-2">
                       {activeTab === "maximumCost" && (
                         <div className="space-y-2">
@@ -906,46 +908,46 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
                         </div>
                       )}
                     </div>
-                  )}
-                </div>
 
-                {/* Summary Items */}
-                <div className="flex flex-col gap-2 text-[#595959]">
-                  <div className="flex justify-between text-sm">
-                    <span>VAT on Fees</span>
-                    <span className="font-semibold text-black">
-                      {currencySymbol}
-                      {convertPrice(vatOnFees.toFixed(2))}
-                    </span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span>Discount</span>
-                    <span className="font-semibold text-black">
-                      {currencySymbol}
-                      {convertPrice(discount.toFixed(2))}
-                    </span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span>Profit Margin</span>
-                    <span className="font-semibold text-black">
-                      {profitMargin.toFixed(2)}%
-                    </span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span>Breakeven Sale Price</span>
-                    <span className="font-semibold text-black">
-                      {currencySymbol}
-                      {convertPrice(breakEvenPrice.toFixed(2))}
-                    </span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span>Estimated Amz. Payout</span>
-                    <span className="font-semibold text-black">
-                      {currencySymbol}
-                      {convertPrice(estimatedPayout.toFixed(2))}
-                    </span>
-                  </div>
-                </div>
+                    {/* Summary Items */}
+                    <div className="flex flex-col gap-2 text-[#595959]">
+                      <div className="flex justify-between text-sm">
+                        <span>VAT on Fees</span>
+                        <span className="font-semibold text-black">
+                          {currencySymbol}
+                          {convertPrice(vatOnFees.toFixed(2))}
+                        </span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span>Discount</span>
+                        <span className="font-semibold text-black">
+                          {currencySymbol}
+                          {convertPrice(discount.toFixed(2))}
+                        </span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span>Profit Margin</span>
+                        <span className="font-semibold text-black">
+                          {profitMargin.toFixed(2)}%
+                        </span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span>Breakeven Sale Price</span>
+                        <span className="font-semibold text-black">
+                          {currencySymbol}
+                          {convertPrice(breakEvenPrice.toFixed(2))}
+                        </span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span>Estimated Amz. Payout</span>
+                        <span className="font-semibold text-black">
+                          {currencySymbol}
+                          {convertPrice(estimatedPayout.toFixed(2))}
+                        </span>
+                      </div>
+                    </div>
+                  </>
+                )}
               </div>
 
               {/* extra stats grid */}
