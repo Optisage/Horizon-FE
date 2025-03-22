@@ -9,9 +9,9 @@ import CustomDatePicker from "./CustomDatePicker";
 import { Product } from "./Dashboard";
 import { useGetSalesStatisticsQuery } from "@/redux/api/productsApi";
 import { useAppSelector } from "@/redux/hooks";
-import Loader from "@/utils/loader";
 import dayjs from "dayjs";
 import { useRouter } from "next/navigation";
+import ProgressLoader from "@/utils/progressLoader";
 // import useCurrencyConverter from "@/utils/currencyConverter";
 
 interface BuyBoxItem {
@@ -101,7 +101,12 @@ const SalesStats = ({ product }: { product: Product }) => {
     if (isLoadingSalesStats) {
       return (
         <div className="flex items-center justify-center h-64">
-          <Loader />
+          {/* <Loader /> */}
+          <ProgressLoader
+            duration={3000}
+            color="#18CB96"
+            className="w-3/4 max-w-md"
+          />
         </div>
       );
     }
