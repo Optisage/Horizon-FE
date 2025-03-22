@@ -98,7 +98,7 @@ const AlertsDrawer = ({ itemAsin, marketplaceId, productName }: prop) => {
             </p>
 
             {ipAlertData?.eligible_to_sell ? (
-              <h4 className="text-lg font-semibold mt-4">
+              <h4 className="text-lg font-semibold mt-4 text-green-500">
                 You are authorised to sell this product
               </h4>
             ) : (

@@ -24,8 +24,7 @@ const FeatureList = ({
   //const [expanded, setExpanded] = useState(false);
 
   const safeInitialCount = Math.max(0, initialCount);
- 
- 
+
   // Always visible items
   const initialItems = items.slice(0, safeInitialCount);
   // Extra items to show/hide with animation
@@ -36,11 +35,11 @@ const FeatureList = ({
       <ul className="mt-1 text-left space-y-2 h-fit border-t pt-4">
         {initialItems.map((subItem, index) => (
           <li className="flex gap-2 items-center" key={index}>
-           <div>
-                <FaCheckCircle className="text-green-700 !h-[20px] !w-[20px]" />
-                </div>
-                <span className={`${expanded ? "" : "truncate"} w-full`}>
-            {subItem}
+            <div>
+              <FaCheckCircle className="text-green-700 !h-[20px] !w-[20px]" />
+            </div>
+            <span className={`${expanded ? "" : "truncate"} w-full`}>
+              {subItem}
             </span>
           </li>
         ))}
@@ -54,7 +53,7 @@ const FeatureList = ({
             {extraItems.map((subItem, index) => (
               <li className="flex gap-2 items-center" key={index}>
                 <div>
-                <FaCheckCircle className="text-green-700 !h-[20px] !w-[20px]" />
+                  <FaCheckCircle className="text-green-700 !h-[20px] !w-[20px]" />
                 </div>
                 {subItem}
               </li>
@@ -78,7 +77,9 @@ const Pricing = () => {
   const searchParams = useSearchParams();
   const [getPricing, { data }] = useLazyGetPricingQuery();
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
-  const [expandedCards, setExpandedCards] = useState<Record<string, boolean>>({});
+  const [expandedCards, setExpandedCards] = useState<Record<string, boolean>>(
+    {}
+  );
   const [showModal, setShowModal] = useState(false);
   const [refCode, setRefCode] = useState<string | null>(null);
   const [subscribe, { isLoading: subscribeLoading }] =
@@ -89,9 +90,9 @@ const Pricing = () => {
   }, [getPricing]);
 
   const handleExpand = (planKey: string, isExpanded: boolean) => {
-    setExpandedCards(prev => ({
+    setExpandedCards((prev) => ({
       ...prev,
-      [planKey]: isExpanded
+      [planKey]: isExpanded,
     }));
   };
 
@@ -181,10 +182,12 @@ const Pricing = () => {
                 Coming Soon
               </span>
             )}
-            <h3 className="text-xl font-semibold capitalize truncate w-full max-w-full text-nowrap">{item.title}</h3>
+            <h3 className="text-xl font-semibold capitalize truncate w-full max-w-full text-nowrap">
+              {item.title}
+            </h3>
             <div className="flex items-baseline relative">
               <div className=" -mb-5">
-              <FaDollarSign size={25}  />
+                <FaDollarSign size={25} />
               </div>
               <p className="text-4xl font-semibold">{item.price}</p>
               <div className="-mb-5">
@@ -193,12 +196,12 @@ const Pricing = () => {
             </div>
             <p className="text-gray-600 text-sm">{item.subTitle}</p>
             {/* Use the dropdown feature list with smooth animation */}
-            <FeatureList 
-        items={item.subItems}
-        initialCount={3}
-        expanded={expandedCards[item.key] || false}
-        onExpand={(isExpanded) => handleExpand(item.key, isExpanded)}
-  />
+            <FeatureList
+              items={item.subItems}
+              initialCount={3}
+              expanded={expandedCards[item.key] || false}
+              onExpand={(isExpanded) => handleExpand(item.key, isExpanded)}
+            />
 
             <button
               className="mt-4 bg-green-500 text-white px-4 py-2 rounded-lg w-full transition duration-300 hover:bg-green-600 disabled:bg-slate-300"
@@ -214,13 +217,13 @@ const Pricing = () => {
       </div>
 
       {showModal && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 p-4 sm:p-0">
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-10 p-4 sm:p-0">
           <div className="bg-white p-6 rounded-lg shadow-lg max-w-96 text-center">
             <h3 className="text-xl font-bold">7-Day Free Trial</h3>
             <p className="text-gray-600 mt-2">
-              You won&apos;t be charged today. Your 7-day free trial begins after you
-              enter your card details, and you can cancel anytime before the trial
-              ends.
+              You won&apos;t be charged today. Your 7-day free trial begins
+              after you enter your card details, and you can cancel anytime
+              before the trial ends.
             </p>
             <div className="mt-4 flex flex-col-reverse sm:flex-row gap-3 justify-center">
               <button

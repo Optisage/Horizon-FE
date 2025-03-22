@@ -7,6 +7,8 @@ import { useFormik } from "formik";
 import { useSetPasswordMutation } from "@/redux/api/auth";
 import { message } from "antd";
 import { passwordSchema } from "@/lib/validationSchema";
+import * as Yup from "yup";
+import Link from "next/link";
 
 const SignUp = () => {
   const router = useRouter();
@@ -19,6 +21,7 @@ const SignUp = () => {
   const [signUp, { data, isLoading }] = useSetPasswordMutation();
   const [messageApi, contextHolder] = message.useMessage();
   console.log(data);
+
   useEffect(() => {
     // Extract the expires value from the URL
     const params = new URLSearchParams(window.location.search);
@@ -33,17 +36,28 @@ const SignUp = () => {
     if (emailValue) setEmail(emailValue);
   }, []);
 
+  // Extended schema to include terms acceptance
+  const validationSchema = Yup.object({
+    password: passwordSchema.fields.password,
+    confirmPassword: passwordSchema.fields.confirmPassword,
+    termsAccepted: Yup.boolean()
+      .required("You must accept the terms and privacy policy")
+      .oneOf([true], "You must accept the terms and privacy policy"),
+  });
+
   const formik = useFormik({
     initialValues: {
       password: "",
       confirmPassword: "",
+      termsAccepted: false,
     },
-    validationSchema: passwordSchema,
+    validationSchema,
     onSubmit: async (values) => {
+      // Terms checkbox is not sent to BE as per requirements
       const payload = {
         email,
         password: values.password,
-        password_confirmation: values.confirmPassword, // Use formik values
+        password_confirmation: values.confirmPassword,
         expires,
       };
 
@@ -54,7 +68,7 @@ const SignUp = () => {
         });
       } catch (error) {
         messageApi.error("Registration Failed");
-        console.log(error)
+        console.log(error);
       }
     },
   });
@@ -78,7 +92,6 @@ const SignUp = () => {
               id="email"
               placeholder="Ex: marc@example.com"
               className="p-3 bg-[#d7d7d7] border border-transparent focus:border-neutral-700 placeholder:text-[#52525B] text-sm rounded-md outline-none w-full"
-              // required
               value={email}
               disabled
               onChange={(e) => setEmail(e.target.value)}
@@ -124,7 +137,7 @@ const SignUp = () => {
           {/**...CONFIRM PASSWORD....*/}
           <div className="flex flex-col gap-1">
             <label
-              htmlFor="password"
+              htmlFor="confirmPassword"
               className="text-sm text-neutral-700 font-medium"
             >
               Confirm Password
@@ -150,10 +163,49 @@ const SignUp = () => {
               )}
           </div>
 
+          {/* Terms and Privacy Policy Checkbox */}
+          <div className="flex items-center gap-2 mt-2">
+            <input
+              type="checkbox"
+              id="termsAccepted"
+              name="termsAccepted"
+              // defaultChecked
+              className="checkbox checkbox-accent"
+              checked={formik.values.termsAccepted}
+              onChange={formik.handleChange}
+              onBlur={formik.handleBlur}
+            />
+
+            <label htmlFor="termsAccepted" className="text-sm text-neutral-700">
+              I agree to the{" "}
+              <Link
+                href="https://optisage.ai/terms-of-use"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-primary hover:underline"
+              >
+                Terms of Use
+              </Link>{" "}
+              and{" "}
+              <Link
+                href="https://optisage.ai/privacy-policy"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-primary hover:underline"
+              >
+                Privacy Policy
+              </Link>
+            </label>
+          </div>
+          {formik.touched.termsAccepted && formik.errors.termsAccepted && (
+            <p className="text-red-500 text-xs mt-1">
+              {formik.errors.termsAccepted}
+            </p>
+          )}
+
           <button
             type="submit"
-            className="rounded-lg bg-primary hover:bg-primary-hover text-white font-semibold p-2 active:scale-95 duration-200"
-            //onClick={handleSubmit}
+            className="rounded-lg bg-primary hover:bg-primary-hover text-white font-semibold p-2 active:scale-95 duration-200 mt-2"
             disabled={isLoading}
           >
             {isLoading ? "Signing up..." : "Sign Up"}

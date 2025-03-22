@@ -208,6 +208,7 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
   const [activeTab4, setActiveTab4] = useState<
     "current" | "30" | "90" | "180" | "all"
   >("current");
+  const [isRefetching, setIsRefetching] = useState(false);
   const [activeTab5, setActiveTab5] = useState("offers");
 
   const router = useRouter();
@@ -387,6 +388,20 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
     estimatedSales: rankings?.estimated_sales ?? "N/A",
     estTimeToSale: rankings?.estimated_time_to_sale ?? "N/A",
   };
+
+  const handleRefetch = async () => {
+    setIsRefetching(true);
+    try {
+      await refetch();
+    } finally {
+      // Add a slight delay so the user can see the refresh animation
+      setTimeout(() => {
+        setIsRefetching(false);
+      }, 500);
+    }
+  };
+
+  const isLoadingRefetch = isLoadingRankings || isRefetching;
 
   const offersData = {
     offers: buyboxDetails.map((offer: BuyboxItem, index: number) => ({
@@ -1135,17 +1150,13 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
                   <button
                     type="button"
                     className="flex gap-1.5 items-center px-3 py-1.5 rounded-md hover:bg-gray-100 outline-none active:scale-95 duration-200"
-                    onClick={() => refetch()} // Trigger refetch
-                    disabled={isLoadingRankings} // Disable button during loading
+                    onClick={handleRefetch}
+                    disabled={isLoadingRefetch}
                   >
-                    {isLoadingRankings ? (
-                      <div className="animate-spin">
-                        <IoMdRefresh className="size-5" />
-                      </div>
-                    ) : (
+                    <div className={isLoadingRefetch ? "animate-spin" : ""}>
                       <IoMdRefresh className="size-5" />
-                    )}
-                    Refresh
+                    </div>
+                    {isRefetching ? "Refreshing..." : "Refresh"}
                   </button>
                 </div>
 
@@ -1164,15 +1175,16 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
                           tab as "current" | "30" | "90" | "180" | "all"
                         )
                       }
+                      disabled={isLoadingRefetch}
                     >
                       {tab}
                     </button>
                   ))}
                 </div>
 
-                {isLoadingRankings ? (
+                {isLoadingRefetch ? (
                   <div className="h-40 flex items-center justify-center font-medium">
-                    Loading...
+                    {isRefetching ? "Refreshing..." : "Loading..."}
                   </div>
                 ) : rankingsError ? (
                   <div className="h-40 flex items-center justify-center text-red-500 font-medium">
