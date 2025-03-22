@@ -3,7 +3,7 @@ import Seller from "../_components/Seller";
 
 export const metadata: Metadata = {
   title: "Other Sellers",
-  description: "Other Sellers on Optisage",
+  description: "Other Sellers on optisage",
 };
 
 const page = () => {
