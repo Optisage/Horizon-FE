@@ -995,12 +995,12 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
                           displayedOffers.map((offer) => (
                             <tr key={offer.id} className="border-b">
                               <td className="p-3">{offer.id}</td>
-                              <td className="p-3">
+                              <td className="py-3">
                                 <div
                                   onClick={() =>
                                     router.push(`/seller/${offer.seller_id}`)
                                   }
-                                  className="cursor-pointer flex flex-col gap-2 flex-grow"
+                                  className="cursor-pointer flex flex-col gap-0.5 flex-grow"
                                 >
                                   <span className="flex items-center gap-1">
                                     <span
@@ -1010,7 +1010,7 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
                                           : "bg-[#00E4E4]"
                                       }`}
                                     />
-                                    {offer.seller}
+                                    <p className="truncate">{offer.seller}</p>
                                   </span>
                                   {offer.leader && (
                                     <span className="text-xs text-primary block">
@@ -1024,11 +1024,11 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
                                 {currencySymbol}
                                 {convertPrice(offer.price)}
                               </td>
-                              <td className="p-3 flex gap-1 items-center">
+                              <td className="px-3 py-4 flex gap-1 items-center h-full">
                                 {offer.buyboxShare}
-                                <div className="relative w-20 h-2 bg-gray-200 rounded-full">
+                                <div className="w-20 h-2 bg-gray-200 rounded-full">
                                   <div
-                                    className="absolute top-0 left-0 h-2 bg-green-500 rounded-full"
+                                    className="h-2 bg-green-500 rounded-full"
                                     style={{ width: offer.buyboxShare }}
                                   />
                                 </div>
@@ -1086,7 +1086,7 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
                                   onClick={() =>
                                     router.push(`/seller/${seller.sellerId}`)
                                   }
-                                  className="cursor-pointer flex flex-col gap-1"
+                                  className="cursor-pointer flex flex-col"
                                 >
                                   <span className="flex items-center gap-1">
                                     <span
@@ -1096,7 +1096,7 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
                                           : "bg-[#00E4E4]"
                                       }`}
                                     />
-                                    {seller.seller}
+                                    <p className="truncate">{seller.seller}</p>
                                   </span>
                                   <div className="flex">
                                     {renderStars(seller.rating)}
