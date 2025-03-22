@@ -104,6 +104,28 @@ interface MergedDataPoint {
   amazon: number | null;
 }
 
+interface ProfitabilityData {
+  referralFee: number;
+  fulfillmentType: string;
+  fullfillmentFee: number;
+  closingFee: number;
+  storageFee: number;
+  prepFee: string | number;
+  shippingFee: string | number;
+  digitalServicesFee: number;
+  miscFee: string | number;
+  minRoi: number;
+  minProfit: number;
+  profitAmount: number;
+  maxCost: number;
+  totalFees: number;
+  vatOnFees: number;
+  discount: number;
+  profitMargin: number;
+  breakevenSalePrice: number;
+  estimatedAmzPayout: number;
+}
+
 const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
   const [searchValue, setSearchValue] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
@@ -158,6 +180,12 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
   const [calculateProfitability, { isLoading: isLoadingProfitability }] =
     useCalculateProfitablilityMutation();
 
+  const [responseData, setResponseData] = useState({
+    fba: null,
+    fbm: null,
+  });
+  const [isSwitching, setIsSwitching] = useState(false);
+
   // calculating profitability
   const handleCalculateProfitability = async () => {
     const body = {
@@ -167,7 +195,6 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
       currencyCode: currencyCode,
       storage: storageMonths,
       costPrice: costPrice,
-      // salePrice: salePrice,
       salePrice: buyboxWinnerPrice,
       pointsNumber: 0,
       pointsAmount: 0,
@@ -176,33 +203,46 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
     try {
       const response = await calculateProfitability({ body }).unwrap();
       if (response.status === 200) {
-        // Update state with the response data
-        setFees({
-          referralFee: response.data.referralFee,
-          fulfillmentType: response.data.fulfillmentType,
-          fullfillmentFee: response.data.fullfillmentFee,
-          closingFee: response.data.closingFee,
-          storageFee: response.data.storageFee,
-          prepFee: parseFloat(response.data.prepFee),
-          shippingFee: parseFloat(response.data.shippingFee),
-          digitalServicesFee: response.data.digitalServicesFee,
-          miscFee: parseFloat(response.data.miscFee),
+        // Store both FBA and FBM data in state
+        setResponseData({
+          fba: response.data.fba,
+          fbm: response.data.fbm,
         });
-        setMinROI(response.data.minRoi);
-        setMinProfit(response.data.minProfit);
-        setProfitAmount(response.data.profitAmount);
-        setMaxCost(response.data.maxCost);
-        setTotalFees(response.data.totalFees);
-        setVatOnFees(response.data.vatOnFees);
-        setDiscount(response.data.discount);
-        setProfitMargin(response.data.profitMargin);
-        setBreakEvenPrice(response.data.breakevenSalePrice);
-        setEstimatedPayout(response.data.estimatedAmzPayout);
+
+        // Set initial data based on the selected fulfillmentType
+        const data =
+          fulfillmentType === "FBA" ? response.data.fba : response.data.fbm;
+        updateUIWithData(data);
       }
     } catch (error) {
       console.error("Failed to calculate profitability:", error);
       message.error("Failed to calculate profitability. Please try again.");
     }
+  };
+
+  // Helper function to update UI with selected data
+  const updateUIWithData = (data: ProfitabilityData): void => {
+    setFees({
+      referralFee: data.referralFee,
+      fulfillmentType: data.fulfillmentType,
+      fullfillmentFee: data.fullfillmentFee,
+      closingFee: data.closingFee,
+      storageFee: data.storageFee,
+      prepFee: parseFloat(data.prepFee as string),
+      shippingFee: parseFloat(data.shippingFee as string),
+      digitalServicesFee: data.digitalServicesFee,
+      miscFee: parseFloat(data.miscFee as string),
+    });
+    setMinROI(data.minRoi);
+    setMinProfit(data.minProfit);
+    setProfitAmount(data.profitAmount);
+    setMaxCost(data.maxCost);
+    setTotalFees(data.totalFees);
+    setVatOnFees(data.vatOnFees);
+    setDiscount(data.discount);
+    setProfitMargin(data.profitMargin);
+    setBreakEvenPrice(data.breakevenSalePrice);
+    setEstimatedPayout(data.estimatedAmzPayout);
   };
 
   const [activeTab4, setActiveTab4] = useState<
@@ -489,6 +529,12 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
       </div>
     );
 
+  const Loader2 = () => (
+    <div className="flex justify-center items-center py-4">
+      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+    </div>
+  );
+
   return (
     <section className="flex flex-col gap-8 min-h-[50dvh] md:min-h-[80dvh]">
       <SearchInput value={searchValue} onChange={setSearchValue} />
@@ -669,7 +715,18 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
                   <div className="flex gap-2">
                     <button
                       type="button"
-                      onClick={() => setFulfillmentType("FBA")}
+                      onClick={() => {
+                        setIsSwitching(true);
+                        setFulfillmentType("FBA");
+
+                        // Simulate a 1-second delay before updating the UI
+                        setTimeout(() => {
+                          if (responseData.fba) {
+                            updateUIWithData(responseData.fba);
+                          }
+                          setIsSwitching(false);
+                        }, 1000);
+                      }}
                       className={`px-3 py-1 rounded-full text-black border ${
                         fulfillmentType === "FBA"
                           ? "bg-[#E7EBFE]"
@@ -680,7 +737,18 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
                     </button>
                     <button
                       type="button"
-                      onClick={() => setFulfillmentType("FBM")}
+                      onClick={() => {
+                        setIsSwitching(true);
+                        setFulfillmentType("FBM");
+
+                        // Simulate a 1.5-second delay before updating the UI
+                        setTimeout(() => {
+                          if (responseData.fbm) {
+                            updateUIWithData(responseData.fbm);
+                          }
+                          setIsSwitching(false);
+                        }, 1000);
+                      }}
                       className={`px-3 py-1 rounded-full text-black border ${
                         fulfillmentType === "FBM"
                           ? "bg-[#E7EBFE]"
@@ -777,64 +845,68 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
                     </button>
                   </div>
 
-                  <div className="bg-[#F4F4F5] rounded-xl p-2">
-                    {activeTab === "maximumCost" && (
-                      <div className="space-y-2">
-                        <div className="flex justify-between text-sm">
-                          <span className="text-[#595959]">Min. ROI</span>
-                          <span className="font-semibold text-black">
-                            {minROI || 0}%
-                          </span>
-                        </div>
-                        <div className="flex justify-between text-sm">
-                          <span className="text-[#595959]">Min. Profit</span>
-                          <span className="font-semibold text-black">
-                            {currencySymbol}
-                            {convertPrice(minProfit.toFixed(2)) || 0}
-                          </span>
-                        </div>
-                        <div className="border-t pt-2 font-semibold flex justify-between">
-                          <span>Maximum Cost</span>
-                          <span>
-                            {currencySymbol}
-                            {convertPrice(maxCost.toFixed(2)) || 0}
-                          </span>
-                        </div>
-                      </div>
-                    )}
-
-                    {activeTab === "totalFees" && (
-                      <div className="space-y-2">
-                        {Object.entries(fees).map(([key, value]) => (
-                          <div
-                            key={key}
-                            className="flex justify-between text-sm"
-                          >
-                            <span className="text-[#595959]">
-                              {key
-                                .replace(/([A-Z])/g, " $1")
-                                .replace(/^./, (str) => str.toUpperCase())}
-                            </span>
+                  {isSwitching ? (
+                    <Loader2 />
+                  ) : (
+                    <div className="bg-[#F4F4F5] rounded-xl p-2">
+                      {activeTab === "maximumCost" && (
+                        <div className="space-y-2">
+                          <div className="flex justify-between text-sm">
+                            <span className="text-[#595959]">Min. ROI</span>
                             <span className="font-semibold text-black">
-                              {typeof value === "number"
-                                ? `${currencySymbol}${convertPrice(
-                                    value.toFixed(2)
-                                  )}`
-                                : value}
+                              {minROI || 0}%
                             </span>
                           </div>
-                        ))}
-
-                        <div className="border-t pt-2 font-semibold flex justify-between">
-                          <span>Total Fees</span>
-                          <span>
-                            {currencySymbol}
-                            {convertPrice(totalFees.toFixed(2))}
-                          </span>
+                          <div className="flex justify-between text-sm">
+                            <span className="text-[#595959]">Min. Profit</span>
+                            <span className="font-semibold text-black">
+                              {currencySymbol}
+                              {convertPrice(minProfit.toFixed(2)) || 0}
+                            </span>
+                          </div>
+                          <div className="border-t pt-2 font-semibold flex justify-between">
+                            <span>Maximum Cost</span>
+                            <span>
+                              {currencySymbol}
+                              {convertPrice(maxCost.toFixed(2)) || 0}
+                            </span>
+                          </div>
                         </div>
-                      </div>
-                    )}
-                  </div>
+                      )}
+
+                      {activeTab === "totalFees" && (
+                        <div className="space-y-2">
+                          {Object.entries(fees).map(([key, value]) => (
+                            <div
+                              key={key}
+                              className="flex justify-between text-sm"
+                            >
+                              <span className="text-[#595959]">
+                                {key
+                                  .replace(/([A-Z])/g, " $1")
+                                  .replace(/^./, (str) => str.toUpperCase())}
+                              </span>
+                              <span className="font-semibold text-black">
+                                {typeof value === "number"
+                                  ? `${currencySymbol}${convertPrice(
+                                      value.toFixed(2)
+                                    )}`
+                                  : value}
+                              </span>
+                            </div>
+                          ))}
+
+                          <div className="border-t pt-2 font-semibold flex justify-between">
+                            <span>Total Fees</span>
+                            <span>
+                              {currencySymbol}
+                              {convertPrice(totalFees.toFixed(2))}
+                            </span>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 {/* Summary Items */}
