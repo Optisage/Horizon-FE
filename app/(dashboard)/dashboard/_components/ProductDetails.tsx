@@ -49,7 +49,6 @@ import {
   useCalculateProfitablilityMutation,
   useGetMarketAnalysisQuery,
 } from "@/redux/api/productsApi";
-import useCurrencyConverter from "@/utils/currencyConverter";
 import { useAppSelector } from "@/redux/hooks";
 import dayjs from "dayjs";
 import ExportToSheetsButton from "@/utils/exportGoogle";
@@ -208,9 +207,9 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
 
   const router = useRouter();
 
-  const { currencyCode, currencySymbol } =
+  const { currencyCode } =
     useAppSelector((state) => state.global) || {};
-  const { convertPrice } = useCurrencyConverter(currencyCode);
+ 
 
   const {
     data: buyboxData,
@@ -763,15 +762,15 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
                         <div className="flex justify-between text-sm">
                           <span className="text-[#595959]">Min. Profit</span>
                           <span className="font-semibold text-black">
-                            {currencySymbol}
-                            {convertPrice(minProfit.toFixed(2)) || 0}
+                            $
+                            {minProfit.toFixed(2)}
                           </span>
                         </div>
                         <div className="border-t pt-2 font-semibold flex justify-between">
                           <span>Maximum Cost</span>
                           <span>
-                            {currencySymbol}
-                            {convertPrice(maxCost.toFixed(2)) || 0}
+                            $
+                            {maxCost.toFixed(2)}
                           </span>
                         </div>
                       </div>
@@ -791,9 +790,9 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
                             </span>
                             <span className="font-semibold text-black">
                               {typeof value === "number"
-                                ? `${currencySymbol}${convertPrice(
+                                ? `$ ${
                                     value.toFixed(2)
-                                  )}`
+                                  }`
                                 : value}
                             </span>
                           </div>
@@ -802,8 +801,8 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
                         <div className="border-t pt-2 font-semibold flex justify-between">
                           <span>Total Fees</span>
                           <span>
-                            {currencySymbol}
-                            {convertPrice(totalFees.toFixed(2))}
+                            $
+                            {totalFees.toFixed(2)}
                           </span>
                         </div>
                       </div>
@@ -816,15 +815,15 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
                   <div className="flex justify-between text-sm">
                     <span>VAT on Fees</span>
                     <span className="font-semibold text-black">
-                      {currencySymbol}
-                      {convertPrice(vatOnFees.toFixed(2))}
+                      $
+                      {vatOnFees.toFixed(2)}
                     </span>
                   </div>
                   <div className="flex justify-between text-sm">
                     <span>Discount</span>
                     <span className="font-semibold text-black">
-                      {currencySymbol}
-                      {convertPrice(discount.toFixed(2))}
+                      $
+                      {discount.toFixed(2)}
                     </span>
                   </div>
                   <div className="flex justify-between text-sm">
@@ -836,15 +835,15 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
                   <div className="flex justify-between text-sm">
                     <span>Breakeven Sale Price</span>
                     <span className="font-semibold text-black">
-                      {currencySymbol}
-                      {convertPrice(breakEvenPrice.toFixed(2))}
+                   $
+                      {breakEvenPrice.toFixed(2)}
                     </span>
                   </div>
                   <div className="flex justify-between text-sm">
                     <span>Estimated Amz. Payout</span>
                     <span className="font-semibold text-black">
-                      {currencySymbol}
-                      {convertPrice(estimatedPayout.toFixed(2))}
+                      $
+                      {estimatedPayout.toFixed(2)}
                     </span>
                   </div>
                 </div>
@@ -856,8 +855,8 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
                   <InfoCard
                     icon={<PriceTagIcon />}
                     title="Buy Box Price"
-                    value={`${currencySymbol}${
-                      convertPrice(extra?.buybox_price) ?? "0"
+                    value={`$ ${
+                      extra?.buybox_price ?? "0"
                     }`}
                     bgColor="#F0FFF0"
                   />
@@ -879,9 +878,9 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
                   <InfoCard
                     icon={<MaximumCostIcon />}
                     title="Maximum Cost"
-                    value={`${currencySymbol}${
+                    value={`$ ${
                       // convertPrice(extra?.max_cost) ?? "0"
-                      convertPrice(maxCost) ?? "0"
+                      maxCost ?? "0"
                     }`}
                     bgColor="#FFF0F3"
                   />
@@ -898,9 +897,9 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
                   <InfoCard
                     icon={<PriceTagIcon />}
                     title="Profit"
-                    value={`${currencySymbol}${
+                    value={`$ ${
                       // convertPrice(extra?.profit) ?? "0"
-                      convertPrice(profitAmount) ?? "0"
+                      profitAmount ?? "0"
                       // } (${extra?.profit_percentage ?? "0"}%)`}
                     } (${profitMargin.toFixed(0) ?? "0"}%)`}
                     bgColor="#EBFFFE"
@@ -972,8 +971,8 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
                             </td>
                             <td className="p-3">{offer.stock}</td>
                             <td className="p-3">
-                              {currencySymbol}
-                              {convertPrice(offer.price)}
+                              $
+                              {offer.price}
                             </td>
                             <td className="p-3 flex gap-1 items-center">
                               {offer.buyboxShare}
@@ -1028,8 +1027,8 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
                               </div>
                             </td>
                             <td className="p-3">
-                              {currencySymbol}
-                              {convertPrice(seller.avgPrice)}
+                              $
+                              {seller.avgPrice}
                             </td>
                             <td className="p-3">{seller.won}</td>
                             <td className="p-3">{seller.lastWon}</td>
@@ -1125,29 +1124,29 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
                       <div className="flex justify-between py-1">
                         <span>Buy Box</span>
                         <span className="font-semibold text-black">
-                          {currencySymbol}
-                          {convertPrice(ranks.buyBox)}
+                          $
+                          {ranks.buyBox}
                         </span>
                       </div>
                       <div className="flex justify-between py-1">
                         <span>Amazon</span>
                         <span className="font-semibold text-black">
-                          {currencySymbol}
-                          {convertPrice(ranks.amazon)}
+                        $
+                          {ranks.amazon}
                         </span>
                       </div>
                       <div className="flex justify-between py-1">
                         <span>Lowest FBA</span>
                         <span className="font-semibold text-black">
-                          {currencySymbol}
-                          {convertPrice(ranks.lowestFBA)}
+                        $
+                          {ranks.lowestFBA}
                         </span>
                       </div>
                       <div className="flex justify-between py-1">
                         <span>Lowest FBM</span>
                         <span className="font-semibold text-black">
-                          {currencySymbol}
-                          {convertPrice(ranks.lowestFBM)}
+                        $
+                          {ranks.lowestFBM}
                         </span>
                       </div>
                       <div className="flex justify-between py-1">
