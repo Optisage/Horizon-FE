@@ -861,15 +861,15 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
                           <div className="flex justify-between text-sm">
                             <span className="text-[#595959]">Min. Profit</span>
                             <span className="font-semibold text-black">
-                              {currencySymbol}
-                              {convertPrice(minProfit.toFixed(2)) || 0}
+                              $
+                              {minProfit.toFixed(2)}
                             </span>
                           </div>
                           <div className="border-t pt-2 font-semibold flex justify-between">
                             <span>Maximum Cost</span>
                             <span>
-                              {currencySymbol}
-                              {convertPrice(maxCost.toFixed(2)) || 0}
+                            $
+                              {maxCost.toFixed(2)}
                             </span>
                           </div>
                         </div>
@@ -907,7 +907,8 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
                       </div>
                     )}
                   </div>
-                </div>
+                </>)}
+                
 
                 {/* Summary Items */}
                 <div className="flex flex-col gap-2 text-[#595959]">
@@ -1093,8 +1094,8 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
                               </td>
                               <td className="p-3">{offer.stock}</td>
                               <td className="p-3">
-                                {currencySymbol}
-                                {convertPrice(offer.price)}
+                                $
+                                {offer.price}
                               </td>
                               <td className="px-3 py-4 flex gap-1 items-center h-full">
                                 {offer.buyboxShare}
@@ -1176,8 +1177,8 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
                                 </div>
                               </td>
                               <td className="p-3">
-                                {currencySymbol}
-                                {convertPrice(seller.avgPrice)}
+                                $
+                                {seller.avgPrice}
                               </td>
                               <td className="p-3">{seller.won}</td>
                               <td className="p-3">{seller.lastWon}</td>
