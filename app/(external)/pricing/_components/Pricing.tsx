@@ -217,23 +217,23 @@ const Pricing = () => {
       </div>
 
       {showModal && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-10 p-4 sm:p-0">
-          <div className="bg-white p-6 rounded-lg shadow-lg max-w-96 text-center">
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 p-4 sm:p-0">
+          <div className="bg-[#0A0A0A] p-6 rounded-lg shadow-lg max-w-96 text-center text-white">
             <h3 className="text-xl font-bold">7-Day Free Trial</h3>
-            <p className="text-gray-600 mt-2">
-              You won&apos;t be charged today. Your 7-day free trial begins
-              after you enter your card details, and you can cancel anytime
-              before the trial ends.
+            <p className=" mt-2 text-white">
+              You won&apos;t be charged today. Your 7-day free trial begins after you
+              enter your card details, and you can cancel anytime before the trial
+              ends.
             </p>
             <div className="mt-4 flex flex-col-reverse sm:flex-row gap-3 justify-center">
               <button
-                className="px-4 py-2 bg-gray-300 rounded-lg"
+                className="px-4 py-2 bg-gray-300 rounded-lg text-[#09090B]"
                 onClick={() => setShowModal(false)}
               >
                 Cancel
               </button>
               <Button
-                className="!px-4 !py-2 !bg-green-500 border-none !h-[40px] !text-white !rounded-lg"
+                className="!px-4 !py-2 !bg-green-500 !border-none !h-[40px] !text-white !rounded-lg"
                 onClick={confirmSubscription}
                 loading={subscribeLoading}
                 disabled={subscribeLoading}
