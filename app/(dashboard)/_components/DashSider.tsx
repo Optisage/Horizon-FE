@@ -54,7 +54,7 @@ const DashSider = () => {
     // Clear the token cookie
     Cookies.remove("optisage-token");
     router.push("/");
-    dispatch(logout())
+    dispatch(logout());
   };
 
   useLayoutEffect(() => {
@@ -85,7 +85,7 @@ const DashSider = () => {
   return (
     <div className="drawer-side z-50">
       <label htmlFor="my-drawer-2" className="drawer-overlay" />
-      <aside className="flex flex-col justify-between w-[270px] h-screen overflow-hidden shadow-xl bg-[#F7F7F7] border-r border-r-neutral-200 overflow-y-scroll">
+      <aside className="flex flex-col justify-between w-[270px] h-dvh overflow-hidden shadow-xl bg-[#F7F7F7] border-r border-r-neutral-200 overflow-y-scroll">
         <div className="">
           {/* Logo */}
           <div className="flex justify-center p-6 border-b">

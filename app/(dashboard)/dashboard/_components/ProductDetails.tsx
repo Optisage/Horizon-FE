@@ -52,6 +52,7 @@ import {
 import { useAppSelector } from "@/redux/hooks";
 import dayjs from "dayjs";
 import ExportToSheetsButton from "@/utils/exportGoogle";
+import { ImSpinner9 } from "react-icons/im";
 
 interface ProductDetailsProps {
   asin: string;
@@ -61,6 +62,7 @@ interface ProductDetailsProps {
 interface BuyboxItem {
   seller: string;
   seller_id: string;
+  seller_type: string;
   rating: number;
   listing_price: number;
   weight_percentage: number;
@@ -101,6 +103,28 @@ interface MergedDataPoint {
   amazon: number | null;
 }
 
+interface ProfitabilityData {
+  referralFee: number;
+  fulfillmentType: string;
+  fullfillmentFee: number;
+  closingFee: number;
+  storageFee: number;
+  prepFee: string | number;
+  shippingFee: string | number;
+  digitalServicesFee: number;
+  miscFee: string | number;
+  minRoi: number;
+  minProfit: number;
+  profitAmount: number;
+  maxCost: number;
+  totalFees: number;
+  vatOnFees: number;
+  discount: number;
+  profitMargin: number;
+  breakevenSalePrice: number;
+  estimatedAmzPayout: number;
+}
+
 const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
   const [searchValue, setSearchValue] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
@@ -111,6 +135,8 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
   const [isPaginationLoading, setIsPaginationLoading] = useState(false);
   const [nextPageToken, setNextPageToken] = useState<string | null>(null);
 
+  const [itemsToShow, setItemsToShow] = useState(10); // Show 10 items
+  const [loading, setLoading] = useState(false); // Add loading state
   const [costPrice, setCostPrice] = useState<string>("");
   // const [salePrice, setSalePrice] = useState<string>("");
   const [storageMonths, setStorageMonths] = useState(0);
@@ -153,6 +179,12 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
   const [calculateProfitability, { isLoading: isLoadingProfitability }] =
     useCalculateProfitablilityMutation();
 
+  const [responseData, setResponseData] = useState({
+    fba: null,
+    fbm: null,
+  });
+  const [isSwitching, setIsSwitching] = useState(false);
+
   // calculating profitability
   const handleCalculateProfitability = async () => {
     const body = {
@@ -162,7 +194,6 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
       currencyCode: currencyCode,
       storage: storageMonths,
       costPrice: costPrice,
-      // salePrice: salePrice,
       salePrice: buyboxWinnerPrice,
       pointsNumber: 0,
       pointsAmount: 0,
@@ -171,28 +202,16 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
     try {
       const response = await calculateProfitability({ body }).unwrap();
       if (response.status === 200) {
-        // Update state with the response data
-        setFees({
-          referralFee: response.data.referralFee,
-          fulfillmentType: response.data.fulfillmentType,
-          fullfillmentFee: response.data.fullfillmentFee,
-          closingFee: response.data.closingFee,
-          storageFee: response.data.storageFee,
-          prepFee: parseFloat(response.data.prepFee),
-          shippingFee: parseFloat(response.data.shippingFee),
-          digitalServicesFee: response.data.digitalServicesFee,
-          miscFee: parseFloat(response.data.miscFee),
+        // Store both FBA and FBM data in state
+        setResponseData({
+          fba: response.data.fba,
+          fbm: response.data.fbm,
         });
-        setMinROI(response.data.minRoi);
-        setMinProfit(response.data.minProfit);
-        setProfitAmount(response.data.profitAmount);
-        setMaxCost(response.data.maxCost);
-        setTotalFees(response.data.totalFees);
-        setVatOnFees(response.data.vatOnFees);
-        setDiscount(response.data.discount);
-        setProfitMargin(response.data.profitMargin);
-        setBreakEvenPrice(response.data.breakevenSalePrice);
-        setEstimatedPayout(response.data.estimatedAmzPayout);
+
+        // Set initial data based on the selected fulfillmentType
+        const data =
+          fulfillmentType === "FBA" ? response.data.fba : response.data.fbm;
+        updateUIWithData(data);
       }
     } catch (error) {
       console.error("Failed to calculate profitability:", error);
@@ -200,9 +219,35 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
     }
   };
 
+  // Helper function to update UI with selected data
+  const updateUIWithData = (data: ProfitabilityData): void => {
+    setFees({
+      referralFee: data.referralFee,
+      fulfillmentType: data.fulfillmentType,
+      fullfillmentFee: data.fullfillmentFee,
+      closingFee: data.closingFee,
+      storageFee: data.storageFee,
+      prepFee: parseFloat(data.prepFee as string),
+      shippingFee: parseFloat(data.shippingFee as string),
+      digitalServicesFee: data.digitalServicesFee,
+      miscFee: parseFloat(data.miscFee as string),
+    });
+    setMinROI(data.minRoi);
+    setMinProfit(data.minProfit);
+    setProfitAmount(data.profitAmount);
+    setMaxCost(data.maxCost);
+    setTotalFees(data.totalFees);
+    setVatOnFees(data.vatOnFees);
+    setDiscount(data.discount);
+    setProfitMargin(data.profitMargin);
+    setBreakEvenPrice(data.breakevenSalePrice);
+    setEstimatedPayout(data.estimatedAmzPayout);
+  };
+
   const [activeTab4, setActiveTab4] = useState<
     "current" | "30" | "90" | "180" | "all"
   >("current");
+  const [isRefetching, setIsRefetching] = useState(false);
   const [activeTab5, setActiveTab5] = useState("offers");
 
   const router = useRouter();
@@ -258,12 +303,6 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
     itemAsin: asin,
     date: selectedDate.format("YYYY-MM"),
   });
-
-  // const handleDateChange = (date: dayjs.Dayjs | [dayjs.Dayjs, dayjs.Dayjs]) => {
-  //   if (!Array.isArray(date)) {
-  //     setSelectedDate(date);
-  //   }
-  // };
 
   const handleDateChange = (date: dayjs.Dayjs | [dayjs.Dayjs, dayjs.Dayjs]) => {
     if (Array.isArray(date)) {
@@ -389,6 +428,20 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
     estTimeToSale: rankings?.estimated_time_to_sale ?? "N/A",
   };
 
+  const handleRefetch = async () => {
+    setIsRefetching(true);
+    try {
+      await refetch();
+    } finally {
+      // Add a slight delay so the user can see the refresh animation
+      setTimeout(() => {
+        setIsRefetching(false);
+      }, 500);
+    }
+  };
+
+  const isLoadingRefetch = isLoadingRankings || isRefetching;
+
   const offersData = {
     offers: buyboxDetails.map((offer: BuyboxItem, index: number) => ({
       id: index + 1,
@@ -398,6 +451,7 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
       buyboxShare: `${offer.weight_percentage}%`,
       leader: offer.is_buybox_winner,
       seller_id: offer.seller_id,
+      seller_type: offer.seller_type,
     })),
   };
 
@@ -411,6 +465,7 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
       seller: seller.seller,
       rating: seller.rating,
       sellerId: seller.seller_id,
+      seller_type: seller.seller_type,
       avgPrice: `${seller.seller_feedback?.avg_price?.toFixed(2) ?? "N/A"}`,
       won: `${seller.seller_feedback?.percentage_won ?? 0}%`,
       lastWon: seller.seller_feedback?.last_won
@@ -418,6 +473,17 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
         : "N/A",
     })
   );
+
+  const displayedOffers = offersData.offers.slice(0, itemsToShow);
+  const displayedFeedback = sellerFeedbackData.slice(0, itemsToShow);
+
+  const handleLoadMore = () => {
+    setLoading(true); // Start loading
+    setTimeout(() => {
+      setItemsToShow(itemsToShow + 10); // Load more items
+      setLoading(false); // Stop loading
+    }, 2000); // Simulate a 2-second delay
+  };
 
   const renderStars = (rating: number | undefined) => {
     const validRating = Math.floor(rating ?? 0);
@@ -461,6 +527,12 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
         </p>
       </div>
     );
+
+  const Loader2 = () => (
+    <div className="flex justify-center items-center py-4">
+      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+    </div>
+  );
 
   return (
     <section className="flex flex-col gap-8 min-h-[50dvh] md:min-h-[80dvh]">
@@ -561,7 +633,7 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
             <div className="flex flex-col gap-5">
               {/* product details */}
               <div className="border border-border px-4 pt-4 rounded-xl flex flex-col gap-4">
-                <div className="grid md:grid-cols-[2fr_5fr] gap-3">
+                <div className="grid xl:grid-cols-[2fr_5fr] gap-3">
                   <div className="size-[150px] overflow-hidden rounded-lg">
                     <Image
                       src={product?.product_image || ProductThumbnail}
@@ -642,7 +714,18 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
                   <div className="flex gap-2">
                     <button
                       type="button"
-                      onClick={() => setFulfillmentType("FBA")}
+                      onClick={() => {
+                        setIsSwitching(true);
+                        setFulfillmentType("FBA");
+
+                        // Simulate a 1-second delay before updating the UI
+                        setTimeout(() => {
+                          if (responseData.fba) {
+                            updateUIWithData(responseData.fba);
+                          }
+                          setIsSwitching(false);
+                        }, 1000);
+                      }}
                       className={`px-3 py-1 rounded-full text-black border ${
                         fulfillmentType === "FBA"
                           ? "bg-[#E7EBFE]"
@@ -653,7 +736,18 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
                     </button>
                     <button
                       type="button"
-                      onClick={() => setFulfillmentType("FBM")}
+                      onClick={() => {
+                        setIsSwitching(true);
+                        setFulfillmentType("FBM");
+
+                        // Simulate a 1.5-second delay before updating the UI
+                        setTimeout(() => {
+                          if (responseData.fbm) {
+                            updateUIWithData(responseData.fbm);
+                          }
+                          setIsSwitching(false);
+                        }, 1000);
+                      }}
                       className={`px-3 py-1 rounded-full text-black border ${
                         fulfillmentType === "FBM"
                           ? "bg-[#E7EBFE]"
@@ -749,32 +843,37 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
                       Total Fees
                     </button>
                   </div>
+                </div>
 
-                  <div className="bg-[#F4F4F5] rounded-xl p-2">
-                    {activeTab === "maximumCost" && (
-                      <div className="space-y-2">
-                        <div className="flex justify-between text-sm">
-                          <span className="text-[#595959]">Min. ROI</span>
-                          <span className="font-semibold text-black">
-                            {minROI || 0}%
-                          </span>
+                {isSwitching ? (
+                  <Loader2 />
+                ) : (
+                  <>
+                    <div className="bg-[#F4F4F5] rounded-xl p-2">
+                      {activeTab === "maximumCost" && (
+                        <div className="space-y-2">
+                          <div className="flex justify-between text-sm">
+                            <span className="text-[#595959]">Min. ROI</span>
+                            <span className="font-semibold text-black">
+                              {minROI || 0}%
+                            </span>
+                          </div>
+                          <div className="flex justify-between text-sm">
+                            <span className="text-[#595959]">Min. Profit</span>
+                            <span className="font-semibold text-black">
+                              {currencySymbol}
+                              {convertPrice(minProfit.toFixed(2)) || 0}
+                            </span>
+                          </div>
+                          <div className="border-t pt-2 font-semibold flex justify-between">
+                            <span>Maximum Cost</span>
+                            <span>
+                              {currencySymbol}
+                              {convertPrice(maxCost.toFixed(2)) || 0}
+                            </span>
+                          </div>
                         </div>
-                        <div className="flex justify-between text-sm">
-                          <span className="text-[#595959]">Min. Profit</span>
-                          <span className="font-semibold text-black">
-                            $
-                            {minProfit.toFixed(2)}
-                          </span>
-                        </div>
-                        <div className="border-t pt-2 font-semibold flex justify-between">
-                          <span>Maximum Cost</span>
-                          <span>
-                            $
-                            {maxCost.toFixed(2)}
-                          </span>
-                        </div>
-                      </div>
-                    )}
+                      )}
 
                     {activeTab === "totalFees" && (
                       <div className="space-y-2">
@@ -912,140 +1011,207 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
             <div className="flex flex-col gap-5">
               {/* Offers Section */}
               <div className="border border-border flex flex-col rounded-xl max-h-[375px] overflow-scroll">
-                <div className="flex items-center gap-6 font-semibold text-gray-700 p-3">
-                  <button
-                    type="button"
-                    className={`text-lg flex gap-1 items-center border-b-2 ${
-                      activeTab5 === "offers"
-                        ? "border-black"
-                        : "border-transparent"
-                    }`}
-                    onClick={() => setActiveTab5("offers")}
-                  >
-                    <HiOutlineUsers className="size-5" /> Offers
-                  </button>
-                  <button
-                    type="button"
-                    className={`text-lg flex gap-1 items-center border-b-2 ${
-                      activeTab5 === "feedback"
-                        ? "border-black"
-                        : "border-transparent"
-                    }`}
-                    onClick={() => setActiveTab5("feedback")}
-                  >
-                    <MdOutlineInsertChartOutlined className="size-5" /> Seller
-                    Feedback
-                  </button>
+                <div className="flex items-center gap-x-8 gap-y-3 flex-wrap p-3">
+                  <div className="flex items-center gap-6 font-semibold text-gray-700">
+                    <button
+                      type="button"
+                      className={`text-lg flex gap-1 items-center border-b-2 ${
+                        activeTab5 === "offers"
+                          ? "border-black"
+                          : "border-transparent"
+                      }`}
+                      onClick={() => setActiveTab5("offers")}
+                    >
+                      <HiOutlineUsers className="size-5" /> Offers
+                    </button>
+                    <button
+                      type="button"
+                      className={`text-lg flex gap-1 items-center border-b-2 ${
+                        activeTab5 === "feedback"
+                          ? "border-black"
+                          : "border-transparent"
+                      }`}
+                      onClick={() => setActiveTab5("feedback")}
+                    >
+                      <MdOutlineInsertChartOutlined className="size-5" /> Seller
+                      Feedback
+                    </button>
+                  </div>
+                  {/* Legend */}
+                  <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2 text-sm">
+                      <span className="size-2 rounded-sm bg-black" />
+                      <span>FBA</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm">
+                      <span className="size-2 rounded-sm bg-[#00E4E4]" />
+                      <span>FBM</span>
+                    </div>
+                  </div>
                 </div>
 
                 {activeTab5 === "offers" ? (
-                  <table className="w-full border-collapse text-sm">
-                    <thead>
-                      <tr className="border-b text-left bg-[#F7F7F7]">
-                        <th className="p-3">S/N</th>
-                        <th className="p-3">Seller</th>
-                        <th className="p-3">Stock</th>
-                        <th className="p-3">Price</th>
-                        <th className="p-3">Buybox Share</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {offersData.offers.length > 0 ? (
-                        offersData.offers.map((offer) => (
-                          <tr key={offer.id} className="border-b">
-                            <td className="p-3">{offer.id}</td>
-                            <td className="p-3">
-                              <div
-                                onClick={() =>
-                                  router.push(`/seller/${offer.seller_id}`)
-                                }
-                                className="cursor-pointer"
-                              >
-                                {offer.seller}
-                                {offer.leader && (
-                                  <span className="text-xs text-primary block">
-                                    BuyBox Leader
-                                  </span>
-                                )}
-                              </div>
-                            </td>
-                            <td className="p-3">{offer.stock}</td>
-                            <td className="p-3">
-                              $
-                              {offer.price}
-                            </td>
-                            <td className="p-3 flex gap-1 items-center">
-                              {offer.buyboxShare}
-                              <div className="relative w-20 h-2 bg-gray-200 rounded-full">
+                  <>
+                    <table className="w-full border-collapse text-sm">
+                      <thead>
+                        <tr className="border-b text-left bg-[#F7F7F7]">
+                          <th className="p-3">S/N</th>
+                          <th className="p-3">Seller</th>
+                          <th className="p-3">Stock</th>
+                          <th className="p-3">Price</th>
+                          <th className="p-3">Buybox Share</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {displayedOffers.length > 0 ? (
+                          displayedOffers.map((offer) => (
+                            <tr key={offer.id} className="border-b">
+                              <td className="p-3">{offer.id}</td>
+                              <td className="py-3">
                                 <div
-                                  className="absolute top-0 left-0 h-2 bg-green-500 rounded-full"
-                                  style={{ width: offer.buyboxShare }}
-                                />
-                              </div>
-                            </td>
-                          </tr>
-                        ))
-                      ) : (
-                        <tr>
-                          <td
-                            colSpan={5}
-                            className="p-3 py-8 text-center text-gray-500"
-                          >
-                            No offers available.
-                          </td>
-                        </tr>
-                      )}
-                    </tbody>
-                  </table>
-                ) : (
-                  <table className="w-full border-collapse text-sm">
-                    <thead>
-                      <tr className="border-b text-left bg-[#F7F7F7]">
-                        <th className="p-3">S/N</th>
-                        <th className="p-3">Seller</th>
-                        <th className="p-3">Avg. Price</th>
-                        <th className="p-3">Won</th>
-                        <th className="p-3">Last Won</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {sellerFeedbackData.length > 0 ? (
-                        sellerFeedbackData.map((seller) => (
-                          <tr key={seller.id} className="border-b">
-                            <td className="p-3">{seller.id}</td>
-                            <td className="p-3">
-                              <div
-                                onClick={() =>
-                                  router.push(`/seller/${seller.sellerId}`)
-                                }
-                                className="cursor-pointer"
-                              >
-                                {seller.seller}
-                                <div className="flex">
-                                  {renderStars(seller.rating)}
+                                  onClick={() =>
+                                    router.push(`/seller/${offer.seller_id}`)
+                                  }
+                                  className="cursor-pointer flex flex-col gap-0.5 flex-grow"
+                                >
+                                  <span className="flex items-center gap-1">
+                                    <span
+                                      className={`size-2 rounded-sm ${
+                                        offer.seller_type === "FBA"
+                                          ? "bg-black"
+                                          : "bg-[#00E4E4]"
+                                      }`}
+                                    />
+                                    <p className="truncate">{offer.seller}</p>
+                                  </span>
+                                  {offer.leader && (
+                                    <span className="text-xs text-primary block">
+                                      BuyBox Leader
+                                    </span>
+                                  )}
                                 </div>
-                              </div>
+                              </td>
+                              <td className="p-3">{offer.stock}</td>
+                              <td className="p-3">
+                                {currencySymbol}
+                                {convertPrice(offer.price)}
+                              </td>
+                              <td className="px-3 py-4 flex gap-1 items-center h-full">
+                                {offer.buyboxShare}
+                                <div className="w-20 h-2 bg-gray-200 rounded-full">
+                                  <div
+                                    className="h-2 bg-green-500 rounded-full"
+                                    style={{ width: offer.buyboxShare }}
+                                  />
+                                </div>
+                              </td>
+                            </tr>
+                          ))
+                        ) : (
+                          <tr>
+                            <td
+                              colSpan={5}
+                              className="p-3 py-8 text-center text-gray-500"
+                            >
+                              No offers available.
                             </td>
-                            <td className="p-3">
-                              $
-                              {seller.avgPrice}
-                            </td>
-                            <td className="p-3">{seller.won}</td>
-                            <td className="p-3">{seller.lastWon}</td>
                           </tr>
-                        ))
-                      ) : (
-                        <tr>
-                          <td
-                            colSpan={5}
-                            className="p-3 py-8 text-center text-gray-500"
-                          >
-                            No seller feedback available.
-                          </td>
+                        )}
+                      </tbody>
+                    </table>
+                    {offersData.offers.length > itemsToShow && (
+                      <button
+                        onClick={handleLoadMore}
+                        className="px-4 py-2 bg-primary text-white rounded hover:bg-primary-hover flex items-center justify-center gap-2"
+                        disabled={loading}
+                      >
+                        {loading ? (
+                          <>
+                            <ImSpinner9 className="animate-spin size-5" />
+                            {/* Loading... */}
+                          </>
+                        ) : (
+                          "Load More"
+                        )}
+                      </button>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    <table className="w-full border-collapse text-sm">
+                      <thead>
+                        <tr className="border-b text-left bg-[#F7F7F7]">
+                          <th className="p-3">S/N</th>
+                          <th className="p-3">Seller</th>
+                          <th className="p-3">Avg. Price</th>
+                          <th className="p-3">Won</th>
+                          <th className="p-3">Last Won</th>
                         </tr>
-                      )}
-                    </tbody>
-                  </table>
+                      </thead>
+                      <tbody>
+                        {displayedFeedback.length > 0 ? (
+                          displayedFeedback.map((seller) => (
+                            <tr key={seller.id} className="border-b">
+                              <td className="p-3">{seller.id}</td>
+                              <td className="p-3">
+                                <div
+                                  onClick={() =>
+                                    router.push(`/seller/${seller.sellerId}`)
+                                  }
+                                  className="cursor-pointer flex flex-col"
+                                >
+                                  <span className="flex items-center gap-1">
+                                    <span
+                                      className={`size-2 rounded-sm ${
+                                        seller.seller_type === "FBA"
+                                          ? "bg-black"
+                                          : "bg-[#00E4E4]"
+                                      }`}
+                                    />
+                                    <p className="truncate">{seller.seller}</p>
+                                  </span>
+                                  <div className="flex">
+                                    {renderStars(seller.rating)}
+                                  </div>
+                                </div>
+                              </td>
+                              <td className="p-3">
+                                {currencySymbol}
+                                {convertPrice(seller.avgPrice)}
+                              </td>
+                              <td className="p-3">{seller.won}</td>
+                              <td className="p-3">{seller.lastWon}</td>
+                            </tr>
+                          ))
+                        ) : (
+                          <tr>
+                            <td
+                              colSpan={5}
+                              className="p-3 py-8 text-center text-gray-500"
+                            >
+                              No seller feedback available.
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                    {sellerFeedbackData.length > itemsToShow && (
+                      <button
+                        onClick={handleLoadMore}
+                        className="px-4 py-2 bg-primary text-white rounded hover:bg-primary-hover flex items-center justify-center gap-2"
+                        disabled={loading}
+                      >
+                        {loading ? (
+                          <>
+                            <ImSpinner9 className="animate-spin size-5" />
+                            {/* Loading... */}
+                          </>
+                        ) : (
+                          "Load More"
+                        )}
+                      </button>
+                    )}
+                  </>
                 )}
               </div>
 
@@ -1056,17 +1222,13 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
                   <button
                     type="button"
                     className="flex gap-1.5 items-center px-3 py-1.5 rounded-md hover:bg-gray-100 outline-none active:scale-95 duration-200"
-                    onClick={() => refetch()} // Trigger refetch
-                    disabled={isLoadingRankings} // Disable button during loading
+                    onClick={handleRefetch}
+                    disabled={isLoadingRefetch}
                   >
-                    {isLoadingRankings ? (
-                      <div className="animate-spin">
-                        <IoMdRefresh className="size-5" />
-                      </div>
-                    ) : (
+                    <div className={isLoadingRefetch ? "animate-spin" : ""}>
                       <IoMdRefresh className="size-5" />
-                    )}
-                    Refresh
+                    </div>
+                    {isRefetching ? "Refreshing..." : "Refresh"}
                   </button>
                 </div>
 
@@ -1085,15 +1247,16 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
                           tab as "current" | "30" | "90" | "180" | "all"
                         )
                       }
+                      disabled={isLoadingRefetch}
                     >
                       {tab}
                     </button>
                   ))}
                 </div>
 
-                {isLoadingRankings ? (
+                {isLoadingRefetch ? (
                   <div className="h-40 flex items-center justify-center font-medium">
-                    Loading...
+                    {isRefetching ? "Refreshing..." : "Loading..."}
                   </div>
                 ) : rankingsError ? (
                   <div className="h-40 flex items-center justify-center text-red-500 font-medium">

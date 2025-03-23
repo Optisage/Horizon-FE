@@ -11,15 +11,15 @@ import { setIpAlert, setIpIssues } from "@/redux/slice/globalSlice";
 interface prop {
   itemAsin: string;
   marketplaceId: number;
-  productName: string
+  productName: string;
 }
 
-const AlertsDrawer = ({ itemAsin, marketplaceId,productName  }: prop) => {
-   const dispatch = useDispatch();
+const AlertsDrawer = ({ itemAsin, marketplaceId, productName }: prop) => {
+  const dispatch = useDispatch();
   const [open, setOpen] = useState(false);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [ipAlertData, setIpAlertData] = useState<any>(null);
-  
+
   const showDrawer = () => setOpen(true);
   const onClose = () => setOpen(false);
 
@@ -29,14 +29,19 @@ const AlertsDrawer = ({ itemAsin, marketplaceId,productName  }: prop) => {
     const fetchData = async () => {
       if (marketplaceId && itemAsin) {
         try {
-          const response = await getIpAlert({ itemAsin, marketplaceId }).unwrap();
+          const response = await getIpAlert({
+            itemAsin,
+            marketplaceId,
+          }).unwrap();
           setIpAlertData(response.data);
-          dispatch(setIpAlert({
-            setIpIssue: response?.data?.ip_analysis?.issues,
-            eligibility: response?.data?.eligible_to_sell
-          }));
-          
-          dispatch(setIpIssues(response?.data?.ip_analysis?.issues)); 
+          dispatch(
+            setIpAlert({
+              setIpIssue: response?.data?.ip_analysis?.issues,
+              eligibility: response?.data?.eligible_to_sell,
+            })
+          );
+
+          dispatch(setIpIssues(response?.data?.ip_analysis?.issues));
         } catch (error) {
           console.error("Error fetching IP alert:", error);
         }
@@ -85,7 +90,7 @@ const AlertsDrawer = ({ itemAsin, marketplaceId,productName  }: prop) => {
         <div className="p-6">
           <div className="border border-border rounded-xl shadow-sm p-4">
             <h3 className="text-lg font-semibold text-gray-900">
-             {productName}
+              {productName}
             </h3>
             <p className="text-sm text-gray-500 mt-1">
               ASIN:
@@ -93,13 +98,13 @@ const AlertsDrawer = ({ itemAsin, marketplaceId,productName  }: prop) => {
             </p>
 
             {ipAlertData?.eligible_to_sell ? (
-              <h4 className="text-2xl font-semibold mt-4">
-                This Product is Eligible to Sell
+              <h4 className="text-lg font-semibold mt-4 text-green-500">
+                You are authorised to sell this product
               </h4>
             ) : (
               <div className="mt-4 flex flex-col gap-4">
-                <h4 className="text-2xl font-semibold text-[#FF0000]">
-                  This Product is not eligible to sell
+                <h4 className="text-lg font-semibold text-[#FF0000]">
+                  You are not authorized to sell this product
                 </h4>
                 <span className=" hidden">
                   <button
