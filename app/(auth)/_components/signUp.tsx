@@ -179,7 +179,7 @@ const SignUp = () => {
             <label htmlFor="termsAccepted" className="text-sm text-neutral-700">
               I agree to the{" "}
               <Link
-                href="https://optisage.ai/terms-of-use"
+                href="http://getnoticed.ca/terms"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-primary hover:underline"
