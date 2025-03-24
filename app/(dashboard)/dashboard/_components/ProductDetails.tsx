@@ -138,7 +138,7 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
   const [itemsToShow, setItemsToShow] = useState(10); // Show 10 items
   const [loading, setLoading] = useState(false); // Add loading state
   const [costPrice, setCostPrice] = useState<string>("");
-  // const [salePrice, setSalePrice] = useState<string>("");
+  const [salePrice, setSalePrice] = useState<string>("");
   const [storageMonths, setStorageMonths] = useState(0);
   const [fulfillmentType, setFulfillmentType] = useState("FBA");
   const [activeTab, setActiveTab] = useState("maximumCost");
@@ -194,7 +194,7 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
       currencyCode: currencyCode,
       storage: storageMonths,
       costPrice: costPrice,
-      salePrice: buyboxWinnerPrice,
+      salePrice: salePrice || buyboxWinnerPrice, // Use price if entered, or else, fallback to the buybox winner price 🙂
       pointsNumber: 0,
       pointsAmount: 0,
     };
@@ -252,9 +252,7 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
 
   const router = useRouter();
 
-  const { currencyCode } =
-    useAppSelector((state) => state.global) || {};
- 
+  const { currencyCode } = useAppSelector((state) => state.global) || {};
 
   const {
     data: buyboxData,
@@ -458,6 +456,10 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
   // for sales price in calculator
   const buyboxWinnerPrice =
     buyboxDetails.find((offer) => offer.is_buybox_winner)?.listing_price ?? 0;
+
+  const handlePriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSalePrice(e.target.value);
+  };
 
   const sellerFeedbackData = buyboxDetails.map(
     (seller: BuyboxItem, index: number) => ({
@@ -779,9 +781,8 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
                       type="number"
                       placeholder="0"
                       // value={salePrice}
-                      value={buyboxWinnerPrice}
-                      disabled
-                      // onChange={(e) => setSalePrice(e.target.value)}
+                      defaultValue={buyboxWinnerPrice}
+                      onChange={handlePriceChange}
                       className="px-4 py-1.5 w-full border rounded outline-none focus:border-black"
                     />
                   </div>
@@ -861,69 +862,58 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
                           <div className="flex justify-between text-sm">
                             <span className="text-[#595959]">Min. Profit</span>
                             <span className="font-semibold text-black">
-                              $
-                              {minProfit.toFixed(2)}
+                              ${minProfit.toFixed(2)}
                             </span>
                           </div>
                           <div className="border-t pt-2 font-semibold flex justify-between">
                             <span>Maximum Cost</span>
-                            <span>
-                            $
-                              {maxCost.toFixed(2)}
-                            </span>
+                            <span>${maxCost.toFixed(2)}</span>
                           </div>
                         </div>
                       )}
 
-                    {activeTab === "totalFees" && (
-                      <div className="space-y-2">
-                        {Object.entries(fees).map(([key, value]) => (
-                          <div
-                            key={key}
-                            className="flex justify-between text-sm"
-                          >
-                            <span className="text-[#595959]">
-                              {key
-                                .replace(/([A-Z])/g, " $1")
-                                .replace(/^./, (str) => str.toUpperCase())}
-                            </span>
-                            <span className="font-semibold text-black">
-                              {typeof value === "number"
-                                ? `$ ${
-                                    value.toFixed(2)
-                                  }`
-                                : value}
-                            </span>
-                          </div>
-                        ))}
+                      {activeTab === "totalFees" && (
+                        <div className="space-y-2">
+                          {Object.entries(fees).map(([key, value]) => (
+                            <div
+                              key={key}
+                              className="flex justify-between text-sm"
+                            >
+                              <span className="text-[#595959]">
+                                {key
+                                  .replace(/([A-Z])/g, " $1")
+                                  .replace(/^./, (str) => str.toUpperCase())}
+                              </span>
+                              <span className="font-semibold text-black">
+                                {typeof value === "number"
+                                  ? `$ ${value.toFixed(2)}`
+                                  : value}
+                              </span>
+                            </div>
+                          ))}
 
-                        <div className="border-t pt-2 font-semibold flex justify-between">
-                          <span>Total Fees</span>
-                          <span>
-                            $
-                            {totalFees.toFixed(2)}
-                          </span>
+                          <div className="border-t pt-2 font-semibold flex justify-between">
+                            <span>Total Fees</span>
+                            <span>${totalFees.toFixed(2)}</span>
+                          </div>
                         </div>
-                      </div>
-                    )}
-                  </div>
-                </>)}
-                
+                      )}
+                    </div>
+                  </>
+                )}
 
                 {/* Summary Items */}
                 <div className="flex flex-col gap-2 text-[#595959]">
                   <div className="flex justify-between text-sm">
                     <span>VAT on Fees</span>
                     <span className="font-semibold text-black">
-                      $
-                      {vatOnFees.toFixed(2)}
+                      ${vatOnFees.toFixed(2)}
                     </span>
                   </div>
                   <div className="flex justify-between text-sm">
                     <span>Discount</span>
                     <span className="font-semibold text-black">
-                      $
-                      {discount.toFixed(2)}
+                      ${discount.toFixed(2)}
                     </span>
                   </div>
                   <div className="flex justify-between text-sm">
@@ -935,15 +925,13 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
                   <div className="flex justify-between text-sm">
                     <span>Breakeven Sale Price</span>
                     <span className="font-semibold text-black">
-                   $
-                      {breakEvenPrice.toFixed(2)}
+                      ${breakEvenPrice.toFixed(2)}
                     </span>
                   </div>
                   <div className="flex justify-between text-sm">
                     <span>Estimated Amz. Payout</span>
                     <span className="font-semibold text-black">
-                      $
-                      {estimatedPayout.toFixed(2)}
+                      ${estimatedPayout.toFixed(2)}
                     </span>
                   </div>
                 </div>
@@ -955,9 +943,7 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
                   <InfoCard
                     icon={<PriceTagIcon />}
                     title="Buy Box Price"
-                    value={`$ ${
-                      extra?.buybox_price ?? "0"
-                    }`}
+                    value={`$ ${extra?.buybox_price ?? "0"}`}
                     bgColor="#F0FFF0"
                   />
                   <InfoCard
@@ -1093,10 +1079,7 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
                                 </div>
                               </td>
                               <td className="p-3">{offer.stock}</td>
-                              <td className="p-3">
-                                $
-                                {offer.price}
-                              </td>
+                              <td className="p-3">${offer.price}</td>
                               <td className="px-3 py-4 flex gap-1 items-center h-full">
                                 {offer.buyboxShare}
                                 <div className="w-20 h-2 bg-gray-200 rounded-full">
@@ -1176,10 +1159,7 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
                                   </div>
                                 </div>
                               </td>
-                              <td className="p-3">
-                                $
-                                {seller.avgPrice}
-                              </td>
+                              <td className="p-3">${seller.avgPrice}</td>
                               <td className="p-3">{seller.won}</td>
                               <td className="p-3">{seller.lastWon}</td>
                             </tr>
@@ -1288,29 +1268,25 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
                       <div className="flex justify-between py-1">
                         <span>Buy Box</span>
                         <span className="font-semibold text-black">
-                          $
-                          {ranks.buyBox}
+                          ${ranks.buyBox}
                         </span>
                       </div>
                       <div className="flex justify-between py-1">
                         <span>Amazon</span>
                         <span className="font-semibold text-black">
-                        $
-                          {ranks.amazon}
+                          ${ranks.amazon}
                         </span>
                       </div>
                       <div className="flex justify-between py-1">
                         <span>Lowest FBA</span>
                         <span className="font-semibold text-black">
-                        $
-                          {ranks.lowestFBA}
+                          ${ranks.lowestFBA}
                         </span>
                       </div>
                       <div className="flex justify-between py-1">
                         <span>Lowest FBM</span>
                         <span className="font-semibold text-black">
-                        $
-                          {ranks.lowestFBM}
+                          ${ranks.lowestFBM}
                         </span>
                       </div>
                       <div className="flex justify-between py-1">
