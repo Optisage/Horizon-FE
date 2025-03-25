@@ -20,7 +20,7 @@ import {
 import AlertsDrawer from "./AlertsDrawer";
 import { useRouter } from "next/navigation";
 import CustomDatePicker from "./CustomDatePicker";
-import Loader from "@/utils/loader";
+// import Loader from "@/utils/loader";
 import SalesStats from "./SalesStats";
 import { Product } from "./Dashboard";
 
@@ -53,6 +53,7 @@ import { useAppSelector } from "@/redux/hooks";
 import dayjs from "dayjs";
 import ExportToSheetsButton from "@/utils/exportGoogle";
 import { ImSpinner9 } from "react-icons/im";
+import CircularLoader from "@/utils/circularLoader";
 
 interface ProductDetailsProps {
   asin: string;
@@ -395,7 +396,15 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
     isLoadingRankings ||
     isPaginationLoading
   )
-    return <Loader />;
+    // return <Loader />;
+    return (
+      <CircularLoader
+        duration={3000}
+        color="#18CB96"
+        size={64}
+        strokeWidth={4}
+      />
+    );
 
   const product = data?.data;
   const buybox: BuyboxItem[] = buyboxData?.data?.buybox ?? [];
@@ -518,7 +527,15 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
       : [];
 
   if (isLoadingBuybox || isLoading || isLoadingRankings || isLoadingSearch)
-    return <Loader />;
+    // return <Loader />;
+    return (
+      <CircularLoader
+        duration={3000}
+        color="#18CB96"
+        size={64}
+        strokeWidth={4}
+      />
+    );
 
   if (error)
     return (

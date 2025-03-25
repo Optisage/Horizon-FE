@@ -8,7 +8,8 @@ import UFO from "@/public/assets/svg/ufo.svg";
 import SalesStats from "./SalesStats";
 import { useSearchItemsQuery } from "@/redux/api/productsApi";
 import { useAppSelector } from "@/redux/hooks";
-import Loader from "@/utils/loader";
+
+import CircularLoader from "@/utils/circularLoader";
 
 export interface Product {
   asin: string;
@@ -143,7 +144,14 @@ const Dashboard = () => {
       <SearchInput value={searchValue} onChange={setSearchValue} />
       {/* <h2>Selected Marketplace ID: {marketplaceId || "N/A"}</h2> */}
 
-      {(isLoading || isFetching) && <Loader />}
+      {(isLoading || isFetching) && (
+        <CircularLoader
+          duration={1000}
+          color="#18CB96"
+          size={64}
+          strokeWidth={4}
+        />
+      )}
 
       {error && (
         <div className="text-center text-red-500 mt-4">
@@ -219,7 +227,14 @@ const Dashboard = () => {
                 </div>
               </div>
             ))}
-            {isPaginationLoading && <Loader />}
+            {isPaginationLoading && (
+              <CircularLoader
+                duration={2000}
+                color="#18CB96"
+                size={64}
+                strokeWidth={4}
+              />
+            )}
           </div>
 
           <CustomPagination
