@@ -123,6 +123,10 @@ const History = () => {
   const isLoading = historyLoading || productsLoading;
   const error = historyError || productsError;
 
+  const totalResults = debouncedSearch
+    ? productsData?.pagination?.number_of_results
+    : historyData?.pagination?.number_of_results;
+
   // Process the search history data based on the response
   const historyItems: HistoryProduct[] = historyData?.data
     ? // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -256,9 +260,10 @@ const History = () => {
                         </p>
                       )}
                       <p className="text-sm">By ASIN: {item.asin}</p>
-                      {item.category && item.category !== "NaN" && (
+                      {item.category && (
                         <p className="text-sm">
-                          {item.category} | <SalesStats product={item} />
+                          {item.category === "NaN" ? "N/A" : item.category} |{" "}
+                          <SalesStats product={item} />
                         </p>
                       )}
                       {item.vendor && (
@@ -281,18 +286,29 @@ const History = () => {
             )}
           </div>
 
-          <CustomPagination
-            onNext={() => {
-              setIsPaginationLoading(true);
-              setCurrentPageToken(nextPageToken);
-            }}
-            onPrevious={() => {
-              setIsPaginationLoading(true);
-              setCurrentPageToken(previousPageToken);
-            }}
-            hasNext={!!nextPageToken}
-            hasPrevious={!!previousPageToken}
-          />
+          <div className="flex flex-col-reverse md:flex-row sm:gap-4 items-center">
+            <p className="text-sm">
+              Showing{" "}
+              <span className="font-semibold">{displayItems.length}</span> of{" "}
+              <span className="font-semibold">{totalResults || 0}</span>{" "}
+              products
+            </p>
+
+            <div className="flex-1 flex justify-center">
+              <CustomPagination
+                onNext={() => {
+                  setIsPaginationLoading(true);
+                  setCurrentPageToken(nextPageToken);
+                }}
+                onPrevious={() => {
+                  setIsPaginationLoading(true);
+                  setCurrentPageToken(previousPageToken);
+                }}
+                hasNext={!!nextPageToken}
+                hasPrevious={!!previousPageToken}
+              />
+            </div>
+          </div>
         </main>
       )}
     </section>
