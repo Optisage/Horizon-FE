@@ -11,7 +11,8 @@ import {
   useSearchProductsHistoryQuery,
 } from "@/redux/api/productsApi";
 import { useAppSelector } from "@/redux/hooks";
-import Loader from "@/utils/loader";
+import CircularLoader from "@/utils/circularLoader";
+import SalesStats from "../../dashboard/_components/SalesStats";
 
 export interface HistoryProduct {
   asin: string;
@@ -170,7 +171,16 @@ const History = () => {
         />
       </div>
 
-      {isLoading && <Loader />}
+      {isLoading && (
+        <div className="h-[50dvh] flex justify-center items-center">
+          <CircularLoader
+            duration={1000}
+            color="#18CB96"
+            size={64}
+            strokeWidth={4}
+          />
+        </div>
+      )}
 
       {error && (
         <div className="text-center text-red-500 mt-4">
@@ -199,7 +209,7 @@ const History = () => {
       )}
 
       {displayItems.length > 0 && (
-        <main className="flex flex-col gap-20 justify-between h-full">
+        <main className="flex flex-col gap-10 justify-between h-full">
           <div className="p-2 rounded-lg border border-border flex flex-col divide-y divide-[#E4E4E7]">
             {Object.entries(groupedItems).map(([date, items]) => (
               <div key={date} className="flex flex-col">
@@ -247,7 +257,9 @@ const History = () => {
                       )}
                       <p className="text-sm">By ASIN: {item.asin}</p>
                       {item.category && item.category !== "NaN" && (
-                        <p className="text-sm">{item.category}</p>
+                        <p className="text-sm">
+                          {item.category} | <SalesStats product={item} />
+                        </p>
                       )}
                       {item.vendor && (
                         <p className="text-sm">Vendor: {item.vendor}</p>
@@ -257,7 +269,16 @@ const History = () => {
                 ))}
               </div>
             ))}
-            {isPaginationLoading && <Loader />}
+            {isPaginationLoading && (
+              <div className="py-16">
+                <CircularLoader
+                  duration={2000}
+                  color="#18CB96"
+                  size={64}
+                  strokeWidth={4}
+                />
+              </div>
+            )}
           </div>
 
           <CustomPagination
