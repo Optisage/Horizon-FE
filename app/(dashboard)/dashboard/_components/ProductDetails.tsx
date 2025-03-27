@@ -143,11 +143,18 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
   const [storageMonths, setStorageMonths] = useState(0);
   const [fulfillmentType, setFulfillmentType] = useState("FBA");
   const [activeTab, setActiveTab] = useState("maximumCost");
-  const [selectedDate, setSelectedDate] = useState(dayjs());
+  // const [selectedDate, setSelectedDate] = useState(dayjs());
   const [statStartDate, setStatStartDate] = useState(
     dayjs().format("YYYY-MM-DD")
   ); // For date range start
   const [statEndDate, setStatEndDate] = useState(
+    dayjs().add(1, "month").format("YYYY-MM-DD")
+  ); // For date range end
+
+  const [statStartDate2, setStatStartDate2] = useState(
+    dayjs().format("YYYY-MM-DD")
+  ); // For date range start
+  const [statEndDate2, setStatEndDate2] = useState(
     dayjs().add(1, "month").format("YYYY-MM-DD")
   ); // For date range end
 
@@ -300,7 +307,8 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
   } = useGetMarketAnalysisQuery({
     marketplaceId,
     itemAsin: asin,
-    date: selectedDate.format("YYYY-MM"),
+    statStartDate: statStartDate2,
+    statEndDate: statEndDate2,
   });
 
   const handleDateChange = (date: dayjs.Dayjs | [dayjs.Dayjs, dayjs.Dayjs]) => {
@@ -311,7 +319,21 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
       setStatEndDate(endDate.format("YYYY-MM-DD"));
     } else {
       // Handle single date selection
-      setSelectedDate(date);
+      // setSelectedDate(date);
+    }
+  };
+
+  const handleDateChange2 = (
+    date2: dayjs.Dayjs | [dayjs.Dayjs, dayjs.Dayjs]
+  ) => {
+    if (Array.isArray(date2)) {
+      // Handle date range selection
+      const [startDate2, endDate2] = date2;
+      setStatStartDate2(startDate2.format("YYYY-MM-DD"));
+      setStatEndDate2(endDate2.format("YYYY-MM-DD"));
+    } else {
+      // Handle single date selection
+      // setSelectedDate(date);
     }
   };
 
@@ -1337,8 +1359,9 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
 
               {/* Buy Box Analysis */}
               <div className="p-6 border rounded-lg">
-                <h2 className="text-lg font-semibold">Buy Box Analysis</h2>
-                <div className="mt-4">
+                <div className="flex flex-col xl:flex-row gap-4 justify-between xl:items-center">
+                  <h2 className="text-lg font-semibold">Buy Box Analysis</h2>
+
                   <CustomDatePicker isRange onChange={handleDateChange} />
                 </div>
 
@@ -1385,10 +1408,11 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
 
               {/* Market Analysis */}
               <div className="p-6 border rounded-lg">
-                <div className="flex justify-between items-center">
+                <div className="flex flex-col xl:flex-row gap-4 justify-between xl:items-center">
                   <h2 className="text-lg font-semibold">Market Analysis</h2>
                   {/* Date Picker */}
-                  <CustomDatePicker onChange={handleDateChange} />
+
+                  <CustomDatePicker isRange onChange={handleDateChange2} />
                 </div>
 
                 <p className="mt-4 text-black">Price</p>
