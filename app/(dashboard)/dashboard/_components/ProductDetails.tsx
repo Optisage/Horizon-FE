@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { CustomPagination, SearchInput } from "@/app/(dashboard)/_components";
 import Image from "next/image";
-import { message } from "antd";
+import { message, Tooltip as Tooltip2 } from "antd";
 import { CustomSlider as Slider } from "@/lib/AntdComponents";
 import {
   PieChart,
@@ -65,6 +65,7 @@ interface BuyboxItem {
   seller_id: string;
   seller_type: string;
   rating: number;
+  review_count: number;
   listing_price: number;
   weight_percentage: number;
   stock_quantity: number;
@@ -143,11 +144,18 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
   const [storageMonths, setStorageMonths] = useState(0);
   const [fulfillmentType, setFulfillmentType] = useState("FBA");
   const [activeTab, setActiveTab] = useState("maximumCost");
-  const [selectedDate, setSelectedDate] = useState(dayjs());
+  // const [selectedDate, setSelectedDate] = useState(dayjs());
   const [statStartDate, setStatStartDate] = useState(
     dayjs().format("YYYY-MM-DD")
   ); // For date range start
   const [statEndDate, setStatEndDate] = useState(
+    dayjs().add(1, "month").format("YYYY-MM-DD")
+  ); // For date range end
+
+  const [statStartDate2, setStatStartDate2] = useState(
+    dayjs().format("YYYY-MM-DD")
+  ); // For date range start
+  const [statEndDate2, setStatEndDate2] = useState(
     dayjs().add(1, "month").format("YYYY-MM-DD")
   ); // For date range end
 
@@ -300,7 +308,8 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
   } = useGetMarketAnalysisQuery({
     marketplaceId,
     itemAsin: asin,
-    date: selectedDate.format("YYYY-MM"),
+    statStartDate: statStartDate2,
+    statEndDate: statEndDate2,
   });
 
   const handleDateChange = (date: dayjs.Dayjs | [dayjs.Dayjs, dayjs.Dayjs]) => {
@@ -311,7 +320,21 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
       setStatEndDate(endDate.format("YYYY-MM-DD"));
     } else {
       // Handle single date selection
-      setSelectedDate(date);
+      // setSelectedDate(date);
+    }
+  };
+
+  const handleDateChange2 = (
+    date2: dayjs.Dayjs | [dayjs.Dayjs, dayjs.Dayjs]
+  ) => {
+    if (Array.isArray(date2)) {
+      // Handle date range selection
+      const [startDate2, endDate2] = date2;
+      setStatStartDate2(startDate2.format("YYYY-MM-DD"));
+      setStatEndDate2(endDate2.format("YYYY-MM-DD"));
+    } else {
+      // Handle single date selection
+      // setSelectedDate(date);
     }
   };
 
@@ -398,12 +421,14 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
   )
     // return <Loader />;
     return (
-      <CircularLoader
-        duration={3000}
-        color="#18CB96"
-        size={64}
-        strokeWidth={4}
-      />
+      <div className="h-[50dvh] flex justify-center items-center">
+        <CircularLoader
+          duration={3500}
+          color="#18CB96"
+          size={64}
+          strokeWidth={4}
+        />
+      </div>
     );
 
   const product = data?.data;
@@ -449,10 +474,17 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
 
   const isLoadingRefetch = isLoadingRankings || isRefetching;
 
+  // Sort buyboxDetails by price in ascending order
+  const sortedBuyboxDetails = [...buyboxDetails].sort(
+    (a, b) => a.listing_price - b.listing_price
+  );
+
   const offersData = {
-    offers: buyboxDetails.map((offer: BuyboxItem, index: number) => ({
+    offers: sortedBuyboxDetails.map((offer: BuyboxItem, index: number) => ({
       id: index + 1,
       seller: offer.seller,
+      rating: offer.rating,
+      review_count: offer.review_count,
       stock: offer.stock_quantity,
       price: `${offer.listing_price.toFixed(2)}`,
       buyboxShare: `${offer.weight_percentage}%`,
@@ -470,11 +502,12 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
     setSalePrice(e.target.value);
   };
 
-  const sellerFeedbackData = buyboxDetails.map(
+  const sellerFeedbackData = sortedBuyboxDetails.map(
     (seller: BuyboxItem, index: number) => ({
       id: index + 1,
       seller: seller.seller,
       rating: seller.rating,
+      review_count: seller.review_count,
       sellerId: seller.seller_id,
       seller_type: seller.seller_type,
       avgPrice: `${seller.seller_feedback?.avg_price?.toFixed(2) ?? "N/A"}`,
@@ -529,12 +562,14 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
   if (isLoadingBuybox || isLoading || isLoadingRankings || isLoadingSearch)
     // return <Loader />;
     return (
-      <CircularLoader
-        duration={3000}
-        color="#18CB96"
-        size={64}
-        strokeWidth={4}
-      />
+      <div className="h-[50dvh] flex justify-center items-center">
+        <CircularLoader
+          duration={3500}
+          color="#18CB96"
+          size={64}
+          strokeWidth={4}
+        />
+      </div>
     );
 
   if (error)
@@ -1072,28 +1107,33 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
                             <tr key={offer.id} className="border-b">
                               <td className="p-3">{offer.id}</td>
                               <td className="py-3">
-                                <div
-                                  onClick={() =>
-                                    router.push(`/seller/${offer.seller_id}`)
-                                  }
-                                  className="cursor-pointer flex flex-col gap-0.5 flex-grow"
+                                <Tooltip2
+                                  title={`Rating: ${offer.rating} (${offer.review_count})`}
+                                  placement="topLeft"
                                 >
-                                  <span className="flex items-center gap-1">
-                                    <span
-                                      className={`size-2 rounded-sm ${
-                                        offer.seller_type === "FBA"
-                                          ? "bg-black"
-                                          : "bg-[#00E4E4]"
-                                      }`}
-                                    />
-                                    <p className="truncate">{offer.seller}</p>
-                                  </span>
-                                  {offer.leader && (
-                                    <span className="text-xs text-primary block">
-                                      BuyBox Leader
+                                  <div
+                                    onClick={() =>
+                                      router.push(`/seller/${offer.seller_id}`)
+                                    }
+                                    className="cursor-pointer flex flex-col gap-0.5 flex-grow"
+                                  >
+                                    <span className="flex items-center gap-1">
+                                      <span
+                                        className={`size-2 rounded-sm ${
+                                          offer.seller_type === "FBA"
+                                            ? "bg-black"
+                                            : "bg-[#00E4E4]"
+                                        }`}
+                                      />
+                                      <p className="truncate">{offer.seller}</p>
                                     </span>
-                                  )}
-                                </div>
+                                    {offer.leader && (
+                                      <span className="text-xs text-primary block">
+                                        BuyBox Leader
+                                      </span>
+                                    )}
+                                  </div>
+                                </Tooltip2>
                               </td>
                               <td className="p-3">{offer.stock}</td>
                               <td className="p-3">${offer.price}</td>
@@ -1155,26 +1195,33 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
                             <tr key={seller.id} className="border-b">
                               <td className="p-3">{seller.id}</td>
                               <td className="p-3">
-                                <div
-                                  onClick={() =>
-                                    router.push(`/seller/${seller.sellerId}`)
-                                  }
-                                  className="cursor-pointer flex flex-col"
+                                <Tooltip2
+                                  title={`Rating: ${seller.rating} (${seller.review_count})`}
+                                  placement="topLeft"
                                 >
-                                  <span className="flex items-center gap-1">
-                                    <span
-                                      className={`size-2 rounded-sm ${
-                                        seller.seller_type === "FBA"
-                                          ? "bg-black"
-                                          : "bg-[#00E4E4]"
-                                      }`}
-                                    />
-                                    <p className="truncate">{seller.seller}</p>
-                                  </span>
-                                  <div className="flex">
-                                    {renderStars(seller.rating)}
+                                  <div
+                                    onClick={() =>
+                                      router.push(`/seller/${seller.sellerId}`)
+                                    }
+                                    className="cursor-pointer flex flex-col"
+                                  >
+                                    <span className="flex items-center gap-1">
+                                      <span
+                                        className={`size-2 rounded-sm ${
+                                          seller.seller_type === "FBA"
+                                            ? "bg-black"
+                                            : "bg-[#00E4E4]"
+                                        }`}
+                                      />
+                                      <p className="truncate">
+                                        {seller.seller}
+                                      </p>
+                                    </span>
+                                    <div className="flex">
+                                      {renderStars(seller.rating)}
+                                    </div>
                                   </div>
-                                </div>
+                                </Tooltip2>
                               </td>
                               <td className="p-3">${seller.avgPrice}</td>
                               <td className="p-3">{seller.won}</td>
@@ -1333,8 +1380,9 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
 
               {/* Buy Box Analysis */}
               <div className="p-6 border rounded-lg">
-                <h2 className="text-lg font-semibold">Buy Box Analysis</h2>
-                <div className="mt-4">
+                <div className="flex flex-col xl:flex-row gap-4 justify-between xl:items-center">
+                  <h2 className="text-lg font-semibold">Buy Box Analysis</h2>
+
                   <CustomDatePicker isRange onChange={handleDateChange} />
                 </div>
 
@@ -1381,10 +1429,11 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
 
               {/* Market Analysis */}
               <div className="p-6 border rounded-lg">
-                <div className="flex justify-between items-center">
+                <div className="flex flex-col xl:flex-row gap-4 justify-between xl:items-center">
                   <h2 className="text-lg font-semibold">Market Analysis</h2>
                   {/* Date Picker */}
-                  <CustomDatePicker onChange={handleDateChange} />
+
+                  <CustomDatePicker isRange onChange={handleDateChange2} />
                 </div>
 
                 <p className="mt-4 text-black">Price</p>

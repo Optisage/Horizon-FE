@@ -145,12 +145,14 @@ const Dashboard = () => {
       {/* <h2>Selected Marketplace ID: {marketplaceId || "N/A"}</h2> */}
 
       {(isLoading || isFetching) && (
-        <CircularLoader
-          duration={1000}
-          color="#18CB96"
-          size={64}
-          strokeWidth={4}
-        />
+        <div className="h-[50dvh] flex justify-center items-center">
+          <CircularLoader
+            duration={1000}
+            color="#18CB96"
+            size={64}
+            strokeWidth={4}
+          />
+        </div>
       )}
 
       {error && (
@@ -215,10 +217,10 @@ const Dashboard = () => {
                   >
                     {product.title}
                   </p>
-                  <p>
+                  {/* <p>
                     {"⭐".repeat(product.rating || 0)}{" "}
                     <span className="font-bold">({product.reviews || 0})</span>
-                  </p>
+                  </p> */}
                   <p className="text-sm">By ASIN: {product.asin}</p>
 
                   <p className="text-sm">
