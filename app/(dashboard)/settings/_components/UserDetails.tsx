@@ -91,7 +91,7 @@ const UserDetails = ({ userData }: UserDetailsProps) => {
   const numericValue = value === "" ? 0 : Number(value);
     setFormData((prev) => ({
       ...prev,
-      [field]: value === "" ? 0 : parseFloat(value),
+      [field]: isNaN(numericValue) ? prev[field as keyof UserData] : numericValue
     }));
   };
 
