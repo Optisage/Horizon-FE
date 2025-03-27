@@ -73,6 +73,13 @@ export const authApi = createApi({
         body: data,
       }),
     }),
+    changePassword: builder.mutation({
+      query: (data) => ({
+        url: "change-password",
+        method: "POST",
+        body: data,
+      }),
+    }),
 
     getProfile: builder.query({
       query: () => ({
@@ -126,5 +133,6 @@ export const {
   useSetPasswordMutation,
   useResetPasswordMutation,
   useLazyAmazonAuthQuery,
-  useResendVerificationMutation
+  useResendVerificationMutation,
+  useChangePasswordMutation
 } = authApi;

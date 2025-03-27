@@ -22,3 +22,15 @@ import * as Yup from "yup";
       .oneOf([Yup.ref("password")], "Passwords must match")
       .required("Confirm Password is required"),
   });
+
+  export const changePasswordSchema = Yup.object().shape({
+    currentPassword: Yup.string()
+    .min(8, "Password must be at least 8 characters long")
+      .required("Current password is required"),
+    newPassword: Yup.string()
+      .min(8, "Password must be at least 8 characters long")
+      .required("New password is required"),
+    confirmNewPassword: Yup.string()
+      .oneOf([Yup.ref("newPassword")], "Passwords must match")
+      .required("Confirm new password is required"),
+  });

@@ -8,7 +8,11 @@ import {
 import { IoMdInformationCircleOutline } from "react-icons/io";
 import { useUpdateSettingsMutation } from "@/redux/api/user";
 import { Button, message } from "antd";
-
+import ChangePasswordModal from "./changePassword";
+import { useChangePasswordMutation } from "@/redux/api/auth";
+//import { password } from "@/lib/validationSchema";
+import { FaCheckCircle } from "react-icons/fa";
+import { useRouter } from "next/navigation";
 
 interface UserData {
   email: string;
@@ -18,6 +22,7 @@ interface UserData {
   inbound_shipping: number;
   prep_fee: number;
   vat: {
+    toggle: boolean;
     flat_rate: { rate: number };
     standard_rate: { rate: number; reduced_rate: number };
   };
@@ -32,6 +37,7 @@ interface UserDetailsProps {
     inbound_shipping: number;
     prep_fee: number;
     vat: {
+      toggle: boolean;
       flat_rate: { rate: number };
       standard_rate: { rate: number; reduced_rate: number };
     };
@@ -46,23 +52,29 @@ const defaultUserData: UserData = {
   inbound_shipping: 0,
   prep_fee: 0,
   vat: {
+    toggle: true,
     flat_rate: { rate: 0 },
     standard_rate: { rate: 0, reduced_rate: 0 },
   },
 };
 const UserDetails = ({ userData }: UserDetailsProps) => {
-  const [vatEnabled, setVatEnabled] = useState(true);
+  const router = useRouter();
+  //const [vatEnabled, setVatEnabled] = useState(true);
+  const [ChangeVisible, setChangeVisible] = useState(false);
 
   const [vatType, setVatType] = useState<"standard" | "flat">("standard");
   const [saveSettings, { isLoading }] = useUpdateSettingsMutation();
-  //const [formData, setFormData] = useState<UserData>(userData);
- 
+  const [changePassword, { isLoading: passwordLoading }] =
+    useChangePasswordMutation();
+  const [changePasswordErrors, setChangePasswordErrors] =
+    useState<Record<string, string[]>>();
   const [messageApi, contextHolder] = message.useMessage();
 
   const [formData, setFormData] = useState<UserData>({
     ...defaultUserData,
     ...userData,
     vat: {
+      toggle: userData?.vat?.toggle ?? defaultUserData.vat.toggle,
       flat_rate: {
         ...defaultUserData.vat.flat_rate,
         ...(userData?.vat?.flat_rate || {}),
@@ -88,6 +100,7 @@ const UserDetails = ({ userData }: UserDetailsProps) => {
         ...prev,
         ...userData,
         vat: {
+          toggle: userData?.vat?.toggle ?? prev.vat.toggle,
           flat_rate: { ...prev.vat.flat_rate, ...userData?.vat?.flat_rate },
           standard_rate: {
             ...prev.vat.standard_rate,
@@ -120,6 +133,12 @@ const UserDetails = ({ userData }: UserDetailsProps) => {
   };
 
   const handleSaveUser = () => {
+    // Check password validation first
+    if (formData.password && formData.password.length < 8) {
+      messageApi.error("Password must be at least 8 characters long");
+      return;
+    }
+
     const updatedFields: Partial<UserData> = {};
 
     Object.keys(formData).forEach((key) => {
@@ -151,7 +170,23 @@ const UserDetails = ({ userData }: UserDetailsProps) => {
       });
   };
 
-  
+  const success = () => {
+    messageApi.open({
+      type: "success",
+      content: "Your password was updated successfully",
+      icon: <FaCheckCircle color=" #009163" size={20} className=" mr-2" />,
+      className: "custom-class",
+      style: {
+        marginTop: "10vh",
+        fontSize: 16,
+      },
+    });
+  };
+
+  const handleCloseModal = () => {
+    setChangeVisible(false);
+    setChangePasswordErrors(undefined); // Clear errors when closing
+  };
 
   return (
     <div className="flex flex-col gap-6">
@@ -162,20 +197,13 @@ const UserDetails = ({ userData }: UserDetailsProps) => {
           <label htmlFor="email" className="text-[#01011D] font-medium">
             Email Address<span className="text-red-500">*</span>
           </label>
-
-          <p className="text-sm flex gap-1 items-center">
-            <IoMdInformationCircleOutline className="size-4" />
-            To change this email,{" "}
-            <button type="button" className="underline">
-              click here
-            </button>
-          </p>
         </span>
         <Input
           id="email"
           type="email"
           placeholder="Tunde@yahoo.com"
           className="px-3 py-2"
+          disabled
           value={formData?.email}
           onChange={(e) => handleChange("email", e.target.value)}
         />
@@ -188,8 +216,15 @@ const UserDetails = ({ userData }: UserDetailsProps) => {
             Password
           </label>
           <p className="text-sm flex gap-1 items-center">
-            <IoMdInformationCircleOutline className="size-4" /> Keep your
-            password safe and secured
+            <IoMdInformationCircleOutline className="size-4" />
+            To change your password,{" "}
+            <button
+              type="button"
+              className="underline"
+              onClick={() => setChangeVisible(true)}
+            >
+              click here
+            </button>
           </p>
         </span>
 
@@ -197,9 +232,17 @@ const UserDetails = ({ userData }: UserDetailsProps) => {
           id="password"
           placeholder="******"
           className="px-3 py-2"
+          disabled
           value={formData?.password}
-          onChange={(e) => handleChange("password", e.target.value)}
+          onChange={(e) =>
+            setFormData({ ...formData, password: e.target.value })
+          }
         />
+        {formData.password && formData.password.length < 8 && (
+          <span className="text-red-500 text-sm">
+            Password must be at least 8 characters
+          </span>
+        )}
       </div>
 
       {/* VAT Scheme Toggle */}
@@ -213,11 +256,22 @@ const UserDetails = ({ userData }: UserDetailsProps) => {
             </button>
           </span>
         </p>
-        <Switch checked={vatEnabled} onChange={setVatEnabled} />
+        <Switch
+          checked={formData.vat.toggle}
+          onChange={(checked: boolean) =>
+            setFormData((prev) => ({
+              ...prev,
+              vat: {
+                ...prev.vat,
+                toggle: checked,
+              },
+            }))
+          }
+        />
       </div>
 
       {/* VAT Type Selection */}
-      {vatEnabled && (
+      {formData.vat.toggle && (
         <div className="bg-[#F7F7F7] border border-border rounded-2xl p-4 flex flex-col gap-1">
           <label className="font-medium">
             VAT Type<span className="text-red-500">*</span>
@@ -259,7 +313,7 @@ const UserDetails = ({ userData }: UserDetailsProps) => {
                     id="standard-rates"
                     defaultValue="10%"
                     className="px-3 py-2"
-                    value={`${formData?.vat?.standard_rate?.rate ?? ""}%`}
+                    value={`%${formData?.vat?.standard_rate?.rate ?? ""}`}
                     onChange={(e) => handleVatChange("rate", e.target.value)}
                   />
                 </span>
@@ -274,9 +328,9 @@ const UserDetails = ({ userData }: UserDetailsProps) => {
                     id="reduced-rate"
                     defaultValue="0.00%"
                     className="px-3 py-2"
-                    value={`${
+                    value={`%${
                       formData?.vat?.standard_rate?.reduced_rate ?? ""
-                    }%`}
+                    }`}
                     onChange={(e) =>
                       handleVatChange("reduced_rate", e.target.value)
                     }
@@ -295,7 +349,7 @@ const UserDetails = ({ userData }: UserDetailsProps) => {
                     id="flat-rate"
                     defaultValue="0.00%"
                     className="px-3 py-2"
-                    value={`${formData?.vat?.flat_rate?.rate ?? ""}%`}
+                    value={`%${formData?.vat?.flat_rate?.rate ?? ""}`}
                     onChange={(e) => handleVatChange("rate", e.target.value)}
                   />
                 </span>
@@ -423,6 +477,35 @@ const UserDetails = ({ userData }: UserDetailsProps) => {
           </Button>
         </div>
       </div>
+
+      <ChangePasswordModal
+        isChangeVisible={ChangeVisible}
+        setIsChangeVisible={handleCloseModal}
+        loading={passwordLoading}
+        errors={changePasswordErrors}
+        proceed={(values) => {
+          changePassword(values)
+            .unwrap()
+            .then(() => {
+              success();
+              setChangeVisible(false);
+              // Redirect after 2 seconds to allow message display
+              setTimeout(() => router.replace("/"), 2000);
+            })
+            .catch((err) => {
+              messageApi.error(
+                err.data?.message || "Failed to change password"
+              );
+              setChangePasswordErrors(err.data?.errors);
+            });
+        }}
+      />
+
+      <style jsx global>{`
+        .custom-class > .ant-message-notice-content {
+          background-color: #fffae6 !important;
+        }
+      `}</style>
     </div>
   );
 };
