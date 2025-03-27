@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { CustomPagination, SearchInput } from "@/app/(dashboard)/_components";
 import Image from "next/image";
 import { message, Tooltip as Tooltip2 } from "antd";
+import { evaluate } from "mathjs";
+
 import { CustomSlider as Slider } from "@/lib/AntdComponents";
 import {
   PieChart,
@@ -819,10 +821,19 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
                     <label className="text-sm text-gray-600">Cost Price</label>
                     <input
                       aria-label="Cost Price"
-                      type="number"
+                      type="text"
                       placeholder="0"
                       value={costPrice}
                       onChange={(e) => setCostPrice(e.target.value)}
+                      onBlur={(e) => {
+                        try {
+                          const result = evaluate(e.target.value);
+                          setCostPrice(result.toString());
+                        } catch {
+                          message.error("Invalid mathematical expression");
+                          console.error("Invalid mathematical expression");
+                        }
+                      }}
                       className="px-4 py-1.5 w-full border rounded outline-none focus:border-black"
                     />
                   </div>
