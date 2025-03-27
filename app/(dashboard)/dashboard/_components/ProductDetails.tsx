@@ -473,8 +473,13 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
 
   const isLoadingRefetch = isLoadingRankings || isRefetching;
 
+  // Sort buyboxDetails by price in ascending order
+  const sortedBuyboxDetails = [...buyboxDetails].sort(
+    (a, b) => a.listing_price - b.listing_price
+  );
+
   const offersData = {
-    offers: buyboxDetails.map((offer: BuyboxItem, index: number) => ({
+    offers: sortedBuyboxDetails.map((offer: BuyboxItem, index: number) => ({
       id: index + 1,
       seller: offer.seller,
       stock: offer.stock_quantity,
@@ -494,7 +499,7 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
     setSalePrice(e.target.value);
   };
 
-  const sellerFeedbackData = buyboxDetails.map(
+  const sellerFeedbackData = sortedBuyboxDetails.map(
     (seller: BuyboxItem, index: number) => ({
       id: index + 1,
       seller: seller.seller,
