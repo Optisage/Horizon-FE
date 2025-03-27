@@ -68,7 +68,7 @@ const Login: React.FC = () => {
       >
         {({ isSubmitting }) => (
           <Form className="flex flex-col gap-4">
-            {step === 1 && (
+            
               <div className="flex flex-col gap-1">
                 <label
                   htmlFor="email"
@@ -88,9 +88,9 @@ const Login: React.FC = () => {
                   className="text-red-500 text-sm mt-1"
                 />
               </div>
-            )}
+           
 
-            {step === 2 && (
+           
               <div className="flex flex-col gap-1">
                 <label
                   htmlFor="password"
@@ -126,7 +126,7 @@ const Login: React.FC = () => {
                   className="text-red-500 text-sm mt-1"
                 />
               </div>
-            )}
+            
 
             <button
               type="submit"
