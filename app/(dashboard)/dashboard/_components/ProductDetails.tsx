@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { CustomPagination, SearchInput } from "@/app/(dashboard)/_components";
 import Image from "next/image";
 import { message, Tooltip as Tooltip2 } from "antd";
+import { evaluate } from "mathjs";
+
 import { CustomSlider as Slider } from "@/lib/AntdComponents";
 import {
   PieChart,
@@ -819,10 +821,19 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
                     <label className="text-sm text-gray-600">Cost Price</label>
                     <input
                       aria-label="Cost Price"
-                      type="number"
+                      type="text"
                       placeholder="0"
                       value={costPrice}
                       onChange={(e) => setCostPrice(e.target.value)}
+                      onBlur={(e) => {
+                        try {
+                          const result = evaluate(e.target.value);
+                          setCostPrice(result.toString());
+                        } catch {
+                          message.error("Invalid mathematical expression");
+                          console.error("Invalid mathematical expression");
+                        }
+                      }}
                       className="px-4 py-1.5 w-full border rounded outline-none focus:border-black"
                     />
                   </div>
@@ -1169,7 +1180,6 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
                         {loading ? (
                           <>
                             <ImSpinner9 className="animate-spin size-5" />
-                            {/* Loading... */}
                           </>
                         ) : (
                           "Load More"
@@ -1399,7 +1409,7 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
                     ) : (
                       <ResponsiveContainer width={250} height={250}>
                         <PieChart>
-                          <Pie data={pieData} dataKey="value" outerRadius={80}>
+                          <Pie data={pieData} dataKey="value" outerRadius={90}>
                             {pieData.map((entry, index) => (
                               <Cell key={index} fill={entry.color} />
                             ))}
@@ -1408,13 +1418,16 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
                       </ResponsiveContainer>
                     )}
 
-                    <ul>
+                    <ul className="max-h-56 overflow-y-scroll py-1">
                       {pieData.map((entry, index) => (
-                        <li key={index} className="flex items-center gap-2">
+                        <li
+                          key={index}
+                          className="flex items-center gap-2 text-sm"
+                        >
                           <span
                             className="size-3 rounded-lg"
                             style={{ backgroundColor: entry.color }}
-                          ></span>
+                          />
                           {entry.name} &nbsp; - {entry.value}%
                         </li>
                       ))}
