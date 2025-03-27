@@ -124,7 +124,7 @@ const SalesStats = ({ product }: { product: Product }) => {
           <span className="p-4 flex flex-col gap-1">
             <p className="text-[#737373] text-xs">Estimated No. of Sales</p>
             <p className="text-xl md:text-2xl font-semibold">
-              {salesStats?.estimated_sales_per_month?.amount.toLocaleString() ||
+              {salesStats?.estimated_sales_per_month?.amount?.toLocaleString() ||
                 0}{" "}
               / month
             </p>
@@ -155,7 +155,7 @@ const SalesStats = ({ product }: { product: Product }) => {
               <p className="text-base font-semibold">
                 {salesStats?.sales_analytics?.net_revenue?.currency ||
                   currencySymbol}
-                {salesStats?.sales_analytics?.net_revenue?.amount.toLocaleString() ||
+                {salesStats?.sales_analytics?.net_revenue?.amount?.toLocaleString() ||
                   0}
               </p>
             </span>
@@ -183,7 +183,7 @@ const SalesStats = ({ product }: { product: Product }) => {
               <span className="flex flex-col gap-1">
                 <p className="text-[#737373] text-xs">Monthly Units Sold</p>
                 <p className="text-base font-semibold">
-                  {salesStats?.sales_analytics?.monthly_units_sold?.amount.toLocaleString() ||
+                  {salesStats?.sales_analytics?.monthly_units_sold?.amount?.toLocaleString() ||
                     0}
                 </p>
               </span>
