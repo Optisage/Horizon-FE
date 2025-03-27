@@ -16,7 +16,6 @@ import { useRouter } from "next/navigation";
 
 interface UserData {
   email: string;
-  password: string;
   misc_fee: number;
   misc_fee_percentage: number;
   inbound_shipping: number;
@@ -31,7 +30,7 @@ interface UserData {
 interface UserDetailsProps {
   userData: {
     email: string;
-    password: string;
+  
     misc_fee: number;
     misc_fee_percentage: number;
     inbound_shipping: number;
@@ -46,7 +45,7 @@ interface UserDetailsProps {
 
 const defaultUserData: UserData = {
   email: "",
-  password: "",
+  
   misc_fee: 0,
   misc_fee_percentage: 0,
   inbound_shipping: 0,
@@ -88,6 +87,8 @@ const UserDetails = ({ userData }: UserDetailsProps) => {
 
   // Handle Input Change
   const handleChange = (field: string, value: string) => {
+    // Allow empty value or valid numbers with decimals
+  const numericValue = value === "" ? 0 : Number(value);
     setFormData((prev) => ({
       ...prev,
       [field]: value === "" ? 0 : parseFloat(value),
@@ -133,20 +134,14 @@ const UserDetails = ({ userData }: UserDetailsProps) => {
   };
 
   const handleSaveUser = () => {
-    // Check password validation first
-    if (formData.password && formData.password.length < 8) {
-      messageApi.error("Password must be at least 8 characters long");
-      return;
-    }
+   
 
     const updatedFields: Partial<UserData> = {};
 
     Object.keys(formData).forEach((key) => {
       const typedKey = key as keyof UserData;
 
-      // Skip empty password fields
-      if (typedKey === "password" && !formData.password) return;
-
+  
       if (
         JSON.stringify(formData[typedKey]) !==
         JSON.stringify(userData[typedKey])
@@ -233,22 +228,14 @@ const UserDetails = ({ userData }: UserDetailsProps) => {
           placeholder="******"
           className="px-3 py-2"
           disabled
-          value={formData?.password}
-          onChange={(e) =>
-            setFormData({ ...formData, password: e.target.value })
-          }
+          
         />
-        {formData.password && formData.password.length < 8 && (
-          <span className="text-red-500 text-sm">
-            Password must be at least 8 characters
-          </span>
-        )}
       </div>
 
       {/* VAT Scheme Toggle */}
       <div className="flex items-center gap-2">
         <p className="font-medium flex items-center gap-1">
-          VAT Scheme<span className="text-red-500">*</span>{" "}
+          Sales Tax<span className="text-red-500">*</span>{" "}
           <span className="text-sm text-[#787891] flex items-center gap-1">
             (optional){" "}
             <button type="button" aria-label="Info">
@@ -274,7 +261,7 @@ const UserDetails = ({ userData }: UserDetailsProps) => {
       {formData.vat.toggle && (
         <div className="bg-[#F7F7F7] border border-border rounded-2xl p-4 flex flex-col gap-1">
           <label className="font-medium">
-            VAT Type<span className="text-red-500">*</span>
+            Sales Tax<span className="text-red-500">*</span>
           </label>
 
           <div className="flex flex-col gap-6">
@@ -381,6 +368,8 @@ const UserDetails = ({ userData }: UserDetailsProps) => {
           <Input
             id="prep-fee"
             defaultValue="$0.00"
+            type="number"  // Add type="number"
+  step="0.01"
             className="px-3 py-2"
             value={`${formData?.prep_fee ?? ""}`}
             onChange={(e) => handleChange("prep_fee", e.target.value)}
