@@ -1169,7 +1169,6 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
                         {loading ? (
                           <>
                             <ImSpinner9 className="animate-spin size-5" />
-                            {/* Loading... */}
                           </>
                         ) : (
                           "Load More"
@@ -1399,7 +1398,7 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
                     ) : (
                       <ResponsiveContainer width={250} height={250}>
                         <PieChart>
-                          <Pie data={pieData} dataKey="value" outerRadius={80}>
+                          <Pie data={pieData} dataKey="value" outerRadius={90}>
                             {pieData.map((entry, index) => (
                               <Cell key={index} fill={entry.color} />
                             ))}
@@ -1408,13 +1407,16 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
                       </ResponsiveContainer>
                     )}
 
-                    <ul>
+                    <ul className="max-h-56 overflow-y-scroll py-1">
                       {pieData.map((entry, index) => (
-                        <li key={index} className="flex items-center gap-2">
+                        <li
+                          key={index}
+                          className="flex items-center gap-2 text-sm"
+                        >
                           <span
                             className="size-3 rounded-lg"
                             style={{ backgroundColor: entry.color }}
-                          ></span>
+                          />
                           {entry.name} &nbsp; - {entry.value}%
                         </li>
                       ))}
