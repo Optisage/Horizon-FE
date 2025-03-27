@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { CustomPagination, SearchInput } from "@/app/(dashboard)/_components";
 import Image from "next/image";
-import { message } from "antd";
+import { message, Tooltip as Tooltip2 } from "antd";
 import { CustomSlider as Slider } from "@/lib/AntdComponents";
 import {
   PieChart,
@@ -20,7 +20,7 @@ import {
 import AlertsDrawer from "./AlertsDrawer";
 import { useRouter } from "next/navigation";
 import CustomDatePicker from "./CustomDatePicker";
-import Loader from "@/utils/loader";
+// import Loader from "@/utils/loader";
 import SalesStats from "./SalesStats";
 import { Product } from "./Dashboard";
 
@@ -53,6 +53,7 @@ import { useAppSelector } from "@/redux/hooks";
 import dayjs from "dayjs";
 import ExportToSheetsButton from "@/utils/exportGoogle";
 import { ImSpinner9 } from "react-icons/im";
+import CircularLoader from "@/utils/circularLoader";
 
 interface ProductDetailsProps {
   asin: string;
@@ -64,6 +65,7 @@ interface BuyboxItem {
   seller_id: string;
   seller_type: string;
   rating: number;
+  review_count: number;
   listing_price: number;
   weight_percentage: number;
   stock_quantity: number;
@@ -138,15 +140,22 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
   const [itemsToShow, setItemsToShow] = useState(10); // Show 10 items
   const [loading, setLoading] = useState(false); // Add loading state
   const [costPrice, setCostPrice] = useState<string>("");
-  // const [salePrice, setSalePrice] = useState<string>("");
+  const [salePrice, setSalePrice] = useState<string>("");
   const [storageMonths, setStorageMonths] = useState(0);
   const [fulfillmentType, setFulfillmentType] = useState("FBA");
   const [activeTab, setActiveTab] = useState("maximumCost");
-  const [selectedDate, setSelectedDate] = useState(dayjs());
+  // const [selectedDate, setSelectedDate] = useState(dayjs());
   const [statStartDate, setStatStartDate] = useState(
     dayjs().format("YYYY-MM-DD")
   ); // For date range start
   const [statEndDate, setStatEndDate] = useState(
+    dayjs().add(1, "month").format("YYYY-MM-DD")
+  ); // For date range end
+
+  const [statStartDate2, setStatStartDate2] = useState(
+    dayjs().format("YYYY-MM-DD")
+  ); // For date range start
+  const [statEndDate2, setStatEndDate2] = useState(
     dayjs().add(1, "month").format("YYYY-MM-DD")
   ); // For date range end
 
@@ -194,7 +203,7 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
       currencyCode: currencyCode,
       storage: storageMonths,
       costPrice: costPrice,
-      salePrice: buyboxWinnerPrice,
+      salePrice: salePrice || buyboxWinnerPrice, // Use price if entered, or else, fallback to the buybox winner price 🙂
       pointsNumber: 0,
       pointsAmount: 0,
     };
@@ -252,9 +261,7 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
 
   const router = useRouter();
 
-  const { currencyCode } =
-    useAppSelector((state) => state.global) || {};
- 
+  const { currencyCode } = useAppSelector((state) => state.global) || {};
 
   const {
     data: buyboxData,
@@ -301,7 +308,8 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
   } = useGetMarketAnalysisQuery({
     marketplaceId,
     itemAsin: asin,
-    date: selectedDate.format("YYYY-MM"),
+    statStartDate: statStartDate2,
+    statEndDate: statEndDate2,
   });
 
   const handleDateChange = (date: dayjs.Dayjs | [dayjs.Dayjs, dayjs.Dayjs]) => {
@@ -312,7 +320,21 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
       setStatEndDate(endDate.format("YYYY-MM-DD"));
     } else {
       // Handle single date selection
-      setSelectedDate(date);
+      // setSelectedDate(date);
+    }
+  };
+
+  const handleDateChange2 = (
+    date2: dayjs.Dayjs | [dayjs.Dayjs, dayjs.Dayjs]
+  ) => {
+    if (Array.isArray(date2)) {
+      // Handle date range selection
+      const [startDate2, endDate2] = date2;
+      setStatStartDate2(startDate2.format("YYYY-MM-DD"));
+      setStatEndDate2(endDate2.format("YYYY-MM-DD"));
+    } else {
+      // Handle single date selection
+      // setSelectedDate(date);
     }
   };
 
@@ -397,7 +419,17 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
     isLoadingRankings ||
     isPaginationLoading
   )
-    return <Loader />;
+    // return <Loader />;
+    return (
+      <div className="h-[50dvh] flex justify-center items-center">
+        <CircularLoader
+          duration={3500}
+          color="#18CB96"
+          size={64}
+          strokeWidth={4}
+        />
+      </div>
+    );
 
   const product = data?.data;
   const buybox: BuyboxItem[] = buyboxData?.data?.buybox ?? [];
@@ -442,10 +474,17 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
 
   const isLoadingRefetch = isLoadingRankings || isRefetching;
 
+  // Sort buyboxDetails by price in ascending order
+  const sortedBuyboxDetails = [...buyboxDetails].sort(
+    (a, b) => a.listing_price - b.listing_price
+  );
+
   const offersData = {
-    offers: buyboxDetails.map((offer: BuyboxItem, index: number) => ({
+    offers: sortedBuyboxDetails.map((offer: BuyboxItem, index: number) => ({
       id: index + 1,
       seller: offer.seller,
+      rating: offer.rating,
+      review_count: offer.review_count,
       stock: offer.stock_quantity,
       price: `${offer.listing_price.toFixed(2)}`,
       buyboxShare: `${offer.weight_percentage}%`,
@@ -459,11 +498,16 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
   const buyboxWinnerPrice =
     buyboxDetails.find((offer) => offer.is_buybox_winner)?.listing_price ?? 0;
 
-  const sellerFeedbackData = buyboxDetails.map(
+  const handlePriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSalePrice(e.target.value);
+  };
+
+  const sellerFeedbackData = sortedBuyboxDetails.map(
     (seller: BuyboxItem, index: number) => ({
       id: index + 1,
       seller: seller.seller,
       rating: seller.rating,
+      review_count: seller.review_count,
       sellerId: seller.seller_id,
       seller_type: seller.seller_type,
       avgPrice: `${seller.seller_feedback?.avg_price?.toFixed(2) ?? "N/A"}`,
@@ -516,7 +560,17 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
       : [];
 
   if (isLoadingBuybox || isLoading || isLoadingRankings || isLoadingSearch)
-    return <Loader />;
+    // return <Loader />;
+    return (
+      <div className="h-[50dvh] flex justify-center items-center">
+        <CircularLoader
+          duration={3500}
+          color="#18CB96"
+          size={64}
+          strokeWidth={4}
+        />
+      </div>
+    );
 
   if (error)
     return (
@@ -779,9 +833,8 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
                       type="number"
                       placeholder="0"
                       // value={salePrice}
-                      value={buyboxWinnerPrice}
-                      disabled
-                      // onChange={(e) => setSalePrice(e.target.value)}
+                      defaultValue={buyboxWinnerPrice}
+                      onChange={handlePriceChange}
                       className="px-4 py-1.5 w-full border rounded outline-none focus:border-black"
                     />
                   </div>
@@ -861,69 +914,58 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
                           <div className="flex justify-between text-sm">
                             <span className="text-[#595959]">Min. Profit</span>
                             <span className="font-semibold text-black">
-                              $
-                              {minProfit.toFixed(2)}
+                              ${minProfit.toFixed(2)}
                             </span>
                           </div>
                           <div className="border-t pt-2 font-semibold flex justify-between">
                             <span>Maximum Cost</span>
-                            <span>
-                            $
-                              {maxCost.toFixed(2)}
-                            </span>
+                            <span>${maxCost.toFixed(2)}</span>
                           </div>
                         </div>
                       )}
 
-                    {activeTab === "totalFees" && (
-                      <div className="space-y-2">
-                        {Object.entries(fees).map(([key, value]) => (
-                          <div
-                            key={key}
-                            className="flex justify-between text-sm"
-                          >
-                            <span className="text-[#595959]">
-                              {key
-                                .replace(/([A-Z])/g, " $1")
-                                .replace(/^./, (str) => str.toUpperCase())}
-                            </span>
-                            <span className="font-semibold text-black">
-                              {typeof value === "number"
-                                ? `$ ${
-                                    value.toFixed(2)
-                                  }`
-                                : value}
-                            </span>
-                          </div>
-                        ))}
+                      {activeTab === "totalFees" && (
+                        <div className="space-y-2">
+                          {Object.entries(fees).map(([key, value]) => (
+                            <div
+                              key={key}
+                              className="flex justify-between text-sm"
+                            >
+                              <span className="text-[#595959]">
+                                {key
+                                  .replace(/([A-Z])/g, " $1")
+                                  .replace(/^./, (str) => str.toUpperCase())}
+                              </span>
+                              <span className="font-semibold text-black">
+                                {typeof value === "number"
+                                  ? `$ ${value.toFixed(2)}`
+                                  : value}
+                              </span>
+                            </div>
+                          ))}
 
-                        <div className="border-t pt-2 font-semibold flex justify-between">
-                          <span>Total Fees</span>
-                          <span>
-                            $
-                            {totalFees.toFixed(2)}
-                          </span>
+                          <div className="border-t pt-2 font-semibold flex justify-between">
+                            <span>Total Fees</span>
+                            <span>${totalFees.toFixed(2)}</span>
+                          </div>
                         </div>
-                      </div>
-                    )}
-                  </div>
-                </>)}
-                
+                      )}
+                    </div>
+                  </>
+                )}
 
                 {/* Summary Items */}
                 <div className="flex flex-col gap-2 text-[#595959]">
                   <div className="flex justify-between text-sm">
                     <span>VAT on Fees</span>
                     <span className="font-semibold text-black">
-                      $
-                      {vatOnFees.toFixed(2)}
+                      ${vatOnFees.toFixed(2)}
                     </span>
                   </div>
                   <div className="flex justify-between text-sm">
                     <span>Discount</span>
                     <span className="font-semibold text-black">
-                      $
-                      {discount.toFixed(2)}
+                      ${discount.toFixed(2)}
                     </span>
                   </div>
                   <div className="flex justify-between text-sm">
@@ -935,15 +977,13 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
                   <div className="flex justify-between text-sm">
                     <span>Breakeven Sale Price</span>
                     <span className="font-semibold text-black">
-                   $
-                      {breakEvenPrice.toFixed(2)}
+                      ${breakEvenPrice.toFixed(2)}
                     </span>
                   </div>
                   <div className="flex justify-between text-sm">
                     <span>Estimated Amz. Payout</span>
                     <span className="font-semibold text-black">
-                      $
-                      {estimatedPayout.toFixed(2)}
+                      ${estimatedPayout.toFixed(2)}
                     </span>
                   </div>
                 </div>
@@ -955,9 +995,7 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
                   <InfoCard
                     icon={<PriceTagIcon />}
                     title="Buy Box Price"
-                    value={`$ ${
-                      extra?.buybox_price ?? "0"
-                    }`}
+                    value={`$ ${extra?.buybox_price ?? "0"}`}
                     bgColor="#F0FFF0"
                   />
                   <InfoCard
@@ -1069,34 +1107,36 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
                             <tr key={offer.id} className="border-b">
                               <td className="p-3">{offer.id}</td>
                               <td className="py-3">
-                                <div
-                                  onClick={() =>
-                                    router.push(`/seller/${offer.seller_id}`)
-                                  }
-                                  className="cursor-pointer flex flex-col gap-0.5 flex-grow"
+                                <Tooltip2
+                                  title={`Rating: ${offer.rating} (${offer.review_count})`}
+                                  placement="topLeft"
                                 >
-                                  <span className="flex items-center gap-1">
-                                    <span
-                                      className={`size-2 rounded-sm ${
-                                        offer.seller_type === "FBA"
-                                          ? "bg-black"
-                                          : "bg-[#00E4E4]"
-                                      }`}
-                                    />
-                                    <p className="truncate">{offer.seller}</p>
-                                  </span>
-                                  {offer.leader && (
-                                    <span className="text-xs text-primary block">
-                                      BuyBox Leader
+                                  <div
+                                    onClick={() =>
+                                      router.push(`/seller/${offer.seller_id}`)
+                                    }
+                                    className="cursor-pointer flex flex-col gap-0.5 flex-grow"
+                                  >
+                                    <span className="flex items-center gap-1">
+                                      <span
+                                        className={`size-2 rounded-sm ${
+                                          offer.seller_type === "FBA"
+                                            ? "bg-black"
+                                            : "bg-[#00E4E4]"
+                                        }`}
+                                      />
+                                      <p className="truncate">{offer.seller}</p>
                                     </span>
-                                  )}
-                                </div>
+                                    {offer.leader && (
+                                      <span className="text-xs text-primary block">
+                                        BuyBox Leader
+                                      </span>
+                                    )}
+                                  </div>
+                                </Tooltip2>
                               </td>
                               <td className="p-3">{offer.stock}</td>
-                              <td className="p-3">
-                                $
-                                {offer.price}
-                              </td>
+                              <td className="p-3">${offer.price}</td>
                               <td className="px-3 py-4 flex gap-1 items-center h-full">
                                 {offer.buyboxShare}
                                 <div className="w-20 h-2 bg-gray-200 rounded-full">
@@ -1155,31 +1195,35 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
                             <tr key={seller.id} className="border-b">
                               <td className="p-3">{seller.id}</td>
                               <td className="p-3">
-                                <div
-                                  onClick={() =>
-                                    router.push(`/seller/${seller.sellerId}`)
-                                  }
-                                  className="cursor-pointer flex flex-col"
+                                <Tooltip2
+                                  title={`Rating: ${seller.rating} (${seller.review_count})`}
+                                  placement="topLeft"
                                 >
-                                  <span className="flex items-center gap-1">
-                                    <span
-                                      className={`size-2 rounded-sm ${
-                                        seller.seller_type === "FBA"
-                                          ? "bg-black"
-                                          : "bg-[#00E4E4]"
-                                      }`}
-                                    />
-                                    <p className="truncate">{seller.seller}</p>
-                                  </span>
-                                  <div className="flex">
-                                    {renderStars(seller.rating)}
+                                  <div
+                                    onClick={() =>
+                                      router.push(`/seller/${seller.sellerId}`)
+                                    }
+                                    className="cursor-pointer flex flex-col"
+                                  >
+                                    <span className="flex items-center gap-1">
+                                      <span
+                                        className={`size-2 rounded-sm ${
+                                          seller.seller_type === "FBA"
+                                            ? "bg-black"
+                                            : "bg-[#00E4E4]"
+                                        }`}
+                                      />
+                                      <p className="truncate">
+                                        {seller.seller}
+                                      </p>
+                                    </span>
+                                    <div className="flex">
+                                      {renderStars(seller.rating)}
+                                    </div>
                                   </div>
-                                </div>
+                                </Tooltip2>
                               </td>
-                              <td className="p-3">
-                                $
-                                {seller.avgPrice}
-                              </td>
+                              <td className="p-3">${seller.avgPrice}</td>
                               <td className="p-3">{seller.won}</td>
                               <td className="p-3">{seller.lastWon}</td>
                             </tr>
@@ -1288,29 +1332,25 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
                       <div className="flex justify-between py-1">
                         <span>Buy Box</span>
                         <span className="font-semibold text-black">
-                          $
-                          {ranks.buyBox}
+                          ${ranks.buyBox}
                         </span>
                       </div>
                       <div className="flex justify-between py-1">
                         <span>Amazon</span>
                         <span className="font-semibold text-black">
-                        $
-                          {ranks.amazon}
+                          ${ranks.amazon}
                         </span>
                       </div>
                       <div className="flex justify-between py-1">
                         <span>Lowest FBA</span>
                         <span className="font-semibold text-black">
-                        $
-                          {ranks.lowestFBA}
+                          ${ranks.lowestFBA}
                         </span>
                       </div>
                       <div className="flex justify-between py-1">
                         <span>Lowest FBM</span>
                         <span className="font-semibold text-black">
-                        $
-                          {ranks.lowestFBM}
+                          ${ranks.lowestFBM}
                         </span>
                       </div>
                       <div className="flex justify-between py-1">
@@ -1340,8 +1380,9 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
 
               {/* Buy Box Analysis */}
               <div className="p-6 border rounded-lg">
-                <h2 className="text-lg font-semibold">Buy Box Analysis</h2>
-                <div className="mt-4">
+                <div className="flex flex-col xl:flex-row gap-4 justify-between xl:items-center">
+                  <h2 className="text-lg font-semibold">Buy Box Analysis</h2>
+
                   <CustomDatePicker isRange onChange={handleDateChange} />
                 </div>
 
@@ -1388,10 +1429,11 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
 
               {/* Market Analysis */}
               <div className="p-6 border rounded-lg">
-                <div className="flex justify-between items-center">
+                <div className="flex flex-col xl:flex-row gap-4 justify-between xl:items-center">
                   <h2 className="text-lg font-semibold">Market Analysis</h2>
                   {/* Date Picker */}
-                  <CustomDatePicker onChange={handleDateChange} />
+
+                  <CustomDatePicker isRange onChange={handleDateChange2} />
                 </div>
 
                 <p className="mt-4 text-black">Price</p>

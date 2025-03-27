@@ -70,11 +70,12 @@ export const productsApi = createApi({
     }),
 
     getMarketAnalysis: builder.query({
-      query: ({ marketplaceId, itemAsin, date }) => ({
+      query: ({ marketplaceId, itemAsin, statStartDate, statEndDate }) => ({
         url: `catalog/products/${itemAsin}/market-analysis`,
         method: "GET",
-        params: { marketplaceId, date },
-        // https://api-staging.optisage.ai/api/catalog/products/:asin/market-analysis?marketplaceId=1&date=2024-12
+        // params: { marketplaceId, date },
+        params: { marketplaceId, asin: itemAsin, statStartDate, statEndDate },
+        // https://api-staging.optisage.ai/api/catalog/products/:asin/market-analysis?marketplaceId=1&statStartDate=2025-03-01&statEndDate=2025-03-25
       }),
     }),
 

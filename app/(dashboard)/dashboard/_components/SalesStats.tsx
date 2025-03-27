@@ -11,7 +11,8 @@ import { useGetSalesStatisticsQuery } from "@/redux/api/productsApi";
 import { useAppSelector } from "@/redux/hooks";
 import dayjs from "dayjs";
 import { useRouter } from "next/navigation";
-import ProgressLoader from "@/utils/progressLoader";
+// import ProgressLoader from "@/utils/progressLoader";
+import CircularLoader from "@/utils/circularLoader";
 // import useCurrencyConverter from "@/utils/currencyConverter";
 
 interface BuyBoxItem {
@@ -101,11 +102,17 @@ const SalesStats = ({ product }: { product: Product }) => {
     if (isLoadingSalesStats) {
       return (
         <div className="flex items-center justify-center h-64">
-          <ProgressLoader
+          <CircularLoader
+            duration={5000}
+            color="#18CB96"
+            size={64}
+            strokeWidth={6}
+          />
+          {/* <ProgressLoader
             duration={5000}
             color="#18CB96"
             className="w-3/4 max-w-md"
-          />
+          /> */}
         </div>
       );
     }
