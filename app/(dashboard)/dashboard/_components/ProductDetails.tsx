@@ -398,12 +398,14 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
   )
     // return <Loader />;
     return (
-      <CircularLoader
-        duration={3000}
-        color="#18CB96"
-        size={64}
-        strokeWidth={4}
-      />
+      <div className="h-[50dvh] flex justify-center items-center">
+        <CircularLoader
+          duration={3500}
+          color="#18CB96"
+          size={64}
+          strokeWidth={4}
+        />
+      </div>
     );
 
   const product = data?.data;
@@ -529,12 +531,14 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
   if (isLoadingBuybox || isLoading || isLoadingRankings || isLoadingSearch)
     // return <Loader />;
     return (
-      <CircularLoader
-        duration={3000}
-        color="#18CB96"
-        size={64}
-        strokeWidth={4}
-      />
+      <div className="h-[50dvh] flex justify-center items-center">
+        <CircularLoader
+          duration={3500}
+          color="#18CB96"
+          size={64}
+          strokeWidth={4}
+        />
+      </div>
     );
 
   if (error)
