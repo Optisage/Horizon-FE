@@ -19,7 +19,7 @@ const ResetPassword = () => {
   const params = new URLSearchParams(window.location.search);
   const tokenValue = params.get("token");
   const emailValue = params.get("email");
-const [messageApi, contextHolder] = message.useMessage();
+  const [messageApi, contextHolder] = message.useMessage();
   console.log("Token from URL:", tokenValue);
 
   const handleSubmit = (e: FormEvent) => {
@@ -28,12 +28,10 @@ const [messageApi, contextHolder] = message.useMessage();
       messageApi.error("Passwords do not match");
       return;
     }
-     if (!passwordRegex.test(password)) {
-                messageApi.error(
-                 "Password must be at least 8 characters long"
-                );
-                return;
-              }
+    if (!passwordRegex.test(password)) {
+      messageApi.error("Password must be at least 8 characters long");
+      return;
+    }
     resetPassword({
       email: emailValue,
       password: password,
@@ -43,26 +41,24 @@ const [messageApi, contextHolder] = message.useMessage();
       .unwrap()
       .then(() => {
         messageApi.open({
-          type: 'success',
-          content: 'Reset Successful',
+          type: "success",
+          content: "Reset Successful",
           onClose: () => {
             router.push("/");
-          }
+          },
         });
-       
       })
       .catch(() => {
         messageApi.open({
-          type: 'error',
-          content: 'Reset Failed',
+          type: "error",
+          content: "Reset Failed",
         });
-
       });
   };
 
   return (
     <>
-    {contextHolder}
+      {contextHolder}
       <span className="flex flex-col gap-3">
         <h1 className="text-[#111827] font-bold text-xl md:text-2xl">
           Create New Password

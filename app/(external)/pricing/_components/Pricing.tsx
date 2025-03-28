@@ -2,9 +2,9 @@
 "use client";
 
 import { useLazyGetPricingQuery } from "@/redux/api/auth";
-import { useCreateStripeSubscriptionMutation } from "@/redux/api/subscriptionApi";
+//import { useCreateStripeSubscriptionMutation } from "@/redux/api/subscriptionApi";
 import { Button } from "antd";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { FaCheckCircle } from "react-icons/fa";
 import { FaDollarSign } from "react-icons/fa6";
@@ -75,6 +75,7 @@ const FeatureList = ({
 
 const Pricing = () => {
   const searchParams = useSearchParams();
+  const router = useRouter()
   const [getPricing, { data }] = useLazyGetPricingQuery();
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
   const [expandedCards, setExpandedCards] = useState<Record<string, boolean>>(
@@ -82,8 +83,7 @@ const Pricing = () => {
   );
   const [showModal, setShowModal] = useState(false);
   const [refCode, setRefCode] = useState<string | null>(null);
-  const [subscribe, { isLoading: subscribeLoading }] =
-    useCreateStripeSubscriptionMutation();
+  //const [subscribe, { isLoading: subscribeLoading }] = useCreateStripeSubscriptionMutation();
 
   useEffect(() => {
     getPricing({});
@@ -131,6 +131,7 @@ const Pricing = () => {
     setShowModal(true);
   };
 
+  /** 
   const confirmSubscription = () => {
     if (!selectedPlan) {
       console.error("No plan selected");
@@ -142,11 +143,12 @@ const Pricing = () => {
     })
       .unwrap()
       .then((res) => {
-        if (res?.data?.url) {
+        console.log(res)
+        if (res?.url) {
           if (window.top) {
-            window.top.location.href = res?.data?.url;
+            window.top.location.href = res?.url;
           } else {
-            window.open(res?.data?.url, "_blank");
+            window.open(res?.url, "_blank");
           }
         } else {
           console.error("No checkout URL returned");
@@ -157,6 +159,7 @@ const Pricing = () => {
         console.log(err);
       });
   };
+  */
 
   return (
     <section className="py-12 px-4 bg-white h-dvh flex flex-col gap-12">
@@ -234,9 +237,10 @@ const Pricing = () => {
               </button>
               <Button
                 className="!px-4 !py-2 !bg-green-500 !border-none !h-[40px] !text-white !rounded-lg"
-                onClick={confirmSubscription}
-                loading={subscribeLoading}
-                disabled={subscribeLoading}
+                //onClick={confirmSubscription}
+                onClick={()=>router.push(`/pre-signup?ref=${refCode || ""}&pricing=${selectedPlan}`)}
+                //loading={subscribeLoading}
+                //disabled={subscribeLoading}
               >
                 Continue to Checkout
               </Button>
