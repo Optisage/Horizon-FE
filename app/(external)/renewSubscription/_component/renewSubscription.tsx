@@ -2,10 +2,10 @@
 "use client";
 
 import { useLazyGetPricingQuery } from "@/redux/api/auth";
-import { useCreateStripeSubscriptionMutation, useRenewSubscriptionMutation } from "@/redux/api/subscriptionApi";
+import { useRenewSubscriptionMutation } from "@/redux/api/subscriptionApi";
 import { Button, message } from "antd";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+//import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { FaCheckCircle } from "react-icons/fa";
 import { FaDollarSign } from "react-icons/fa6";
@@ -75,7 +75,6 @@ const FeatureList = ({
 };
 
 const RenewSubscription = () => {
-  const searchParams = useSearchParams();
   const [getPricing, { data }] = useLazyGetPricingQuery();
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
   const [expandedCards, setExpandedCards] = useState<Record<string, boolean>>(
