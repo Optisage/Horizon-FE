@@ -33,6 +33,13 @@ export const subscriptionApi = createApi({
         params,
       }),
     }),
+    createStripeSubscriptionV2: builder.query({
+      query: (params) => ({
+        url: `customer/stripe/get-checkout-link`,
+        method: 'GET',
+        params,
+      }),
+    }),
     verifyStripeSubscription: builder.mutation({
       query: (body) => ({
         url: `customer/stripe/verify`,
@@ -70,5 +77,6 @@ export const {
    useVerifyStripeSubscriptionMutation,
    useChangeSubscriptionMutation,
    useRenewSubscriptionMutation,
-   useCancelSubscriptionMutation
+   useCancelSubscriptionMutation,
+   useLazyCreateStripeSubscriptionV2Query
   } = subscriptionApi; 
