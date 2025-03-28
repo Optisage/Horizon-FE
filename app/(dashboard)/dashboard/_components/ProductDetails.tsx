@@ -162,32 +162,6 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
     dayjs().add(1, "month").format("YYYY-MM-DD")
   ); // For date range end
 
-  const [fees, setFees] = useState({
-    referralFee: 0,
-    fulfillmentType: "FBA",
-    fullfillmentFee: 0,
-    closingFee: 0,
-    storageFee: 0,
-    prepFee: 0,
-    shippingFee: 0,
-    digitalServicesFee: 0,
-    miscFee: 0,
-  });
-  const [totalFees, setTotalFees] = useState(0);
-  const [minROI, setMinROI] = useState(0);
-  const [minProfit, setMinProfit] = useState(0);
-  const [profitAmount, setProfitAmount] = useState(0);
-  const [maxCost, setMaxCost] = useState(0);
-  const [vatOnFees, setVatOnFees] = useState(0);
-  const [discount, setDiscount] = useState(0);
-  const [profitMargin, setProfitMargin] = useState(0);
-  const [breakEvenPrice, setBreakEvenPrice] = useState(0);
-  const [estimatedPayout, setEstimatedPayout] = useState(0);
-
-  const { setIpIssue, eligibility } = useAppSelector(
-    (state) => state?.global?.ipAlert || { setIpIssue: 0, eligibility: false }
-  );
-
   const [calculateProfitability, { isLoading: isLoadingProfitability }] =
     useCalculateProfitablilityMutation();
 
@@ -199,13 +173,72 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
   const product = data?.data;
   const productLink = product?.amazon_link;
 
-  // const lastProfitabilityCalc = product?.last_profitability_calculation;
+  const lastProfitabilityCalc = product?.last_profitability_calculation;
 
-  const [responseData, setResponseData] = useState({
-    fba: null,
-    fbm: null,
+  // Initialize state with last profitability calculation if available
+  const [fees, setFees] = useState({
+    referralFee: lastProfitabilityCalc?.fba?.referralFee || 0,
+    fulfillmentType: lastProfitabilityCalc?.fba?.fulfillmentType || "FBA",
+    fullfillmentFee: lastProfitabilityCalc?.fba?.fullfillmentFee || 0,
+    closingFee: lastProfitabilityCalc?.fba?.closingFee || 0,
+    storageFee: lastProfitabilityCalc?.fba?.storageFee || 0,
+    prepFee: lastProfitabilityCalc?.fba?.prepFee || 0,
+    shippingFee: lastProfitabilityCalc?.fba?.shippingFee || 0,
+    digitalServicesFee: lastProfitabilityCalc?.fba?.digitalServicesFee || 0,
+    miscFee: lastProfitabilityCalc?.fba?.miscFee || 0,
   });
+
+  const [totalFees, setTotalFees] = useState(
+    lastProfitabilityCalc?.fba?.totalFees || 0
+  );
+  const [minROI, setMinROI] = useState(lastProfitabilityCalc?.fba?.minRoi || 0);
+  const [minProfit, setMinProfit] = useState(
+    lastProfitabilityCalc?.fba?.minProfit || 0
+  );
+  const [profitAmount, setProfitAmount] = useState(
+    lastProfitabilityCalc?.fba?.profitAmount || 0
+  );
+  const [maxCost, setMaxCost] = useState(
+    lastProfitabilityCalc?.fba?.maxCost || 0
+  );
+  const [vatOnFees, setVatOnFees] = useState(
+    lastProfitabilityCalc?.fba?.vatOnFees || 0
+  );
+  const [discount, setDiscount] = useState(
+    lastProfitabilityCalc?.fba?.discount || 0
+  );
+  const [profitMargin, setProfitMargin] = useState(
+    lastProfitabilityCalc?.fba?.profitMargin || 0
+  );
+  const [breakEvenPrice, setBreakEvenPrice] = useState(
+    lastProfitabilityCalc?.fba?.breakevenSalePrice || 0
+  );
+  const [estimatedPayout, setEstimatedPayout] = useState(
+    lastProfitabilityCalc?.fba?.estimatedAmzPayout || 0
+  );
+
+  const { setIpIssue, eligibility } = useAppSelector(
+    (state) => state?.global?.ipAlert || { setIpIssue: 0, eligibility: false }
+  );
+
+  // Initialize responseData with last calculation
+  const [responseData, setResponseData] = useState({
+    fba: lastProfitabilityCalc?.fba || null,
+    fbm: lastProfitabilityCalc?.fbm || null,
+  });
+
   const [isSwitching, setIsSwitching] = useState(false);
+
+  // Update UI when fulfillmentType changes
+  useEffect(() => {
+    if (lastProfitabilityCalc) {
+      const data =
+        fulfillmentType === "FBA"
+          ? lastProfitabilityCalc.fba
+          : lastProfitabilityCalc.fbm;
+      updateUIWithData(data);
+    }
+  }, [fulfillmentType, lastProfitabilityCalc]);
 
   // calculating profitability
   const handleCalculateProfitability = async () => {
