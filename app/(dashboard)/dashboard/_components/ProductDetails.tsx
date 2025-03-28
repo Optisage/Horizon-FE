@@ -174,6 +174,13 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
   const productLink = product?.amazon_link;
 
   const lastProfitabilityCalc = product?.last_profitability_calculation;
+  const lastCostPrice = lastProfitabilityCalc?.fba?.costPrice;
+
+  useEffect(() => {
+    if (lastCostPrice) {
+      setCostPrice(lastCostPrice);
+    }
+  }, [lastCostPrice]);
 
   // Initialize state with last profitability calculation if available
   const [fees, setFees] = useState({
@@ -866,7 +873,7 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
                     <input
                       aria-label="Cost Price"
                       type="text"
-                      placeholder="0"
+                      placeholder={lastCostPrice}
                       value={costPrice}
                       onChange={(e) => setCostPrice(e.target.value)}
                       onBlur={(e) => {
