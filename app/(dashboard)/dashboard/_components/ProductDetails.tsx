@@ -190,6 +190,14 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
   const [calculateProfitability, { isLoading: isLoadingProfitability }] =
     useCalculateProfitablilityMutation();
 
+  const { data, error, isLoading } = useGetItemQuery({
+    marketplaceId,
+    itemAsin: asin,
+  });
+
+  const product = data?.data;
+  // const lastProfitabilityCalc = product?.last_profitability_calculation;
+
   const [responseData, setResponseData] = useState({
     fba: null,
     fbm: null,
@@ -283,8 +291,6 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
   } = useGetBuyboxDetailsQuery({
     marketplaceId,
     itemAsin: asin,
-    statStartDate,
-    statEndDate,
   });
 
   const {
@@ -296,11 +302,6 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
     marketplaceId,
     itemAsin: asin,
     period: activeTab4,
-  });
-
-  const { data, error, isLoading } = useGetItemQuery({
-    marketplaceId,
-    itemAsin: asin,
   });
 
   const {
@@ -433,7 +434,6 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
       </div>
     );
 
-  const product = data?.data;
   const buybox: BuyboxItem[] = buyboxData?.data?.buybox ?? [];
   const buyboxDetails: BuyboxItem[] = buyboxDetailsData?.data?.buybox ?? [];
   const extra = buyboxDetailsData?.data?.extra;
@@ -562,7 +562,6 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
       : [];
 
   if (isLoadingBuybox || isLoading || isLoadingRankings || isLoadingSearch)
-    // return <Loader />;
     return (
       <div className="h-[50dvh] flex justify-center items-center">
         <CircularLoader

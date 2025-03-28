@@ -172,7 +172,8 @@ const SalesStats = ({ product }: { product: Product }) => {
                 <p className="text-base font-semibold">
                   {salesStats?.sales_analytics?.price?.currency ||
                     currencySymbol}
-                  {salesStats?.sales_analytics?.price?.amount || 0}
+                  {salesStats?.sales_analytics?.price?.amount?.toLocaleString() ||
+                    0}
                 </p>
               </span>
               {formatPercentage(
@@ -199,7 +200,8 @@ const SalesStats = ({ product }: { product: Product }) => {
               <span className="flex flex-col gap-1">
                 <p className="text-[#737373] text-xs">Daily Units Sold</p>
                 <p className="text-base font-semibold">
-                  {salesStats?.sales_analytics?.daily_units_sold?.amount || 0}
+                  {salesStats?.sales_analytics?.daily_units_sold?.amount?.toLocaleString() ||
+                    0}
                 </p>
               </span>
               {formatPercentage(
@@ -212,7 +214,8 @@ const SalesStats = ({ product }: { product: Product }) => {
                 <p className="text-base font-semibold">
                   {salesStats?.sales_analytics?.monthly_revenue?.currency ||
                     currencySymbol}
-                  {salesStats?.sales_analytics?.monthly_revenue?.amount || 0}
+                  {salesStats?.sales_analytics?.monthly_revenue?.amount?.toLocaleString() ||
+                    0}
                 </p>
               </span>
               {formatPercentage(
