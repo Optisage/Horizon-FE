@@ -4,7 +4,7 @@
 import { useLazyGetPricingQuery } from "@/redux/api/auth";
 //import { useCreateStripeSubscriptionMutation } from "@/redux/api/subscriptionApi";
 import { Button } from "antd";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { FaCheckCircle } from "react-icons/fa";
 import { FaDollarSign } from "react-icons/fa6";
@@ -75,7 +75,7 @@ const FeatureList = ({
 
 const Pricing = () => {
   const searchParams = useSearchParams();
-  const router = useRouter()
+  //const router = useRouter()
   const [getPricing, { data }] = useLazyGetPricingQuery();
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
   const [expandedCards, setExpandedCards] = useState<Record<string, boolean>>(
@@ -238,7 +238,7 @@ const Pricing = () => {
               <Button
                 className="!px-4 !py-2 !bg-green-500 !border-none !h-[40px] !text-white !rounded-lg"
                 //onClick={confirmSubscription}
-                onClick={()=>router.push(`/pre-signup?ref=${refCode || ""}&pricing=${selectedPlan}`)}
+                onClick={()=>window.open(`/pre-signup?ref=${refCode || ""}&pricing=${selectedPlan}`)}
                 //loading={subscribeLoading}
                 //disabled={subscribeLoading}
               >
