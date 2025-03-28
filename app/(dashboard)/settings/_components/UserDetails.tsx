@@ -294,13 +294,13 @@ const UserDetails = ({ userData }: UserDetailsProps) => {
                     htmlFor="standard-rates"
                     className="text-sm font-medium"
                   >
-                    Standard Rate
+                    Standard Rate(%)
                   </label>
                   <Input
                     id="standard-rates"
                     defaultValue="10%"
                     className="px-3 py-2"
-                    value={`%${formData?.vat?.standard_rate?.rate ?? ""}`}
+                    value={`${formData?.vat?.standard_rate?.rate ?? ""}`}
                     onChange={(e) => handleVatChange("rate", e.target.value)}
                   />
                 </span>
@@ -309,13 +309,13 @@ const UserDetails = ({ userData }: UserDetailsProps) => {
                     htmlFor="reduced-rates"
                     className="text-sm font-medium"
                   >
-                    Reduced Rate
+                    Reduced Rate(%)
                   </label>
                   <Input
                     id="reduced-rate"
                     defaultValue="0.00%"
                     className="px-3 py-2"
-                    value={`%${
+                    value={`${
                       formData?.vat?.standard_rate?.reduced_rate ?? ""
                     }`}
                     onChange={(e) =>
@@ -330,13 +330,13 @@ const UserDetails = ({ userData }: UserDetailsProps) => {
               <div>
                 <span className="flex flex-col gap-4">
                   <label htmlFor="flat-rate" className="text-sm font-medium">
-                    Flat rate
+                    Flat rate(%)
                   </label>
                   <Input
                     id="flat-rate"
                     defaultValue="0.00%"
                     className="px-3 py-2"
-                    value={`%${formData?.vat?.flat_rate?.rate ?? ""}`}
+                    value={`${formData?.vat?.flat_rate?.rate ?? ""}`}
                     onChange={(e) => handleVatChange("rate", e.target.value)}
                   />
                 </span>
