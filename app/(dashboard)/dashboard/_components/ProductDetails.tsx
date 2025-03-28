@@ -56,6 +56,7 @@ import dayjs from "dayjs";
 import ExportToSheetsButton from "@/utils/exportGoogle";
 import { ImSpinner9 } from "react-icons/im";
 import CircularLoader from "@/utils/circularLoader";
+import Link from "next/link";
 
 interface ProductDetailsProps {
   asin: string;
@@ -196,6 +197,8 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
   });
 
   const product = data?.data;
+  const productLink = product?.amazon_link;
+
   // const lastProfitabilityCalc = product?.last_profitability_calculation;
 
   const [responseData, setResponseData] = useState({
@@ -663,7 +666,7 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
               <RxArrowTopRight className="size-5" />
             </button>
 
-            <button
+            {/*}            <button
               type="button"
               onClick={() => {
                 if (product?.asin) {
@@ -679,7 +682,16 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
             >
               See this Product on Amazon
               <RxArrowTopRight className="size-5" />
-            </button>
+            </button> */}
+
+            <Link
+              href={productLink}
+              target="_blank"
+              className="border border-border text-primary px-3 py-2 rounded-xl flex gap-1 items-center font-semibold hover:bg-gray-50 active:scale-95 duration-200 text-sm md:text-base"
+            >
+              See this Product on Amazon
+              <RxArrowTopRight className="size-5" />
+            </Link>
           </div>
 
           {/* grid */}

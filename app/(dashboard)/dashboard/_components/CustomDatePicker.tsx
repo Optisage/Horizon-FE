@@ -65,20 +65,20 @@ const CustomDatePicker: React.FC<CustomDatePickerProps> = ({
     }
   };
 
-  const rangePresets = [
-    {
-      label: "1M",
-      value: [dayjs(), dayjs().add(1, "month")] as [dayjs.Dayjs, dayjs.Dayjs],
-    },
-    {
-      label: "3M",
-      value: [dayjs(), dayjs().add(3, "month")] as [dayjs.Dayjs, dayjs.Dayjs],
-    },
-    {
-      label: "6M",
-      value: [dayjs(), dayjs().add(6, "month")] as [dayjs.Dayjs, dayjs.Dayjs],
-    },
-  ];
+  // const rangePresets = [
+  //   {
+  //     label: "1M",
+  //     value: [dayjs(), dayjs().add(1, "month")] as [dayjs.Dayjs, dayjs.Dayjs],
+  //   },
+  //   {
+  //     label: "3M",
+  //     value: [dayjs(), dayjs().add(3, "month")] as [dayjs.Dayjs, dayjs.Dayjs],
+  //   },
+  //   {
+  //     label: "6M",
+  //     value: [dayjs(), dayjs().add(6, "month")] as [dayjs.Dayjs, dayjs.Dayjs],
+  //   },
+  // ];
 
   const disabledDate = (current: dayjs.Dayjs) => {
     // Disable dates that are after today
@@ -117,7 +117,7 @@ const CustomDatePicker: React.FC<CustomDatePickerProps> = ({
             className="!border-none !rounded-none !shadow-none !p-1 !text-center !w-[200px]"
             popupClassName="custom-datepicker-popup"
             renderExtraFooter={() => null}
-            presets={rangePresets}
+            // presets={rangePresets}
             disabledDate={disabledDate}
           />
         ) : (
