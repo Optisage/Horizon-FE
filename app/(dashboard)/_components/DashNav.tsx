@@ -43,16 +43,14 @@ const DashNav = () => {
       />
 
       <div className="hidden lg:flex items-center gap-3">
-        {
-          billing_status !== 'active' && (
-            <p className="text-sm font-medium text-[#090F0D]">
+        {billing_status !== "active" && (
+          <p className="text-sm font-medium text-[#090F0D]">
             {remainingDays !== null && remainingDays > 0
               ? `${remainingDays} days left on your free trial`
               : "Your free trial has expired."}
           </p>
-          )
-        }
-       
+        )}
+
         <button
           onClick={() => router.push("/subscriptions")}
           type="button"
@@ -70,7 +68,7 @@ const DashNav = () => {
             href=""
             className="hidden xl:block text-sm font-medium text-[#090F0D]"
           >
-            For better experience, install optisage Chrome Extension.
+            For better experience, please install optisage Chrome Extension.
           </Link>
           <CountrySelect />
         </div>
