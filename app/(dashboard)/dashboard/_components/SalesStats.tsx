@@ -332,10 +332,10 @@ const SalesStats = ({ product }: { product: Product }) => {
                   {product.title}
                 </h3>
 
-                <p>
+                {/* <p>
                   {"⭐".repeat(product.rating || 0)}{" "}
                   <span className="font-bold">({product.reviews || 0})</span>
-                </p>
+                </p> */}
                 <p>By ASIN: {product.asin}</p>
               </span>
             </div>

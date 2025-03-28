@@ -56,6 +56,7 @@ import dayjs from "dayjs";
 import ExportToSheetsButton from "@/utils/exportGoogle";
 import { ImSpinner9 } from "react-icons/im";
 import CircularLoader from "@/utils/circularLoader";
+import Link from "next/link";
 
 interface ProductDetailsProps {
   asin: string;
@@ -161,32 +162,6 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
     dayjs().add(1, "month").format("YYYY-MM-DD")
   ); // For date range end
 
-  const [fees, setFees] = useState({
-    referralFee: 0,
-    fulfillmentType: "FBA",
-    fullfillmentFee: 0,
-    closingFee: 0,
-    storageFee: 0,
-    prepFee: 0,
-    shippingFee: 0,
-    digitalServicesFee: 0,
-    miscFee: 0,
-  });
-  const [totalFees, setTotalFees] = useState(0);
-  const [minROI, setMinROI] = useState(0);
-  const [minProfit, setMinProfit] = useState(0);
-  const [profitAmount, setProfitAmount] = useState(0);
-  const [maxCost, setMaxCost] = useState(0);
-  const [vatOnFees, setVatOnFees] = useState(0);
-  const [discount, setDiscount] = useState(0);
-  const [profitMargin, setProfitMargin] = useState(0);
-  const [breakEvenPrice, setBreakEvenPrice] = useState(0);
-  const [estimatedPayout, setEstimatedPayout] = useState(0);
-
-  const { setIpIssue, eligibility } = useAppSelector(
-    (state) => state?.global?.ipAlert || { setIpIssue: 0, eligibility: false }
-  );
-
   const [calculateProfitability, { isLoading: isLoadingProfitability }] =
     useCalculateProfitablilityMutation();
 
@@ -196,13 +171,81 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
   });
 
   const product = data?.data;
-  // const lastProfitabilityCalc = product?.last_profitability_calculation;
+  const productLink = product?.amazon_link;
 
-  const [responseData, setResponseData] = useState({
-    fba: null,
-    fbm: null,
+  const lastProfitabilityCalc = product?.last_profitability_calculation;
+  const lastCostPrice = lastProfitabilityCalc?.fba?.costPrice;
+
+  useEffect(() => {
+    if (lastCostPrice) {
+      setCostPrice(lastCostPrice);
+    }
+  }, [lastCostPrice]);
+
+  // Initialize state with last profitability calculation if available
+  const [fees, setFees] = useState({
+    referralFee: lastProfitabilityCalc?.fba?.referralFee || 0,
+    fulfillmentType: lastProfitabilityCalc?.fba?.fulfillmentType || "FBA",
+    fullfillmentFee: lastProfitabilityCalc?.fba?.fullfillmentFee || 0,
+    closingFee: lastProfitabilityCalc?.fba?.closingFee || 0,
+    storageFee: lastProfitabilityCalc?.fba?.storageFee || 0,
+    prepFee: lastProfitabilityCalc?.fba?.prepFee || 0,
+    shippingFee: lastProfitabilityCalc?.fba?.shippingFee || 0,
+    digitalServicesFee: lastProfitabilityCalc?.fba?.digitalServicesFee || 0,
+    miscFee: lastProfitabilityCalc?.fba?.miscFee || 0,
   });
+
+  const [totalFees, setTotalFees] = useState(
+    lastProfitabilityCalc?.fba?.totalFees || 0
+  );
+  const [minROI, setMinROI] = useState(lastProfitabilityCalc?.fba?.minRoi || 0);
+  const [minProfit, setMinProfit] = useState(
+    lastProfitabilityCalc?.fba?.minProfit || 0
+  );
+  const [profitAmount, setProfitAmount] = useState(
+    lastProfitabilityCalc?.fba?.profitAmount || 0
+  );
+  const [maxCost, setMaxCost] = useState(
+    lastProfitabilityCalc?.fba?.maxCost || 0
+  );
+  const [vatOnFees, setVatOnFees] = useState(
+    lastProfitabilityCalc?.fba?.vatOnFees || 0
+  );
+  const [discount, setDiscount] = useState(
+    lastProfitabilityCalc?.fba?.discount || 0
+  );
+  const [profitMargin, setProfitMargin] = useState(
+    lastProfitabilityCalc?.fba?.profitMargin || 0
+  );
+  const [breakEvenPrice, setBreakEvenPrice] = useState(
+    lastProfitabilityCalc?.fba?.breakevenSalePrice || 0
+  );
+  const [estimatedPayout, setEstimatedPayout] = useState(
+    lastProfitabilityCalc?.fba?.estimatedAmzPayout || 0
+  );
+
+  const { setIpIssue, eligibility } = useAppSelector(
+    (state) => state?.global?.ipAlert || { setIpIssue: 0, eligibility: false }
+  );
+
+  // Initialize responseData with last calculation
+  const [responseData, setResponseData] = useState({
+    fba: lastProfitabilityCalc?.fba || null,
+    fbm: lastProfitabilityCalc?.fbm || null,
+  });
+
   const [isSwitching, setIsSwitching] = useState(false);
+
+  // Update UI when fulfillmentType changes
+  useEffect(() => {
+    if (lastProfitabilityCalc) {
+      const data =
+        fulfillmentType === "FBA"
+          ? lastProfitabilityCalc.fba
+          : lastProfitabilityCalc.fbm;
+      updateUIWithData(data);
+    }
+  }, [fulfillmentType, lastProfitabilityCalc]);
 
   // calculating profitability
   const handleCalculateProfitability = async () => {
@@ -663,7 +706,7 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
               <RxArrowTopRight className="size-5" />
             </button>
 
-            <button
+            {/*}            <button
               type="button"
               onClick={() => {
                 if (product?.asin) {
@@ -679,7 +722,16 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
             >
               See this Product on Amazon
               <RxArrowTopRight className="size-5" />
-            </button>
+            </button> */}
+
+            <Link
+              href={productLink}
+              target="_blank"
+              className="border border-border text-primary px-3 py-2 rounded-xl flex gap-1 items-center font-semibold hover:bg-gray-50 active:scale-95 duration-200 text-sm md:text-base"
+            >
+              See this Product on Amazon
+              <RxArrowTopRight className="size-5" />
+            </Link>
           </div>
 
           {/* grid */}
@@ -821,7 +873,7 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
                     <input
                       aria-label="Cost Price"
                       type="text"
-                      placeholder="0"
+                      placeholder={lastCostPrice}
                       value={costPrice}
                       onChange={(e) => setCostPrice(e.target.value)}
                       onBlur={(e) => {
