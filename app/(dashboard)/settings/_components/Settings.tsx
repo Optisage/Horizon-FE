@@ -21,7 +21,12 @@ const Settings = () => {
   );
   const [isCancelVisible, setIsCancelVisible] = useState(false);
   const [isReasonVisible, setIsReasonVisible] = useState(false);
- const { subscription_type, subscription_canceled, subscription_will_end_at, is_subscribed } =
+ const {  subscription_type,
+  subscription_canceled,
+  subscription_will_end_at,
+  billing_status,
+  trial_ends_at,
+  next_billing_date,} =
      useAppSelector((state) => state.api?.user) || {};
   const [messageApi, contextHolder] = message.useMessage();
   const [getProfile] =useLazyGetProfileQuery()
@@ -47,6 +52,34 @@ const Settings = () => {
         messageApi.error("Failed to Cancel Subscription");
       });
   };
+
+
+  // Determine expiration date and message
+  let expirationDate;
+  let statusMessage = "";
+  let statusText = "";
+
+  if (subscription_canceled) {
+    statusText = "Canceled";
+    statusMessage = "Your subscription will fully expire at";
+    expirationDate = subscription_will_end_at;
+  } else {
+    switch (billing_status) {
+      case "trialing":
+        statusText = "Trialing";
+        statusMessage = "Your trial ends at";
+        expirationDate = trial_ends_at;
+        break;
+      case "active":
+        statusText = "Active";
+        statusMessage = "Your subscription will renew on";
+        expirationDate = next_billing_date;
+        break;
+      default:
+        statusText = "Inactive";
+        statusMessage = "No active subscription";
+    }
+  }
 
   return (
     <section className="flex flex-col gap-8 min-h-[50dvh] md:min-h-[80dvh] ">
@@ -107,15 +140,17 @@ const Settings = () => {
               <h5 className=" font-semibold text-[#090F0D] ">{subscription_type} User</h5>
               <h6 className=" flex items-center">
                 <span className=" text-sm text-[#1E6B4F] font-semibold">
-                  {
-                    is_subscribed ? "Active" : "Inactive"
-                  }
+                {statusText}
                   
                 </span>
-                <LuDot size={20} color="#D9D9D9" />
-                <span className=" text-sm text-[#5F6362]">
-                  Expires on {formatDate(subscription_will_end_at)}
-                </span>
+                {expirationDate && (
+                  <>
+                    <LuDot size={20} color="#D9D9D9" />
+                    <span className="text-sm text-[#5F6362]">
+                      {`${statusMessage} ${formatDate(expirationDate)}`}
+                    </span>
+                  </>
+                )}
               </h6>
             </div>
             <div>
