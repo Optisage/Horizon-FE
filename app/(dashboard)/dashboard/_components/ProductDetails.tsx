@@ -1594,11 +1594,11 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
                     className="font-bold hover:underline duration-100"
                   >
                     {product.title}
-                  </p>
+{/*                   </p>
                   <p>
                     {"⭐".repeat(product.rating || 0)}{" "}
                     <span className="font-bold">({product.reviews || 0})</span>
-                  </p>
+                  </p> */}
                   <p className="text-sm">By ASIN: {product.asin}</p>
 
                   <p className="text-sm">
