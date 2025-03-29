@@ -290,7 +290,7 @@ const Subscriptions = () => {
                   className="bg-primary text-white rounded-xl text-sm py-1 px-3 hover:bg-primary-hover"
                   onClick={() => setIsRenewVisible(true)}
                 >
-                  Renew Subscription
+                  Resume Subscription
                 </button>
               </div>
             )}
