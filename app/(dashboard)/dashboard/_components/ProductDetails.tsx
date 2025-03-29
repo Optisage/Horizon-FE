@@ -1594,8 +1594,8 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
                     className="font-bold hover:underline duration-100"
                   >
                     {product.title}
-{/*                   </p>
-                  <p>
+                  </p>
+                  {/*                  <p>
                     {"⭐".repeat(product.rating || 0)}{" "}
                     <span className="font-bold">({product.reviews || 0})</span>
                   </p> */}
@@ -1676,3 +1676,4 @@ const InfoCard = ({
 );
 
 export default ProductDetails;
+
