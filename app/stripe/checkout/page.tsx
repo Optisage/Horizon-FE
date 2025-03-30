@@ -96,8 +96,8 @@ export default function StripeCheckout() {
                 <h1 className=" font-semibold text-2xl mb-6">
                 Your subscription is successful!
                 </h1>
-                <p>An email has been sent to <span className=" font-semibold">{email}</span>, Please follow the instructions to set up account</p>
-                <p className=" text-xs text-gray-400 font-semibold mb-2">If you do not see it in your inbox check your spam</p>
+                <p>An email has been sent to <span className=" font-semibold">{email}</span>, Please follow the instructions to set up your account.</p>
+                <p className=" text-xs text-gray-400 font-semibold mb-2">If you do not see it in your inbox, please check spam</p>
                 <div className=" mt-1">
                   <Button className=" w-full rounded-md border shadow-[0px_-3px_0px_0px_#00000014_inset] py-2" onClick={handleResetLink}
                   loading={isLoading}

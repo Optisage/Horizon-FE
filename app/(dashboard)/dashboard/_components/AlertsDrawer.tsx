@@ -1,5 +1,5 @@
 "use client";
-
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useState } from "react";
 import { Drawer } from "antd";
 import { RxArrowTopRight } from "react-icons/rx";
@@ -17,7 +17,7 @@ interface prop {
 const AlertsDrawer = ({ itemAsin, marketplaceId, productName }: prop) => {
   const dispatch = useDispatch();
   const [open, setOpen] = useState(false);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
   const [ipAlertData, setIpAlertData] = useState<any>(null);
 
   const showDrawer = () => setOpen(true);
@@ -29,31 +29,35 @@ const AlertsDrawer = ({ itemAsin, marketplaceId, productName }: prop) => {
     const fetchData = async () => {
       if (marketplaceId && itemAsin) {
         try {
-          const response = await getIpAlert({
-            itemAsin,
-            marketplaceId,
-          }).unwrap();
-          setIpAlertData(response.data);
+          const response = await getIpAlert({ itemAsin, marketplaceId }).unwrap();
+          setIpAlertData(response.data ?? null);
+          
           dispatch(
             setIpAlert({
-              setIpIssue: response?.data?.ip_analysis?.issues,
-              eligibility: response?.data?.eligible_to_sell,
+              setIpIssue: response?.data?.ip_analysis?.issues ?? [],
+              eligibility: response?.data?.eligible_to_sell ?? false,
             })
           );
 
-          dispatch(setIpIssues(response?.data?.ip_analysis?.issues));
+          dispatch(setIpIssues(response?.data?.ip_analysis?.issues ?? []));
         } catch (error) {
           console.error("Error fetching IP alert:", error);
         }
       }
     };
     fetchData();
-  }, [marketplaceId, itemAsin, getIpAlert]);
+  }, [marketplaceId, itemAsin, getIpAlert, dispatch]);
 
   const getFirstDescription = () => {
-    if (!ipAlertData?.ip_analysis?.description) return "No known IP issues";
-    const descriptions = Object.values(ipAlertData.ip_analysis.description);
-    return descriptions.length > 0 ? descriptions[0] : "No known IP issues";
+    const description = ipAlertData?.ip_analysis?.description;
+    if (!description) return "No known IP issues";
+    
+    if (typeof description === 'object') {
+      const descriptions = Object.values(description);
+      return descriptions[0] || "No known IP issues";
+    }
+    
+    return description.toString();
   };
 
   return (
@@ -90,11 +94,11 @@ const AlertsDrawer = ({ itemAsin, marketplaceId, productName }: prop) => {
         <div className="p-6">
           <div className="border border-border rounded-xl shadow-sm p-4">
             <h3 className="text-lg font-semibold text-gray-900">
-              {productName}
+              {productName || 'Product Name Not Available'}
             </h3>
             <p className="text-sm text-gray-500 mt-1">
               ASIN:
-              <span className="font-medium ml-1">{itemAsin}</span>
+              <span className="font-medium ml-1">{itemAsin ?? 'N/A'}</span>
             </p>
 
             {ipAlertData?.eligible_to_sell ? (
@@ -106,14 +110,6 @@ const AlertsDrawer = ({ itemAsin, marketplaceId, productName }: prop) => {
                 <h4 className="text-lg font-semibold text-[#FF0000]">
                   You are not authorized to sell this product
                 </h4>
-                <span className=" hidden">
-                  <button
-                    type="button"
-                    className="px-6 py-2 bg-primary hover:bg-primary-hover rounded-xl text-white text-sm font-medium"
-                  >
-                    Get Approval on Amazon
-                  </button>
-                </span>
               </div>
             )}
 
@@ -134,7 +130,7 @@ const AlertsDrawer = ({ itemAsin, marketplaceId, productName }: prop) => {
                 },
                 {
                   label: "Size",
-                  value: ipAlertData?.size || ipAlertData?.size_text || "N/A",
+                  value: ipAlertData?.size ?? ipAlertData?.size_text ?? "N/A",
                 },
                 {
                   label: "Meltable",
