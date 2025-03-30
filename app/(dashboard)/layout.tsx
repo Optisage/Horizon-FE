@@ -80,7 +80,7 @@ export default function DashboardLayout({
               <div className=" grid grid-cols-2 gap-10">
                 <button
                   className="px-4 py-2 bg-gray-300 rounded-lg font-bold"
-                  onClick={() => handleLogout}
+                  onClick={() => handleLogout()}
                 >
                   Log Out
                 </button>

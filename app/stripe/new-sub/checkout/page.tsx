@@ -1,5 +1,5 @@
 "use client";
-import {useVerifyStripeSubscriptionMutation } from "@/redux/api/subscriptionApi";
+import {useVerifyNewSubscriptionMutation } from "@/redux/api/subscriptionApi";
 import Image from "next/image";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
@@ -7,18 +7,18 @@ import { useEffect, useState } from "react";
 import Logo from "@/public/assets/svg/Optisage Logo.svg";
 import success from "@/public/assets/svg/subSuccess.svg"
 import failedimg from "@/public/assets/svg/subFailed.svg"
-import { useResendVerificationMutation } from "@/redux/api/auth";
-import { Button, message } from "antd";
+
+import { Button } from "antd";
 export default function StripeCheckout() {
   const searchParams = useSearchParams();
   const status = searchParams.get("status");
   const [loading, setLoading] = useState(false);
   const [failed, setFailed] = useState(status !== "success");
-  const [verifySubscription] = useVerifyStripeSubscriptionMutation();
-  const [resendLink, {isLoading}]= useResendVerificationMutation()
+  const [verifySubscription] = useVerifyNewSubscriptionMutation();
 
-   const [messageApi, contextHolder] = message.useMessage();
-   const email = searchParams.get("email") || "";
+
+   //const [messageApi, contextHolder] = message.useMessage();
+   //const email = searchParams.get("email") || "";
   useEffect(() => {
     const sessionId = searchParams.get("session_id");
     const currentStatus = searchParams.get("status");
@@ -29,7 +29,6 @@ export default function StripeCheckout() {
       verifySubscription({ session_id: sessionId })
         .unwrap()
         .then(() => {
-          //setEmail(res?.data?.user?.email || "")
          setLoading(false);
         })
         .catch(() => {
@@ -39,18 +38,10 @@ export default function StripeCheckout() {
     }
   }, [searchParams, verifySubscription]);
 
-  const handleResetLink = () =>{
-    resendLink({email}).unwrap()
-    .then(()=>{
-      messageApi.success("Email sent")
-    })
-    .catch(()=>{
-      messageApi.error("Failed to send email")
-    })
-  }
+ 
   return (
     <main>
-      {contextHolder}
+     
       {loading ? (
         <div className=" flex justify-center h-screen items-center">
           <div className="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-primary"></div>
@@ -84,28 +75,29 @@ export default function StripeCheckout() {
                   Payment unsuccessful!
                 </h1>
                 <p>Please check your payment details and try again.</p>
+                <p className=" text-xs text-gray-400">If your card was charged, please reach out to support.</p>
                 <div>
-                  <a href="https://optisage.ai/pricing/">
+                  <Link href="/renewSubscription">
                   <button className=" w-full rounded-md border shadow-[0px_-3px_0px_0px_#00000014_inset] py-2">
                   Select another plan
                   </button>
-                  </a>
+                  </Link>
                 </div>
               </div>
             ) : (
               <div className=" text-center">
                 <h1 className=" font-semibold text-2xl mb-6">
-                Your subscription is successful!
+                Your subscription Renewal was successful!
                 </h1>
-                <p>An email has been sent to <span className=" font-semibold">{email}</span>, Please follow the instructions to set up your account.</p>
-                <p className=" text-xs text-gray-400 font-semibold mb-2">If you do not see it in your inbox, please check spam</p>
+                <p>Proceed to login.</p>
+               
                 <div className=" mt-1">
-                  <Button className=" w-full rounded-md border shadow-[0px_-3px_0px_0px_#00000014_inset] py-2" onClick={handleResetLink}
-                  loading={isLoading}
-                  disabled={isLoading}
+                    <Link href="/">
+                  <Button className=" w-full rounded-md border shadow-[0px_-3px_0px_0px_#00000014_inset] py-2" 
                   >
-                  Resend Email
+                  Login
                   </Button>
+                  </Link>
                 </div>
               </div>
             )}

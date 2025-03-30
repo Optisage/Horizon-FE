@@ -2,9 +2,10 @@
 "use client";
 
 import { useLazyGetPricingQuery } from "@/redux/api/auth";
-import { useRenewSubscriptionMutation } from "@/redux/api/subscriptionApi";
+import { useLazyNewSubscriptionQuery } from "@/redux/api/subscriptionApi";
 import { Button, message } from "antd";
-import Link from "next/link";
+
+import { useRouter } from "next/navigation";
 //import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { FaCheckCircle } from "react-icons/fa";
@@ -75,18 +76,17 @@ const FeatureList = ({
 };
 
 const RenewSubscription = () => {
+  const router = useRouter()
   const [getPricing, { data }] = useLazyGetPricingQuery();
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
   const [expandedCards, setExpandedCards] = useState<Record<string, boolean>>(
     {}
   );
-    const [renewed, setRenewed] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [renew, { isLoading: subscribeLoading }] =
-      useRenewSubscriptionMutation();
+      useLazyNewSubscriptionQuery();
        const [messageApi, contextHolder] = message.useMessage();
  
-
 
   useEffect(() => {
     getPricing({});
@@ -138,7 +138,7 @@ const RenewSubscription = () => {
       })
         .unwrap()
         .then((res) => {
-          setRenewed(true);
+          router.push(`${res?.data?.url}`)
           messageApi.success("renewal successful");
           console.log(res);
         })
@@ -211,16 +211,11 @@ const RenewSubscription = () => {
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 p-4 sm:p-0">
           <div className="bg-black text-white p-6 rounded-lg shadow-lg max-w-96 text-center">
             <h3 className="text-xl font-bold">Subscription Renewal</h3>
-            {renewed ? (
-              <p className="text-white font-semibold mt-2">
-                Subscription Renewal Successful
-              </p>
-            ) : (
               <p className=" mt-2">
                 This action will charge your card. Please confirm you want to
                 renew your subscription
               </p>
-            )}
+           
 
             <div className="mt-4 flex flex-col-reverse sm:flex-row gap-3 justify-center">
               <button
@@ -230,11 +225,6 @@ const RenewSubscription = () => {
                 Cancel
               </button>
 
-              {renewed ? (
-                <Link href={"/"} className="!px-4 !py-2 !bg-green-500 border-none !h-[40px] !text-white !rounded-lg">
-                  Go to Login
-                </Link>
-              ) : (
                 <Button
                   className="!px-4 !py-2 !bg-green-500 !border-none !h-[40px] !text-white !rounded-lg "
                   onClick={confirmSubscription}
@@ -243,7 +233,7 @@ const RenewSubscription = () => {
                 >
                   Confirm
                 </Button>
-              )}
+              
             </div>
           </div>
         </div>
