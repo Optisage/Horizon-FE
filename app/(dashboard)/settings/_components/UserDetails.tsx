@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import {
   CustomSwitch as Switch,
   CustomInput as Input,
@@ -13,6 +13,10 @@ import { useChangePasswordMutation } from "@/redux/api/auth";
 //import { password } from "@/lib/validationSchema";
 import { FaCheckCircle } from "react-icons/fa";
 import { useRouter } from "next/navigation";
+
+interface FormErrors {
+  [key: string]: string[];
+}
 
 interface UserData {
   email: string;
@@ -28,24 +32,23 @@ interface UserData {
 }
 
 interface UserDetailsProps {
-  userData: {
-    email: string;
-  
-    misc_fee: number;
-    misc_fee_percentage: number;
-    inbound_shipping: number;
-    prep_fee: number;
-    vat: {
-      toggle: boolean;
-      flat_rate: { rate: number };
-      standard_rate: { rate: number; reduced_rate: number };
+  userData?: {
+    email?: string;
+    misc_fee?: number;
+    misc_fee_percentage?: number;
+    inbound_shipping?: number;
+    prep_fee?: number;
+    vat?: {
+      toggle?: boolean;
+      flat_rate?: { rate?: number };
+      standard_rate?: { rate?: number; reduced_rate?: number };
     };
   };
 }
 
 const defaultUserData: UserData = {
   email: "",
-  
+
   misc_fee: 0,
   misc_fee_percentage: 0,
   inbound_shipping: 0,
@@ -60,7 +63,7 @@ const UserDetails = ({ userData }: UserDetailsProps) => {
   const router = useRouter();
   //const [vatEnabled, setVatEnabled] = useState(true);
   const [ChangeVisible, setChangeVisible] = useState(false);
-
+  const [formErrors, setFormErrors] = useState<FormErrors>({});
   const [vatType, setVatType] = useState<"standard" | "flat">("standard");
   const [saveSettings, { isLoading }] = useUpdateSettingsMutation();
   const [changePassword, { isLoading: passwordLoading }] =
@@ -69,101 +72,138 @@ const UserDetails = ({ userData }: UserDetailsProps) => {
     useState<Record<string, string[]>>();
   const [messageApi, contextHolder] = message.useMessage();
 
-  const [formData, setFormData] = useState<UserData>({
-    ...defaultUserData,
-    ...userData,
-    vat: {
-      toggle: userData?.vat?.toggle ?? defaultUserData.vat.toggle,
-      flat_rate: {
-        ...defaultUserData.vat.flat_rate,
-        ...(userData?.vat?.flat_rate || {}),
-      },
-      standard_rate: {
-        ...defaultUserData.vat.standard_rate,
-        ...(userData?.vat?.standard_rate || {}),
-      },
-    },
-  });
-
-  // Handle Input Change
-  const handleChange = (field: string, value: string) => {
-    // Allow empty value or valid numbers with decimals
-  const numericValue = value === "" ? 0 : Number(value);
-    setFormData((prev) => ({
-      ...prev,
-      [field]: isNaN(numericValue) ? prev[field as keyof UserData] : numericValue
-    }));
+  const deepMerge = (target: any, source: any): any => {
+    const merged = { ...target };
+    for (const key of Object.keys(source)) {
+      if (source[key] instanceof Object && !Array.isArray(source[key])) {
+        merged[key] = deepMerge(merged[key] || {}, source[key]);
+      } else {
+        merged[key] = source[key] !== undefined ? source[key] : merged[key];
+      }
+    }
+    return merged;
   };
 
+  const [formData, setFormData] = useState<UserData>(() =>
+    deepMerge(defaultUserData, userData || {})
+  );
+  const [initialData, setInitialData] = useState<UserData>(() =>
+    deepMerge(defaultUserData, userData || {})
+  );
+
+  // Local input state (strings)
+  const [inputValues, setInputValues] = useState({
+    prep_fee: userData?.prep_fee?.toString() || "0",
+    misc_fee: userData?.misc_fee?.toString() || "0",
+    misc_fee_percentage: userData?.misc_fee_percentage?.toString() || "0",
+    inbound_shipping: userData?.inbound_shipping?.toString() || "0",
+    vat_standard_rate: userData?.vat?.standard_rate?.rate?.toString() || "0",
+    vat_reduced_rate:
+      userData?.vat?.standard_rate?.reduced_rate?.toString() || "0",
+    vat_flat_rate: userData?.vat?.flat_rate?.rate?.toString() || "0",
+  });
+
+  // Sync input values when formData changes
   useEffect(() => {
-    if (userData) {
+    setInputValues({
+      prep_fee: formData.prep_fee.toString(),
+      misc_fee: formData.misc_fee.toString(),
+      misc_fee_percentage: formData.misc_fee_percentage.toString(),
+      inbound_shipping: formData.inbound_shipping.toString(),
+      vat_standard_rate: formData.vat.standard_rate.rate.toString(),
+      vat_reduced_rate: formData.vat.standard_rate.reduced_rate.toString(),
+      vat_flat_rate: formData.vat.flat_rate.rate.toString(),
+    });
+  }, [formData]);
+
+  useEffect(() => {
+    const merged = deepMerge(defaultUserData, userData || {});
+    setFormData(merged);
+    setInitialData(merged);
+  }, [userData]);
+  // Handle text input changes
+  const handleInputChange = (field: string, value: string) => {
+    // Allow numbers and decimals only
+    if (/^(\d+)?([.]?\d*)?$/.test(value)) {
+      setInputValues((prev) => ({ ...prev, [field]: value }));
+    }
+  };
+
+  // Convert to number on blur
+  const handleBlur = (field: keyof typeof inputValues) => {
+    const numericValue = parseFloat(inputValues[field]) || 0;
+
+    if (field.startsWith("vat_")) {
+      const rateType = vatType === "standard" ? "standard_rate" : "flat_rate";
+      // Define a mapping between the field and the correct key name.
+      const fieldMapping: { [key: string]: string } = {
+        vat_standard_rate: "rate",
+        vat_reduced_rate: "reduced_rate",
+        vat_flat_rate: "rate",
+      };
+      const keyToUpdate = fieldMapping[field];
+
       setFormData((prev) => ({
         ...prev,
-        ...userData,
         vat: {
-          toggle: userData?.vat?.toggle ?? prev.vat.toggle,
-          flat_rate: { ...prev.vat.flat_rate, ...userData?.vat?.flat_rate },
-          standard_rate: {
-            ...prev.vat.standard_rate,
-            ...userData?.vat?.standard_rate,
+          ...prev.vat,
+          [rateType]: {
+            ...prev.vat[rateType],
+            [keyToUpdate]: numericValue,
           },
         },
       }));
+
+      setInputValues((prev) => ({
+        ...prev,
+        [field]: numericValue.toString(),
+      }));
+    } else {
+      setFormData((prev) => ({
+        ...prev,
+        [field]: numericValue,
+      }));
     }
-  }, [userData]);
+  };
 
-  // Handle VAT Change
-  const handleVatChange = (field: string, value: string) => {
-    // Remove unwanted characters and convert to number
-    const cleanValue = Number(value.replace(/[$\s/%]/g, ""));
-
-    setFormData((prev) => ({
-      ...prev,
-      vat: {
-        ...prev.vat,
-        [vatType === "standard" ? "standard_rate" : "flat_rate"]: {
-          ...(prev.vat[
-            vatType === "standard" ? "standard_rate" : "flat_rate"
-          ] || {}),
-          [field]: isNaN(cleanValue)
-            ? 0
-            : Math.min(Math.max(cleanValue, 0), 100),
-        },
-      },
-    }));
+  // Helper function to calculate differences between two objects.
+  const getChangedValues = (initial: any, current: any) => {
+    const diff: any = {};
+    Object.keys(current).forEach((key) => {
+      if (key === "vat") {
+        // If any property within vat has changed, include the entire vat object.
+        if (JSON.stringify(initial.vat) !== JSON.stringify(current.vat)) {
+          diff.vat = current.vat;
+        }
+      } else if (typeof current[key] === "object" && current[key] !== null) {
+        const nestedDiff = getChangedValues(initial[key] || {}, current[key]);
+        if (Object.keys(nestedDiff).length > 0) {
+          diff[key] = nestedDiff;
+        }
+      } else if (current[key] !== initial[key]) {
+        diff[key] = current[key];
+      }
+    });
+    return diff;
   };
 
   const handleSaveUser = () => {
-   
-
-    const updatedFields: Partial<UserData> = {};
-
-    Object.keys(formData).forEach((key) => {
-      const typedKey = key as keyof UserData;
-
-  
-      if (
-        JSON.stringify(formData[typedKey]) !==
-        JSON.stringify(userData[typedKey])
-      ) {
-        (updatedFields[typedKey] as unknown) = formData[typedKey];
-      }
-    });
-
-    if (Object.keys(updatedFields).length === 0) {
-      messageApi.info("No changes detected.");
-      return;
-    }
-
-    saveSettings(updatedFields)
+    const changedValues = getChangedValues(initialData, formData);
+    saveSettings(changedValues)
       .unwrap()
       .then(() => {
         messageApi.success("Your User Details Saved.");
+        setInitialData(formData);
+        setFormErrors({});
       })
-      .catch(() => {
+      .catch((err) => {
+        if (err.data?.errors) {
+          setFormErrors(err.data.errors);
+        }
         messageApi.error("Failed to Save Details");
       });
   };
+
 
   const success = () => {
     messageApi.open({
@@ -200,7 +240,6 @@ const UserDetails = ({ userData }: UserDetailsProps) => {
           className="px-3 py-2"
           disabled
           value={formData?.email}
-          onChange={(e) => handleChange("email", e.target.value)}
         />
       </div>
 
@@ -228,7 +267,6 @@ const UserDetails = ({ userData }: UserDetailsProps) => {
           placeholder="******"
           className="px-3 py-2"
           disabled
-          
         />
       </div>
 
@@ -296,13 +334,25 @@ const UserDetails = ({ userData }: UserDetailsProps) => {
                   >
                     Standard Rate(%)
                   </label>
-                  <Input
-                    id="standard-rates"
-                    defaultValue="10%"
-                    className="px-3 py-2"
-                    value={`${formData?.vat?.standard_rate?.rate ?? ""}`}
-                    onChange={(e) => handleVatChange("rate", e.target.value)}
-                  />
+                  <div className="flex flex-col gap-1 w-full">
+                    <Input
+                      id="standard-rates"
+                      className="px-3 py-2"
+                      value={inputValues.vat_standard_rate}
+                      onChange={(e) =>
+                        handleInputChange("vat_standard_rate", e.target.value)
+                      }
+                      onBlur={() => handleBlur("vat_standard_rate")}
+                      status={
+                        formErrors["vat.standard_rate.rate"] ? "error" : ""
+                      }
+                    />
+                    {formErrors["vat.standard_rate.rate"] && (
+                      <div className="text-red-500 text-sm">
+                        {formErrors["vat.standard_rate.rate"][0]}
+                      </div>
+                    )}
+                  </div>
                 </span>
                 <span className="flex flex-col gap-4">
                   <label
@@ -311,17 +361,27 @@ const UserDetails = ({ userData }: UserDetailsProps) => {
                   >
                     Reduced Rate(%)
                   </label>
-                  <Input
-                    id="reduced-rate"
-                    defaultValue="0.00%"
-                    className="px-3 py-2"
-                    value={`${
-                      formData?.vat?.standard_rate?.reduced_rate ?? ""
-                    }`}
-                    onChange={(e) =>
-                      handleVatChange("reduced_rate", e.target.value)
-                    }
-                  />
+                  <div className="flex flex-col gap-1 w-full">
+                    <Input
+                      id="reduced-rate"
+                      className="px-3 py-2"
+                      value={inputValues.vat_reduced_rate}
+                      onChange={(e) =>
+                        handleInputChange("vat_reduced_rate", e.target.value)
+                      }
+                      onBlur={() => handleBlur("vat_reduced_rate")}
+                      status={
+                        formErrors["vat.standard_rate.reduced_rate"]
+                          ? "error"
+                          : ""
+                      }
+                    />
+                    {formErrors["vat.standard_rate.reduced_rate"] && (
+                      <div className="text-red-500 text-sm">
+                        {formErrors["vat.standard_rate.reduced_rate"][0]}
+                      </div>
+                    )}
+                  </div>
                 </span>
               </div>
             )}
@@ -332,13 +392,23 @@ const UserDetails = ({ userData }: UserDetailsProps) => {
                   <label htmlFor="flat-rate" className="text-sm font-medium">
                     Flat rate(%)
                   </label>
-                  <Input
-                    id="flat-rate"
-                    defaultValue="0.00%"
-                    className="px-3 py-2"
-                    value={`${formData?.vat?.flat_rate?.rate ?? ""}`}
-                    onChange={(e) => handleVatChange("rate", e.target.value)}
-                  />
+                  <div className="flex flex-col gap-1 w-full">
+                    <Input
+                      id="flat-rate"
+                      className="px-3 py-2"
+                      value={inputValues.vat_flat_rate}
+                      onChange={(e) =>
+                        handleInputChange("vat_flat_rate", e.target.value)
+                      }
+                      onBlur={() => handleBlur("vat_flat_rate")}
+                      status={formErrors["vat.flat_rate.rate"] ? "error" : ""}
+                    />
+                    {formErrors["vat.flat_rate.rate"] && (
+                      <div className="text-red-500 text-sm">
+                        {formErrors["vat.flat_rate.rate"][0]}
+                      </div>
+                    )}
+                  </div>
                 </span>
               </div>
             )}
@@ -365,15 +435,22 @@ const UserDetails = ({ userData }: UserDetailsProps) => {
             </p>
           </span>
 
-          <Input
-            id="prep-fee"
-            defaultValue="$0.00"
-            type="number"  // Add type="number"
-  step="0.01"
-            className="px-3 py-2"
-            value={`${formData?.prep_fee ?? ""}`}
-            onChange={(e) => handleChange("prep_fee", e.target.value)}
-          />
+          <div className="flex flex-col gap-1 w-full">
+            <Input
+              id="prep-fee"
+              type="text"
+              value={inputValues.prep_fee}
+              onChange={(e) => handleInputChange("prep_fee", e.target.value)}
+              onBlur={() => handleBlur("prep_fee")}
+              className="px-3 py-2"
+              status={formErrors.prep_fee ? "error" : ""}
+            />
+            {formErrors.prep_fee && (
+              <div className="text-red-500 text-xs">
+                {formErrors.prep_fee[0]}
+              </div>
+            )}
+          </div>
         </div>
 
         <div className="flex flex-col sm:flex-row gap-4 sm:gap-8 justify-between sm:items-center">
@@ -393,13 +470,22 @@ const UserDetails = ({ userData }: UserDetailsProps) => {
             </p>
           </span>
 
-          <Input
-            id="misc-fee"
-            defaultValue="$0.00"
-            className="px-3 py-2"
-            value={`${formData?.misc_fee ?? ""}`}
-            onChange={(e) => handleChange("misc_fee", e.target.value)}
-          />
+          <div className="flex flex-col gap-1 w-full">
+            <Input
+              id="misc-fee"
+              type="text"
+              value={inputValues.misc_fee}
+              onChange={(e) => handleInputChange("misc_fee", e.target.value)}
+              onBlur={() => handleBlur("misc_fee")}
+              className="px-3 py-2"
+              status={formErrors.misc_fee ? "error" : ""}
+            />
+            {formErrors.misc_fee && (
+              <div className="text-red-500 text-sm">
+                {formErrors.misc_fee[0]}
+              </div>
+            )}
+          </div>
         </div>
 
         <div className="flex flex-col sm:flex-row gap-4 sm:gap-8 justify-between sm:items-center">
@@ -418,15 +504,24 @@ const UserDetails = ({ userData }: UserDetailsProps) => {
             </p>
           </span>
 
-          <Input
-            id="misc-fee-percent"
-            defaultValue="$0.00"
-            className="px-3 py-2"
-            value={`${formData?.misc_fee_percentage ?? ""}`}
-            onChange={(e) =>
-              handleChange("misc_fee_percentage", e.target.value)
-            }
-          />
+          <div className="flex flex-col gap-1 w-full">
+            <Input
+              id="misc-fee-percent"
+              defaultValue="$0.00"
+              className="px-3 py-2"
+              value={inputValues.misc_fee_percentage}
+              onChange={(e) =>
+                handleInputChange("misc_fee_percentage", e.target.value)
+              }
+              onBlur={() => handleBlur("misc_fee_percentage")}
+              status={formErrors.misc_fee_percentage ? "error" : ""}
+            />
+            {formErrors.misc_fee_percentage && (
+              <div className="text-red-500 text-sm">
+                {formErrors.misc_fee_percentage[0]}
+              </div>
+            )}
+          </div>
         </div>
 
         <div className="flex flex-col sm:flex-row gap-4 sm:gap-8 justify-between sm:items-center">
@@ -445,14 +540,24 @@ const UserDetails = ({ userData }: UserDetailsProps) => {
               inbound shipping rates to include in calculations
             </p>
           </span>
-
-          <Input
-            id="inbound-shipping"
-            defaultValue="$0.00"
-            className="px-3 py-2"
-            value={`${formData?.inbound_shipping ?? ""}`}
-            onChange={(e) => handleChange("inbound_shipping", e.target.value)}
-          />
+          <div className="flex flex-col gap-1 w-full">
+            <Input
+              id="inbound-shipping"
+              defaultValue="$0.00"
+              className="px-3 py-2"
+              value={inputValues.inbound_shipping}
+              onChange={(e) =>
+                handleInputChange("inbound_shipping", e.target.value)
+              }
+              onBlur={() => handleBlur("inbound_shipping")}
+              status={formErrors.inbound_shipping ? "error" : ""}
+            />
+            {formErrors.inbound_shipping && (
+              <div className="text-red-500 text-sm">
+                {formErrors.inbound_shipping[0]}
+              </div>
+            )}
+          </div>
         </div>
 
         <div className=" flex justify-between items-center">

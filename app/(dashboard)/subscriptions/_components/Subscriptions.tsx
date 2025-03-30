@@ -118,7 +118,7 @@ const Subscriptions = () => {
    } else {
      switch (billing_status) {
        case "trialing":
-         statusText = "Trialing";
+         statusText = "";
          statusMessage = "Your trial ends at";
          expirationDate = trial_ends_at;
          break;

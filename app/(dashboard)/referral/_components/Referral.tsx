@@ -7,7 +7,7 @@ import Illustration3 from "@/public/assets/svg/illustration-3.svg";
 
 import { BsPieChart } from "react-icons/bs";
 import { HiOutlineChartBar } from "react-icons/hi";
-import { HiOutlinePlayCircle } from "react-icons/hi2";
+//import { HiOutlinePlayCircle } from "react-icons/hi2";
 import ReferralTable from "./ReferralTable";
 import SocialReferralModal from "./SocialReferralModal";
 import { useLazyGetReferralsQuery } from "@/redux/api/user";
@@ -107,9 +107,11 @@ const Referral = () => {
             </div>
           </div>
 
+
           <div className="flex flex-col md:flex-row xl:flex-col gap-4">
             <SocialReferralModal />
 
+{/** 
             <div className="border border-border rounded-lg p-5 flex gap-4 items-center relative cursor-pointer">
               <span className="absolute right-3 top-3 bg-primary text-white text-xs px-1.5 py-0.5 rounded-md">
                 Coming Soon
@@ -130,6 +132,7 @@ const Referral = () => {
                 </p>
               </span>
             </div>
+            */}
           </div>
         </div>
 
@@ -151,7 +154,7 @@ const Referral = () => {
             </div>
 
             <p className="px-2 pl-4 text-xs text-[#787891]">
-              100 points = $5 (Redeemable as a discount on your subscription
+              100 points = C$5 (Redeemable as a discount on your subscription
               plan or future purchases. Points cannot be withdrawn as cash.)
             </p>
           </div>

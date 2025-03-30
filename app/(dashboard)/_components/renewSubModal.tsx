@@ -1,5 +1,5 @@
 
-import { useAppSelector } from "@/redux/hooks";
+//import { useAppSelector } from "@/redux/hooks";
 import { Button, Modal } from "antd";
 
 
@@ -17,8 +17,7 @@ export default function RenewSubscriptionModal({
   handleRenewSubscription
 }: modal) {
   
- const {payment_method } =
-     useAppSelector((state) => state.api?.user) || {};
+ //const {payment_method } =useAppSelector((state) => state.api?.user) || {};
    
   return (
     <>
@@ -35,7 +34,7 @@ export default function RenewSubscriptionModal({
         <div className=" space-y-5">
             <p></p>
           <p>
-            Your {payment_method?.card_type} card will be charged 
+          your card will be charged at the end of your subscription
           </p>
 
           

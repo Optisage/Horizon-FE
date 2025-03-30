@@ -49,7 +49,7 @@ const SocialReferralModal = () => {
     <>
       <div
         onClick={() => setIsModalOpen(true)}
-        className="border border-border rounded-lg p-5 flex gap-4 items-center cursor-pointer"
+        className="border border-border rounded-lg p-5 flex gap-4 items-center cursor-pointer hover:border-primary"
       >
         <span>
           <span className="size-[50px] flex items-center justify-center bg-[#F7F7F7] text-[#4B4B62] rounded-full">
