@@ -83,14 +83,14 @@ const SalesStats = ({ product }: { product: Product }) => {
       return (
         <p className="text-green-500 text-sm flex items-center gap-0.5">
           <BsArrowUp className="size-4" />
-          {Math.abs(value).toFixed(3)}%
+          {Math.abs(value).toFixed(2)}%
         </p>
       );
     } else if (value < 0) {
       return (
         <p className="text-red-500 text-sm flex items-center gap-0.5">
           <BsArrowDown className="size-4" />
-          {Math.abs(value).toFixed(3)}%
+          {Math.abs(value).toFixed(2)}%
         </p>
       );
     } else {
