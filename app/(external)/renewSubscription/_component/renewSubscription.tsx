@@ -139,7 +139,7 @@ const RenewSubscription = () => {
         .unwrap()
         .then((res) => {
           router.push(`${res?.data?.url}`)
-          messageApi.success("renewal successful");
+          messageApi.success("redirecting to checkout...");
           console.log(res);
         })
         .catch((err) => {

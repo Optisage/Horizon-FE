@@ -15,10 +15,23 @@ export default function StripeCheckout() {
   const [loading, setLoading] = useState(false);
   const [failed, setFailed] = useState(status !== "success");
   const [verifySubscription] = useVerifyStripeSubscriptionMutation();
-  const [resendLink, {isLoading}]= useResendVerificationMutation()
+  const [resendLink, {isLoading}]= useResendVerificationMutation();
+  const [countdown, setCountdown] = useState(0);
 
    const [messageApi, contextHolder] = message.useMessage();
    const email = searchParams.get("email") || "";
+
+   // Countdown timer effect
+  useEffect(() => {
+    let intervalId: NodeJS.Timeout;
+    if (countdown > 0) {
+      intervalId = setInterval(() => {
+        setCountdown((prev) => prev - 1);
+      }, 1000);
+    }
+    return () => clearInterval(intervalId);
+  }, [countdown]);
+
   useEffect(() => {
     const sessionId = searchParams.get("session_id");
     const currentStatus = searchParams.get("status");
@@ -31,6 +44,7 @@ export default function StripeCheckout() {
         .then(() => {
           //setEmail(res?.data?.user?.email || "")
          setLoading(false);
+         setCountdown(60);
         })
         .catch(() => {
           setLoading(false);
@@ -42,7 +56,8 @@ export default function StripeCheckout() {
   const handleResetLink = () =>{
     resendLink({email}).unwrap()
     .then(()=>{
-      messageApi.success("Email sent")
+      messageApi.success("Email sent");
+      setCountdown(60);
     })
     .catch(()=>{
       messageApi.error("Failed to send email")
@@ -97,14 +112,14 @@ export default function StripeCheckout() {
                 <h1 className=" font-semibold text-2xl mb-6">
                 Your subscription is successful!
                 </h1>
-                <p>An email has been sent to <span className=" font-semibold">{email}</span>, Please follow the instructions to set up your account.</p>
+                <p>An email has been sent to <span className=" font-semibold">{email}</span>, please follow the instructions to set up your account.</p>
                 <p className=" text-xs text-gray-400 font-semibold mb-2">If you do not see it in your inbox, please check spam</p>
                 <div className=" mt-1">
                   <Button className=" w-full rounded-md border shadow-[0px_-3px_0px_0px_#00000014_inset] py-2" onClick={handleResetLink}
                   loading={isLoading}
-                  disabled={isLoading}
+                  disabled={isLoading || countdown > 0}
                   >
-                  Resend Email
+                   {countdown > 0 ? `Resend in ${countdown}s` : "Resend Email"}
                   </Button>
                 </div>
               </div>
