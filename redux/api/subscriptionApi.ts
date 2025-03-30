@@ -68,6 +68,20 @@ export const subscriptionApi = createApi({
         body,
       }),
     }),
+    newSubscription: builder.query({
+      query: (params) => ({
+        url: 'customer/stripe/new-subscription',
+        method: 'GET',
+        params,
+      }),
+    }),
+    verifyNewSubscription: builder.mutation({
+      query: (body) => ({
+        url: 'customer/stripe/new-subscription-verification',
+        method: 'POST',
+        body,
+      }),
+    }),
   }),
 });
 
@@ -78,5 +92,7 @@ export const {
    useChangeSubscriptionMutation,
    useRenewSubscriptionMutation,
    useCancelSubscriptionMutation,
-   useLazyCreateStripeSubscriptionV2Query
+   useLazyCreateStripeSubscriptionV2Query,
+   useLazyNewSubscriptionQuery,
+   useVerifyNewSubscriptionMutation
   } = subscriptionApi; 
