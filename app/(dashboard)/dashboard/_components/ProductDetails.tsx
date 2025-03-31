@@ -199,6 +199,7 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
     lastProfitabilityCalc?.fba?.totalFees || 0
   );
   const [minROI, setMinROI] = useState(lastProfitabilityCalc?.fba?.minRoi || 0);
+  const [ROI, setROI] = useState(lastProfitabilityCalc?.fba?.roi || 0);
   const [minProfit, setMinProfit] = useState(
     lastProfitabilityCalc?.fba?.minProfit || 0
   );
@@ -294,6 +295,7 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
       digitalServicesFee: data.digitalServicesFee,
       miscFee: parseFloat(data.miscFee as string),
     });
+    setROI(data.roi);
     setMinROI(data.minRoi);
     setMinProfit(data.minProfit);
     setProfitAmount(data.profitAmount);
@@ -1090,8 +1092,7 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
                   <InfoCard
                     icon={<ROIIcon />}
                     title="ROI"
-                    // {minROI || 0}%
-                    value={`${minROI ?? "0"}%`}
+                    value={`${ROI ?? "0"}%`}
                     bgColor="#F5EBFF"
                   />
                   <InfoCard
@@ -1676,4 +1677,3 @@ const InfoCard = ({
 );
 
 export default ProductDetails;
-
