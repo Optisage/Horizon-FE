@@ -118,6 +118,7 @@ interface ProfitabilityData {
   shippingFee: string | number;
   digitalServicesFee: number;
   miscFee: string | number;
+  roi: number;
   minRoi: number;
   minProfit: number;
   profitAmount: number;
@@ -634,6 +635,25 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
     </div>
   );
 
+  const StrikethroughIfNull = ({
+    value,
+    children,
+  }: {
+    value: string;
+    children: React.ReactNode;
+  }) => {
+    if (value === null) {
+      return <span style={{ textDecoration: "line-through" }}>{children}</span>;
+    }
+    return <>{children}</>;
+  };
+
+  const formatValue = (value: string | number) => {
+    if (value === null || value === undefined) return "N/A";
+    if (typeof value === "number") return `$${value.toFixed(2)}`;
+    return value;
+  };
+
   return (
     <section className="flex flex-col gap-8 min-h-[50dvh] md:min-h-[80dvh]">
       <SearchInput value={searchValue} onChange={setSearchValue} />
@@ -827,7 +847,6 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
                         setIsSwitching(true);
                         setFulfillmentType("FBA");
 
-                        // Simulate a 1-second delay before updating the UI
                         setTimeout(() => {
                           if (responseData.fba) {
                             updateUIWithData(responseData.fba);
@@ -849,7 +868,6 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
                         setIsSwitching(true);
                         setFulfillmentType("FBM");
 
-                        // Simulate a 1.5-second delay before updating the UI
                         setTimeout(() => {
                           if (responseData.fbm) {
                             updateUIWithData(responseData.fbm);
@@ -896,8 +914,7 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
                       aria-label="Sale Price"
                       type="number"
                       placeholder="0"
-                      // value={salePrice}
-                      defaultValue={buyboxWinnerPrice}
+                      value={salePrice}
                       onChange={handlePriceChange}
                       className="px-4 py-1.5 w-full border rounded outline-none focus:border-black"
                     />
@@ -963,23 +980,35 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
                 </div>
 
                 {isSwitching ? (
-                  <Loader2 />
+                  <div className="flex justify-center py-4">
+                    <Loader2 />
+                  </div>
                 ) : (
                   <>
                     <div className="bg-[#F4F4F5] rounded-xl p-2">
                       {activeTab === "maximumCost" && (
                         <div className="space-y-2">
                           <div className="flex justify-between text-sm">
-                            <span className="text-[#595959]">Min. ROI</span>
-                            <span className="font-semibold text-black">
-                              {minROI || 0}%
-                            </span>
+                            <StrikethroughIfNull value={minROI}>
+                              <span className="text-[#595959]">Min. ROI</span>
+                            </StrikethroughIfNull>
+                            <StrikethroughIfNull value={minROI}>
+                              <span className="font-semibold text-black">
+                                {minROI || 0}%
+                              </span>
+                            </StrikethroughIfNull>
                           </div>
                           <div className="flex justify-between text-sm">
-                            <span className="text-[#595959]">Min. Profit</span>
-                            <span className="font-semibold text-black">
-                              ${minProfit.toFixed(2)}
-                            </span>
+                            <StrikethroughIfNull value={minProfit}>
+                              <span className="text-[#595959]">
+                                Min. Profit
+                              </span>
+                            </StrikethroughIfNull>
+                            <StrikethroughIfNull value={minProfit}>
+                              <span className="font-semibold text-black">
+                                ${minProfit.toFixed(2)}
+                              </span>
+                            </StrikethroughIfNull>
                           </div>
                           <div className="border-t pt-2 font-semibold flex justify-between">
                             <span>Maximum Cost</span>
@@ -995,16 +1024,18 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
                               key={key}
                               className="flex justify-between text-sm"
                             >
-                              <span className="text-[#595959]">
-                                {key
-                                  .replace(/([A-Z])/g, " $1")
-                                  .replace(/^./, (str) => str.toUpperCase())}
-                              </span>
-                              <span className="font-semibold text-black">
-                                {typeof value === "number"
-                                  ? `$ ${value.toFixed(2)}`
-                                  : value}
-                              </span>
+                              <StrikethroughIfNull value={value}>
+                                <span className="text-[#595959]">
+                                  {key
+                                    .replace(/([A-Z])/g, " $1")
+                                    .replace(/^./, (str) => str.toUpperCase())}
+                                </span>
+                              </StrikethroughIfNull>
+                              <StrikethroughIfNull value={value}>
+                                <span className="font-semibold text-black">
+                                  {formatValue(value)}
+                                </span>
+                              </StrikethroughIfNull>
                             </div>
                           ))}
 
@@ -1015,42 +1046,62 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
                         </div>
                       )}
                     </div>
+
+                    {/* Summary Items */}
+                    <div className="flex flex-col gap-2 text-[#595959]">
+                      <div className="flex justify-between text-sm">
+                        <StrikethroughIfNull value={vatOnFees}>
+                          <span>VAT on Fees</span>
+                        </StrikethroughIfNull>
+                        <StrikethroughIfNull value={vatOnFees}>
+                          <span className="font-semibold text-black">
+                            {formatValue(vatOnFees)}
+                          </span>
+                        </StrikethroughIfNull>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <StrikethroughIfNull value={discount}>
+                          <span>Discount</span>
+                        </StrikethroughIfNull>
+                        <StrikethroughIfNull value={discount}>
+                          <span className="font-semibold text-black">
+                            {formatValue(discount)}
+                          </span>
+                        </StrikethroughIfNull>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <StrikethroughIfNull value={profitMargin}>
+                          <span>Profit Margin</span>
+                        </StrikethroughIfNull>
+                        <StrikethroughIfNull value={profitMargin}>
+                          <span className="font-semibold text-black">
+                            {profitMargin.toFixed(2)}%
+                          </span>
+                        </StrikethroughIfNull>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <StrikethroughIfNull value={breakEvenPrice}>
+                          <span>Breakeven Sale Price</span>
+                        </StrikethroughIfNull>
+                        <StrikethroughIfNull value={breakEvenPrice}>
+                          <span className="font-semibold text-black">
+                            ${breakEvenPrice.toFixed(2)}
+                          </span>
+                        </StrikethroughIfNull>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <StrikethroughIfNull value={estimatedPayout}>
+                          <span>Estimated Amz. Payout</span>
+                        </StrikethroughIfNull>
+                        <StrikethroughIfNull value={estimatedPayout}>
+                          <span className="font-semibold text-black">
+                            ${estimatedPayout.toFixed(2)}
+                          </span>
+                        </StrikethroughIfNull>
+                      </div>
+                    </div>
                   </>
                 )}
-
-                {/* Summary Items */}
-                <div className="flex flex-col gap-2 text-[#595959]">
-                  <div className="flex justify-between text-sm">
-                    <span>VAT on Fees</span>
-                    <span className="font-semibold text-black">
-                      ${vatOnFees.toFixed(2)}
-                    </span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span>Discount</span>
-                    <span className="font-semibold text-black">
-                      ${discount.toFixed(2)}
-                    </span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span>Profit Margin</span>
-                    <span className="font-semibold text-black">
-                      {profitMargin.toFixed(2)}%
-                    </span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span>Breakeven Sale Price</span>
-                    <span className="font-semibold text-black">
-                      ${breakEvenPrice.toFixed(2)}
-                    </span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span>Estimated Amz. Payout</span>
-                    <span className="font-semibold text-black">
-                      ${estimatedPayout.toFixed(2)}
-                    </span>
-                  </div>
-                </div>
               </div>
 
               {/* extra stats grid */}
