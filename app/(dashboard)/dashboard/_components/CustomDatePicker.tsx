@@ -19,6 +19,14 @@ const CustomDatePicker: React.FC<CustomDatePickerProps> = ({
     isRange ? currentDate.subtract(1, "month") : currentDate
   ); // Default: start with prev month for range, current month for single
   const [endDate, setEndDate] = useState(currentDate);
+  const [isInitialized, setIsInitialized] = useState(false);
+
+  React.useEffect(() => {
+    if (isRange && !isInitialized) {
+      onChange?.([startDate, endDate]);
+      setIsInitialized(true);
+    }
+  }, [isRange, onChange, startDate, endDate, isInitialized]);
 
   const handlePrev = () => {
     if (isRange) {
@@ -97,6 +105,7 @@ const CustomDatePicker: React.FC<CustomDatePickerProps> = ({
               handleDateChange(dates as [dayjs.Dayjs, dayjs.Dayjs])
             }
             format="MMM YYYY"
+            defaultPickerValue={[startDate, endDate]}
             allowClear={false}
             suffixIcon={null}
             className="!border-none !rounded-none !shadow-none !p-1 !text-center !w-[200px]"
@@ -136,3 +145,4 @@ const CustomDatePicker: React.FC<CustomDatePickerProps> = ({
 };
 
 export default CustomDatePicker;
+
