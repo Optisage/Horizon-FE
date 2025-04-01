@@ -535,7 +535,8 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
       review_count: offer.review_count,
       stock: offer.stock_quantity,
       price: `${offer.listing_price.toFixed(2)}`,
-      buyboxShare: `${offer.weight_percentage}%`,
+      buyboxShare:
+        offer.weight_percentage != null ? `${offer.weight_percentage}%` : "N/A",
       leader: offer.is_buybox_winner,
       seller_id: offer.seller_id,
       seller_type: offer.seller_type,
