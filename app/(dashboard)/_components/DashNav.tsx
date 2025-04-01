@@ -68,7 +68,8 @@ const DashNav = () => {
             href=""
             className="hidden xl:block text-sm font-medium text-[#090F0D]"
           >
-            For a better experience, please install optisage Chrome Extension.
+            For a better experience, please install the optisage Chrome
+            Extension.
           </Link>
           <CountrySelect />
         </div>
@@ -85,3 +86,4 @@ const DashNav = () => {
 };
 
 export default DashNav;
+
