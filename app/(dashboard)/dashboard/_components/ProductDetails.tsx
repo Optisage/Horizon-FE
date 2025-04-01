@@ -1051,7 +1051,7 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
                     <div className="flex flex-col gap-2 text-[#595959]">
                       <div className="flex justify-between text-sm">
                         <StrikethroughIfNull value={vatOnFees}>
-                          <span>VAT on Fees</span>
+                          <span>Sales Tax</span>
                         </StrikethroughIfNull>
                         <StrikethroughIfNull value={vatOnFees}>
                           <span className="font-semibold text-black">
@@ -1728,3 +1728,4 @@ const InfoCard = ({
 );
 
 export default ProductDetails;
+
