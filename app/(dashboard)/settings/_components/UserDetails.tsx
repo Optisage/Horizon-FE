@@ -64,7 +64,7 @@ const UserDetails = ({ userData }: UserDetailsProps) => {
   //const [vatEnabled, setVatEnabled] = useState(true);
   const [ChangeVisible, setChangeVisible] = useState(false);
   const [formErrors, setFormErrors] = useState<FormErrors>({});
-  const [vatType, setVatType] = useState<"standard" | "flat">("standard");
+  const [vatType, setVatType] = useState<"standard" | "flat">("flat");
   const [saveSettings, { isLoading }] = useUpdateSettingsMutation();
   const [changePassword, { isLoading: passwordLoading }] =
     useChangePasswordMutation();
@@ -95,7 +95,7 @@ const UserDetails = ({ userData }: UserDetailsProps) => {
   const [inputValues, setInputValues] = useState({
     prep_fee: userData?.prep_fee?.toString() || "0",
     misc_fee: userData?.misc_fee?.toString() || "0",
-    misc_fee_percentage: userData?.misc_fee_percentage?.toString() || "0",
+    // misc_fee_percentage: userData?.misc_fee_percentage?.toString() || "0",
     inbound_shipping: userData?.inbound_shipping?.toString() || "0",
     vat_standard_rate: userData?.vat?.standard_rate?.rate?.toString() || "0",
     vat_reduced_rate:
@@ -108,7 +108,7 @@ const UserDetails = ({ userData }: UserDetailsProps) => {
     setInputValues({
       prep_fee: formData.prep_fee.toString(),
       misc_fee: formData.misc_fee.toString(),
-      misc_fee_percentage: formData.misc_fee_percentage.toString(),
+      // misc_fee_percentage: formData.misc_fee_percentage.toString(),
       inbound_shipping: formData.inbound_shipping.toString(),
       vat_standard_rate: formData.vat.standard_rate.rate.toString(),
       vat_reduced_rate: formData.vat.standard_rate.reduced_rate.toString(),
@@ -203,7 +203,6 @@ const UserDetails = ({ userData }: UserDetailsProps) => {
         messageApi.error("Failed to Save Details");
       });
   };
-
 
   const success = () => {
     messageApi.open({
@@ -304,7 +303,7 @@ const UserDetails = ({ userData }: UserDetailsProps) => {
 
           <div className="flex flex-col gap-6">
             <div className="flex justify-between gap-2">
-              <button
+              {/* <button
                 type="button"
                 className={`flex-1 p-1.5 rounded-md border border-border text-sm font-medium ${
                   vatType === "standard" ? "bg-white" : "text-gray-600"
@@ -312,7 +311,7 @@ const UserDetails = ({ userData }: UserDetailsProps) => {
                 onClick={() => setVatType("standard")}
               >
                 Standard Rate
-              </button>
+              </button> */}
               <button
                 type="button"
                 className={`flex-1 p-1.5 rounded-md border border-border text-sm font-medium ${
@@ -325,7 +324,7 @@ const UserDetails = ({ userData }: UserDetailsProps) => {
             </div>
 
             {/* VAT Rate Fields */}
-            {vatType === "standard" && (
+            {/* {vatType === "standard" && (
               <div className="grid grid-cols-2 gap-4">
                 <span className="flex flex-col gap-4">
                   <label
@@ -384,7 +383,7 @@ const UserDetails = ({ userData }: UserDetailsProps) => {
                   </div>
                 </span>
               </div>
-            )}
+            )} */}
 
             {vatType === "flat" && (
               <div>
@@ -488,7 +487,7 @@ const UserDetails = ({ userData }: UserDetailsProps) => {
           </div>
         </div>
 
-        <div className="flex flex-col sm:flex-row gap-4 sm:gap-8 justify-between sm:items-center">
+        {/* <div className="flex flex-col sm:flex-row gap-4 sm:gap-8 justify-between sm:items-center">
           <span className="flex flex-col gap-1 sm:min-w-[400px] max-w-[412px] text-[#C2C2CE]">
             <label
               htmlFor="misc-fee-percent"
@@ -522,7 +521,7 @@ const UserDetails = ({ userData }: UserDetailsProps) => {
               </div>
             )}
           </div>
-        </div>
+        </div> */}
 
         <div className="flex flex-col sm:flex-row gap-4 sm:gap-8 justify-between sm:items-center">
           <span className="flex flex-col gap-1 sm:min-w-[400px] max-w-[412px] text-[#C2C2CE]">
@@ -605,3 +604,4 @@ const UserDetails = ({ userData }: UserDetailsProps) => {
 };
 
 export default UserDetails;
+
