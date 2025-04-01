@@ -655,6 +655,33 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
     return value;
   };
 
+  interface ChartDataPoint {
+    date: string; // ISO format like "2025-04-01T00:00:00.000"
+    amazon: number | null;
+    buyBox: number;
+  }
+
+  type MonthTick = string; // ISO date strings (same as ChartDataPoint['date'])
+
+  const getMonthTicks = (data: ChartDataPoint[]): MonthTick[] => {
+    if (!data?.length) return [];
+
+    const ticks: MonthTick[] = [];
+    let lastMonth: number | null = null;
+
+    data.forEach((item: ChartDataPoint) => {
+      const date = new Date(item.date);
+      const currentMonth: number = date.getMonth();
+
+      if (currentMonth !== lastMonth) {
+        ticks.push(item.date);
+        lastMonth = currentMonth;
+      }
+    });
+
+    return ticks;
+  };
+
   return (
     <section className="flex flex-col gap-8 min-h-[50dvh] md:min-h-[80dvh]">
       <SearchInput value={searchValue} onChange={setSearchValue} />
@@ -1581,7 +1608,17 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
                       <ResponsiveContainer width="100%" height={300}>
                         <LineChart data={chartData}>
                           <CartesianGrid strokeDasharray="3 3" />
-                          <XAxis dataKey="date" />
+                          <XAxis
+                            dataKey="date"
+                            tickFormatter={(value) =>
+                              new Date(value).toLocaleString("default", {
+                                month: "short",
+                              })
+                            }
+                            ticks={getMonthTicks(chartData)}
+                            interval={0}
+                            padding={{ left: 20, right: 20 }}
+                          />
                           <YAxis />
                           <Tooltip />
                           <Line
