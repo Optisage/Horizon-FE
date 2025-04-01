@@ -179,7 +179,7 @@ const SignUp = () => {
             <label htmlFor="termsAccepted" className="text-sm text-neutral-700">
               I agree to the{" "}
               <Link
-                href="http://getnoticed.ca/terms"
+                href="https://getnoticed.ca/terms"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-primary hover:underline"
@@ -188,7 +188,7 @@ const SignUp = () => {
               </Link>{" "}
               and{" "}
               <Link
-                href="https://optisage.ai/privacy-policy"
+                href="https://getnoticed.ca/privacy-policy/"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-primary hover:underline"
@@ -217,3 +217,4 @@ const SignUp = () => {
 };
 
 export default SignUp;
+

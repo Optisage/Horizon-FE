@@ -133,7 +133,7 @@ const Login: React.FC = () => {
       </Formik>
 
       <Link
-        href="https://optisage.ai/privacy-policy"
+        href="https://getnoticed.ca/privacy-policy/"
         target="_blank"
         rel="noopener noreferrer"
         className="text-primary underline font-medium"
@@ -153,3 +153,4 @@ const Login: React.FC = () => {
 };
 
 export default Login;
+
