@@ -123,9 +123,9 @@ const History = () => {
   const isLoading = historyLoading || productsLoading;
   const error = historyError || productsError;
 
-  const totalResults = debouncedSearch
-    ? productsData?.pagination?.number_of_results
-    : historyData?.pagination?.number_of_results;
+  // const totalResults = debouncedSearch
+  //   ? productsData?.pagination?.number_of_results
+  //   : historyData?.pagination?.number_of_results;
 
   // Process the search history data based on the response
   const historyItems: HistoryProduct[] = historyData?.data
@@ -288,10 +288,11 @@ const History = () => {
 
           <div className="flex flex-col-reverse md:flex-row sm:gap-4 items-center">
             <p className="text-sm">
-              Showing{" "}
-              <span className="font-semibold">{displayItems.length}</span> of{" "}
+              Showing <span className="font-semibold">10</span> products per
+              page
+              {/* <span className="font-semibold">{displayItems.length}</span> of{" "}
               <span className="font-semibold">{totalResults || 0}</span>{" "}
-              products
+              products */}
             </p>
 
             <div className="flex-1 flex justify-center">
@@ -316,3 +317,4 @@ const History = () => {
 };
 
 export default History;
+
