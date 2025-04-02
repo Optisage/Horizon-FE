@@ -13,6 +13,7 @@ import {
   SubscriptionsIcon,
   CreditIcon,
   HistoryIcon,
+  GoCompareIcon
 } from "@/public/assets/svg/icons";
 import LogoutModal from "./LogoutModal";
 import { BiChevronRight } from "react-icons/bi";
@@ -25,17 +26,18 @@ import { logout } from "@/redux/slice/authSlice";
 const menuData = [
   { id: "1", path: "/dashboard", label: "Dashboard", icon: DashboardIcon },
   { id: "2", path: "/history", label: "History", icon: HistoryIcon },
-  { id: "3", path: "", label: "Keepa", icon: KeepaIcon, comingSoon: true },
+  { id: "3", path: "/go-compare", label: "Go Compare", icon: GoCompareIcon },
+  { id: "4", path: "", label: "Keepa", icon: KeepaIcon, comingSoon: true },
 ];
 
 const secondaryMenu = [
-  { id: "4", path: "/settings", label: "Settings", icon: SettingsIcon },
-  { id: "5", path: "", label: "Credit", icon: CreditIcon, comingSoon: true },
+  { id: "5", path: "/settings", label: "Settings", icon: SettingsIcon },
+  { id: "6", path: "", label: "Credit", icon: CreditIcon, comingSoon: true },
 ];
 
 const billingMenu = [
   {
-    id: "6",
+    id: "7",
     path: "/subscriptions",
     label: "Subscriptions",
     icon: SubscriptionsIcon,
