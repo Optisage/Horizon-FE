@@ -530,16 +530,16 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
   const offersData = {
     offers: sortedBuyboxDetails.map((offer: BuyboxItem, index: number) => ({
       id: index + 1,
-      seller: offer.seller,
-      rating: offer.rating,
-      review_count: offer.review_count,
-      stock: offer.stock_quantity,
-      price: `${offer.listing_price.toFixed(2)}`,
+      seller: offer.seller || "N/A",
+      rating: offer.rating || "N/A",
+      review_count: offer.review_count || "N/A",
+      stock: offer.stock_quantity || "N/A",
+      price: offer.listing_price ? `${offer.listing_price.toFixed(2)}` : "N/A",
       buyboxShare:
         offer.weight_percentage != null ? `${offer.weight_percentage}%` : "N/A",
-      leader: offer.is_buybox_winner,
-      seller_id: offer.seller_id,
-      seller_type: offer.seller_type,
+      leader: offer.is_buybox_winner || false,
+      seller_id: offer.seller_id || "N/A",
+      seller_type: offer.seller_type || "N/A",
     })),
   };
 
@@ -1144,7 +1144,9 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
                   <InfoCard
                     icon={<ProductSalesIcon />}
                     title="Estimated Product Sales"
-                    value={`${extra?.monthly_est_product_sales ?? "0"}/month`}
+                    value={`${
+                      extra?.monthly_est_product_sales.toLocaleString() ?? "0"
+                    }/month`}
                     bgColor="#F0F0FF"
                   />
                 </div>
@@ -1284,7 +1286,13 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
                                 <div className="w-20 h-2 bg-gray-200 rounded-full">
                                   <div
                                     className="h-2 bg-green-500 rounded-full"
-                                    style={{ width: offer.buyboxShare }}
+                                    style={{
+                                      width:
+                                        offer.buyboxShare &&
+                                        offer.buyboxShare !== "N/A"
+                                          ? offer.buyboxShare
+                                          : "0",
+                                    }}
                                   />
                                 </div>
                               </td>
