@@ -49,7 +49,9 @@ const Seller = () => {
   const sellerId = params?.sellerId;
   const { marketplaceId } = useAppSelector((state) => state?.global);
   const [nextPageToken, setNextPageToken] = useState<string | null>(null);
-  const [previousPageToken, setPreviousPageToken] = useState<string | null>(null);
+  const [previousPageToken, setPreviousPageToken] = useState<string | null>(
+    null
+  );
   const [currentPageToken, setCurrentPageToken] = useState<string | null>(null);
   const [getSellerDetails, { data, isLoading: detailsLoading }] =
     useLazyGetSellerDetailsQuery();
@@ -57,8 +59,6 @@ const Seller = () => {
     useLazyGetSellerProductsQuery();
   const [loading, setLoading] = useState(true);
   const [messageApi, contextHolder] = message.useMessage();
-
- 
 
   useEffect(() => {
     if (sellerId && marketplaceId) {
@@ -73,7 +73,7 @@ const Seller = () => {
       getSellerProducts({
         marketplaceId: marketplaceId,
         sellerId: sellerId,
-        pageToken: currentPageToken
+        pageToken: currentPageToken,
       }).finally(() => setLoading(false));
     }
   }, [currentPageToken, sellerId, marketplaceId, getSellerProducts]);
@@ -85,20 +85,18 @@ const Seller = () => {
     }
   }, [productsData]);
 
-
   // Extract seller details safely
   const seller = data?.data;
   const products: Product[] = productsData?.data?.items || [];
 
-
-  const copyToClipboard = async (text:string) => {
+  const copyToClipboard = async (text: string) => {
     try {
       await navigator.clipboard.writeText(text);
-      messageApi.success("Link copied to clipboard")
-      console.log('Text copied to clipboard');
+      messageApi.success("Link copied to clipboard");
+      console.log("Text copied to clipboard");
     } catch (err) {
-      messageApi.error("Failed to copy to clipboard")
-      console.error('Failed to copy text: ', err);
+      messageApi.error("Failed to copy to clipboard");
+      console.error("Failed to copy text: ", err);
     }
   };
 
@@ -147,8 +145,11 @@ const Seller = () => {
 
               <div className="p-3 border border-border rounded-xl flex gap-3 items-center justify-between">
                 <span className="flex items-center gap-3 text-[#787891]">
-                  <div onClick={()=>copyToClipboard(seller?.amazon_link)} className=" cursor-pointer">
-                  <RiAttachment2 className="size-5" />
+                  <div
+                    onClick={() => copyToClipboard(seller?.amazon_link)}
+                    className=" cursor-pointer"
+                  >
+                    <RiAttachment2 className="size-5" />
                   </div>
                   <p className="text-[#787891] text-sm">
                     {" "}
@@ -156,8 +157,11 @@ const Seller = () => {
                   </p>
                 </span>
 
-
-                <a href={seller?.amazon_link || ""} aria-label="Download" target="_blank">
+                <a
+                  href={seller?.amazon_link || ""}
+                  aria-label="Download"
+                  target="_blank"
+                >
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     width="20"
@@ -258,7 +262,7 @@ const Seller = () => {
               </span>
 
               {products?.map((product, index) => {
-                 const basicDetails = product?.basic_details || {};
+                const basicDetails = product?.basic_details || {};
                 return (
                   <div
                     key={index}
@@ -288,12 +292,12 @@ const Seller = () => {
                       >
                         {basicDetails.product_name}
                       </p>
-                      <p>
+                      {/* <p>
                         {"⭐".repeat(basicDetails.rating.stars)}{" "}
                         <span className="font-bold">
                           {basicDetails.rating.count} ( reviews)
                         </span>
-                      </p>
+                      </p> */}
                       <p className="text-sm">By ASIN: {basicDetails.asin}</p>
                       <p className="text-sm">
                         {/* {product.category} | <SalesStats /> */}
@@ -306,14 +310,13 @@ const Seller = () => {
             </div>
 
             {/* pagination */}
-            
-            <CustomPagination 
-            onNext={() => setCurrentPageToken(nextPageToken)}
-            onPrevious={() => setCurrentPageToken(previousPageToken)}
-            hasNext={!!nextPageToken}
-            hasPrevious={!!previousPageToken}
-          />
-             
+
+            <CustomPagination
+              onNext={() => setCurrentPageToken(nextPageToken)}
+              onPrevious={() => setCurrentPageToken(previousPageToken)}
+              hasNext={!!nextPageToken}
+              hasPrevious={!!previousPageToken}
+            />
           </main>
         </>
       )}
@@ -322,3 +325,4 @@ const Seller = () => {
 };
 
 export default Seller;
+
