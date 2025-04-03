@@ -61,6 +61,7 @@ import Link from "next/link";
 
 import { useDispatch } from "react-redux";
 import { setIpAlert, setIpIssues } from "@/redux/slice/globalSlice";
+import { InfoCard } from "./info-card";
 
 interface ProductDetailsProps {
   asin: string;
@@ -785,24 +786,6 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
               Find Supplier
               <RxArrowTopRight className="size-5" />
             </button>
-
-            {/*}            <button
-              type="button"
-              onClick={() => {
-                if (product?.asin) {
-                  window.open(
-                    `https://www.amazon.com/dp/${product.asin}`,
-                    "_blank"
-                  );
-                } else {
-                  message.warning("ASIN not available.");
-                }
-              }}
-              className="border border-border text-primary px-3 py-2 rounded-xl flex gap-1 items-center font-semibold hover:bg-gray-50 active:scale-95 duration-200 text-sm md:text-base"
-            >
-              See this Product on Amazon
-              <RxArrowTopRight className="size-5" />
-            </button> */}
 
             <Link
               href={productLink}
@@ -1780,31 +1763,6 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
     </section>
   );
 };
-
-const InfoCard = ({
-  icon,
-  title,
-  value,
-  bgColor,
-}: {
-  icon: React.ReactNode;
-  title: string;
-  value: string | number;
-  bgColor: string;
-}) => (
-  <div className="flex flex-col sm:flex-row gap-2 sm:items-center">
-    <span
-      className="size-12 rounded-lg flex items-center justify-center"
-      style={{ backgroundColor: bgColor }}
-    >
-      {icon}
-    </span>
-    <span className="text-black text-sm">
-      <p>{title}</p>
-      <p className="text-xl font-semibold">{value}</p>
-    </span>
-  </div>
-);
 
 export default ProductDetails;
 
