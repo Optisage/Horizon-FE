@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useLazyAmazonAuthQuery } from "@/redux/api/auth";
 
-
 export default function CallbackPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -12,9 +11,19 @@ export default function CallbackPage() {
   const [loading, setLoading] = useState(true);
   const [amazonVerify] = useLazyAmazonAuthQuery();
   const spapiOauthCode = searchParams.get("spapi_oauth_code");
-    
+  const sellingPartnerId = searchParams.get("selling_partner_id");
+
   useEffect(() => {
-    amazonVerify({ spapi_oauth_code: spapiOauthCode })
+    // if (!spapiOauthCode || !sellingPartnerId) {
+    //   console.error("Authorization code or selling partner ID not found in URL.");
+    //   setLoading(false);
+    //   return;
+    // }
+
+    amazonVerify({
+      spapi_oauth_code: spapiOauthCode,
+      selling_partner_id: sellingPartnerId,
+    })
       .unwrap()
       .then(() => {
         router.push("/dashboard");
@@ -23,8 +32,9 @@ export default function CallbackPage() {
       .catch((err) => {
         console.log(err);
       });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchParams]);
+  }, [searchParams, spapiOauthCode, sellingPartnerId, amazonVerify, router]);
+  // }, [searchParams]);
+
   /** 
   useEffect(() => {
     const fetchToken = async () => {
@@ -82,3 +92,4 @@ export default function CallbackPage() {
     </div>
   );
 }
+
