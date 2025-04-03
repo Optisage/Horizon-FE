@@ -941,8 +941,9 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
                     <input
                       aria-label="Sale Price"
                       type="number"
-                      placeholder="0"
-                      value={salePrice}
+                      placeholder={buyboxWinnerPrice.toString()}
+                      defaultValue={buyboxWinnerPrice.toString()}
+                      // value={salePrice}
                       onChange={handlePriceChange}
                       className="px-4 py-1.5 w-full border rounded outline-none focus:border-black"
                     />
