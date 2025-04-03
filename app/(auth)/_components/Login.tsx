@@ -143,7 +143,10 @@ const Login: React.FC = () => {
 
         <p className="font-medium">
           New here?{" "}
-          <Link href="/pricing" className="underline hover:font-semibold">
+          <Link
+            href="https://optisage.ai/pricing/"
+            className="underline hover:font-semibold"
+          >
             Create an Account
           </Link>
           .
