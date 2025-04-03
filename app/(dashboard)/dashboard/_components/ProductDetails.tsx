@@ -50,6 +50,7 @@ import {
   useSearchItemsQuery,
   useCalculateProfitablilityMutation,
   useGetMarketAnalysisQuery,
+  useLazyGetIpAlertQuery,
 } from "@/redux/api/productsApi";
 import { useAppSelector } from "@/redux/hooks";
 import dayjs from "dayjs";
@@ -57,6 +58,9 @@ import ExportToSheetsButton from "@/utils/exportGoogle";
 import { ImSpinner9 } from "react-icons/im";
 import CircularLoader from "@/utils/circularLoader";
 import Link from "next/link";
+
+import { useDispatch } from "react-redux";
+import { setIpAlert, setIpIssues } from "@/redux/slice/globalSlice";
 
 interface ProductDetailsProps {
   asin: string;
@@ -132,6 +136,12 @@ interface ProfitabilityData {
 }
 
 const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
+  const dispatch = useDispatch();
+  const [getIpAlert] = useLazyGetIpAlertQuery();
+  const { setIpIssue, eligibility } = useAppSelector(
+    (state) => state?.global?.ipAlert || { setIpIssue: 0, eligibility: false }
+  );
+
   const [searchValue, setSearchValue] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [previousPageToken, setPreviousPageToken] = useState<string | null>(
@@ -226,10 +236,6 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
     lastProfitabilityCalc?.fba?.estimatedAmzPayout || 0
   );
 
-  const { setIpIssue, eligibility } = useAppSelector(
-    (state) => state?.global?.ipAlert || { setIpIssue: 0, eligibility: false }
-  );
-
   // Initialize responseData with last calculation
   const [responseData, setResponseData] = useState({
     fba: lastProfitabilityCalc?.fba || null,
@@ -248,6 +254,30 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
       updateUIWithData(data);
     }
   }, [fulfillmentType, lastProfitabilityCalc]);
+
+  useEffect(() => {
+    const fetchIpData = async () => {
+      try {
+        const response = await getIpAlert({
+          itemAsin: asin,
+          marketplaceId,
+        }).unwrap();
+        dispatch(
+          setIpAlert({
+            setIpIssue: response?.data?.ip_analysis?.issues ?? [],
+            eligibility: response?.data?.eligible_to_sell ?? false,
+          })
+        );
+        dispatch(setIpIssues(response?.data?.ip_analysis?.issues ?? []));
+      } catch (error) {
+        console.error("Error fetching IP alert:", error);
+      }
+    };
+
+    if (asin && marketplaceId) {
+      fetchIpData();
+    }
+  }, [asin, marketplaceId, dispatch, getIpAlert]);
 
   // calculating profitability
   const handleCalculateProfitability = async () => {
@@ -462,7 +492,7 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
   }, [searchValue]);
 
   if (
-    isLoadingBuybox ||
+    // isLoadingBuybox ||
     isLoadingBuyboxDetails ||
     isLoading ||
     isLoadingRankings ||
@@ -842,6 +872,8 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
                         itemAsin={asin}
                         marketplaceId={marketplaceId}
                         productName={product?.product_name}
+                        eligibility={eligibility}
+                        ipIssuesCount={setIpIssue}
                       />
                     </div>
                   </div>
