@@ -844,7 +844,9 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
                           setIpIssue ? "text-red-500" : "text-[#09090B]"
                         }`}
                       >
-                        {setIpIssue
+                        {setIpIssue === 1
+                          ? "There is 1 issue"
+                          : setIpIssue > 1
                           ? `There are ${setIpIssue} issues`
                           : "No issues found"}
                       </p>
