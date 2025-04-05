@@ -3,23 +3,18 @@
 import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useLazyAmazonAuthQuery } from "@/redux/api/auth";
+import ConnectedModal from "./modal";
 
 export default function CallbackPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [loading, setLoading] = useState(true);
+  const [connected, setConnected] = useState(false); // Initialize as false
   const [amazonVerify] = useLazyAmazonAuthQuery();
   const spapiOauthCode = searchParams.get("spapi_oauth_code");
   const sellingPartnerId = searchParams.get("selling_partner_id");
 
   useEffect(() => {
-    // if (!spapiOauthCode || !sellingPartnerId) {
-    //   console.error("Authorization code or selling partner ID not found in URL.");
-    //   setLoading(false);
-    //   return;
-    // }
-
     amazonVerify({
       spapi_oauth_code: spapiOauthCode,
       selling_partner_id: sellingPartnerId,
@@ -27,59 +22,17 @@ export default function CallbackPage() {
       .unwrap()
       .then(() => {
         router.push("/dashboard");
-        //console.log(res);
       })
       .catch((err) => {
         console.log(err);
+        setLoading(false);
+        // Check if the error status is 400
+        if (err.status === 400) {
+          setConnected(true); // Show the modal
+        }
       });
   }, [searchParams, spapiOauthCode, sellingPartnerId, amazonVerify, router]);
-  // }, [searchParams]);
 
-  /** 
-  useEffect(() => {
-    const fetchToken = async () => {
-      const spapiOauthCode = searchParams.get("spapi_oauth_code");
-
-      if (!spapiOauthCode) {
-        console.error("Authorization code not found in URL.");
-        return;
-      }
-
-      try {
-        const response = await fetch("https://api.amazon.com/auth/o2/token", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/x-www-form-urlencoded",
-          },
-          body: new URLSearchParams({
-            grant_type: "authorization_code",
-            code: spapiOauthCode,
-            client_id: "amzn1.application-oa2-client.d59a0a95a8b6495fabd9dcc456446b81",
-            client_secret: "amzn1.oa2-cs.v1.f14b202a4c9046a9e1dee178efa6039dbf2dc57314aa254ac828f6038d78f532",
-            redirect_uri:"https://staging.optisage.ai/amazon/callback"
-          }).toString(),
-        });
-
-        const data = await response.json();
-
-        if (response.ok) {
-          console.log("Access Token:", data);
-          // Store token and redirect
-          localStorage.setItem("amazon_access_token", data.access_token);
-          router.push("/dashboard");
-        } else {
-          console.error("Token exchange failed:", data);
-        }
-      } catch (error) {
-        console.error("Error fetching token:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchToken();
-  }, [router, searchParams]);
-*/
   return (
     <div className="flex items-center justify-center min-h-screen">
       {loading ? (
@@ -89,7 +42,8 @@ export default function CallbackPage() {
           Failed to authenticate. Please try again.
         </p>
       )}
+      {/* Modal shows when connected is true */}
+      <ConnectedModal isConnectedVisible={connected} />
     </div>
   );
 }
-
