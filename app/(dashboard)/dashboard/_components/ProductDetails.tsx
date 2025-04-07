@@ -1,5 +1,5 @@
 "use client";
-
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useState } from "react";
 import { CustomPagination, SearchInput } from "@/app/(dashboard)/_components";
 import Image from "next/image";
@@ -139,6 +139,7 @@ interface ProfitabilityData {
 const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
   const dispatch = useDispatch();
   const [getIpAlert] = useLazyGetIpAlertQuery();
+  const [ipData, setIpData] = useState<any>(null);
   const { setIpIssue, eligibility } = useAppSelector(
     (state) => state?.global?.ipAlert || { setIpIssue: 0, eligibility: false }
   );
@@ -272,6 +273,8 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
           })
         );
         dispatch(setIpIssues(response?.data?.ip_analysis?.issues ?? []));
+         // Store full IP data locally
+    setIpData(response.data);
       } catch (error) {
         console.error("Error fetching IP alert:", error);
       }
@@ -857,10 +860,10 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
                     <div>
                       <AlertsDrawer
                         itemAsin={asin}
-                        marketplaceId={marketplaceId}
                         productName={product?.product_name}
                         eligibility={eligibility}
                         ipIssuesCount={setIpIssue}
+                        ipData={ipData}
                       />
                     </div>
                   </div>
