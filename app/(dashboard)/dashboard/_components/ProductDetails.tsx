@@ -262,6 +262,8 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
         const response = await getIpAlert({
           itemAsin: asin,
           marketplaceId,
+          statStartDate,
+          statEndDate,
         }).unwrap();
         dispatch(
           setIpAlert({
@@ -278,7 +280,7 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
     if (asin && marketplaceId) {
       fetchIpData();
     }
-  }, [asin, marketplaceId, dispatch, getIpAlert]);
+  }, [asin, marketplaceId, dispatch, getIpAlert, statStartDate, statEndDate]);
 
   // calculating profitability
   const handleCalculateProfitability = async () => {
@@ -845,9 +847,9 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
                         }`}
                       >
                         {setIpIssue === 1
-                          ? "There is 1 IP issue"
+                          ? "There is 1 issue"
                           : setIpIssue > 1
-                          ? `There are ${setIpIssue} IP issues`
+                          ? `There are ${setIpIssue} issues`
                           : "No issues found"}
                       </p>
                     </span>
@@ -1767,4 +1769,3 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
 };
 
 export default ProductDetails;
-

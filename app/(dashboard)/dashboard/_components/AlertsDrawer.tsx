@@ -122,7 +122,7 @@ const AlertsDrawer = ({
                   You are not authorized to sell this product
                 </h4>
                 {ipIssuesCount > 0 && (
-                  <p className="text-red-500 text-sm">
+                  <p className="text-red-500 text-sm hidden">
                     There {ipIssuesCount === 1 ? "is" : "are"} {ipIssuesCount}{" "}
                     IP issue{ipIssuesCount !== 1 ? "s" : ""}
                   </p>
