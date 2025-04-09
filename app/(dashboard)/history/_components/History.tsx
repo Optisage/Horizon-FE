@@ -267,7 +267,7 @@ const History = () => {
                         </p>
                       )}
                       {item.vendor && (
-                        <p className="text-sm">Vendor: {item.vendor}</p>
+                        <p className="text-sm">Store: {item.vendor}</p>
                       )}
                     </div>
                   </div>
