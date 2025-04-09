@@ -9,29 +9,35 @@ export default function CallbackPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [loading, setLoading] = useState(true);
-  const [connected, setConnected] = useState(false); // Initialize as false
+  const [connected, setConnected] = useState(false);
   const [amazonVerify] = useLazyAmazonAuthQuery();
   const spapiOauthCode = searchParams.get("spapi_oauth_code");
   const sellingPartnerId = searchParams.get("selling_partner_id");
 
   useEffect(() => {
-    amazonVerify({
-      spapi_oauth_code: spapiOauthCode,
-      selling_partner_id: sellingPartnerId,
-    })
-      .unwrap()
-      .then(() => {
+    const verifyAmazonAuth = async () => {
+      try {
+        await amazonVerify({
+          spapi_oauth_code: spapiOauthCode,
+          selling_partner_id: sellingPartnerId,
+        }).unwrap();
+        
         router.push("/dashboard");
-      })
-      .catch((err) => {
-        console.log(err);
+      } catch (err) {
+        console.error(err);
         setLoading(false);
-        // Check if the error status is 400
-        if (err.status === 400) {
-          setConnected(true); // Show the modal
+        
+        // Handle error structure properly
+        if ((err as any)?.status === 401 || (err as any)?.originalStatus === 401) {
+          setConnected(true); // This should trigger a rerender immediately
         }
-      });
-  }, [searchParams, spapiOauthCode, sellingPartnerId, amazonVerify, router]);
+      }
+    };
+
+    if (spapiOauthCode && sellingPartnerId) {
+      verifyAmazonAuth();
+    }
+  }, [searchParams, spapiOauthCode, sellingPartnerId, router]); // Removed amazonVerify from deps
 
   return (
     <div className="flex items-center justify-center min-h-screen">
@@ -42,7 +48,6 @@ export default function CallbackPage() {
           Failed to authenticate. Please try again.
         </p>
       )}
-      {/* Modal shows when connected is true */}
       <ConnectedModal isConnectedVisible={connected} />
     </div>
   );
