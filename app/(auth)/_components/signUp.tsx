@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { IoEyeOffOutline, IoEyeOutline } from "react-icons/io5";
 import { useFormik } from "formik";
-import { useSetPasswordMutation } from "@/redux/api/auth";
+import { useSetPasswordMutation,useLoginMutation  } from "@/redux/api/auth";
 import { message } from "antd";
 import { passwordSchema } from "@/lib/validationSchema";
 import * as Yup from "yup";
@@ -19,6 +19,7 @@ const SignUp = () => {
   const [token, setToken] = useState("");
 
   const [signUp, { data, isLoading }] = useSetPasswordMutation();
+  const [login] = useLoginMutation();
   const [messageApi, contextHolder] = message.useMessage();
   console.log(data);
 
@@ -63,9 +64,19 @@ const SignUp = () => {
 
       try {
         await signUp({ data: payload, token }).unwrap();
-        messageApi.success("Registration Completed", 2, () => {
-          router.push("/");
-        });
+         // 2. Automatically log in with the same credentials
+         const loginResponse = await login({ 
+          email, 
+          password: values.password 
+        }).unwrap();
+
+        // 3. Handle redirection based on user status
+        if (loginResponse?.data?.user?.has_connected_amazon_account) {
+          router.push("/dashboard");
+        } else {
+          router.push("/connect-amazon");
+        }
+        messageApi.success("Registration & Login Successful");
       } catch (error) {
         messageApi.error("Registration Failed");
         console.log(error);
