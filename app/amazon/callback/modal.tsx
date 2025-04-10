@@ -47,7 +47,7 @@ export default function ConnectedModal({ isConnectedVisible }: modal) {
             <p className=" text-center text-xs text-[#5F6362]">
               <span>Have any issues? </span>
               <Link
-                href={"https://optisage.ai/contact/"}
+                href={"https://optisage.ai/contact/#"}
                 className=" text-black font-semibold underline"
               >
                 <span>Contact Support</span>

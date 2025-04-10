@@ -143,7 +143,7 @@ export default function StripeCheckout() {
           </div>
 
           <div className=" absolute bottom-5 w-full flex justify-center">
-            <a href="https://optisage.ai/contact/" className=" underline">
+            <a href="https://optisage.ai/contact/#" className=" underline">
               Contact Support
             </a>
           </div>
