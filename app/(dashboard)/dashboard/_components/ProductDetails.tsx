@@ -92,16 +92,6 @@ interface MarketAnalysisDataPoint {
   price: number;
 }
 
-interface BuyboxMarketDataPoint {
-  date: string;
-  buyBox: number;
-}
-
-interface AmazonMarketDataPoint {
-  date: string;
-  amazon: number;
-}
-
 interface MarketAnalysisData {
   buybox: MarketAnalysisDataPoint[];
   amazon: MarketAnalysisDataPoint[];
@@ -109,7 +99,7 @@ interface MarketAnalysisData {
 
 interface MergedDataPoint {
   date: string;
-  buyBox: number;
+  buyBox: number | null;
   amazon: number | null;
 }
 
@@ -273,8 +263,8 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
           })
         );
         dispatch(setIpIssues(response?.data?.ip_analysis?.issues ?? []));
-         // Store full IP data locally
-    setIpData(response.data);
+        // Store full IP data locally
+        setIpData(response.data);
       } catch (error) {
         console.error("Error fetching IP alert:", error);
       }
@@ -429,32 +419,28 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
   ): MergedDataPoint[] => {
     if (!data) return [];
 
-    const buyboxMarketData: BuyboxMarketDataPoint[] = data.buybox.map(
-      (item) => ({
-        date: dayjs(item.date).format("MMM D"),
-        buyBox: item.price,
-      })
+    const buyboxMap = new Map(
+      data.buybox.map((item) => [dayjs(item.date).format("MMM D"), item.price])
     );
 
-    const amazonMarketData: AmazonMarketDataPoint[] = data.amazon.map(
-      (item: MarketAnalysisDataPoint) => ({
-        date: dayjs(item.date).format("MMM D"),
-        amazon: item.price,
-      })
+    const amazonMap = new Map(
+      data.amazon.map((item) => [dayjs(item.date).format("MMM D"), item.price])
     );
 
-    // Merge the data by date
-    const mergedData: MergedDataPoint[] = buyboxMarketData.map((item) => {
-      const amazonItem = amazonMarketData.find(
-        (amazon) => amazon.date === item.date
-      );
-      return {
-        ...item,
-        amazon: amazonItem ? amazonItem.amazon : null,
-      };
-    });
+    const allDates = new Set([
+      ...Array.from(buyboxMap.keys()),
+      ...Array.from(amazonMap.keys()),
+    ]);
 
-    return mergedData;
+    const mergedData: MergedDataPoint[] = Array.from(allDates).map((date) => ({
+      date,
+      buyBox: buyboxMap.get(date) ?? null,
+      amazon: amazonMap.get(date) ?? null,
+    }));
+
+    return mergedData.sort((a, b) =>
+      dayjs(a.date, "MMM D").isBefore(dayjs(b.date, "MMM D")) ? -1 : 1
+    );
   };
 
   const chartData = transformData(marketAnalysisData?.data);
@@ -694,7 +680,7 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
   interface ChartDataPoint {
     date: string; // ISO format like "2025-04-01T00:00:00.000"
     amazon: number | null;
-    buyBox: number;
+    buyBox: number | null;
   }
 
   type MonthTick = string; // ISO date strings (same as ChartDataPoint['date'])
@@ -1772,3 +1758,4 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
 };
 
 export default ProductDetails;
+
