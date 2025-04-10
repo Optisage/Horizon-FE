@@ -91,7 +91,7 @@ const ExportToSheetsButton = ({
     scope:
       "https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/drive.file",
     onSuccess: async (tokenResponse) => {
-      message.loading("Preparing export...", 0); // Show loading indicator
+      const loadingMessage = message.loading("Preparing export...", 0);
 
       try {
         const exportData = prepareExportData();
@@ -112,44 +112,49 @@ const ExportToSheetsButton = ({
           throw new Error(result.error || "Export failed");
         }
 
-        // Show success message with link
+        // Close loading and show success
+        loadingMessage();
         message.success({
           content: (
-            <span>
-              {result.isNewSheet
-                ? "New sheet created! "
-                : "Added to existing sheet! "}
+            <div className="flex items-center gap-2">
+              <span>
+                {result.isNewSheet
+                  ? "New sheet created!"
+                  : "Added to existing sheet!"}
+              </span>
               <a
                 href={result.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-blue-500 underline"
+                className="text-primary underline font-medium"
               >
                 Open Sheet
               </a>
-            </span>
+            </div>
           ),
-          duration: 5,
+          duration: 10,
         });
 
-        // Open in new tab if possible
+        // Open in new tab
         window.open(result.url, "_blank");
       } catch (error: unknown) {
-        message.destroy(); // Remove loading indicator
+        loadingMessage();
         console.error("Export failed:", error);
-        message.error(
-          `Export failed: ${
+        message.error({
+          content: `Export failed: ${
             error instanceof Error
               ? error.message
               : "An unexpected error occurred"
-          }`
-        );
-      } finally {
-        message.destroy(); // Ensure loading indicator is removed
+          }`,
+          duration: 5,
+        });
       }
     },
     onError: () => {
-      message.error("Google authentication failed");
+      message.error({
+        content: "Google authentication failed",
+        duration: 5,
+      });
     },
   });
 
