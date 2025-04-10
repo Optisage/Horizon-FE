@@ -21,14 +21,22 @@ export default function CallbackPage() {
           spapi_oauth_code: spapiOauthCode,
           selling_partner_id: sellingPartnerId,
         }).unwrap();
-        
+
         router.push("/dashboard");
       } catch (err) {
         console.error(err);
         setLoading(false);
-        
+
+        interface ApiError {
+          status?: number;
+          originalStatus?: number;
+        }
+
         // Handle error structure properly
-        if ((err as any)?.status === 401 || (err as any)?.originalStatus === 401) {
+        if (
+          (err as ApiError)?.status === 401 ||
+          (err as ApiError)?.originalStatus === 401
+        ) {
           setConnected(true); // This should trigger a rerender immediately
         }
       }
