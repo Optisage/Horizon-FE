@@ -89,7 +89,7 @@ export default function StripeCheckout() {
             </Link>
           </div>
 
-          <div className=" border rounded-xl shadow-xl p-7">
+          <div className=" border rounded-xl shadow-xl p-7 max-w-[500px]">
             <div className=" flex justify-center">
               {failed ? (
                 <Image src={failedimg} alt="failed" className="" />
