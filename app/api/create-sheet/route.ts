@@ -69,9 +69,19 @@ export async function POST(request: Request) {
       });
     }
 
+    const appendResponse = await sheets.spreadsheets.values.append({
+      spreadsheetId,
+      range: `${sheetTitle}!A1`,
+      valueInputOption: "USER_ENTERED",
+      requestBody: {
+        values: [data[1]], // Append data row
+      },
+    });
+
     return NextResponse.json({
       url: `https://docs.google.com/spreadsheets/d/${spreadsheetId}/edit`,
       isNewSheet,
+      appendedRows: appendResponse.data.updates?.updatedRows || 0,
     });
   } catch (error: unknown) {
     console.error("Full error:", error);
