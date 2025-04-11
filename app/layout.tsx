@@ -30,7 +30,7 @@ export default function RootLayout({
       <body className={`${inter.className} antialiased`}>
      
         <AntdRegistry>
-        <GoogleOAuthProvider clientId="249315146305-qg3vng1svlpadsmetmo407077ak3e2ii.apps.googleusercontent.com">
+        <GoogleOAuthProvider clientId={process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || ''}>
           <ReduxProvider>{children}</ReduxProvider>
           </GoogleOAuthProvider>
         </AntdRegistry>
