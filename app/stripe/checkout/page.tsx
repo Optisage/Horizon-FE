@@ -76,7 +76,7 @@ export default function StripeCheckout() {
           <div className="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-primary"></div>
         </div>
       ) : (
-        <section className=" h-screen place-content-center place-items-center relative">
+        <section className=" h-screen flex justify-center items-center relative">
           <div className=" flex justify-center py-10 absolute top-10 w-full">
             <Link href="/">
               <Image
