@@ -95,6 +95,14 @@ const ExportToSheetsButton = ({
 
       try {
         const exportData = prepareExportData();
+
+          // Add this console log to verify the data structure
+      console.log("Export Data Preview:", {
+        headers: exportData[0],
+        rowData: exportData[1],
+        fullData: exportData
+      });
+      
         const response = await fetch("/api/create-sheet", {
           method: "POST",
           headers: {
