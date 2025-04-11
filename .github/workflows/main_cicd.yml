@@ -1,0 +1,62 @@
+name: 'Production Server Deployment'
+
+on:
+  push:
+    branches:
+      - main
+
+env:
+  REGISTRY: ghcr.io
+  REPO_NAME: ${{ vars.ORG_NAME }}
+  APP_NAME: horizon-frontend
+
+jobs:
+  deployOptisageFrontend:
+    name: Optisage Frontend Deployment
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    - name: Log in to the Container registry
+      uses: docker/login-action@v2
+      with:
+        registry: ${{ env.REGISTRY }}
+        username: ${{ github.actor }}
+        password: ${{ secrets.DOCKER_TOKEN }}
+
+    - name: Build, tag, and push image to GHCR
+      id: build-image
+      env:
+        IMAGE_NAME: ${{ env.APP_NAME }}
+        COMMIT_ID: ${{ github.sha }}
+        ENV: ${{ secrets.PROD_ENV }}
+      run: |
+        echo "$ENV" >> .env
+        IMAGE_TAG=$(echo $COMMIT_ID | cut -c 1-7)
+        docker build -t $REGISTRY/$REPO_NAME/$IMAGE_NAME:prod-$IMAGE_TAG .
+        docker push $REGISTRY/$REPO_NAME/$IMAGE_NAME:prod-$IMAGE_TAG
+        echo "image=$REGISTRY/$REPO_NAME/$IMAGE_NAME:prod-$IMAGE_TAG" >> $GITHUB_OUTPUT
+        
+    - name: Deploy to Server Instance
+      env:
+          IMAGE: ${{ steps.build-image.outputs.image }}
+          TOKEN: ${{ secrets.DOCKER_TOKEN }}
+          APP: ${{ env.APP_NAME }}
+      uses: appleboy/ssh-action@master
+      with:
+          host: ${{ secrets.PROD_DEPLOY_SERVER }}
+          username: ${{ secrets.USERNAME }}
+          key: ${{ secrets.PRIVATE_KEY }}
+          envs: IMAGE,TOKEN,APP
+          script: |
+            echo "$TOKEN" | docker login ghcr.io -u USERNAME --password-stdin
+            export HORIZON_FRONTEND_IMAGE="$IMAGE"
+            envsubst < /home/ubuntu/docker/prod-"$APP".yaml > /home/ubuntu/optisage/prod-"$APP"/compose.yaml
+            docker rm -f prod-"$APP"
+            docker system prune -af
+            docker compose -f /home/ubuntu/optisage/prod-"$APP"/compose.yaml up -d
+            docker ps
