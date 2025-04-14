@@ -16,27 +16,40 @@ export const authApi = createApi({
         method: "POST",
         body: data,
       }),
-      onQueryStarted(id, { dispatch, queryFulfilled }) {
-        queryFulfilled
-          .then((apiResponse) => {
-            //console.log("API Response:", apiResponse.data?.data?.token); // Log the entire response
-            dispatch(setUser(apiResponse.data?.data.user));
-            // Set the token in cookies with a 6-hours expiration, accessible on all paths, secure, and SameSite set to 'Strict'
-            Cookies.set("optisage-token", apiResponse.data?.data.token, {
-              expires: new Date(new Date().getTime() + 6 * 60 * 60 * 1000), // 6 hours from now
-              path: "/", // Accessible on all paths
-              //secure: true, // Only sent over HTTPS
-              sameSite: 'Strict' // Cookie is not sent with cross-site requests
-            });
-            //console.log("Stored Token:", Cookies.get("token"));
-            //sessionStorage.setItem("token", apiResponse.data?.token);
-          })
-          .catch((error) => {
-            console.log(error);
+      onQueryStarted: async (id, { dispatch, queryFulfilled }) => {
+        try {
+          const { data } = await queryFulfilled;
+          const token = data?.data?.token;
+
+          // Set cookie (web app)
+          Cookies.set("optisage-token", token, {
+            expires: new Date(new Date().getTime() + 6 * 60 * 60 * 1000),
+            path: "/",
+            sameSite: "None",
+            secure: true,
           });
+          //console.log("Stored Token:", Cookies.get("token"));
+          //sessionStorage.setItem("token", apiResponse.data?.token);
+
+          dispatch(setUser(data?.data.user));
+
+          // Send token to extension if in iframe
+          if (window.parent !== window) {
+            window.parent.postMessage(
+              {
+                type: "STORE_TOKEN",
+                token: token,
+              },
+              "*"
+            );
+          }
+        } catch (error) {
+          console.error("Login failed:", error);
+        }
       },
       invalidatesTags: ["Profile"],
     }),
+
     signup: builder.mutation({
       query: (data) => ({
         url: "auth/signup",
@@ -100,14 +113,14 @@ export const authApi = createApi({
       query: (data) => ({
         url: "amazon/exchange-token",
         method: "POST",
-        body:data
+        body: data,
       }),
     }),
     resendVerification: builder.mutation({
       query: (data) => ({
         url: "email/verification-notification",
         method: "POST",
-        body:data
+        body: data,
       }),
     }),
     getPricing: builder.query<any, {}>({
@@ -134,5 +147,6 @@ export const {
   useResetPasswordMutation,
   useLazyAmazonAuthQuery,
   useResendVerificationMutation,
-  useChangePasswordMutation
+  useChangePasswordMutation,
 } = authApi;
+
