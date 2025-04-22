@@ -53,6 +53,15 @@ export const productsApi = createApi({
     }),
 
     getBuyboxInfo: builder.query({
+      query: ({ marketplaceId, itemAsin, statStartDate, statEndDate }) => ({
+        url: "catalog/products/buybox-details",
+        method: "GET",
+        params: { marketplaceId, asin: itemAsin, statStartDate, statEndDate },
+        // https://api-staging.optisage.ai/api/catalog/products/buybox-details?asin=B0DP3G4GVQ&marketplaceId=1&statStartDate=2025-03-01&statEndDate=2025-03-14
+      }),
+    }),
+
+    getBuyboxDetails: builder.query({
       query: ({ marketplaceId, itemAsin }) => ({
         url: "catalog/products/buybox-details",
         method: "GET",
@@ -61,11 +70,12 @@ export const productsApi = createApi({
     }),
 
     getMarketAnalysis: builder.query({
-      query: ({ marketplaceId, itemAsin, date }) => ({
+      query: ({ marketplaceId, itemAsin, statStartDate, statEndDate }) => ({
         url: `catalog/products/${itemAsin}/market-analysis`,
         method: "GET",
-        params: { marketplaceId, date },
-        // https://api-staging.optisage.ai/api/catalog/products/:asin/market-analysis?marketplaceId=1&date=2024-12
+        // params: { marketplaceId, date },
+        params: { marketplaceId, asin: itemAsin, statStartDate, statEndDate },
+        // https://api-staging.optisage.ai/api/catalog/products/:asin/market-analysis?marketplaceId=1&statStartDate=2025-03-01&statEndDate=2025-03-25
       }),
     }),
 
@@ -109,7 +119,7 @@ export const productsApi = createApi({
     }),
     getIpAlert: builder.query({
       query: (params) => ({
-        url: "catalog/ip-alert",
+        url: "catalog/products/ip-alert",
         method: "GET",
         params,
       }),
@@ -126,6 +136,7 @@ export const {
   useGetItemQuery,
   useGetRankingsAndPricesQuery,
   useGetBuyboxInfoQuery,
+  useGetBuyboxDetailsQuery,
   useGetProductFeesQuery,
   useCalculateProfitablilityMutation,
   useGetSalesStatisticsQuery,

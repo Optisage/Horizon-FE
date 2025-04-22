@@ -73,6 +73,13 @@ export const authApi = createApi({
         body: data,
       }),
     }),
+    changePassword: builder.mutation({
+      query: (data) => ({
+        url: "change-password",
+        method: "POST",
+        body: data,
+      }),
+    }),
 
     getProfile: builder.query({
       query: () => ({
@@ -82,7 +89,7 @@ export const authApi = createApi({
       onQueryStarted(_, { dispatch, queryFulfilled }) {
         queryFulfilled
           .then((apiResponse) => {
-            dispatch(setUser(apiResponse?.data));
+            dispatch(setUser(apiResponse?.data?.data));
           })
           .catch((error) => {
             console.log(error);
@@ -92,6 +99,13 @@ export const authApi = createApi({
     amazonAuth: builder.query({
       query: (data) => ({
         url: "amazon/exchange-token",
+        method: "POST",
+        body:data
+      }),
+    }),
+    resendVerification: builder.mutation({
+      query: (data) => ({
+        url: "email/verification-notification",
         method: "POST",
         body:data
       }),
@@ -118,5 +132,7 @@ export const {
   useLazyGetPricingQuery,
   useSetPasswordMutation,
   useResetPasswordMutation,
-  useLazyAmazonAuthQuery
+  useLazyAmazonAuthQuery,
+  useResendVerificationMutation,
+  useChangePasswordMutation
 } = authApi;

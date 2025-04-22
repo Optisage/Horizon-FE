@@ -1,9 +1,9 @@
 "use client";
 
-import {useState } from "react";
-import { Table } from "antd";
+import { useState } from "react";
+import { message, Table } from "antd";
 import { useAppSelector } from "@/redux/hooks";
-
+import { RiAttachment2 } from "react-icons/ri";
 
 interface Referral {
   id: number;
@@ -14,9 +14,6 @@ interface Referral {
   joined_date: string;
   status: string;
 }
-
-
-
 
 // Function to extract initials from Store Name
 const getInitials = (name: string) => {
@@ -48,7 +45,7 @@ const columns = [
   },
   {
     title: "Store Name",
-    dataIndex: "store_name", 
+    dataIndex: "store_name",
     key: "store_name",
     render: (storeName: string) => (
       <div className="flex items-center gap-2">
@@ -66,7 +63,7 @@ const columns = [
   },
   {
     title: "Joined Date",
-    dataIndex: "joined_date", 
+    dataIndex: "joined_date",
     key: "joined_date",
   },
   {
@@ -74,18 +71,38 @@ const columns = [
     dataIndex: "status",
     key: "status",
     render: (status: string) => (
-      <StatusTag status={status.toLowerCase() === "active" ? "Active" : "Pending"} />
+      <StatusTag
+        status={status.toLowerCase() === "active" ? "Active" : "Pending"}
+      />
     ),
   },
 ];
 
-const ReferralTable = ({tableData, tableLoading}: { tableData: Referral[]; tableLoading: boolean}) => {
+const ReferralTable = ({
+  tableData,
+  tableLoading,
+}: {
+  tableData: Referral[];
+  tableLoading: boolean;
+}) => {
   const [activeTab, setActiveTab] = useState<"all" | "active">("all");
-  const {username} = useAppSelector((state) => state.api?.user) || {};
- 
-  
+  const { username } = useAppSelector((state) => state.api?.user) || {};
+  const [messageApi, contextHolder] = message.useMessage();
+
+  const copyToClipboard = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      messageApi.success("Link copied to clipboard");
+      console.log("Text copied to clipboard");
+    } catch (err) {
+      messageApi.error("Failed to copy to clipboard");
+      console.error("Failed to copy text: ", err);
+    }
+  };
+
   return (
     <div className="flex flex-col gap-8">
+      {contextHolder}
       <div className="flex flex-col sm:flex-row sm:items-center gap-4 justify-between">
         {/* Tabs */}
         <div className="bg-[#F7F7F7] rounded-[10px] p-1 flex items-center gap-2 w-max">
@@ -114,9 +131,19 @@ const ReferralTable = ({tableData, tableLoading}: { tableData: Referral[]; table
         </div>
 
         <div className="rounded-xl px-4 py-2 border border-border">
-          <p className="text-[#4B4B62] text-sm font-bold">
+          <p className="text-[#4B4B62] text-sm font-bold  flex items-center gap-2">
             Your referral link:{" "}
-            <span className="font-normal">https://optisage.ai/pricing/?ref={username}</span>
+            <span className="font-normal">
+              https://optisage.ai/pricing/?ref={username}
+            </span>
+            <div
+              onClick={() =>
+                copyToClipboard(`https://optisage.ai/pricing/?ref=${username}`)
+              }
+              className=" cursor-pointer"
+            >
+              <RiAttachment2 className="size-5" />
+            </div>
           </p>
         </div>
       </div>
@@ -124,7 +151,7 @@ const ReferralTable = ({tableData, tableLoading}: { tableData: Referral[]; table
       {/* Tab Content */}
       <div className="overflow-x-scroll">
         <Table
-        loading={tableLoading}
+          loading={tableLoading}
           columns={columns}
           dataSource={
             activeTab === "all"
@@ -133,7 +160,7 @@ const ReferralTable = ({tableData, tableLoading}: { tableData: Referral[]; table
           }
           rowSelection={{ type: "checkbox" }}
           pagination={false}
-           rowKey="id"
+          rowKey="id"
         />
       </div>
     </div>

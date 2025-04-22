@@ -33,6 +33,13 @@ export const subscriptionApi = createApi({
         params,
       }),
     }),
+    createStripeSubscriptionV2: builder.query({
+      query: (params) => ({
+        url: `customer/stripe/get-checkout-link`,
+        method: 'GET',
+        params,
+      }),
+    }),
     verifyStripeSubscription: builder.mutation({
       query: (body) => ({
         url: `customer/stripe/verify`,
@@ -61,6 +68,20 @@ export const subscriptionApi = createApi({
         body,
       }),
     }),
+    newSubscription: builder.query({
+      query: (params) => ({
+        url: 'customer/stripe/new-subscription',
+        method: 'GET',
+        params,
+      }),
+    }),
+    verifyNewSubscription: builder.mutation({
+      query: (body) => ({
+        url: 'customer/stripe/new-subscription-verification',
+        method: 'POST',
+        body,
+      }),
+    }),
   }),
 });
 
@@ -70,5 +91,8 @@ export const {
    useVerifyStripeSubscriptionMutation,
    useChangeSubscriptionMutation,
    useRenewSubscriptionMutation,
-   useCancelSubscriptionMutation
+   useCancelSubscriptionMutation,
+   useLazyCreateStripeSubscriptionV2Query,
+   useLazyNewSubscriptionQuery,
+   useVerifyNewSubscriptionMutation
   } = subscriptionApi; 

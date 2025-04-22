@@ -14,8 +14,19 @@ const CustomDatePicker: React.FC<CustomDatePickerProps> = ({
   isRange = false,
   onChange,
 }) => {
-  const [startDate, setStartDate] = useState(dayjs());
-  const [endDate, setEndDate] = useState(dayjs().add(1, "month"));
+  const currentDate = dayjs(); // Today's date
+  const [startDate, setStartDate] = useState(
+    isRange ? currentDate.subtract(1, "month") : currentDate
+  ); // Default: start with prev month for range, current month for single
+  const [endDate, setEndDate] = useState(currentDate);
+  const [isInitialized, setIsInitialized] = useState(false);
+
+  React.useEffect(() => {
+    if (isRange && !isInitialized) {
+      onChange?.([startDate, endDate]);
+      setIsInitialized(true);
+    }
+  }, [isRange, onChange, startDate, endDate, isInitialized]);
 
   const handlePrev = () => {
     if (isRange) {
@@ -62,20 +73,15 @@ const CustomDatePicker: React.FC<CustomDatePickerProps> = ({
     }
   };
 
-  const rangePresets = [
-    {
-      label: "1M",
-      value: [dayjs(), dayjs().add(1, "month")] as [dayjs.Dayjs, dayjs.Dayjs],
-    },
-    {
-      label: "3M",
-      value: [dayjs(), dayjs().add(3, "month")] as [dayjs.Dayjs, dayjs.Dayjs],
-    },
-    {
-      label: "6M",
-      value: [dayjs(), dayjs().add(6, "month")] as [dayjs.Dayjs, dayjs.Dayjs],
-    },
-  ];
+  const disabledDate = (current: dayjs.Dayjs) => {
+    // Disable dates that are after today
+    return current && current > dayjs().endOf("day");
+  };
+
+  // Disable the "Next" button if the end date is the current month (for range) or start date is the current month (for single)
+  const isNextButtonDisabled = isRange
+    ? endDate.isSame(currentDate, "month")
+    : startDate.isSame(currentDate, "month");
 
   return (
     <div className="flex items-center">
@@ -99,12 +105,13 @@ const CustomDatePicker: React.FC<CustomDatePickerProps> = ({
               handleDateChange(dates as [dayjs.Dayjs, dayjs.Dayjs])
             }
             format="MMM YYYY"
+            defaultPickerValue={[startDate, endDate]}
             allowClear={false}
             suffixIcon={null}
             className="!border-none !rounded-none !shadow-none !p-1 !text-center !w-[200px]"
             popupClassName="custom-datepicker-popup"
             renderExtraFooter={() => null}
-            presets={rangePresets}
+            disabledDate={disabledDate}
           />
         ) : (
           <DatePicker
@@ -117,6 +124,7 @@ const CustomDatePicker: React.FC<CustomDatePickerProps> = ({
             className="!border-none !rounded-none !shadow-none !p-1 !text-center !w-[93px]"
             popupClassName="custom-datepicker-popup"
             renderExtraFooter={() => null}
+            disabledDate={disabledDate}
           />
         )}
       </span>
@@ -124,8 +132,11 @@ const CustomDatePicker: React.FC<CustomDatePickerProps> = ({
       <button
         aria-label="Next"
         type="button"
-        className="p-2 rounded-r-full border border-gray-300"
+        className={`p-2 rounded-r-full border border-gray-300 ${
+          isNextButtonDisabled ? "opacity-50 cursor-not-allowed" : ""
+        }`}
         onClick={handleNext}
+        disabled={isNextButtonDisabled}
       >
         <HiChevronRight size={16} />
       </button>
@@ -134,3 +145,4 @@ const CustomDatePicker: React.FC<CustomDatePickerProps> = ({
 };
 
 export default CustomDatePicker;
+

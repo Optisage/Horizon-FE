@@ -97,6 +97,8 @@ const ForgotPassword = () => {
           <span className=" text-green-500"> Reset Password Link</span>
           <br />
           Please check your email to complete your password reset
+          <br/>
+          <span className=" text-xs text-gray-400 font-semibold my-2">If you do not see it in your inbox check your spam</span>
         </p>
       </Modal>
     </>

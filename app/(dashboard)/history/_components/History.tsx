@@ -11,7 +11,8 @@ import {
   useSearchProductsHistoryQuery,
 } from "@/redux/api/productsApi";
 import { useAppSelector } from "@/redux/hooks";
-import Loader from "@/utils/loader";
+import CircularLoader from "@/utils/circularLoader";
+import SalesStats from "../../dashboard/_components/SalesStats";
 
 export interface HistoryProduct {
   asin: string;
@@ -56,9 +57,13 @@ const groupByDate = (items: HistoryProduct[]) => {
 const History = () => {
   const [searchValue, setSearchValue] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [nextPageToken, setNextPageToken] = useState<string | null>(null);
+  const [previousPageToken, setPreviousPageToken] = useState<string | null>(
+    null
+  );
+  const [currentPageToken, setCurrentPageToken] = useState<string | null>(null);
   const [isPaginationLoading, setIsPaginationLoading] = useState(false);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
+
   const router = useRouter();
   const { marketplaceId } = useAppSelector((state) => state?.global);
 
@@ -70,11 +75,6 @@ const History = () => {
     return () => clearTimeout(handler);
   }, [searchValue]);
 
-  // Reset to first page when search changes
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [debouncedSearch]);
-
   // Get search history
   const {
     data: historyData,
@@ -83,8 +83,7 @@ const History = () => {
   } = useGetSearchHistoryQuery(
     {
       marketplaceId: marketplaceId || "1",
-      //pageSize: itemsPerPage,
-      page: currentPage,
+      pageToken: currentPageToken,
     },
     { skip: false }
   );
@@ -98,20 +97,19 @@ const History = () => {
     {
       q: debouncedSearch || "",
       marketplaceId: marketplaceId || "1",
-      //perPage: itemsPerPage,
-      page: currentPage,
+      pageToken: currentPageToken,
     },
     { skip: !debouncedSearch }
   );
 
- 
-
-  // Update pagination tokens
+  // Update pagination tokens from API response
   useEffect(() => {
-    const meta = debouncedSearch ? productsData?.meta : historyData?.meta;
-    if (meta) {
-      setTotalPages(meta.last_page);
-      setCurrentPage(meta.current_page);
+    const pagination = debouncedSearch
+      ? productsData?.pagination
+      : historyData?.pagination;
+    if (pagination) {
+      setNextPageToken(pagination.nextPageToken);
+      setPreviousPageToken(pagination.previousPageToken);
     }
   }, [historyData, productsData, debouncedSearch]);
 
@@ -124,6 +122,10 @@ const History = () => {
 
   const isLoading = historyLoading || productsLoading;
   const error = historyError || productsError;
+
+  // const totalResults = debouncedSearch
+  //   ? productsData?.pagination?.number_of_results
+  //   : historyData?.pagination?.number_of_results;
 
   // Process the search history data based on the response
   const historyItems: HistoryProduct[] = historyData?.data
@@ -173,7 +175,16 @@ const History = () => {
         />
       </div>
 
-      {isLoading && <Loader />}
+      {isLoading && (
+        <div className="h-[50dvh] flex justify-center items-center">
+          <CircularLoader
+            duration={1000}
+            color="#18CB96"
+            size={64}
+            strokeWidth={4}
+          />
+        </div>
+      )}
 
       {error && (
         <div className="text-center text-red-500 mt-4">
@@ -202,7 +213,7 @@ const History = () => {
       )}
 
       {displayItems.length > 0 && (
-        <main className="flex flex-col gap-20 justify-between h-full">
+        <main className="flex flex-col gap-10 justify-between h-full">
           <div className="p-2 rounded-lg border border-border flex flex-col divide-y divide-[#E4E4E7]">
             {Object.entries(groupedItems).map(([date, items]) => (
               <div key={date} className="flex flex-col">
@@ -249,32 +260,56 @@ const History = () => {
                         </p>
                       )}
                       <p className="text-sm">By ASIN: {item.asin}</p>
-                      {item.category && item.category !== "NaN" && (
-                        <p className="text-sm">{item.category}</p>
+                      {item.category && (
+                        <p className="text-sm">
+                          {item.category === "NaN" ? "N/A" : item.category} |{" "}
+                          <SalesStats product={item} />
+                        </p>
                       )}
                       {item.vendor && (
-                        <p className="text-sm">Vendor: {item.vendor}</p>
+                        <p className="text-sm">Store: {item.vendor}</p>
                       )}
                     </div>
                   </div>
                 ))}
               </div>
             ))}
-            {isPaginationLoading && <Loader />}
+            {isPaginationLoading && (
+              <div className="py-16">
+                <CircularLoader
+                  duration={2000}
+                  color="#18CB96"
+                  size={64}
+                  strokeWidth={4}
+                />
+              </div>
+            )}
           </div>
 
-          <CustomPagination
-            onNext={() => {
-              setIsPaginationLoading(true);
-              setCurrentPage((prev) => prev + 1);
-            }}
-            onPrevious={() => {
-              setIsPaginationLoading(true);
-              setCurrentPage((prev) => prev - 1);
-            }}
-            hasNext={currentPage < totalPages}
-            hasPrevious={currentPage > 1}
-          />
+          <div className="flex flex-col-reverse md:flex-row sm:gap-4 items-center">
+            <p className="text-sm">
+              Showing <span className="font-semibold">10</span> products per
+              page
+              {/* <span className="font-semibold">{displayItems.length}</span> of{" "}
+              <span className="font-semibold">{totalResults || 0}</span>{" "}
+              products */}
+            </p>
+
+            <div className="flex-1 flex justify-center">
+              <CustomPagination
+                onNext={() => {
+                  setIsPaginationLoading(true);
+                  setCurrentPageToken(nextPageToken);
+                }}
+                onPrevious={() => {
+                  setIsPaginationLoading(true);
+                  setCurrentPageToken(previousPageToken);
+                }}
+                hasNext={!!nextPageToken}
+                hasPrevious={!!previousPageToken}
+              />
+            </div>
+          </div>
         </main>
       )}
     </section>
@@ -282,3 +317,4 @@ const History = () => {
 };
 
 export default History;
+

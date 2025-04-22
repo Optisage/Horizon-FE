@@ -132,24 +132,38 @@ const Login: React.FC = () => {
         )}
       </Formik>
 
-      <Link
-        href="https://getnoticed.ca/privacy-policy/"
-        target="_blank"
-        rel="noopener noreferrer"
-        className="text-primary underline font-medium"
-      >
-        Privacy Policy
-      </Link>
+      <div className="flex flex-col gap-2 items-center">
+        <p>
+          Forgot your password? You can reset it{" "}
+          <Link href="/forgot-password" className="underline hover:font-medium">
+            here
+          </Link>
+          .
+        </p>
 
-      <p>
-        Forgot your password? You can reset it{" "}
-        <Link href="/forgot-password" className="underline hover:font-medium">
-          here
+        <p className="font-medium">
+          New here?{" "}
+          <Link
+            href="https://optisage.ai/pricing/"
+            className="underline hover:font-semibold"
+          >
+            Create an Account
+          </Link>
+          .
+        </p>
+
+        <Link
+          href="https://getnoticed.ca/privacy-policy/"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="underline font-medium"
+        >
+          Privacy Policy
         </Link>
-        .
-      </p>
+      </div>
     </>
   );
 };
 
 export default Login;
+

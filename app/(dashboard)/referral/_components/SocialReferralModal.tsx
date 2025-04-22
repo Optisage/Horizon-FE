@@ -8,8 +8,8 @@ import { useAppSelector } from "@/redux/hooks";
 
 const SocialReferralModal = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const {username} = useAppSelector((state) => state.api?.user) || {};
-  
+  const { username } = useAppSelector((state) => state.api?.user) || {};
+
   const referralLink = `https://optisage.ai/pricing/?ref=${username}`; // Replace with dynamic link generation later
   const [copied, setCopied] = useState(false);
 
@@ -24,7 +24,7 @@ const SocialReferralModal = () => {
       case "twitter":
         shareUrl = `https://twitter.com/intent/tweet?url=${encodeURIComponent(
           referralLink
-        )}&text=Join%20Optisage%20and%20earn%20rewards!`;
+        )}&text=Join%20optisage%20and%20earn%20rewards!`;
         break;
       case "whatsapp":
         shareUrl = `https://wa.me/?text=${encodeURIComponent(referralLink)}`;
@@ -32,7 +32,7 @@ const SocialReferralModal = () => {
       case "telegram":
         shareUrl = `https://t.me/share/url?url=${encodeURIComponent(
           referralLink
-        )}&text=Join%20Optisage%20and%20earn%20rewards!`;
+        )}&text=Join%20optisage%20and%20earn%20rewards!`;
         break;
       default:
         return;
@@ -49,7 +49,7 @@ const SocialReferralModal = () => {
     <>
       <div
         onClick={() => setIsModalOpen(true)}
-        className="border border-border rounded-lg p-5 flex gap-4 items-center cursor-pointer"
+        className="border border-border rounded-lg p-5 flex gap-4 items-center cursor-pointer hover:border-primary"
       >
         <span>
           <span className="size-[50px] flex items-center justify-center bg-[#F7F7F7] text-[#4B4B62] rounded-full">

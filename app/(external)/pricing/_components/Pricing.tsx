@@ -2,7 +2,7 @@
 "use client";
 
 import { useLazyGetPricingQuery } from "@/redux/api/auth";
-import { useCreateStripeSubscriptionMutation } from "@/redux/api/subscriptionApi";
+//import { useCreateStripeSubscriptionMutation } from "@/redux/api/subscriptionApi";
 import { Button } from "antd";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -24,8 +24,7 @@ const FeatureList = ({
   //const [expanded, setExpanded] = useState(false);
 
   const safeInitialCount = Math.max(0, initialCount);
- 
- 
+
   // Always visible items
   const initialItems = items.slice(0, safeInitialCount);
   // Extra items to show/hide with animation
@@ -36,11 +35,11 @@ const FeatureList = ({
       <ul className="mt-1 text-left space-y-2 h-fit border-t pt-4">
         {initialItems.map((subItem, index) => (
           <li className="flex gap-2 items-center" key={index}>
-           <div>
-                <FaCheckCircle className="text-green-700 !h-[20px] !w-[20px]" />
-                </div>
-                <span className={`${expanded ? "" : "truncate"} w-full`}>
-            {subItem}
+            <div>
+              <FaCheckCircle className="text-green-700 !h-[20px] !w-[20px]" />
+            </div>
+            <span className={`${expanded ? "" : "truncate"} w-full`}>
+              {subItem}
             </span>
           </li>
         ))}
@@ -54,7 +53,7 @@ const FeatureList = ({
             {extraItems.map((subItem, index) => (
               <li className="flex gap-2 items-center" key={index}>
                 <div>
-                <FaCheckCircle className="text-green-700 !h-[20px] !w-[20px]" />
+                  <FaCheckCircle className="text-green-700 !h-[20px] !w-[20px]" />
                 </div>
                 {subItem}
               </li>
@@ -76,22 +75,24 @@ const FeatureList = ({
 
 const Pricing = () => {
   const searchParams = useSearchParams();
+  //const router = useRouter()
   const [getPricing, { data }] = useLazyGetPricingQuery();
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
-  const [expandedCards, setExpandedCards] = useState<Record<string, boolean>>({});
+  const [expandedCards, setExpandedCards] = useState<Record<string, boolean>>(
+    {}
+  );
   const [showModal, setShowModal] = useState(false);
   const [refCode, setRefCode] = useState<string | null>(null);
-  const [subscribe, { isLoading: subscribeLoading }] =
-    useCreateStripeSubscriptionMutation();
+  //const [subscribe, { isLoading: subscribeLoading }] = useCreateStripeSubscriptionMutation();
 
   useEffect(() => {
     getPricing({});
   }, [getPricing]);
 
   const handleExpand = (planKey: string, isExpanded: boolean) => {
-    setExpandedCards(prev => ({
+    setExpandedCards((prev) => ({
       ...prev,
-      [planKey]: isExpanded
+      [planKey]: isExpanded,
     }));
   };
 
@@ -130,6 +131,7 @@ const Pricing = () => {
     setShowModal(true);
   };
 
+  /** 
   const confirmSubscription = () => {
     if (!selectedPlan) {
       console.error("No plan selected");
@@ -141,11 +143,12 @@ const Pricing = () => {
     })
       .unwrap()
       .then((res) => {
-        if (res?.data?.url) {
+        console.log(res)
+        if (res?.url) {
           if (window.top) {
-            window.top.location.href = res?.data?.url;
+            window.top.location.href = res?.url;
           } else {
-            window.open(res?.data?.url, "_blank");
+            window.open(res?.url, "_blank");
           }
         } else {
           console.error("No checkout URL returned");
@@ -156,6 +159,7 @@ const Pricing = () => {
         console.log(err);
       });
   };
+  */
 
   return (
     <section className="py-12 px-4 bg-white h-dvh flex flex-col gap-12">
@@ -181,10 +185,12 @@ const Pricing = () => {
                 Coming Soon
               </span>
             )}
-            <h3 className="text-xl font-semibold capitalize truncate w-full max-w-full text-nowrap">{item.title}</h3>
+            <h3 className="text-xl font-semibold capitalize truncate w-full max-w-full text-nowrap">
+              {item.title}
+            </h3>
             <div className="flex items-baseline relative">
               <div className=" -mb-5">
-              <FaDollarSign size={25}  />
+                <FaDollarSign size={25} />
               </div>
               <p className="text-4xl font-semibold">{item.price}</p>
               <div className="-mb-5">
@@ -193,12 +199,12 @@ const Pricing = () => {
             </div>
             <p className="text-gray-600 text-sm">{item.subTitle}</p>
             {/* Use the dropdown feature list with smooth animation */}
-            <FeatureList 
-        items={item.subItems}
-        initialCount={3}
-        expanded={expandedCards[item.key] || false}
-        onExpand={(isExpanded) => handleExpand(item.key, isExpanded)}
-  />
+            <FeatureList
+              items={item.subItems}
+              initialCount={3}
+              expanded={expandedCards[item.key] || false}
+              onExpand={(isExpanded) => handleExpand(item.key, isExpanded)}
+            />
 
             <button
               className="mt-4 bg-green-500 text-white px-4 py-2 rounded-lg w-full transition duration-300 hover:bg-green-600 disabled:bg-slate-300"
@@ -215,25 +221,26 @@ const Pricing = () => {
 
       {showModal && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 p-4 sm:p-0">
-          <div className="bg-white p-6 rounded-lg shadow-lg max-w-96 text-center">
+          <div className="bg-[#0A0A0A] p-6 rounded-lg shadow-lg max-w-96 text-center text-white">
             <h3 className="text-xl font-bold">7-Day Free Trial</h3>
-            <p className="text-gray-600 mt-2">
+            <p className=" mt-2 text-white">
               You won&apos;t be charged today. Your 7-day free trial begins after you
               enter your card details, and you can cancel anytime before the trial
               ends.
             </p>
             <div className="mt-4 flex flex-col-reverse sm:flex-row gap-3 justify-center">
               <button
-                className="px-4 py-2 bg-gray-300 rounded-lg"
+                className="px-4 py-2 bg-gray-300 rounded-lg text-[#09090B]"
                 onClick={() => setShowModal(false)}
               >
                 Cancel
               </button>
               <Button
-                className="!px-4 !py-2 !bg-green-500 border-none !h-[40px] !text-white !rounded-lg"
-                onClick={confirmSubscription}
-                loading={subscribeLoading}
-                disabled={subscribeLoading}
+                className="!px-4 !py-2 !bg-green-500 !border-none !h-[40px] !text-white !rounded-lg"
+                //onClick={confirmSubscription}
+                onClick={()=>window.open(`/pre-signup?ref=${refCode || ""}&pricing=${selectedPlan}`)}
+                //loading={subscribeLoading}
+                //disabled={subscribeLoading}
               >
                 Continue to Checkout
               </Button>

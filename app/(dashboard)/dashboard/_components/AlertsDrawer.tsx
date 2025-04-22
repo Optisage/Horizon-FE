@@ -1,30 +1,58 @@
 "use client";
-
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import { Drawer } from "antd";
 import { RxArrowTopRight } from "react-icons/rx";
 import { IoClose } from "react-icons/io5";
-import { useLazyGetIpAlertQuery } from "@/redux/api/productsApi";
-
-
-interface prop{
-  itemAsin:string,
-  marketplaceId: number
+/* eslint-disable @typescript-eslint/no-explicit-any */
+interface AlertDrawerProps {
+  itemAsin: string;
+  productName: string;
+  eligibility: boolean;
+  ipIssuesCount: number;
+  ipData: any; // Added prop for pre-fetched IP data
 }
-const AlertsDrawer = ({itemAsin, marketplaceId}:prop) => {
+
+const AlertsDrawer = ({
+  itemAsin,
+  productName,
+  eligibility,
+  ipIssuesCount,
+  ipData, // Receive IP data from parent
+}: AlertDrawerProps) => {
   const [open, setOpen] = useState(false);
+  const [additionalData, setAdditionalData] = useState({
+    amazonShareBuyBox: 0,
+    privateLabel: "No",
+    size: "N/A",
+    isMeltable: false,
+    hasVariations: false,
+    ipDescription: "No known IP issues",
+  });
+
+  useEffect(() => {
+    if (ipData) {
+      setAdditionalData({
+        amazonShareBuyBox: ipData?.amazon_share_buybox ?? 0,
+        privateLabel: ipData?.private_label ?? "No",
+        size: ipData?.size ?? ipData?.size_text ?? "N/A",
+        isMeltable: ipData?.is_meltable ?? false,
+        hasVariations: ipData?.has_variations ?? false,
+        ipDescription: getFirstDescription(ipData?.ip_analysis?.description),
+      });
+    }
+  }, [ipData]); // Update when IP data changes
 
   const showDrawer = () => setOpen(true);
   const onClose = () => setOpen(false);
 
-  const [getIpAlert] =useLazyGetIpAlertQuery()
-
-  useEffect(()=>{
-    if(marketplaceId && itemAsin){
-      getIpAlert({itemAsin,marketplaceId})
+  const getFirstDescription = (description: string) => {
+    if (!description) return "No known IP issues";
+    if (typeof description === "object") {
+      const descriptions = Object.values(description);
+      return descriptions[0]?.toString() || "No known IP issues";
     }
-    
-  },[marketplaceId, itemAsin])
+    return description.toString();
+  };
 
   return (
     <>
@@ -44,7 +72,6 @@ const AlertsDrawer = ({itemAsin, marketplaceId}:prop) => {
         width={500}
         styles={{ body: { padding: 0 } }}
       >
-        {/* Header */}
         <div className="p-6 border-b border-gray-200 flex justify-between items-center">
           <h2 className="text-lg font-semibold">Alerts</h2>
           <button
@@ -60,42 +87,56 @@ const AlertsDrawer = ({itemAsin, marketplaceId}:prop) => {
         <div className="p-6">
           <div className="border border-border rounded-xl shadow-sm p-4">
             <h3 className="text-lg font-semibold text-gray-900">
-              Rosemary Mint Scalp & Hair Strengthening Oil Model(399-9243)
+              {productName || "Product Name Not Available"}
             </h3>
             <p className="text-sm text-gray-500 mt-1">
-              ASIN:
-              <span className="font-medium">B09TQLC5TK</span>
+              ASIN: <span className="font-medium">{itemAsin || "N/A"}</span>
             </p>
 
-            <h4 className="text-2xl font-semibold mt-4">
-              This Product is Eligible to Sell
-            </h4>
-
-            {/* not eligible */}
-            {/* <div className="mt-4 flex flex-col gap-4">
-              <h4 className="text-2xl font-semibold text-[#FF0000]">
-                This Product is not eligible to sell
+            {eligibility ? (
+              <h4 className="text-lg font-semibold mt-4 text-green-500">
+                You are authorised to sell this product
               </h4>
+            ) : (
+              <div className="mt-4 flex flex-col gap-4">
+                <h4 className="text-lg font-semibold text-[#FF0000]">
+                  You are not authorized to sell this product
+                </h4>
+                {ipIssuesCount > 0 && (
+                  <p className="text-red-500 text-sm hidden">
+                    There {ipIssuesCount === 1 ? "is" : "are"} {ipIssuesCount}{" "}
+                    IP issue{ipIssuesCount !== 1 ? "s" : ""}
+                  </p>
+                )}
+              </div>
+            )}
 
-              <span>
-                <button
-                  type="button"
-                  className="px-6 py-2 bg-primary hover:bg-primary-hover rounded-xl text-white text-sm font-medium"
-                >
-                  Get Approval on Amazon
-                </button>
-              </span>
-            </div> */}
-
-            {/* Alert Details */}
             <div className="mt-4 space-y-3">
               {[
-                { label: "Amazon Share Buy Box", value: "Never on Listing" },
-                { label: "Private Label", value: "Unlikely" },
-                { label: "IP Analysis", value: "No known IP issues" },
-                { label: "Size", value: "Standard Size" },
-                { label: "Meltable", value: "No" },
-                { label: "Variations", value: "No" },
+                {
+                  label: "Amazon Share Buy Box",
+                  value: `${additionalData.amazonShareBuyBox}%`,
+                },
+                {
+                  label: "Private Label",
+                  value: additionalData.privateLabel,
+                },
+                {
+                  label: "IP Analysis",
+                  value: additionalData.ipDescription,
+                },
+                {
+                  label: "Size",
+                  value: additionalData.size,
+                },
+                {
+                  label: "Meltable",
+                  value: additionalData.isMeltable ? "Yes" : "No",
+                },
+                {
+                  label: "Variations",
+                  value: additionalData.hasVariations ? "Yes" : "No",
+                },
               ].map((item, index) => (
                 <div
                   key={index}

@@ -9,9 +9,10 @@ import CustomDatePicker from "./CustomDatePicker";
 import { Product } from "./Dashboard";
 import { useGetSalesStatisticsQuery } from "@/redux/api/productsApi";
 import { useAppSelector } from "@/redux/hooks";
-import Loader from "@/utils/loader";
 import dayjs from "dayjs";
 import { useRouter } from "next/navigation";
+// import ProgressLoader from "@/utils/progressLoader";
+import CircularLoader from "@/utils/circularLoader";
 // import useCurrencyConverter from "@/utils/currencyConverter";
 
 interface BuyBoxItem {
@@ -82,14 +83,14 @@ const SalesStats = ({ product }: { product: Product }) => {
       return (
         <p className="text-green-500 text-sm flex items-center gap-0.5">
           <BsArrowUp className="size-4" />
-          {Math.abs(value).toFixed(3)}%
+          {Math.abs(value).toFixed(2)}%
         </p>
       );
     } else if (value < 0) {
       return (
         <p className="text-red-500 text-sm flex items-center gap-0.5">
           <BsArrowDown className="size-4" />
-          {Math.abs(value).toFixed(3)}%
+          {Math.abs(value).toFixed(2)}%
         </p>
       );
     } else {
@@ -101,7 +102,17 @@ const SalesStats = ({ product }: { product: Product }) => {
     if (isLoadingSalesStats) {
       return (
         <div className="flex items-center justify-center h-64">
-          <Loader />
+          <CircularLoader
+            duration={5000}
+            color="#18CB96"
+            size={64}
+            strokeWidth={6}
+          />
+          {/* <ProgressLoader
+            duration={5000}
+            color="#18CB96"
+            className="w-3/4 max-w-md"
+          /> */}
         </div>
       );
     }
@@ -113,7 +124,7 @@ const SalesStats = ({ product }: { product: Product }) => {
           <span className="p-4 flex flex-col gap-1">
             <p className="text-[#737373] text-xs">Estimated No. of Sales</p>
             <p className="text-xl md:text-2xl font-semibold">
-              {salesStats?.estimated_sales_per_month?.amount.toLocaleString() ||
+              {salesStats?.estimated_sales_per_month?.amount?.toLocaleString() ||
                 0}{" "}
               / month
             </p>
@@ -144,7 +155,7 @@ const SalesStats = ({ product }: { product: Product }) => {
               <p className="text-base font-semibold">
                 {salesStats?.sales_analytics?.net_revenue?.currency ||
                   currencySymbol}
-                {salesStats?.sales_analytics?.net_revenue?.amount.toLocaleString() ||
+                {salesStats?.sales_analytics?.net_revenue?.amount?.toLocaleString() ||
                   0}
               </p>
             </span>
@@ -161,7 +172,8 @@ const SalesStats = ({ product }: { product: Product }) => {
                 <p className="text-base font-semibold">
                   {salesStats?.sales_analytics?.price?.currency ||
                     currencySymbol}
-                  {salesStats?.sales_analytics?.price?.amount || 0}
+                  {salesStats?.sales_analytics?.price?.amount?.toLocaleString() ||
+                    0}
                 </p>
               </span>
               {formatPercentage(
@@ -172,7 +184,7 @@ const SalesStats = ({ product }: { product: Product }) => {
               <span className="flex flex-col gap-1">
                 <p className="text-[#737373] text-xs">Monthly Units Sold</p>
                 <p className="text-base font-semibold">
-                  {salesStats?.sales_analytics?.monthly_units_sold?.amount.toLocaleString() ||
+                  {salesStats?.sales_analytics?.monthly_units_sold?.amount?.toLocaleString() ||
                     0}
                 </p>
               </span>
@@ -188,7 +200,8 @@ const SalesStats = ({ product }: { product: Product }) => {
               <span className="flex flex-col gap-1">
                 <p className="text-[#737373] text-xs">Daily Units Sold</p>
                 <p className="text-base font-semibold">
-                  {salesStats?.sales_analytics?.daily_units_sold?.amount || 0}
+                  {salesStats?.sales_analytics?.daily_units_sold?.amount?.toLocaleString() ||
+                    0}
                 </p>
               </span>
               {formatPercentage(
@@ -201,7 +214,8 @@ const SalesStats = ({ product }: { product: Product }) => {
                 <p className="text-base font-semibold">
                   {salesStats?.sales_analytics?.monthly_revenue?.currency ||
                     currencySymbol}
-                  {salesStats?.sales_analytics?.monthly_revenue?.amount || 0}
+                  {salesStats?.sales_analytics?.monthly_revenue?.amount?.toLocaleString() ||
+                    0}
                 </p>
               </span>
               {formatPercentage(
@@ -318,10 +332,10 @@ const SalesStats = ({ product }: { product: Product }) => {
                   {product.title}
                 </h3>
 
-                <p>
+                {/* <p>
                   {"⭐".repeat(product.rating || 0)}{" "}
                   <span className="font-bold">({product.reviews || 0})</span>
-                </p>
+                </p> */}
                 <p>By ASIN: {product.asin}</p>
               </span>
             </div>
