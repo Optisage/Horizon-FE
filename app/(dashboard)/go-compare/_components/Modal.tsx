@@ -1,71 +1,100 @@
 "use client"
-import { useRef, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { GoChevronDown } from "react-icons/go"
 import { IoCloseOutline } from "react-icons/io5"
 import { RiCheckboxBlankCircleFill } from "react-icons/ri"
 import canada from '@/public/assets/svg/gocompare/canada.svg'
 import './styles.css'
 import Image from "next/image"
+import { useLazyGetAllCountriesQuery, useLazyQuickSearchQuery } from "@/redux/api/quickSearchApi"
 
 interface Store {
-    id: string
-    name: string
-}
-interface Country {
-    id: string
-    name: string
-    flag: string
+    id: string;
+    name: string;
+    marketplace_id: string | null;
+    country_id: number;
+    created_at: {
+        human: string;
+        string: string;
+        timestamp: number;
+        locale: string;
+    };
 }
 
-const Modal = ({ isOpen, onClose, setDeck }: {
+interface Country {
+    id: number;
+    name: string;
+    flag: string;
+    short_code: string;
+    created_at: {
+        human: string;
+        string: string;
+        timestamp: number;
+        locale: string;
+    };
+    stores: Store[];
+}
+
+const Modal = ({ isOpen, onClose, setDeck, setSearchRe, setAsin }: {
     isOpen: boolean
     onClose: () => void
-    setDeck: React.Dispatch<React.SetStateAction<any>> 
+    setDeck: React.Dispatch<React.SetStateAction<any>>
+    setSearchRe: React.Dispatch<React.SetStateAction<any>>
+    setAsin: React.Dispatch<React.SetStateAction<any>>
 }) => {
-    const [selectedCountry, setSelectedCountry] = useState<Country>({
-        id: "canada",
-        name: "Canada",
-        flag: canada,
-    })
-    const [selectedStores, setSelectedStores] = useState<string[]>(["Walmart"])
+    const [getCountries, { data: countries }] = useLazyGetAllCountriesQuery();
+    const [selectedCountry, setSelectedCountry] = useState<Country | undefined>();
+    useEffect(() => {
+        console.log('fetching....')
+        getCountries({});
+    }, [])
+    useEffect(() => {
+        if (countries && countries?.data?.length > 0) {
+            console.log(countries);
+            setSelectedCountry(countries?.data[0]);
+        }
+    }, [countries]);
+    const [selectedStores, setSelectedStores] = useState<string[]>([])
     const [asinOrUpc, setAsinOrUpc] = useState("");
+    const [triggerQuickSearch, { data: quickSearchResults, isFetching, isError }] = useLazyQuickSearchQuery();
     const [isCountryDropdownOpen, setIsCountryDropdownOpen] = useState(false)
     const dropdownRef = useRef<HTMLDivElement>(null);
 
-    const countries: Country[] = [
-        { id: "canada", name: "Canada", flag: canada },
-        { id: "usa", name: "United States", flag: canada },
-        { id: "uk", name: "United Kingdom", flag: canada },
-        { id: "australia", name: "Australia", flag: canada },
-        { id: "germany", name: "Germany", flag: canada },
-        { id: "france", name: "France", flag: canada },
-        { id: "japan", name: "Japan", flag: canada },
-    ]
-
-    const stores: Store[] = [
-        { id: "walmart", name: "Walmart" },
-        { id: "canadian-tire", name: "Canadian Tire" },
-        { id: "dollarama", name: "Dollarama" },
-        { id: "uline", name: "ULine" },
-        { id: "kitchen-stuss-plus", name: "Kitchen Stuss Plus" },
-    ]
-
-    const toggleStore = (storeId: string) => {
-        if (selectedStores.includes(storeId)) {
-            setSelectedStores(selectedStores.filter((id) => id !== storeId))
+    const toggleStore = (storeName: string) => {
+        if (selectedStores.includes(storeName)) {
+            setSelectedStores(selectedStores.filter((name) => name !== storeName));
         } else {
-            setSelectedStores([...selectedStores, storeId])
+            setSelectedStores([...selectedStores, storeName]);
         }
     }
+    const resetFields = () => {
+        setAsinOrUpc("");
+        setSelectedStores([]);
+        setSelectedCountry(countries?.data[0]);
+    };
 
-    const handleSearch = () => {
-        console.log({
-            asinOrUpc,
-            selectedCountry,
-            selectedStores,
-        })
-        onClose()
-        setDeck("quickSearch")
+    const handleClose = () => {
+        resetFields();
+        onClose();
+    };
+
+
+    const handleSearch = async () => {
+        if (!asinOrUpc || !selectedCountry || selectedStores.length === 0) {
+            console.warn("Missing required fields");
+            return;
+        }
+        const country_ids = [selectedCountry.id];
+        try {
+            setAsin(asinOrUpc)
+            const response = await triggerQuickSearch({ asin: asinOrUpc, store_names: selectedStores, country_ids }).unwrap();
+            setSearchRe(response);
+            console.log("Quick Search Response:", response);
+            setDeck("quickSearch");
+            handleClose();
+        } catch (error) {
+            console.error("Quick Search failed:", error);
+        }
     }
 
     if (!isOpen) return null
@@ -75,7 +104,7 @@ const Modal = ({ isOpen, onClose, setDeck }: {
             <div className="bg-white rounded-lg w-full max-w-md mx-4 overflow-hidden shadow-xl">
                 <div className="flex justify-between items-center p-5 pb-4 font-medium">
                     <h2 className="text-lg">Quick Search (100 Products)</h2>
-                    <button onClick={onClose} className="text-gray-400 hover:text-gray-500">
+                    <button onClick={handleClose} className="text-gray-400 hover:text-gray-500">
                         <IoCloseOutline size={22} />
                     </button>
                 </div>
@@ -107,27 +136,34 @@ const Modal = ({ isOpen, onClose, setDeck }: {
                                     className="w-full text-[#9F9FA3] text-sm p-3 border border-gray-300 rounded-md bg-white flex items-center justify-between focus:outline-none focus:ring-2 focus:ring-[#4C3CC6] focus:border-transparent"
                                 >
                                     <div className="flex items-center">
-                                        {/* <span className="mr-2">{selectedCountry.flag}</span> */}
-                                        <Image src={selectedCountry.flag} alt='🇨🇦' className="mr-2"/>
-                                        <span>{selectedCountry.name}</span>
+                                        {/* <Image src={selectedCountry?.flag} alt={selectedCountry?.short_code} className="mr-2" /> */}
+                                        <span
+                                            className="inline-block w-4 h-4 mr-2 mt-2"
+                                            dangerouslySetInnerHTML={{ __html: selectedCountry?.flag }}
+                                        />
+                                        <span>{selectedCountry?.name}</span>
                                     </div>
-                                    <GoChevronDown size={18} color="black"/>
+                                    <GoChevronDown size={18} color="black" />
                                 </button>
 
                                 {isCountryDropdownOpen && (
                                     <div className="absolute z-10 mt-1 px-2 w-full text-sm bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-auto">
-                                        {countries.map((country) => (
+                                        {countries?.data.map((country: Country) => (
                                             <button
-                                                key={country.id}
+                                                key={country?.id}
                                                 onClick={() => {
                                                     setSelectedCountry(country)
+                                                    setSelectedStores([]);
                                                     setIsCountryDropdownOpen(false)
                                                 }}
                                                 className="w-full text-left px-4 py-2 hover:bg-gray-100 flex items-center border-b"
                                             >
-                                                {/* <span className="mr-2">{country.flag}</span> */}
-                                                <Image src={country.flag} alt='🇨🇦' className="mr-2"/>
-                                                <span>{country.name}</span>
+                                                {/* <Image src={country?.flag} alt={country?.short_code} className="mr-2" /> */}
+                                                <span
+                                                    className="inline-block w-4 h-4 mr-2 mt-2"
+                                                    dangerouslySetInnerHTML={{ __html: country?.flag }}
+                                                />
+                                                <span>{country?.name}</span>
                                             </button>
                                         ))}
                                     </div>
@@ -136,19 +172,19 @@ const Modal = ({ isOpen, onClose, setDeck }: {
                         </div>
 
                         <div>
-                            <label className="block text-xs text-[#737379] mb-1.5">Canada Stores</label>
+                            <label className="block text-xs text-[#737379] mb-1.5">{selectedCountry?.name} Stores</label>
                             <div className="space-y-2">
-                                {stores.map((store) => (
+                                {selectedCountry?.stores?.map((store) => (
                                     <div
                                         key={store.id}
-                                        onClick={() => toggleStore(store.id)}
+                                        onClick={() => toggleStore(store.name)}
                                         className={`text-xs px-3 py-4 border rounded-md flex items-center justify-between cursor-pointer ${selectedStores.includes(store.id) ? "border-[#4C3CC6] bg-gray-100" : "border-gray-300"
                                             }`}
                                     >
                                         <span>{store.name}</span>
-                                        {selectedStores.includes(store.id) ? (
+                                        {selectedStores.includes(store.name) ? (
                                             <div className="h-4 w-4 bg-[#365AF9] rounded-full flex items-center justify-center">
-                                                <RiCheckboxBlankCircleFill  color="white" size={10}/>
+                                                <RiCheckboxBlankCircleFill color="white" size={10} />
                                             </div>
                                         ) : (
                                             <div className="h-4 w-4 border border-gray-300 rounded-full bg-white">
@@ -163,13 +199,17 @@ const Modal = ({ isOpen, onClose, setDeck }: {
 
                 <div className="p-5 text-sm font-medium flex justify-end space-x-3 D">
                     <button
-                        onClick={onClose}
+                        onClick={handleClose}
                         className="px-4 py-1 shadow-lg border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50"
                     >
                         Cancel
                     </button>
-                    <button onClick={handleSearch} className="px-4 py-1 shadow-lg bg-[#18cb96] text-white rounded-md hover:bg-[#15b588]">
-                        Search
+                    <button onClick={handleSearch} disabled={isFetching} className="px-4 py-1 shadow-lg bg-[#18cb96] text-white rounded-md hover:bg-[#15b588]">
+                        {isFetching ? (
+                            <div className="h-4 w-4 border-2 border-white animate-spin rounded-full"></div>
+                        ) : (
+                            'Search'
+                        )}
                     </button>
                 </div>
             </div>

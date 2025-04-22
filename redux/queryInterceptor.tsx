@@ -1,5 +1,3 @@
-
-
 import {
     fetchBaseQuery,
     type BaseQueryFn,
@@ -10,7 +8,8 @@ import {
 import { setNotAuthorized, setServerError, updateIdleTimeOut } from './slice/authSlice'
 
 import Cookies from "js-cookie";
-export const baseUrl = process.env.NEXT_PUBLIC_BASE_URL
+export const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
+export const testUrl = process.env.NEXT_PUBLIC_BASE_TEST_URL;
 
 export const baseQueryWithOutToken = fetchBaseQuery({
     baseUrl: `${baseUrl}`,
@@ -34,12 +33,32 @@ export const baseQuery = fetchBaseQuery({
 
 })
 
+export const testQuery = fetchBaseQuery({
+    baseUrl: `${testUrl}`,
+    prepareHeaders: (headers) => {
+        //const token = sessionStorage.getItem('token')
+        const token = Cookies.get('optisage-token');
+        if (token) {
+            headers.set('authorization', `Bearer ${token}`)
+        }
+        headers.set('Accept', 'application/json')
+        return headers
+    },
+
+})
+
 export const baseQueryWithInterceptor: BaseQueryFn<
     string | FetchArgs,
     unknown,
     FetchBaseQueryError
 > = async (args, api, extraOptions) => {
-    const result: any = await baseQuery(args, api, extraOptions)
+
+    const isTestServer = (typeof args === 'object' && 'meta' in args && args.meta?.server === 'test');
+
+    const selectedBaseQuery = isTestServer ? testQuery : baseQuery;
+
+    const result: any = await selectedBaseQuery(args, api, extraOptions);
+
     api.dispatch(updateIdleTimeOut());
     // Check if the response has a status code of 401
     if (result.error?.status === 401 || result.error?.originalStatus === 401) {
@@ -47,14 +66,14 @@ export const baseQueryWithInterceptor: BaseQueryFn<
         sessionStorage.removeItem("token");
     }
     if (result.error?.status === 403 || result.error?.originalStatus === 403) {
-        // api.dispatch(setNotAuthorized())
+        // api.dispatch(setNotAuthorized());
         // message.error("Method Not Allowed");
     }
     if (result.error?.status === 404 || result.error?.originalStatus === 404) {
         // message.error("Not Found");
     }
     if (result.error?.status === 503 || result.error?.originalStatus === 503) {
-        // api.dispatch(setNotAuthorized())
+        // api.dispatch(setNotAuthorized());
         // message.error("Under Maintenance");
     }
     if (result.error?.status === 500 || result.error?.originalStatus === 500) {

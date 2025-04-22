@@ -7,12 +7,12 @@ export function middleware(request: NextRequest) {
 
   // Define the paths that require authentication
   const protectedPaths = [
-    '/dashboard',
-    '/settings',
-    '/subscriptions',
-    '/referral',
-    '/history',
-    '/seller',
+    // '/dashboard',
+    // '/settings',
+    // '/subscriptions',
+    // '/referral',
+    // '/history',
+    // '/seller',
   ];
 
   // Check if the request is for a protected path

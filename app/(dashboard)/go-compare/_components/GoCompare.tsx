@@ -41,8 +41,10 @@ const GoCompare = () => {
     const [activeTab, setActiveTab] = useState("create");
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
     const [deck, setDeck] = useState("empty");
-    const [isModalOpen, setIsModalOpen] = useState(false)
+    const [isModalOpen, setIsModalOpen] = useState(false);
     const dropdownRef = useRef(null);
+    const [searchRe, setSearchRe] = useState({})
+    const [asin, setAsin] = useState('')
 
     const toggleDropdown = () => {
         setIsDropdownOpen(!isDropdownOpen)
@@ -159,8 +161,8 @@ const GoCompare = () => {
                     </div>
                 )}
             </div>
-            <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} setDeck={setDeck} />
-            {activeTab === 'create' ? <Create deck={deck} /> : <SearchHistory />}
+            <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} setDeck={setDeck} setSearchRe={setSearchRe} setAsin={setAsin} />
+            {activeTab === 'create' ? <Create deck={deck} searchRe={searchRe} asin={asin} /> : <SearchHistory />}
         </section>
     )
 }

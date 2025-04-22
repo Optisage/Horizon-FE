@@ -1,24 +1,168 @@
+// "use client";
+// import { useDraggable } from "@dnd-kit/core"
+// import Image from "next/image"
+// import { useState } from "react"
+// import TablePagination from "./TablePagination"
+
+// export type Product = {
+//   id: string
+//   name: string
+//   image: any 
+//   store: string
+//   storeLogo: any 
+//   profitMargin: string
+//   grossROI: string
+//   storePrice: string
+//   monthlySales: string
+//   amazonPrice: string
+//   numberOfSellers: string
+//   asin?: string
+//   avgPrice?: string
+//   avgSalesRank?: string
+// }
+
+// interface ProductTableProps {
+//   products: Product[]
+//   onRowClick: (product: Product) => void
+// }
+
+// function DraggableRow({ product, onRowClick }: { product: Product; onRowClick: (product: Product) => void }) {
+//   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
+//     id: product.id,
+//     data: { product },
+//   })
+
+//   const style = transform
+//     ? {
+//       transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`,
+//       zIndex: isDragging ? 1000 : 1,
+//       opacity: isDragging ? 0.5 : 1,
+//       position: isDragging ? "relative" : ("static" as any),
+//     }
+//     : undefined
+
+//   return (
+//     <tr
+//       ref={setNodeRef}
+//       style={style}
+//       {...listeners}
+//       {...attributes}
+//       onClick={() => onRowClick(product)}
+//       className={` hover:bg-gray-50 cursor-pointer ${isDragging ? "opacity-50 bg-gray-100" : ""}`}
+//     >
+//       <td className="px-4 py-1.5 flex items-center gap-2">
+//         <div className="w-8 h-8 relative rounded overflow-hidden">
+//           <Image src={product.storeLogo} alt={product.name} fill className="object-cover" />
+//         </div>
+//         <span className="text-sm line-clamp-1">
+//           {product.name.length > 25 ? `${product.name.slice(0, 25)}...` : product.name}
+//         </span>
+//       </td>
+//       <td className="px-4 py-1.5">
+//         <div className="w-12 h-12 relative">
+//           <Image src={product.image} alt={product.store} fill className="object-contain" />
+//         </div>
+//       </td>
+//       <td className="px-4 py-1.5 text-sm">{product.storePrice}</td>
+//       <td className="px-4 py-1.5 text-sm">{product.amazonPrice}</td>
+//       <td className="px-4 py-1.5 text-sm">{product.profitMargin}</td>
+//       <td className="px-4 py-1.5 text-sm">{product.grossROI}</td>
+//       <td className="px-4 py-1.5 text-sm">{product.monthlySales}</td>
+//       <td className="px-4 py-1.5 text-sm">{product.numberOfSellers}</td>
+//     </tr>
+//   )
+// }
+
+// export default function QuickSearchTable({ products, onRowClick }: ProductTableProps) {
+//   const [page, setPage] = useState(1)
+//   const [perPage, setPerPage] = useState(10)
+
+//   const totalPages = Math.ceil(products.length / perPage)
+//   const startIndex = (page - 1) * perPage
+//   const endIndex = startIndex + perPage
+//   const currentData = products.slice(startIndex, endIndex)
+
+//   const handlePageChange = (page: number) => {
+//     setPage(page)
+//   }
+
+//   const handlePerPageChange = (value: number) => {
+//     setPerPage(value)
+//     setPage(1)
+//   }
+
+//   return (
+//     <div className="border border-gray-200 rounded-lg">
+//       <div className="w-full bg-white rounded-lg ">
+//         <div className="overflow-x-auto ">
+//           <table className="w-full text-sm">
+//             <thead>
+//               <tr className="bg-gray-50 border-b">
+//                 <th className="px-4 py-3 text-left font-medium text-gray-600">Product name</th>
+//                 <th className="px-4 py-3 text-left font-medium text-gray-600">Store</th>
+//                 <th className="px-4 py-3 text-left font-medium text-gray-600">Store Price</th>
+//                 <th className="px-4 py-3 text-left font-medium text-gray-600">Amazon Price</th>
+//                 <th className="px-4 py-3 text-left font-medium text-gray-600">Profit Margin</th>
+//                 <th className="px-4 py-3 text-left font-medium text-gray-600">Gross ROI</th>
+//                 <th className="px-4 py-3 text-left font-medium text-gray-600">Estimated Monthly Sales</th>
+//                 <th className="px-4 py-3 text-left font-medium text-gray-600">No. of Sellers</th>
+//               </tr>
+//             </thead>
+//             <tbody>
+//               {currentData.map((product) => (
+//                 <DraggableRow key={product.id} product={product} onRowClick={onRowClick} />
+//               ))}
+//             </tbody>
+//           </table>
+//         </div>
+//       </div>
+
+//       <TablePagination page={page} perPage={perPage} totalPages={totalPages} handlePageChange={handlePageChange} handlePerPageChange={handlePerPageChange} />
+
+//     </div>
+//   )
+// }
+
+
 "use client";
 import { useDraggable } from "@dnd-kit/core"
 import Image from "next/image"
 import { useState } from "react"
 import TablePagination from "./TablePagination"
+import walmart from "@/public/assets/svg/gocompare/walmart.svg"
+
 
 export type Product = {
-  id: string
-  name: string
-  image: any 
-  store: string
-  storeLogo: any 
-  profitMargin: string
-  grossROI: string
-  storePrice: string
-  monthlySales: string
-  amazonPrice: string
-  numberOfSellers: string
-  asin?: string
-  avgPrice?: string
-  avgSalesRank?: string
+  scraped_product: {
+    id: string
+    product_name: string
+    image_url: string
+    price: {
+      amount: number
+      currency: string
+      formatted: string
+    }
+    original_price?: {
+      amount: number
+      currency: string
+      formatted: string
+    }
+  }
+  price_difference: number
+  roi_percentage: number
+  profit_margin: number
+  estimated_profit: number
+  amazon_fees: number
+  potential_monthly_sales: number
+  store: {
+    id: string
+    name: string
+  }
+  links: {
+    amazon_product: string
+    scraped_product: string
+  }
+  confidence: number
 }
 
 interface ProductTableProps {
@@ -28,10 +172,10 @@ interface ProductTableProps {
 
 function DraggableRow({ product, onRowClick }: { product: Product; onRowClick: (product: Product) => void }) {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
-    id: product.id,
+    id: product.scraped_product.id,
     data: { product },
   })
-
+  
   const style = transform
     ? {
       transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`,
@@ -41,6 +185,11 @@ function DraggableRow({ product, onRowClick }: { product: Product; onRowClick: (
     }
     : undefined
 
+  const amazonPrice = (product.scraped_product.price.amount + product.price_difference).toFixed(2)
+  const formattedAmazonPrice = `${product.scraped_product.price.currency} ${amazonPrice}`
+  const formattedProfitMargin = `${product.profit_margin.toFixed(1)}%`
+  const formattedROI = `${product.roi_percentage.toFixed(1)}%`
+
   return (
     <tr
       ref={setNodeRef}
@@ -48,27 +197,30 @@ function DraggableRow({ product, onRowClick }: { product: Product; onRowClick: (
       {...listeners}
       {...attributes}
       onClick={() => onRowClick(product)}
-      className={` hover:bg-gray-50 cursor-pointer ${isDragging ? "opacity-50 bg-gray-100" : ""}`}
+      className={`hover:bg-gray-50 cursor-pointer ${isDragging ? "opacity-50 bg-gray-100" : ""}`}
     >
       <td className="px-4 py-1.5 flex items-center gap-2">
         <div className="w-8 h-8 relative rounded overflow-hidden">
-          <Image src={product.storeLogo} alt={product.name} fill className="object-cover" />
+          <Image src={product.scraped_product?.image_url} alt={product.store.name} width={32} height={32} className="object-cover" />
         </div>
         <span className="text-sm line-clamp-1">
-          {product.name.length > 25 ? `${product.name.slice(0, 25)}...` : product.name}
+          {product.scraped_product.product_name.length > 25 
+            ? `${product.scraped_product.product_name.slice(0, 25)}...` 
+            : product.scraped_product.product_name}
         </span>
       </td>
       <td className="px-4 py-1.5">
         <div className="w-12 h-12 relative">
-          <Image src={product.image} alt={product.store} fill className="object-contain" />
+          {/* <Image src={product.scraped_product.image_url} alt={product.store.name} fill className="object-contain" /> */}
+          <Image src={walmart} alt={product.store.name} fill className="object-contain" />
         </div>
       </td>
-      <td className="px-4 py-1.5 text-sm">{product.storePrice}</td>
-      <td className="px-4 py-1.5 text-sm">{product.amazonPrice}</td>
-      <td className="px-4 py-1.5 text-sm">{product.profitMargin}</td>
-      <td className="px-4 py-1.5 text-sm">{product.grossROI}</td>
-      <td className="px-4 py-1.5 text-sm">{product.monthlySales}</td>
-      <td className="px-4 py-1.5 text-sm">{product.numberOfSellers}</td>
+      <td className="px-4 py-1.5 text-sm">{product.scraped_product.price.formatted}</td>
+      <td className="px-4 py-1.5 text-sm">{formattedAmazonPrice}</td>
+      <td className="px-4 py-1.5 text-sm">{formattedProfitMargin}</td>
+      <td className="px-4 py-1.5 text-sm">{formattedROI}</td>
+      <td className="px-4 py-1.5 text-sm">{product.potential_monthly_sales}</td>
+      <td className="px-4 py-1.5 text-sm">-</td>
     </tr>
   )
 }
@@ -93,8 +245,8 @@ export default function QuickSearchTable({ products, onRowClick }: ProductTableP
 
   return (
     <div className="border border-gray-200 rounded-lg">
-      <div className="w-full bg-white rounded-lg ">
-        <div className="overflow-x-auto ">
+      <div className="w-full bg-white rounded-lg">
+        <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="bg-gray-50 border-b">
@@ -110,15 +262,20 @@ export default function QuickSearchTable({ products, onRowClick }: ProductTableP
             </thead>
             <tbody>
               {currentData.map((product) => (
-                <DraggableRow key={product.id} product={product} onRowClick={onRowClick} />
+                <DraggableRow key={product.scraped_product.id} product={product} onRowClick={onRowClick} />
               ))}
             </tbody>
           </table>
         </div>
       </div>
 
-      <TablePagination page={page} perPage={perPage} totalPages={totalPages} handlePageChange={handlePageChange} handlePerPageChange={handlePerPageChange} />
-
+      <TablePagination 
+        page={page} 
+        perPage={perPage} 
+        totalPages={totalPages} 
+        handlePageChange={handlePageChange} 
+        handlePerPageChange={handlePerPageChange} 
+      />
     </div>
   )
 }
