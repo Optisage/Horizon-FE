@@ -1,11 +1,7 @@
 "use client";
 
-// import { CustomPagination } from "../../_components";
 import Image from "next/image";
 import { useParams, useRouter } from "next/navigation";
-
-// import SalesStats from "../../dashboard/_components/SalesStats";
-import { RiAttachment2 } from "react-icons/ri";
 import {
   useLazyGetSellerDetailsQuery,
   useLazyGetSellerProductsQuery,
@@ -14,6 +10,14 @@ import { useEffect, useState } from "react";
 import { useAppSelector } from "@/redux/hooks";
 import { message } from "antd";
 import CustomPagination from "../../_components/CustomPagination";
+import Link from "next/link";
+
+import { FaGoogle } from "react-icons/fa6";
+import AmazonIcon from "@/public/assets/svg/amazon-icon.svg";
+import { SearchInput } from "@/app/(dashboard)/_components";
+import FilterPopup from "./filter-popup";
+import { HiOutlineUsers } from "react-icons/hi2";
+import { BiChevronDown } from "react-icons/bi";
 
 // Define the Product interface
 interface Product {
@@ -26,9 +30,11 @@ interface Product {
       count: number;
     };
     asin: string;
+    vendor: string;
     category: string;
   };
 }
+
 // Define the Brand interface
 interface Brand {
   amazon_link: string;
@@ -42,6 +48,13 @@ interface Category {
   category_name: string;
   count: number;
 }
+
+// Define the Offer interface
+// interface Offer {
+//   seller: string;
+//   price: string;
+//   stock: string;
+// }
 
 const Seller = () => {
   const router = useRouter();
@@ -58,7 +71,9 @@ const Seller = () => {
   const [getSellerProducts, { data: productsData, isLoading: productLoading }] =
     useLazyGetSellerProductsQuery();
   const [loading, setLoading] = useState(true);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [messageApi, contextHolder] = message.useMessage();
+  const [searchValue, setSearchValue] = useState("");
 
   useEffect(() => {
     if (sellerId && marketplaceId) {
@@ -89,121 +104,98 @@ const Seller = () => {
   const seller = data?.data;
   const products: Product[] = productsData?.data?.items || [];
 
-  const copyToClipboard = async (text: string) => {
-    try {
-      await navigator.clipboard.writeText(text);
-      messageApi.success("Link copied to clipboard");
-      console.log("Text copied to clipboard");
-    } catch (err) {
-      messageApi.error("Failed to copy to clipboard");
-      console.error("Failed to copy text: ", err);
-    }
-  };
+  // Mock data for top 5 offers (would be replaced with actual data)
+  const mockOffers = [
+    { seller: "FBA", price: "$40.00", stock: "20" },
+    { seller: "FBM", price: "$49.40", stock: "12" },
+    { seller: "FBM", price: "$32.99", stock: "123" },
+    { seller: "FBM", price: "$32.99", stock: "123" },
+    { seller: "FBM", price: "$32.99", stock: "123" },
+  ];
 
   return (
     <section className="flex flex-col gap-8 min-h-[50dvh] md:min-h-[80dvh]">
       {contextHolder}
       {(detailsLoading && productLoading) || loading ? (
-        <div className=" mx-auto animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-primary"></div>
+        <div className="mx-auto animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-primary"></div>
       ) : (
         <>
-          <div className="grid sm:grid-cols-2 xl:grid-cols-[3fr_2fr_2fr] gap-6">
-            {/* deets */}
-            <div className="rounded-lg border border-border p-4 flex flex-col gap-6 lg:h-max">
-              {/* max-w-[451px] */}
-              <div className="flex items-center gap-4">
+          {/* nav */}
+          <div className="rounded-xl border border-border p-4 flex flex-col gap-2">
+            <p className="text-[#676A75] text-xs font-medium">Navigation</p>
+
+            <div className="flex items-center gap-4">
+              <Link
+                href={seller?.google_link || ""}
+                className="size-12 flex items-center justify-center rounded-lg bg-[#F3F4F6]"
+              >
+                <FaGoogle className="size-6 text-[#0F172A]" />
+              </Link>
+
+              <Link
+                href={seller?.amazon_link || ""}
+                target="_blank"
+                className="size-12 flex items-center justify-center rounded-lg bg-[#F3F4F6]"
+              >
                 <Image
-                  src="https://avatar.iran.liara.run/public/73"
-                  alt="Avatar"
-                  className="size-[80px] object-cover"
-                  width={80}
-                  height={80}
-                  quality={90}
-                  unoptimized
+                  src={AmazonIcon}
+                  alt="Amazon icon"
+                  width={32}
+                  height={32}
                 />
+              </Link>
+            </div>
+          </div>
 
-                <div className="flex flex-col gap-4">
-                  <span>
-                    <h4 className="text-[#020231] text-base font-medium">
-                      {seller?.name || "Seller Name"}
-                    </h4>
-                    <p className="text-[#787891] text-sm">
-                      ID: {seller?.id || "N/A"}
-                    </p>
-                  </span>
-
-                  <span className="flex flex-col lg:flex-row gap-2">
-                    <p className="text-black py-1 px-2.5 rounded-full border border-primary text-sm bg-[#0F2E230F]">
-                      Rating: {seller?.rating_percentage}% ({seller?.rating})
-                    </p>
-                    <p className="text-error-500 py-1 px-2.5 rounded-full border border-error-500 text-sm bg-[#FFF5F5]">
-                      ASIN Count: {seller?.asin_count || 0}
-                    </p>
-                  </span>
-                </div>
-              </div>
-
-              <div className="p-3 border border-border rounded-xl flex gap-3 items-center justify-between">
-                <span className="flex items-center gap-3 text-[#787891]">
-                  <div
-                    onClick={() => copyToClipboard(seller?.amazon_link)}
-                    className=" cursor-pointer"
-                  >
-                    <RiAttachment2 className="size-5" />
-                  </div>
-                  <p className="text-[#787891] text-sm">
-                    {" "}
-                    {seller?.amazon_link || "N/A"}
-                  </p>
-                </span>
-
-                <a
-                  href={seller?.amazon_link || ""}
-                  aria-label="Download"
-                  target="_blank"
-                >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="20"
-                    height="20"
-                    viewBox="0 0 20 20"
-                    fill="none"
-                  >
-                    <path
-                      d="M8.58498 3.40039H7.00063C4.91067 3.40039 3.6001 4.88021 3.6001 6.97444V12.6263C3.6001 14.7206 4.90427 16.2004 7.00063 16.2004H12.9982C15.0952 16.2004 16.4001 14.7206 16.4001 12.6263V11.3883"
-                      stroke="#787891"
-                      strokeWidth="1.44"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                    <path
-                      d="M10.5957 5.75898V9.20289M10.5957 9.20289H14.0396M10.5957 9.20289L15.9959 3.80273"
-                      stroke="#787891"
-                      strokeWidth="1.44"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </svg>
-                </a>
-              </div>
+          <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-4 gap-y-6">
+            {/* store details */}
+            <div className="rounded-lg border border-border flex flex-col divide-y divide-[#EDEDED] text-[#252525] text-sm">
+              <span className="p-4 border-b border-border mb-2">
+                <p className="bg-primary rounded-2xl py-2 px-4 text-white font-semibold w-max">
+                  Store Details
+                </p>
+              </span>
+              <span className="p-4 bg-[#F7F7F7] flex justify-between items-center font-medium">
+                <p>Seller Name</p>
+                <p>{seller?.name || "N/A"}</p>
+              </span>
+              <span className="p-4 flex justify-between items-center">
+                <p>Seller ID</p>
+                <p>{seller?.id || "N/A"}</p>
+              </span>
+              <span className="p-4 bg-[#F7F7F7] flex justify-between items-center">
+                <p>Rating</p>
+                <p>
+                  {seller?.rating_percentage}% ({seller?.rating})
+                </p>
+              </span>
+              <span className="p-4 flex justify-between items-center">
+                <p>ASIN Count</p>
+                <p>{seller?.asin_count || 0}</p>
+              </span>
+              <span className="p-4">
+                <p className="bg-[#F3F4F6] rounded-lg py-1 px-2">
+                  ASIN, brand and category counts are a guide and not exact
+                </p>
+              </span>
             </div>
 
             {/* top brands */}
-            <div className="border border-border rounded-xl flex flex-col divide-y divide-[#EDEDED] text-[#252525] text-base">
-              <span className="rounded-t-xl py-3 px-5 bg-[#FDFDFD]">
-                <h3 className="text-[#252525] font-semibold border-b-2 border-[#252525] w-max">
+            <div className="rounded-lg border border-border flex flex-col divide-y divide-[#EDEDED] text-[#252525] text-sm">
+              <span className="p-4 border-b border-border mb-2">
+                <p className="bg-[#F3F4F6] rounded-2xl py-2 px-4 text-[#676A75] font-semibold w-max">
                   Top Brands
-                </h3>
+                </p>
               </span>
-              <div className="grid grid-cols-[3fr_2fr] text-center p-3 bg-[#F7F7F7]">
-                <span className="">Brand Name</span>
-                <span className="">Count</span>
-              </div>
+              <span className="flex items-center justify-between p-4 bg-[#F7F7F7] font-medium">
+                <p className="">Brand Name</p>
+                <p className="">Product Count</p>
+              </span>
 
               {seller?.top_brands?.map((brand: Brand, index: number) => (
                 <div
                   key={index}
-                  className="grid grid-cols-[3fr_2fr] text-center p-3 hover:bg-gray-50"
+                  className="flex items-center justify-between p-4 hover:bg-gray-50"
                 >
                   <a
                     href={brand.amazon_link}
@@ -219,22 +211,22 @@ const Seller = () => {
             </div>
 
             {/* top category */}
-            <div className="border border-border rounded-xl flex flex-col divide-y divide-[#EDEDED] text-[#252525] text-base">
-              <span className="rounded-t-xl py-3 px-5 bg-[#FDFDFD]">
-                <h3 className="text-[#252525] font-semibold border-b-2 border-[#252525] w-max">
-                  Top Category
-                </h3>
+            <div className="rounded-lg border border-border flex flex-col divide-y divide-[#EDEDED] text-[#252525] text-sm">
+              <span className="p-4 border-b border-border mb-2">
+                <p className="bg-[#F3F4F6] rounded-2xl py-2 px-4 text-[#676A75] font-semibold w-max">
+                  Top Categories
+                </p>
               </span>
-              <div className="grid grid-cols-[3fr_2fr] text-center p-3 bg-[#F7F7F7]">
-                <span className="">Category Name</span>
-                <span className="">Count</span>
-              </div>
+              <span className="flex items-center justify-between p-4 bg-[#F7F7F7] font-medium">
+                <p className="">Category Name</p>
+                <p className="">Product Count</p>
+              </span>
               <div className="">
                 {seller?.top_categories?.map(
                   (category: Category, index: number) => (
                     <div
                       key={index}
-                      className="grid grid-cols-[3fr_2fr] text-center p-3 hover:bg-gray-50"
+                      className="flex items-center justify-between p-4 hover:bg-gray-50"
                     >
                       <a
                         href={category.amazon_link}
@@ -252,57 +244,329 @@ const Seller = () => {
             </div>
           </div>
 
+          <div className="p-2 rounded-lg border border-border flex items-center gap-6">
+            <SearchInput
+              value={searchValue}
+              onChange={setSearchValue}
+              placeholder="Search for Products on Amazon (For best results use specific keywords, UPC code, ASIN or ISBN code)"
+              className="!max-w-[484px]"
+            />
+
+            <FilterPopup />
+          </div>
+
           {/* seller's products */}
           <main className="flex flex-col gap-20 justify-between h-full">
-            <div className="p-2 rounded-lg border border-border flex flex-col divide-y divide-[#E4E4E7]">
-              <span className="bg-[#FAFAFA] px-4 py-3.5">
-                <h4 className="text-neutral-900 font-medium text-base md:text-lg">
-                  All {seller?.name || "Seller"}&apos;s Products
-                </h4>
-              </span>
-
+            <div className="flex flex-col gap-6">
               {products?.map((product, index) => {
                 const basicDetails = product?.basic_details || {};
+                // Placeholder data for demonstration purposes
+                const productBSR = "22%";
+                const estSales = "5k+/mo";
+                const maxCost = "C$6.75";
+                const offerCount = "7";
+                const buyBox = "C$16.75";
+                const storeStock = "3";
+
                 return (
-                  <div
-                    key={index}
-                    className="hover:bg-gray-50 duration-200 cursor-pointer px-4 py-3.5 flex flex-col sm:flex-row sm:items-center gap-4"
-                  >
-                    <Image
-                      onClick={() =>
-                        router.push(`/dashboard/product/${basicDetails?.asin}`)
-                      }
-                      src={basicDetails.product_image}
-                      alt={basicDetails.product_name}
-                      className="size-16 rounded-lg object-cover"
-                      width={64}
-                      height={64}
-                      quality={90}
-                      priority
-                      unoptimized
-                    />
-                    <div className="flex flex-col gap-1 text-[#09090B]">
-                      <p
-                        onClick={() =>
-                          router.push(
-                            `/dashboard/product/${basicDetails?.asin}`
-                          )
-                        }
-                        className="font-bold hover:underline duration-100"
-                      >
-                        {basicDetails.product_name}
-                      </p>
-                      {/* <p>
-                        {"⭐".repeat(basicDetails.rating.stars)}{" "}
-                        <span className="font-bold">
-                          {basicDetails.rating.count} ( reviews)
-                        </span>
-                      </p> */}
-                      <p className="text-sm">By ASIN: {basicDetails.asin}</p>
-                      <p className="text-sm">
-                        {/* {product.category} | <SalesStats /> */}
-                        {basicDetails.category} |
-                      </p>
+                  <div key={index}>
+                    <div className="grid sm:grid-cols-2 lg:grid-cols-[3fr_2fr_2fr] xl:grid-cols-[4fr_2fr_2fr] gap-2 gap-y-4">
+                      {/* Product Image and Basic Info */}
+                      <div className="flex flex-col divide-y divide-border rounded-xl border border-border">
+                        <div className="flex flex-col sm:flex-row items-center gap-4 p-3">
+                          <div
+                            className="relative w-full max-w-[166px] h-[197px] bg-[#F3F4F6]"
+                            onClick={() =>
+                              router.push(
+                                `/dashboard/product/${basicDetails?.asin}`
+                              )
+                            }
+                          >
+                            <Image
+                              src={basicDetails.product_image}
+                              alt={basicDetails.product_name}
+                              className="size-full object-cover cursor-pointer rounded-lg"
+                              fill
+                              priority
+                              quality={90}
+                              unoptimized
+                            />
+                          </div>
+
+                          <div className="flex flex-col gap-1.5 text-[#5B656C]">
+                            <div className="flex items-center gap-4">
+                              <Link
+                                href={seller?.google_link || ""}
+                                target="_blank"
+                                className="size-12 flex items-center justify-center rounded-lg bg-[#F3F4F6]"
+                              >
+                                <FaGoogle className="size-6 text-[#0F172A]" />
+                              </Link>
+
+                              <Link
+                                href={seller?.amazon_link || ""}
+                                target="_blank"
+                                className="size-12 flex items-center justify-center rounded-lg bg-[#F3F4F6]"
+                              >
+                                <Image
+                                  src={AmazonIcon}
+                                  alt="Amazon icon"
+                                  width={32}
+                                  height={32}
+                                />
+                              </Link>
+                            </div>
+
+                            <p
+                              onClick={() =>
+                                router.push(
+                                  `/dashboard/product/${basicDetails?.asin}`
+                                )
+                              }
+                              className="font-bold hover:underline duration-100 cursor-pointer"
+                            >
+                              {basicDetails.product_name}
+                            </p>
+                            <div className="flex items-center gap-1 mt-1">
+                              <div className="flex">
+                                {"⭐".repeat(
+                                  Math.floor(basicDetails.rating?.stars || 0)
+                                )}
+                              </div>
+                              <span className="text-sm text-gray-600">
+                                {basicDetails.rating?.stars}/5
+                                {/* ({basicDetails.rating?.count} reviews) */}
+                              </span>
+                            </div>
+
+                            <p className="text-sm mt-1">
+                              ASIN: {basicDetails.asin}
+                            </p>
+                            <p className="text-sm">
+                              Category: {basicDetails.category}
+                            </p>
+                            <p className="text-lg font-bold mt-2">
+                              $
+                              {basicDetails.asin
+                                ? (
+                                    (basicDetails.asin.charCodeAt(0) % 50) +
+                                    10
+                                  ).toFixed(2)
+                                : "40.00"}
+                            </p>
+                          </div>
+                        </div>
+
+                        {/* Product stats */}
+                        <div className="text-sm p-3">
+                          <div className="bg-[#F3F4F6E0] text-[#596375] text-xs p-2 px-3 rounded-lg flex items-center gap-4 flex-wrap justify-between">
+                            <div className="flex flex-col">
+                              <span className="text-gray-500">BSR</span>
+                              <span className="font-semibold text-[#8E949F] text-sm">
+                                {productBSR}
+                              </span>
+                            </div>
+                            <div className="flex flex-col">
+                              <span className="text-gray-500">Est. Sales</span>
+                              <span className="font-semibold text-[#8E949F] text-sm">
+                                {estSales}
+                              </span>
+                            </div>
+                            <div className="flex flex-col">
+                              <span className="text-gray-500">Max Cost</span>
+                              <span className="font-semibold text-[#8E949F] text-sm">
+                                {maxCost}
+                              </span>
+                            </div>
+                            <div className="flex flex-col">
+                              <div className="text-gray-500">
+                                Offer: {offerCount}
+                              </div>
+                              <div className="font-semibold flex gap-2">
+                                <span className="text-[#FFC56E] bg-white p-1 rounded-lg">
+                                  AMZ
+                                </span>
+                                <span className="text-[#18CB96] bg-white p-1 rounded-lg">
+                                  FBA: 5
+                                </span>
+                                <span className="text-[#FF8551] bg-white p-1 rounded-lg">
+                                  FBM: 2
+                                </span>
+                              </div>
+                            </div>
+                            <div className="flex flex-col">
+                              <span className="text-gray-500">Buy Box</span>
+                              <span className="font-semibold text-[#8E949F] text-sm">
+                                {buyBox}
+                              </span>
+                            </div>
+                            <div className="flex flex-col">
+                              <span className="text-gray-500">Store Stock</span>
+                              <span className="font-semibold text-[#8E949F] text-sm">
+                                {storeStock}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Top 5 Offers */}
+                      <div className="rounded-xl border border-border overflow-hidden">
+                        <div className="p-4">
+                          <p className="bg-primary flex items-center gap-1 rounded-2xl py-2 px-4 text-white font-semibold w-max text-xs">
+                            <HiOutlineUsers className="size-4" />
+                            Top 5 Offers
+                          </p>
+                        </div>
+
+                        <div className="overflow-x-auto">
+                          <table className="w-full text-sm">
+                            <thead>
+                              <tr className="bg-[#F7F7F7] text-[#252525]">
+                                <th className="p-4 text-left">S/N</th>
+                                <th className="p-4 text-left">Seller</th>
+                                <th className="p-4 text-left">Price</th>
+                                <th className="p-4 text-left">Stock</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {mockOffers.map((offer, idx) => (
+                                <tr
+                                  key={idx}
+                                  className="border-t border-gray-100 hover:bg-gray-50"
+                                >
+                                  <td className="p-4">{idx + 1}</td>
+                                  <td className="p-4">
+                                    <span
+                                      className={`px-2 py-1 rounded text-xs font-semibold ${
+                                        offer.seller === "FBA"
+                                          ? "text-[#FF9B06] bg-[#FDF5E9]"
+                                          : "text-[#009F6D] bg-[#EDF7F5]"
+                                      }`}
+                                    >
+                                      {offer.seller}
+                                    </span>
+                                  </td>
+                                  <td className="p-4">{offer.price}</td>
+                                  <td className="p-4">{offer.stock}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+
+                      {/* Keepa Chart */}
+                      <div className="rounded-xl border border-border">
+                        <div className="bg-white rounded-lg border border-gray-200 overflow-hidden h-full">
+                          <div className="p-4 flex gap-4 justify-between">
+                            <p className="bg-[#F3F4F6] rounded-2xl py-2 px-4 text-[#676A75] font-semibold w-max text-xs">
+                              Keepa
+                            </p>
+                            <button
+                              type="button"
+                              className="bg-primary flex items-center gap-2.5 rounded-2xl py-2 px-3 text-white font-semibold w-max text-xs"
+                            >
+                              30 days
+                              <BiChevronDown className="size-4" />
+                            </button>
+                          </div>
+                          <div className="p-3 relative h-40">
+                            <svg
+                              viewBox="0 0 300 150"
+                              className="w-full h-full"
+                            >
+                              {/* Price history chart simulation */}
+                              <path
+                                d="M0,120 C20,100 40,130 60,110 C80,90 100,130 120,100 C140,70 160,110 180,90 C200,70 220,50 240,80 C260,110 280,70 300,60"
+                                fill="none"
+                                stroke="#FF6B6B"
+                                strokeWidth="2"
+                              />
+                              <path
+                                d="M0,80 C20,110 40,90 60,100 C80,110 100,70 120,90 C140,110 160,80 180,100 C200,120 220,90 240,70 C260,50 280,80 300,90"
+                                fill="none"
+                                stroke="#4ECDC4"
+                                strokeWidth="2"
+                              />
+                              <path
+                                d="M0,90 C20,70 40,100 60,80 C80,60 100,90 120,110 C140,130 160,100 180,80 C200,60 220,90 240,110 C260,130 280,100 300,70"
+                                fill="none"
+                                stroke="#6A67CE"
+                                strokeWidth="2"
+                              />
+
+                              {/* X-axis labels */}
+                              <text
+                                x="10"
+                                y="145"
+                                fontSize="8"
+                                textAnchor="middle"
+                              >
+                                Jan 1
+                              </text>
+                              <text
+                                x="70"
+                                y="145"
+                                fontSize="8"
+                                textAnchor="middle"
+                              >
+                                Jan 2
+                              </text>
+                              <text
+                                x="130"
+                                y="145"
+                                fontSize="8"
+                                textAnchor="middle"
+                              >
+                                Jan 3
+                              </text>
+                              <text
+                                x="190"
+                                y="145"
+                                fontSize="8"
+                                textAnchor="middle"
+                              >
+                                Jan 4
+                              </text>
+                              <text
+                                x="250"
+                                y="145"
+                                fontSize="8"
+                                textAnchor="middle"
+                              >
+                                Jan 5
+                              </text>
+
+                              {/* Price point */}
+                              <text
+                                x="20"
+                                y="20"
+                                fontSize="8"
+                                textAnchor="start"
+                              >
+                                $20.00
+                              </text>
+                            </svg>
+
+                            {/* Legend */}
+                            <div className="flex justify-between items-center text-xs mt-2">
+                              <div className="flex items-center gap-1">
+                                <span className="block w-3 h-3 bg-red-400 rounded-sm"></span>
+                                <span>AMAZON</span>
+                              </div>
+                              <div className="flex items-center gap-1">
+                                <span className="block w-3 h-3 bg-emerald-400 rounded-sm"></span>
+                                <span>SALES RANK</span>
+                              </div>
+                              <div className="flex items-center gap-1">
+                                <span className="block w-3 h-3 bg-indigo-400 rounded-sm"></span>
+                                <span>NEW FBA</span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 );
@@ -310,7 +574,6 @@ const Seller = () => {
             </div>
 
             {/* pagination */}
-
             <CustomPagination
               onNext={() => setCurrentPageToken(nextPageToken)}
               onPrevious={() => setCurrentPageToken(previousPageToken)}
