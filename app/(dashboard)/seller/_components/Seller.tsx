@@ -17,11 +17,10 @@ import AmazonIcon from "@/public/assets/svg/amazon-icon.svg";
 import { SearchInput } from "@/app/(dashboard)/_components";
 import FilterPopup from "./filter-popup";
 import { HiOutlineUsers } from "react-icons/hi2";
-import { BiChevronDown } from "react-icons/bi";
+import KeepaChart from "./keepa-chart";
 
 // Define the Product interface
-interface Product {
-  id: string;
+export interface Product {
   basic_details: {
     product_image: string;
     product_name: string;
@@ -29,9 +28,46 @@ interface Product {
       stars: number;
       count: number;
     };
-    asin: string;
     vendor: string;
+    asin: string;
     category: string;
+    amazon_link: string;
+  };
+  buybox_details: {
+    bsr: number;
+    est_sales: number;
+    max_cost: number | null;
+    offers_count: {
+      amz: number;
+      fba: number;
+      fbm: number;
+    };
+    buybox_price: number;
+    store_stock: number | null;
+    currency: string;
+  };
+  top_five_offers: Array<{
+    seller_id: string;
+    seller_name: string;
+    rating: number;
+    review_count: number;
+    listing_price: number;
+    shipping: number;
+    avg_price: number;
+    weight_percentage: number;
+    percentage_won: number;
+    last_won: string;
+    stock_quantity: number;
+    is_buybox_winner: boolean;
+    seller_type: string;
+    currency: string;
+  }>;
+  chart: {
+    [key: string]: {
+      amazon: Array<{ date: string; price: number }>;
+      sales_rank: Array<{ date: string; price: number }>;
+      new_fba: Array<{ date: string; price: number }>;
+    };
   };
 }
 
@@ -103,15 +139,6 @@ const Seller = () => {
   // Extract seller details safely
   const seller = data?.data;
   const products: Product[] = productsData?.data?.items || [];
-
-  // Mock data for top 5 offers (would be replaced with actual data)
-  const mockOffers = [
-    { seller: "FBA", price: "$40.00", stock: "20" },
-    { seller: "FBM", price: "$49.40", stock: "12" },
-    { seller: "FBM", price: "$32.99", stock: "123" },
-    { seller: "FBM", price: "$32.99", stock: "123" },
-    { seller: "FBM", price: "$32.99", stock: "123" },
-  ];
 
   return (
     <section className="flex flex-col gap-8 min-h-[50dvh] md:min-h-[80dvh]">
@@ -260,13 +287,6 @@ const Seller = () => {
             <div className="flex flex-col gap-6">
               {products?.map((product, index) => {
                 const basicDetails = product?.basic_details || {};
-                // Placeholder data for demonstration purposes
-                const productBSR = "22%";
-                const estSales = "5k+/mo";
-                const maxCost = "C$6.75";
-                const offerCount = "7";
-                const buyBox = "C$16.75";
-                const storeStock = "3";
 
                 return (
                   <div key={index}>
@@ -295,17 +315,28 @@ const Seller = () => {
 
                           <div className="flex flex-col gap-1.5 text-[#5B656C]">
                             <div className="flex items-center gap-4">
-                              <Link
-                                href={seller?.google_link || ""}
-                                target="_blank"
+                              <button
+                                type="button"
+                                aria-label="Search on Google"
+                                onClick={() => {
+                                  const query = encodeURIComponent(
+                                    `${basicDetails.product_name} supplier`
+                                  );
+                                  window.open(
+                                    `https://www.google.com/search?q=${query}`,
+                                    "_blank"
+                                  );
+                                }}
                                 className="size-12 flex items-center justify-center rounded-lg bg-[#F3F4F6]"
                               >
                                 <FaGoogle className="size-6 text-[#0F172A]" />
-                              </Link>
+                              </button>
 
                               <Link
-                                href={seller?.amazon_link || ""}
-                                target="_blank"
+                                href={basicDetails.amazon_link || "#"}
+                                {...(basicDetails.amazon_link && {
+                                  target: "_blank",
+                                })}
                                 className="size-12 flex items-center justify-center rounded-lg bg-[#F3F4F6]"
                               >
                                 <Image
@@ -346,13 +377,8 @@ const Seller = () => {
                               Category: {basicDetails.category}
                             </p>
                             <p className="text-lg font-bold mt-2">
-                              $
-                              {basicDetails.asin
-                                ? (
-                                    (basicDetails.asin.charCodeAt(0) % 50) +
-                                    10
-                                  ).toFixed(2)
-                                : "40.00"}
+                              {product.buybox_details.currency}
+                              {product.buybox_details.buybox_price.toFixed(2)}
                             </p>
                           </div>
                         </div>
@@ -363,47 +389,51 @@ const Seller = () => {
                             <div className="flex flex-col">
                               <span className="text-gray-500">BSR</span>
                               <span className="font-semibold text-[#8E949F] text-sm">
-                                {productBSR}
+                                {product.buybox_details.bsr.toLocaleString()}
                               </span>
                             </div>
                             <div className="flex flex-col">
                               <span className="text-gray-500">Est. Sales</span>
                               <span className="font-semibold text-[#8E949F] text-sm">
-                                {estSales}
+                                {product.buybox_details.est_sales.toLocaleString()}
                               </span>
                             </div>
                             <div className="flex flex-col">
                               <span className="text-gray-500">Max Cost</span>
                               <span className="font-semibold text-[#8E949F] text-sm">
-                                {maxCost}
+                                {product.buybox_details.max_cost || "N/A"}
                               </span>
                             </div>
                             <div className="flex flex-col">
                               <div className="text-gray-500">
-                                Offer: {offerCount}
+                                Offer:{" "}
+                                {product.buybox_details.offers_count.amz +
+                                  product.buybox_details.offers_count.fba +
+                                  product.buybox_details.offers_count.fbm}
                               </div>
                               <div className="font-semibold flex gap-2">
                                 <span className="text-[#FFC56E] bg-white p-1 rounded-lg">
-                                  AMZ
+                                  AMZ: {product.buybox_details.offers_count.amz}
                                 </span>
                                 <span className="text-[#18CB96] bg-white p-1 rounded-lg">
-                                  FBA: 5
+                                  FBA: {product.buybox_details.offers_count.fba}
                                 </span>
                                 <span className="text-[#FF8551] bg-white p-1 rounded-lg">
-                                  FBM: 2
+                                  FBM: {product.buybox_details.offers_count.fbm}
                                 </span>
                               </div>
                             </div>
                             <div className="flex flex-col">
                               <span className="text-gray-500">Buy Box</span>
                               <span className="font-semibold text-[#8E949F] text-sm">
-                                {buyBox}
+                                {product.buybox_details.currency}
+                                {product.buybox_details.buybox_price.toFixed(2)}
                               </span>
                             </div>
                             <div className="flex flex-col">
                               <span className="text-gray-500">Store Stock</span>
                               <span className="font-semibold text-[#8E949F] text-sm">
-                                {storeStock}
+                                {product.buybox_details.store_stock ?? "N/A"}
                               </span>
                             </div>
                           </div>
@@ -430,143 +460,56 @@ const Seller = () => {
                               </tr>
                             </thead>
                             <tbody>
-                              {mockOffers.map((offer, idx) => (
+                              {product.top_five_offers.map((offer, idx) => (
                                 <tr
                                   key={idx}
-                                  className="border-t border-gray-100 hover:bg-gray-50"
+                                  className={`border-t border-gray-100 hover:bg-gray-50 ${
+                                    offer.is_buybox_winner ? "bg-yellow-50" : ""
+                                  }`}
                                 >
                                   <td className="p-4">{idx + 1}</td>
                                   <td className="p-4">
                                     <span
                                       className={`px-2 py-1 rounded text-xs font-semibold ${
-                                        offer.seller === "FBA"
+                                        offer.seller_type === "FBA"
                                           ? "text-[#FF9B06] bg-[#FDF5E9]"
                                           : "text-[#009F6D] bg-[#EDF7F5]"
                                       }`}
                                     >
-                                      {offer.seller}
+                                      {offer.seller_type}
                                     </span>
                                   </td>
-                                  <td className="p-4">{offer.price}</td>
-                                  <td className="p-4">{offer.stock}</td>
+                                  <td className="p-4">
+                                    {offer.currency}
+                                    {(
+                                      offer.listing_price + offer.shipping
+                                    ).toFixed(2)}
+                                  </td>
+                                  <td className="p-4">
+                                    {offer.stock_quantity}
+                                  </td>
                                 </tr>
                               ))}
+                              {product.top_five_offers.length === 0 && (
+                                <tr>
+                                  <td
+                                    colSpan={4}
+                                    className="p-4 text-center text-gray-500"
+                                  >
+                                    No offers available
+                                  </td>
+                                </tr>
+                              )}
                             </tbody>
                           </table>
                         </div>
                       </div>
 
                       {/* Keepa Chart */}
-                      <div className="rounded-xl border border-border">
-                        <div className="bg-white rounded-lg border border-gray-200 overflow-hidden h-full">
-                          <div className="p-4 flex gap-4 justify-between">
-                            <p className="bg-[#F3F4F6] rounded-2xl py-2 px-4 text-[#676A75] font-semibold w-max text-xs">
-                              Keepa
-                            </p>
-                            <button
-                              type="button"
-                              className="bg-primary flex items-center gap-2.5 rounded-2xl py-2 px-3 text-white font-semibold w-max text-xs"
-                            >
-                              30 days
-                              <BiChevronDown className="size-4" />
-                            </button>
-                          </div>
-                          <div className="p-3 relative h-40">
-                            <svg
-                              viewBox="0 0 300 150"
-                              className="w-full h-full"
-                            >
-                              {/* Price history chart simulation */}
-                              <path
-                                d="M0,120 C20,100 40,130 60,110 C80,90 100,130 120,100 C140,70 160,110 180,90 C200,70 220,50 240,80 C260,110 280,70 300,60"
-                                fill="none"
-                                stroke="#FF6B6B"
-                                strokeWidth="2"
-                              />
-                              <path
-                                d="M0,80 C20,110 40,90 60,100 C80,110 100,70 120,90 C140,110 160,80 180,100 C200,120 220,90 240,70 C260,50 280,80 300,90"
-                                fill="none"
-                                stroke="#4ECDC4"
-                                strokeWidth="2"
-                              />
-                              <path
-                                d="M0,90 C20,70 40,100 60,80 C80,60 100,90 120,110 C140,130 160,100 180,80 C200,60 220,90 240,110 C260,130 280,100 300,70"
-                                fill="none"
-                                stroke="#6A67CE"
-                                strokeWidth="2"
-                              />
-
-                              {/* X-axis labels */}
-                              <text
-                                x="10"
-                                y="145"
-                                fontSize="8"
-                                textAnchor="middle"
-                              >
-                                Jan 1
-                              </text>
-                              <text
-                                x="70"
-                                y="145"
-                                fontSize="8"
-                                textAnchor="middle"
-                              >
-                                Jan 2
-                              </text>
-                              <text
-                                x="130"
-                                y="145"
-                                fontSize="8"
-                                textAnchor="middle"
-                              >
-                                Jan 3
-                              </text>
-                              <text
-                                x="190"
-                                y="145"
-                                fontSize="8"
-                                textAnchor="middle"
-                              >
-                                Jan 4
-                              </text>
-                              <text
-                                x="250"
-                                y="145"
-                                fontSize="8"
-                                textAnchor="middle"
-                              >
-                                Jan 5
-                              </text>
-
-                              {/* Price point */}
-                              <text
-                                x="20"
-                                y="20"
-                                fontSize="8"
-                                textAnchor="start"
-                              >
-                                $20.00
-                              </text>
-                            </svg>
-
-                            {/* Legend */}
-                            <div className="flex justify-between items-center text-xs mt-2">
-                              <div className="flex items-center gap-1">
-                                <span className="block w-3 h-3 bg-red-400 rounded-sm"></span>
-                                <span>AMAZON</span>
-                              </div>
-                              <div className="flex items-center gap-1">
-                                <span className="block w-3 h-3 bg-emerald-400 rounded-sm"></span>
-                                <span>SALES RANK</span>
-                              </div>
-                              <div className="flex items-center gap-1">
-                                <span className="block w-3 h-3 bg-indigo-400 rounded-sm"></span>
-                                <span>NEW FBA</span>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
+                      <KeepaChart
+                        chartData={product.chart}
+                        currency={product.buybox_details.currency}
+                      />
                     </div>
                   </div>
                 );

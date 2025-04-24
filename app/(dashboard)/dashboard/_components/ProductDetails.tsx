@@ -26,6 +26,7 @@ import CustomDatePicker from "./CustomDatePicker";
 import SalesStats from "./SalesStats";
 import { Product } from "./Dashboard";
 
+import AmazonIcon from "@/public/assets/svg/amazon-icon.svg";
 import ProductThumbnail from "@/public/assets/images/women-shoes.png";
 import Illustration from "@/public/assets/svg/illustration.svg";
 import UFO from "@/public/assets/svg/ufo.svg";
@@ -62,6 +63,7 @@ import Link from "next/link";
 import { useDispatch } from "react-redux";
 import { setIpAlert, setIpIssues } from "@/redux/slice/globalSlice";
 import { InfoCard } from "./info-card";
+import { FaGoogle } from "react-icons/fa6";
 
 interface ProductDetailsProps {
   asin: string;
@@ -772,16 +774,46 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
                   "_blank"
                 );
               }}
-              className="border border-border text-primary px-3 py-2 rounded-xl flex gap-1 items-center font-semibold hover:bg-gray-50 active:scale-95 duration-200 text-sm md:text-base"
+              className="border border-border text-primary px-3 py-2 rounded-xl hidden md:flex gap-1 items-center font-semibold hover:bg-gray-50 active:scale-95 duration-200 text-sm md:text-base"
             >
               Find Supplier
               <RxArrowTopRight className="size-5" />
             </button>
 
+            <button
+              type="button"
+              aria-label="Find Supplier"
+              onClick={() => {
+                const query = encodeURIComponent(
+                  `${product?.product_name} supplier`
+                );
+                window.open(
+                  `https://www.google.com/search?q=${query}`,
+                  "_blank"
+                );
+              }}
+              className="size-12 flex md:hidden items-center justify-center rounded-lg bg-[#F3F4F6]"
+            >
+              <FaGoogle className="size-6 text-[#0F172A]" />
+            </button>
+
             <Link
               href={productLink}
               target="_blank"
-              className="border border-border text-primary px-3 py-2 rounded-xl flex gap-1 items-center font-semibold hover:bg-gray-50 active:scale-95 duration-200 text-sm md:text-base"
+              className="size-12 flex md:hidden items-center justify-center rounded-lg bg-[#F3F4F6]"
+            >
+              <Image
+                src={AmazonIcon}
+                alt="Amazon icon"
+                width={32}
+                height={32}
+              />
+            </Link>
+
+            <Link
+              href={productLink}
+              target="_blank"
+              className="border border-border text-primary px-3 py-2 rounded-xl hidden md:flex gap-1 items-center font-semibold hover:bg-gray-50 active:scale-95 duration-200 text-sm md:text-base"
             >
               See this Product on Amazon
               <RxArrowTopRight className="size-5" />
