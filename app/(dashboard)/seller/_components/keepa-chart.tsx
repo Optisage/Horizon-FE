@@ -17,26 +17,29 @@ interface ChartDataPoint {
 }
 
 interface ChartRangeData {
-  amazon: ChartDataPoint[];
-  sales_rank: ChartDataPoint[];
-  new_fba: ChartDataPoint[];
+  amazon?: ChartDataPoint[];
+  sales_rank?: ChartDataPoint[];
+  new_fba?: ChartDataPoint[];
 }
 
 interface ChartData {
-  [key: string]: ChartRangeData;
+  [key: string]: ChartRangeData | undefined;
 }
 
 interface KeepaChartProps {
-  chartData: ChartData;
-  currency: string;
+  chartData?: ChartData | null;
+  currency?: string;
 }
 
-const KeepaChart = ({ chartData, currency }: KeepaChartProps) => {
+const KeepaChart = ({ chartData, currency = "" }: KeepaChartProps) => {
   const [timeRange, setTimeRange] = useState("30");
-
-  // Transform the data for Recharts
   const transformData = () => {
+    if (!chartData) return [];
+
     const rangeData = chartData[timeRange];
+
+    if (!rangeData) return [];
+
     const amazonData = rangeData.amazon || [];
     const salesRankData = rangeData.sales_rank || [];
     const newFBAData = rangeData.new_fba || [];
@@ -67,6 +70,25 @@ const KeepaChart = ({ chartData, currency }: KeepaChartProps) => {
   };
 
   const chartDataTransformed = transformData();
+
+  if (
+    !chartData ||
+    !Object.keys(chartData).length ||
+    !chartDataTransformed.length
+  ) {
+    return (
+      <div className="rounded-xl border border-border p-4 bg-white">
+        <div className="flex justify-between items-center mb-4">
+          <p className="bg-[#F3F4F6] rounded-2xl py-2 px-4 text-[#676A75] font-semibold w-max text-xs">
+            Keepa
+          </p>
+        </div>
+        <div className="h-64 flex items-center justify-center text-gray-500">
+          No chart data available
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="rounded-xl border border-border">
@@ -122,33 +144,39 @@ const KeepaChart = ({ chartData, currency }: KeepaChartProps) => {
                 labelFormatter={(date) => new Date(date).toLocaleDateString()}
               />
               <Legend wrapperStyle={{ fontSize: "12px", paddingTop: "10px" }} />
-              <Line
-                type="monotone"
-                dataKey="amazon"
-                stroke="#FF6B6B"
-                strokeWidth={2}
-                dot={false}
-                name="AMAZON"
-                activeDot={{ r: 4 }}
-              />
-              <Line
-                type="monotone"
-                dataKey="sales_rank"
-                stroke="#4ECDC4"
-                strokeWidth={4}
-                dot={false}
-                name="SALES RANK"
-                activeDot={{ r: 4 }}
-              />
-              <Line
-                type="monotone"
-                dataKey="new_fba"
-                stroke="#6A67CE"
-                strokeWidth={4}
-                dot={false}
-                name="NEW FBA"
-                activeDot={{ r: 4 }}
-              />
+              {chartData[timeRange]?.amazon && (
+                <Line
+                  type="monotone"
+                  dataKey="amazon"
+                  stroke="#FF6B6B"
+                  strokeWidth={2}
+                  dot={false}
+                  name="AMAZON"
+                  activeDot={{ r: 4 }}
+                />
+              )}
+              {chartData[timeRange]?.sales_rank && (
+                <Line
+                  type="monotone"
+                  dataKey="sales_rank"
+                  stroke="#4ECDC4"
+                  strokeWidth={4}
+                  dot={false}
+                  name="SALES RANK"
+                  activeDot={{ r: 4 }}
+                />
+              )}
+              {chartData[timeRange]?.new_fba && (
+                <Line
+                  type="monotone"
+                  dataKey="new_fba"
+                  stroke="#6A67CE"
+                  strokeWidth={4}
+                  dot={false}
+                  name="NEW FBA"
+                  activeDot={{ r: 4 }}
+                />
+              )}
             </LineChart>
           </ResponsiveContainer>
         </div>
