@@ -507,8 +507,8 @@ const Seller = () => {
 
                       {/* Keepa Chart */}
                       <KeepaChart
-                        chartData={product.chart}
-                        currency={product.buybox_details.currency}
+                        chartData={product?.chart}
+                        currency={product?.buybox_details.currency}
                       />
                     </div>
                   </div>
