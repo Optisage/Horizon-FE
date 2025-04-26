@@ -14,23 +14,49 @@ export const sellerApi = createApi({
         method: "GET",
       }),
     }),
-    getSellerProducts: builder.query({
-      query: ({ sellerId, ...params }) => ({
-        url: `sellers/${sellerId}/products`,
-        method: "GET",
-        params: {
-          ...params,
-          sellerId,
-        },
-      }),
-    }),
     // getSellerProducts: builder.query({
-    //   query: (params) => ({
-    //     url: `catalog`,
+    //   query: ({ sellerId, ...params }) => ({
+    //     url: `sellers/${sellerId}/products`,
     //     method: "GET",
-    //     params,
+    //     params: {
+    //       ...params,
+    //       marketplaceId: params.marketplaceId,
+    //       estimatedSale: params.estimatedSale,
+    //       buyboxAmount: params.buyboxAmount,
+    //       offer: params.offer,
+    //       minBsr: params.minBsr,
+    //       maxBsr: params.maxBsr,
+    //       q: params.q,
+    //       pageToken: params.pageToken,
+    //       perPage: params.perPage,
+    //     },
     //   }),
     // }),
+
+    getSellerProducts: builder.query({
+      query: ({ sellerId, marketplaceId, ...params }) => {
+        const queryParams: Record<string, string | number | undefined> = {
+          marketplaceId,
+          perPage: params.perPage,
+        };
+
+        // Addind these optional params only if they exist
+        if (params.estimatedSale)
+          queryParams.estimatedSale = params.estimatedSale;
+        if (params.buyboxAmount) queryParams.buyboxAmount = params.buyboxAmount;
+        if (params.offer) queryParams.offer = params.offer;
+        if (params.minBsr) queryParams.minBsr = params.minBsr;
+        if (params.maxBsr) queryParams.maxBsr = params.maxBsr;
+        if (params.q) queryParams.q = params.q;
+        if (params.pageToken) queryParams.pageToken = params.pageToken;
+
+        return {
+          url: `sellers/${sellerId}/products`,
+          method: "GET",
+          params: queryParams,
+        };
+      },
+    }),
   }),
 });
 

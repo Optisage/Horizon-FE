@@ -6,7 +6,7 @@ import {
   useLazyGetSellerDetailsQuery,
   useLazyGetSellerProductsQuery,
 } from "@/redux/api/sellerApi";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useAppSelector } from "@/redux/hooks";
 import { message } from "antd";
 import CustomPagination from "../../_components/CustomPagination";
@@ -15,9 +15,10 @@ import Link from "next/link";
 import { FaGoogle } from "react-icons/fa6";
 import AmazonIcon from "@/public/assets/svg/amazon-icon.svg";
 import { SearchInput } from "@/app/(dashboard)/_components";
-import FilterPopup from "./filter-popup";
+import FilterPopup, { FilterParams } from "./filter-popup";
 import { HiOutlineUsers } from "react-icons/hi2";
 import KeepaChart from "./keepa-chart";
+import { debounce } from "@/utils/debounce";
 
 // Define the Product interface
 export interface Product {
@@ -31,7 +32,6 @@ export interface Product {
     vendor: string;
     asin: string;
     category: string;
-    amazon_link: string;
   };
   buybox_details: {
     bsr: number;
@@ -62,6 +62,7 @@ export interface Product {
     seller_type: string;
     currency: string;
   }>;
+  amazon_link: string;
   chart: {
     [key: string]: {
       amazon: Array<{ date: string; price: number }>;
@@ -85,17 +86,25 @@ interface Category {
   count: number;
 }
 
-// Define the Offer interface
-// interface Offer {
-//   seller: string;
-//   price: string;
-//   stock: string;
-// }
+interface SellerProductsParams {
+  marketplaceId: number;
+  sellerId: string | number;
+  perPage: number;
+  pageToken?: string;
+  q?: string;
+  estimatedSale?: string;
+  buyboxAmount?: number;
+  offer?: string;
+  minBsr?: number;
+  maxBsr?: number;
+}
 
 const Seller = () => {
   const router = useRouter();
   const params = useParams();
-  const sellerId = params?.sellerId;
+  const sellerId = Array.isArray(params?.sellerId)
+    ? params.sellerId[0]
+    : params?.sellerId;
   const { marketplaceId } = useAppSelector((state) => state?.global);
   const [nextPageToken, setNextPageToken] = useState<string | null>(null);
   const [previousPageToken, setPreviousPageToken] = useState<string | null>(
@@ -110,6 +119,8 @@ const Seller = () => {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [messageApi, contextHolder] = message.useMessage();
   const [searchValue, setSearchValue] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filters, setFilters] = useState<FilterParams>({});
 
   useEffect(() => {
     if (sellerId && marketplaceId) {
@@ -117,17 +128,51 @@ const Seller = () => {
     }
   }, [sellerId, marketplaceId, getSellerDetails]);
 
-  // Fetch products with pagination (runs when pagination changes)
   useEffect(() => {
     if (sellerId && marketplaceId) {
       setLoading(true);
-      getSellerProducts({
-        marketplaceId: marketplaceId,
-        sellerId: sellerId,
-        pageToken: currentPageToken,
-      }).finally(() => setLoading(false));
+
+      const params: SellerProductsParams = {
+        marketplaceId,
+        sellerId,
+        perPage: 5,
+      };
+
+      // Only add pageToken if it exists
+      if (currentPageToken) {
+        params.pageToken = currentPageToken;
+      }
+
+      // Add search query if present
+      if (searchQuery) {
+        params.q = searchQuery;
+      }
+
+      // Add filters only if they exist
+      if (filters.estimatedSale) params.estimatedSale = filters.estimatedSale;
+      if (filters.buyboxAmount) params.buyboxAmount = filters.buyboxAmount;
+      if (filters.offer) params.offer = filters.offer;
+      if (filters.minBsr) params.minBsr = filters.minBsr;
+      if (filters.maxBsr) params.maxBsr = filters.maxBsr;
+
+      getSellerProducts(params)
+        .unwrap()
+        .catch((error) => {
+          // Handle API validation errors
+          if (error.data?.errors?.maxBsr) {
+            message.error(error.data.errors.maxBsr[0]);
+          }
+        })
+        .finally(() => setLoading(false));
     }
-  }, [currentPageToken, sellerId, marketplaceId, getSellerProducts]);
+  }, [
+    currentPageToken,
+    sellerId,
+    marketplaceId,
+    getSellerProducts,
+    filters,
+    searchQuery,
+  ]);
 
   useEffect(() => {
     if (productsData?.data?.pagination) {
@@ -140,11 +185,42 @@ const Seller = () => {
   const seller = data?.data;
   const products: Product[] = productsData?.data?.items || [];
 
+  const debouncedSearch = useCallback(
+    debounce((value: string) => {
+      setSearchQuery(value);
+      setCurrentPageToken(null);
+    }, 500),
+    [setSearchQuery, setCurrentPageToken]
+  );
+
+  const handleSearch = (value: string) => {
+    setSearchValue(value);
+    debouncedSearch(value);
+  };
+
+  useEffect(() => {
+    return () => {
+      debouncedSearch.cancel();
+    };
+  }, [debouncedSearch]);
+
+  const onSearchChange = (value: string) => {
+    setSearchValue(value);
+    handleSearch(value);
+  };
+
+  // Add this handler for filters
+  const handleFilterApply = (newFilters: FilterParams) => {
+    setFilters(newFilters);
+    setCurrentPageToken(null);
+  };
+
   return (
     <section className="flex flex-col gap-8 min-h-[50dvh] md:min-h-[80dvh]">
       {contextHolder}
-      {(detailsLoading && productLoading) || loading ? (
-        <div className="mx-auto animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-primary"></div>
+
+      {detailsLoading ? (
+        <div className="mx-auto animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-primary" />
       ) : (
         <>
           {/* nav */}
@@ -274,256 +350,286 @@ const Seller = () => {
           <div className="p-2 rounded-lg border border-border flex items-center gap-6">
             <SearchInput
               value={searchValue}
-              onChange={setSearchValue}
+              onChange={onSearchChange}
               placeholder="Search for Products on Amazon (For best results use specific keywords, UPC code, ASIN or ISBN code)"
               className="!max-w-[484px]"
             />
 
-            <FilterPopup />
+            <FilterPopup onApply={handleFilterApply} />
           </div>
 
-          {/* seller's products */}
-          <main className="flex flex-col gap-20 justify-between h-full">
-            <div className="flex flex-col gap-6">
-              {products?.map((product, index) => {
-                const basicDetails = product?.basic_details || {};
+          {/* Show loading spinner only for products */}
+          {productLoading || loading ? (
+            <div className="mx-auto animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-primary"></div>
+          ) : (
+            /* seller's products */
+            <main className="flex flex-col gap-20 justify-between h-full">
+              <div className="flex flex-col gap-6">
+                {/* No results message */}
+                {!loading && !productLoading && products.length === 0 && (
+                  <div className="text-center py-8">
+                    <p className="text-lg font-medium text-gray-500">
+                      No products found matching your criteria
+                    </p>
+                    <p className="text-sm text-gray-400 mt-2">
+                      Try adjusting your search or filters
+                    </p>
+                  </div>
+                )}
 
-                return (
-                  <div key={index}>
-                    <div className="grid sm:grid-cols-2 lg:grid-cols-[3fr_2fr_2fr] xl:grid-cols-[4fr_2fr_2fr] gap-2 gap-y-4">
-                      {/* Product Image and Basic Info */}
-                      <div className="flex flex-col divide-y divide-border rounded-xl border border-border">
-                        <div className="flex flex-col sm:flex-row items-center gap-4 p-3">
-                          <div
-                            className="relative w-full max-w-[166px] h-[197px] bg-[#F3F4F6]"
-                            onClick={() =>
-                              router.push(
-                                `/dashboard/product/${basicDetails?.asin}`
-                              )
-                            }
-                          >
-                            <Image
-                              src={basicDetails.product_image}
-                              alt={basicDetails.product_name}
-                              className="size-full object-cover cursor-pointer rounded-lg"
-                              fill
-                              priority
-                              quality={90}
-                              unoptimized
-                            />
-                          </div>
+                {products?.map((product, index) => {
+                  const basicDetails = product?.basic_details || {};
 
-                          <div className="flex flex-col gap-1.5 text-[#5B656C]">
-                            <div className="flex items-center gap-4">
-                              <button
-                                type="button"
-                                aria-label="Search on Google"
-                                onClick={() => {
-                                  const query = encodeURIComponent(
-                                    `${basicDetails.product_name} supplier`
-                                  );
-                                  window.open(
-                                    `https://www.google.com/search?q=${query}`,
-                                    "_blank"
-                                  );
-                                }}
-                                className="size-12 flex items-center justify-center rounded-lg bg-[#F3F4F6]"
-                              >
-                                <FaGoogle className="size-6 text-[#0F172A]" />
-                              </button>
-
-                              <Link
-                                href={basicDetails.amazon_link || "#"}
-                                {...(basicDetails.amazon_link && {
-                                  target: "_blank",
-                                })}
-                                className="size-12 flex items-center justify-center rounded-lg bg-[#F3F4F6]"
-                              >
-                                <Image
-                                  src={AmazonIcon}
-                                  alt="Amazon icon"
-                                  width={32}
-                                  height={32}
-                                />
-                              </Link>
-                            </div>
-
-                            <p
+                  return (
+                    <div key={index}>
+                      <div className="grid sm:grid-cols-2 lg:grid-cols-[3fr_2fr_2fr] xl:grid-cols-[4fr_2fr_2fr] gap-2 gap-y-4">
+                        {/* Product Image and Basic Info */}
+                        <div className="flex flex-col divide-y divide-border rounded-xl border border-border">
+                          <div className="flex flex-col sm:flex-row items-center gap-4 p-3">
+                            <div
+                              className="relative w-full max-w-[166px] h-[197px] bg-[#F3F4F6]"
                               onClick={() =>
                                 router.push(
                                   `/dashboard/product/${basicDetails?.asin}`
                                 )
                               }
-                              className="font-bold hover:underline duration-100 cursor-pointer"
                             >
-                              {basicDetails.product_name}
-                            </p>
-                            <div className="flex items-center gap-1 mt-1">
-                              <div className="flex">
-                                {"⭐".repeat(
-                                  Math.floor(basicDetails.rating?.stars || 0)
-                                )}
-                              </div>
-                              <span className="text-sm text-gray-600">
-                                {basicDetails.rating?.stars}/5
-                                {/* ({basicDetails.rating?.count} reviews) */}
-                              </span>
+                              <Image
+                                src={basicDetails.product_image}
+                                alt={basicDetails.product_name}
+                                className="size-full object-cover cursor-pointer rounded-lg"
+                                fill
+                                priority
+                                quality={90}
+                                unoptimized
+                              />
                             </div>
 
-                            <p className="text-sm mt-1">
-                              ASIN: {basicDetails.asin}
-                            </p>
-                            <p className="text-sm">
-                              Category: {basicDetails.category}
-                            </p>
-                            <p className="text-lg font-bold mt-2">
-                              {product.buybox_details.currency}
-                              {product.buybox_details.buybox_price.toFixed(2)}
-                            </p>
-                          </div>
-                        </div>
+                            <div className="flex flex-col gap-1.5 text-[#5B656C]">
+                              <div className="flex items-center gap-4">
+                                <button
+                                  type="button"
+                                  aria-label="Search on Google"
+                                  onClick={() => {
+                                    const query = encodeURIComponent(
+                                      `${basicDetails.product_name} supplier`
+                                    );
+                                    window.open(
+                                      `https://www.google.com/search?q=${query}`,
+                                      "_blank"
+                                    );
+                                  }}
+                                  className="size-12 flex items-center justify-center rounded-lg bg-[#F3F4F6]"
+                                >
+                                  <FaGoogle className="size-6 text-[#0F172A]" />
+                                </button>
 
-                        {/* Product stats */}
-                        <div className="text-sm p-3">
-                          <div className="bg-[#F3F4F6E0] text-[#596375] text-xs p-2 px-3 rounded-lg flex items-center gap-4 flex-wrap justify-between">
-                            <div className="flex flex-col">
-                              <span className="text-gray-500">BSR</span>
-                              <span className="font-semibold text-[#8E949F] text-sm">
-                                {product.buybox_details.bsr.toLocaleString()}
-                              </span>
-                            </div>
-                            <div className="flex flex-col">
-                              <span className="text-gray-500">Est. Sales</span>
-                              <span className="font-semibold text-[#8E949F] text-sm">
-                                {product.buybox_details.est_sales.toLocaleString()}
-                              </span>
-                            </div>
-                            <div className="flex flex-col">
-                              <span className="text-gray-500">Max Cost</span>
-                              <span className="font-semibold text-[#8E949F] text-sm">
-                                {product.buybox_details.max_cost || "N/A"}
-                              </span>
-                            </div>
-                            <div className="flex flex-col">
-                              <div className="text-gray-500">
-                                Offer:{" "}
-                                {product.buybox_details.offers_count.amz +
-                                  product.buybox_details.offers_count.fba +
-                                  product.buybox_details.offers_count.fbm}
+                                <Link
+                                  href={product?.amazon_link || "#"}
+                                  {...(product?.amazon_link && {
+                                    target: "_blank",
+                                  })}
+                                  className="size-12 flex items-center justify-center rounded-lg bg-[#F3F4F6]"
+                                >
+                                  <Image
+                                    src={AmazonIcon}
+                                    alt="Amazon icon"
+                                    width={32}
+                                    height={32}
+                                  />
+                                </Link>
                               </div>
-                              <div className="font-semibold flex gap-2">
-                                <span className="text-[#FFC56E] bg-white p-1 rounded-lg">
-                                  AMZ: {product.buybox_details.offers_count.amz}
-                                </span>
-                                <span className="text-[#18CB96] bg-white p-1 rounded-lg">
-                                  FBA: {product.buybox_details.offers_count.fba}
-                                </span>
-                                <span className="text-[#FF8551] bg-white p-1 rounded-lg">
-                                  FBM: {product.buybox_details.offers_count.fbm}
+
+                              <p
+                                onClick={() =>
+                                  router.push(
+                                    `/dashboard/product/${basicDetails?.asin}`
+                                  )
+                                }
+                                className="font-bold hover:underline duration-100 cursor-pointer"
+                              >
+                                {basicDetails.product_name}
+                              </p>
+                              <div className="flex items-center gap-1 mt-1">
+                                <div className="flex">
+                                  {"⭐".repeat(
+                                    Math.floor(basicDetails.rating?.stars || 0)
+                                  )}
+                                </div>
+                                <span className="text-sm text-gray-600">
+                                  {basicDetails.rating?.stars}/5
+                                  {/* ({basicDetails.rating?.count} reviews) */}
                                 </span>
                               </div>
-                            </div>
-                            <div className="flex flex-col">
-                              <span className="text-gray-500">Buy Box</span>
-                              <span className="font-semibold text-[#8E949F] text-sm">
+
+                              <p className="text-sm mt-1">
+                                ASIN: {basicDetails.asin}
+                              </p>
+                              <p className="text-sm">
+                                Category: {basicDetails.category}
+                              </p>
+                              <p className="text-lg font-bold mt-2">
                                 {product.buybox_details.currency}
                                 {product.buybox_details.buybox_price.toFixed(2)}
-                              </span>
+                              </p>
                             </div>
-                            <div className="flex flex-col">
-                              <span className="text-gray-500">Store Stock</span>
-                              <span className="font-semibold text-[#8E949F] text-sm">
-                                {product.buybox_details.store_stock ?? "N/A"}
-                              </span>
+                          </div>
+
+                          {/* Product stats */}
+                          <div className="text-sm p-3">
+                            <div className="bg-[#F3F4F6E0] text-[#596375] text-xs p-2 px-3 rounded-lg flex items-center gap-4 flex-wrap justify-between">
+                              <div className="flex flex-col">
+                                <span className="text-gray-500">BSR</span>
+                                <span className="font-semibold text-[#8E949F] text-sm">
+                                  {product.buybox_details.bsr.toLocaleString()}
+                                </span>
+                              </div>
+                              <div className="flex flex-col">
+                                <span className="text-gray-500">
+                                  Est. Sales
+                                </span>
+                                <span className="font-semibold text-[#8E949F] text-sm">
+                                  {product.buybox_details.est_sales.toLocaleString()}
+                                </span>
+                              </div>
+                              <div className="flex flex-col">
+                                <span className="text-gray-500">Max Cost</span>
+                                <span className="font-semibold text-[#8E949F] text-sm">
+                                  {product.buybox_details.max_cost || "N/A"}
+                                </span>
+                              </div>
+                              <div className="flex flex-col">
+                                <div className="text-gray-500">
+                                  Offer:{" "}
+                                  {product.buybox_details.offers_count.amz +
+                                    product.buybox_details.offers_count.fba +
+                                    product.buybox_details.offers_count.fbm}
+                                </div>
+                                <div className="font-semibold flex gap-2">
+                                  <span className="text-[#FFC56E] bg-white p-1 rounded-lg">
+                                    AMZ:{" "}
+                                    {product.buybox_details.offers_count.amz}
+                                  </span>
+                                  <span className="text-[#18CB96] bg-white p-1 rounded-lg">
+                                    FBA:{" "}
+                                    {product.buybox_details.offers_count.fba}
+                                  </span>
+                                  <span className="text-[#FF8551] bg-white p-1 rounded-lg">
+                                    FBM:{" "}
+                                    {product.buybox_details.offers_count.fbm}
+                                  </span>
+                                </div>
+                              </div>
+                              <div className="flex flex-col">
+                                <span className="text-gray-500">Buy Box</span>
+                                <span className="font-semibold text-[#8E949F] text-sm">
+                                  {product.buybox_details.currency}
+                                  {product.buybox_details.buybox_price.toFixed(
+                                    2
+                                  )}
+                                </span>
+                              </div>
+                              <div className="flex flex-col">
+                                <span className="text-gray-500">
+                                  Store Stock
+                                </span>
+                                <span className="font-semibold text-[#8E949F] text-sm">
+                                  {product.buybox_details.store_stock ?? "N/A"}
+                                </span>
+                              </div>
                             </div>
                           </div>
                         </div>
-                      </div>
 
-                      {/* Top 5 Offers */}
-                      <div className="rounded-xl border border-border overflow-hidden">
-                        <div className="p-4">
-                          <p className="bg-primary flex items-center gap-1 rounded-2xl py-2 px-4 text-white font-semibold w-max text-xs">
-                            <HiOutlineUsers className="size-4" />
-                            Top 5 Offers
-                          </p>
-                        </div>
+                        {/* Top 5 Offers */}
+                        <div className="rounded-xl border border-border overflow-hidden">
+                          <div className="p-4">
+                            <p className="bg-primary flex items-center gap-1 rounded-2xl py-2 px-4 text-white font-semibold w-max text-xs">
+                              <HiOutlineUsers className="size-4" />
+                              Top 5 Offers
+                            </p>
+                          </div>
 
-                        <div className="overflow-x-auto">
-                          <table className="w-full text-sm">
-                            <thead>
-                              <tr className="bg-[#F7F7F7] text-[#252525]">
-                                <th className="p-4 text-left">S/N</th>
-                                <th className="p-4 text-left">Seller</th>
-                                <th className="p-4 text-left">Price</th>
-                                <th className="p-4 text-left">Stock</th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {product.top_five_offers.map((offer, idx) => (
-                                <tr
-                                  key={idx}
-                                  className={`border-t border-gray-100 hover:bg-gray-50 ${
-                                    offer.is_buybox_winner ? "bg-yellow-50" : ""
-                                  }`}
-                                >
-                                  <td className="p-4">{idx + 1}</td>
-                                  <td className="p-4">
-                                    <span
-                                      className={`px-2 py-1 rounded text-xs font-semibold ${
-                                        offer.seller_type === "FBA"
-                                          ? "text-[#FF9B06] bg-[#FDF5E9]"
-                                          : "text-[#009F6D] bg-[#EDF7F5]"
-                                      }`}
-                                    >
-                                      {offer.seller_type}
-                                    </span>
-                                  </td>
-                                  <td className="p-4">
-                                    {offer.currency}
-                                    {(
-                                      offer.listing_price + offer.shipping
-                                    ).toFixed(2)}
-                                  </td>
-                                  <td className="p-4">
-                                    {offer.stock_quantity}
-                                  </td>
+                          <div className="overflow-x-auto">
+                            <table className="w-full text-sm">
+                              <thead>
+                                <tr className="bg-[#F7F7F7] text-[#252525]">
+                                  <th className="p-4 text-left">S/N</th>
+                                  <th className="p-4 text-left">Seller</th>
+                                  <th className="p-4 text-left">Price</th>
+                                  <th className="p-4 text-left">Stock</th>
                                 </tr>
-                              ))}
-                              {product.top_five_offers.length === 0 && (
-                                <tr>
-                                  <td
-                                    colSpan={4}
-                                    className="p-4 text-center text-gray-500"
+                              </thead>
+                              <tbody>
+                                {product.top_five_offers.map((offer, idx) => (
+                                  <tr
+                                    key={idx}
+                                    className={`border-t border-gray-100 hover:bg-gray-50 ${
+                                      offer.is_buybox_winner
+                                        ? "bg-yellow-50"
+                                        : ""
+                                    }`}
                                   >
-                                    No offers available
-                                  </td>
-                                </tr>
-                              )}
-                            </tbody>
-                          </table>
+                                    <td className="p-4">{idx + 1}</td>
+                                    <td className="p-4">
+                                      <span
+                                        className={`px-2 py-1 rounded text-xs font-semibold ${
+                                          offer.seller_type === "FBA"
+                                            ? "text-[#FF9B06] bg-[#FDF5E9]"
+                                            : "text-[#009F6D] bg-[#EDF7F5]"
+                                        }`}
+                                      >
+                                        {offer.seller_type}
+                                      </span>
+                                    </td>
+                                    <td className="p-4">
+                                      {offer.currency}
+                                      {(
+                                        offer.listing_price + offer.shipping
+                                      ).toFixed(2)}
+                                    </td>
+                                    <td className="p-4">
+                                      {offer.stock_quantity}
+                                    </td>
+                                  </tr>
+                                ))}
+                                {product.top_five_offers.length === 0 && (
+                                  <tr>
+                                    <td
+                                      colSpan={4}
+                                      className="p-4 text-center text-gray-500"
+                                    >
+                                      No offers available
+                                    </td>
+                                  </tr>
+                                )}
+                              </tbody>
+                            </table>
+                          </div>
                         </div>
+
+                        {/* Keepa Chart */}
+                        <KeepaChart
+                          chartData={product?.chart}
+                          currency={product?.buybox_details.currency}
+                        />
                       </div>
-
-                      {/* Keepa Chart */}
-                      <KeepaChart
-                        chartData={product?.chart}
-                        currency={product?.buybox_details.currency}
-                      />
                     </div>
-                  </div>
-                );
-              })}
-            </div>
+                  );
+                })}
+              </div>
 
-            {/* pagination */}
-            <CustomPagination
-              onNext={() => setCurrentPageToken(nextPageToken)}
-              onPrevious={() => setCurrentPageToken(previousPageToken)}
-              hasNext={!!nextPageToken}
-              hasPrevious={!!previousPageToken}
-            />
-          </main>
+              {/* pagination */}
+              {products.length > 0 && (
+                <CustomPagination
+                  onNext={() => setCurrentPageToken(nextPageToken)}
+                  onPrevious={() => setCurrentPageToken(previousPageToken)}
+                  hasNext={!!nextPageToken}
+                  hasPrevious={!!previousPageToken}
+                />
+              )}
+            </main>
+          )}
         </>
       )}
     </section>
