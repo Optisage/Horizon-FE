@@ -16,6 +16,7 @@ import SalesStats from "../../dashboard/_components/SalesStats";
 
 export interface HistoryProduct {
   asin: string;
+  upc?:string;
   image?: string;
   title: string;
   rating?: number;
@@ -132,6 +133,7 @@ const History = () => {
     ? // eslint-disable-next-line @typescript-eslint/no-explicit-any
       historyData.data.map((item: any) => ({
         asin: item.asin || "N/A",
+        upc: item.upc || "N/A",
         image: item.product_image,
         title: item.product_name || item.search_term || "Unknown search",
         rating: item.rating?.stars || 0,
@@ -147,6 +149,7 @@ const History = () => {
     ? // eslint-disable-next-line @typescript-eslint/no-explicit-any
       productsData.data.map((item: any) => ({
         asin: item.asin || "N/A",
+        upc: item.upc || "N/A",
         image: item.product_image,
         title: item.product_name || "Unknown product",
         rating: item.rating?.stars || 0,
@@ -259,7 +262,7 @@ const History = () => {
                           </span>
                         </p>
                       )}
-                      <p className="text-sm">By ASIN: {item.asin}</p>
+                      <p className="text-sm">By ASIN: {item.asin}, UPC: {item.upc}</p>
                       {item.category && (
                         <p className="text-sm">
                           {item.category === "NaN" ? "N/A" : item.category} |{" "}

@@ -12,6 +12,7 @@ import { useAppSelector } from "@/redux/hooks";
 import CircularLoader from "@/utils/circularLoader";
 
 export interface Product {
+  upc?: string;
   asin: string;
   image?: string;
   title: string;
@@ -118,6 +119,7 @@ const Dashboard = () => {
       ? // eslint-disable-next-line @typescript-eslint/no-explicit-any
         data.data.items.map((item: any) => ({
           asin: item.basic_details.asin,
+          upc: item.basic_details.upc,
           image: item.basic_details.product_image,
           title: item.basic_details.product_name,
           rating: item.basic_details.rating.stars,
@@ -221,7 +223,7 @@ const Dashboard = () => {
                     {"⭐".repeat(product.rating || 0)}{" "}
                     <span className="font-bold">({product.reviews || 0})</span>
                   </p> */}
-                  <p className="text-sm">By ASIN: {product.asin}</p>
+                  <p className="text-sm">By ASIN: {product.asin}, UPC: {product.upc || "N/A"}</p>
 
                   <p className="text-sm">
                     {product.category} | <SalesStats product={product} />
