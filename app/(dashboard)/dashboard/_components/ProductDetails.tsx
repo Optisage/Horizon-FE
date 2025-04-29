@@ -3,10 +3,12 @@
 import { useEffect, useState } from "react";
 import { CustomPagination, SearchInput } from "@/app/(dashboard)/_components";
 import Image from "next/image";
-import { message, Tooltip as Tooltip2 } from "antd";
+import { message, Tooltip as Tooltip2, Skeleton } from "antd";
 import { evaluate } from "mathjs";
-
+import { useCallback } from "react";
+import { debounce } from "lodash";
 import { CustomSlider as Slider } from "@/lib/AntdComponents";
+
 import {
   PieChart,
   Pie,
@@ -186,6 +188,11 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
       setCostPrice(lastCostPrice);
     }
   }, [lastCostPrice]);
+  useEffect(() => {
+  return () => {
+    setCostPrice(""); // Clear cost price when component unmounts
+  };
+}, []);
 
   // Initialize state with last profitability calculation if available
   const [fees, setFees] = useState({
@@ -229,6 +236,7 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
   const [estimatedPayout, setEstimatedPayout] = useState(
     lastProfitabilityCalc?.fba?.estimatedAmzPayout || 0
   );
+  const [isCalculating, setIsCalculating] = useState(false);
 
   // Initialize responseData with last calculation
   const [responseData, setResponseData] = useState({
@@ -277,39 +285,71 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
     }
   }, [asin, marketplaceId, dispatch, getIpAlert, statStartDate, statEndDate]);
 
-  // calculating profitability
-  const handleCalculateProfitability = async () => {
-    const body = {
-      asin: asin,
-      marketplaceId: `${marketplaceId}`,
-      isAmazonFulfilled: fulfillmentType === "FBA",
-      currencyCode: currencyCode,
-      storage: storageMonths,
-      costPrice: costPrice,
-      salePrice: salePrice || buyboxWinnerPrice, // Use price if entered, or else, fallback to the buybox winner price 🙂
-      pointsNumber: 0,
-      pointsAmount: 0,
-    };
+  const {
+    data: buyboxDetailsData,
+    isLoading: isLoadingBuyboxDetails,
+    // error: buyboxDetailsError,
+  } = useGetBuyboxDetailsQuery({
+    marketplaceId,
+    itemAsin: asin,
+  });
 
+  const buyboxDetails: BuyboxItem[] = buyboxDetailsData?.data?.buybox ?? [];
+  const buyboxWinnerPrice =
+  buyboxDetails.find((offer) => offer.is_buybox_winner)?.listing_price ?? 0;
+
+  // calculating profitability
+  // Memoize the calculation handler
+  const handleCalculateProfitability = useCallback(async () => {
+    if (!costPrice || !buyboxDetails) return;// Skip if no cost price
+
+    setIsCalculating(true);
     try {
+      const body = {
+        asin: asin,
+        marketplaceId: `${marketplaceId}`,
+        isAmazonFulfilled: fulfillmentType === "FBA",
+        currencyCode: currencyCode,
+        storage: storageMonths,
+        costPrice: costPrice,
+        salePrice: salePrice || buyboxWinnerPrice,
+        pointsNumber: 0,
+        pointsAmount: 0,
+      };
+
       const response = await calculateProfitability({ body }).unwrap();
       if (response.status === 200) {
-        // Store both FBA and FBM data in state
         setResponseData({
           fba: response.data.fba,
           fbm: response.data.fbm,
         });
-
-        // Set initial data based on the selected fulfillmentType
         const data =
           fulfillmentType === "FBA" ? response.data.fba : response.data.fbm;
         updateUIWithData(data);
       }
     } catch (error) {
-      console.error("Failed to calculate profitability:", error);
-      message.error("Failed to calculate profitability. Please try again.");
+      console.error("Calculation error:", error);
+      message.error("Calculation failed. Please check your inputs.");
+    } finally {
+      setIsCalculating(false);
     }
-  };
+  }, [costPrice, salePrice, storageMonths, fulfillmentType]);
+
+  const debouncedCalculation = useCallback(
+    debounce(() => handleCalculateProfitability(), 500),
+    [handleCalculateProfitability]
+  );
+
+  useEffect(() => {
+    debouncedCalculation();
+    return () => debouncedCalculation.cancel();
+  }, [
+    costPrice,
+    salePrice,
+    storageMonths,
+    fulfillmentType,
+    debouncedCalculation,
+  ]);
 
   // Helper function to update UI with selected data
   const updateUIWithData = (data: ProfitabilityData): void => {
@@ -358,14 +398,7 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
     statEndDate,
   });
 
-  const {
-    data: buyboxDetailsData,
-    isLoading: isLoadingBuyboxDetails,
-    // error: buyboxDetailsError,
-  } = useGetBuyboxDetailsQuery({
-    marketplaceId,
-    itemAsin: asin,
-  });
+
 
   const {
     data: rankingsData,
@@ -505,7 +538,8 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
     );
 
   const buybox: BuyboxItem[] = buyboxData?.data?.buybox ?? [];
-  const buyboxDetails: BuyboxItem[] = buyboxDetailsData?.data?.buybox ?? [];
+  
+ 
   const extra = buyboxDetailsData?.data?.extra;
   const rankings = rankingsData?.data?.[activeTab4.toLowerCase()] ?? {};
 
@@ -568,8 +602,7 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
   };
 
   // for sales price in calculator
-  const buyboxWinnerPrice =
-    buyboxDetails.find((offer) => offer.is_buybox_winner)?.listing_price ?? 0;
+ 
 
   const handlePriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSalePrice(e.target.value);
@@ -845,7 +878,7 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
                       {product?.product_name}
                     </h2>
                     <p>{product?.category}</p>
-                    <p>ASIN: {product?.asin}</p>
+                    <p>ASIN: {product?.asin}, UPC: {product?.upc}</p>
                     <p>⭐⭐⭐⭐⭐ {product?.rating?.stars}/5</p>
                   </div>
                 </div>
@@ -960,7 +993,7 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
                     <label className="text-sm text-gray-600">Cost Price</label>
                     <input
                       aria-label="Cost Price"
-                      type="text"
+                      type="number"
                       placeholder={lastCostPrice}
                       value={costPrice}
                       onChange={(e) => setCostPrice(e.target.value)}
@@ -1008,6 +1041,7 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
                 </div>
 
                 {/* Calculate Button */}
+                {/** 
                 <button
                   type="button"
                   onClick={handleCalculateProfitability}
@@ -1018,159 +1052,221 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
                     ? "Calculating..."
                     : "Calculate Profitability"}
                 </button>
+                */}
 
-                {/* Fees Section with Tabs */}
-                <div className="flex flex-col gap-2">
-                  {/* mac cost & total fees tabs */}
-                  <div className="bg-[#F7F7F7] rounded-[10px] p-1 flex items-center gap-2 w-max mx-auto">
-                    <button
-                      type="button"
-                      onClick={() => setActiveTab("maximumCost")}
-                      className={`text-sm font-medium p-1.5 rounded-md border ${
-                        activeTab === "maximumCost"
-                          ? "border-border bg-white"
-                          : "border-transparent text-[#787891]"
-                      }`}
-                    >
-                      Maximum Cost
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setActiveTab("totalFees")}
-                      className={`text-sm font-medium p-1.5 rounded-md border ${
-                        activeTab === "totalFees"
-                          ? "border-border bg-white"
-                          : "border-transparent text-[#787891]"
-                      }`}
-                    >
-                      Total Fees
-                    </button>
+                <>
+                  {/* Fees Section with Tabs */}
+                  <div className="flex flex-col gap-2">
+                    {/* mac cost & total fees tabs */}
+                    <div className="bg-[#F7F7F7] rounded-[10px] p-1 flex items-center gap-2 w-max mx-auto">
+                      <button
+                        type="button"
+                        onClick={() => setActiveTab("maximumCost")}
+                        className={`text-sm font-medium p-1.5 rounded-md border ${
+                          activeTab === "maximumCost"
+                            ? "border-border bg-white"
+                            : "border-transparent text-[#787891]"
+                        }`}
+                      >
+                        Maximum Cost
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setActiveTab("totalFees")}
+                        className={`text-sm font-medium p-1.5 rounded-md border ${
+                          activeTab === "totalFees"
+                            ? "border-border bg-white"
+                            : "border-transparent text-[#787891]"
+                        }`}
+                      >
+                        Total Fees
+                      </button>
+                    </div>
                   </div>
-                </div>
 
-                {isSwitching ? (
-                  <div className="flex justify-center py-4">
-                    <Loader2 />
-                  </div>
-                ) : (
-                  <>
-                    <div className="bg-[#F4F4F5] rounded-xl p-2">
-                      {activeTab === "maximumCost" && (
-                        <div className="space-y-2">
-                          <div className="flex justify-between text-sm">
-                            <StrikethroughIfNull value={minROI}>
-                              <span className="text-[#595959]">Min. ROI</span>
-                            </StrikethroughIfNull>
-                            <StrikethroughIfNull value={minROI}>
-                              <span className="font-semibold text-black">
-                                {minROI || 0}%
-                              </span>
-                            </StrikethroughIfNull>
-                          </div>
-                          <div className="flex justify-between text-sm">
-                            <StrikethroughIfNull value={minProfit}>
-                              <span className="text-[#595959]">
-                                Min. Profit
-                              </span>
-                            </StrikethroughIfNull>
-                            <StrikethroughIfNull value={minProfit}>
-                              <span className="font-semibold text-black">
-                                ${minProfit.toFixed(2)}
-                              </span>
-                            </StrikethroughIfNull>
-                          </div>
-                          <div className="border-t pt-2 font-semibold flex justify-between">
-                            <span>Maximum Cost</span>
-                            <span>${maxCost.toFixed(2)}</span>
-                          </div>
+                  {isSwitching ? (
+                    <div className="flex justify-center py-4">
+                      <Loader2 />
+                    </div>
+                  ) : (
+                    <>
+                      {isCalculating ? (
+                        <div className=" gap-4 grid grid-cols-2">
+                          <Skeleton.Input
+                            active
+                            size="large"
+                            block
+                            style={{ height: 25 }}
+                          />
+                          <Skeleton.Input
+                            active
+                            size="large"
+                            block
+                            style={{ height: 25 }}
+                          />
+                          <Skeleton.Input
+                            active
+                            size="large"
+                            block
+                            style={{ height: 25 }}
+                          />
+                          <Skeleton.Input
+                            active
+                            size="large"
+                            block
+                            style={{ height: 25 }}
+                          />
+                          <Skeleton.Input
+                            active
+                            size="large"
+                            block
+                            style={{ height: 25 }}
+                          />
+                          <Skeleton.Input
+                            active
+                            size="large"
+                            block
+                            style={{ height: 25 }}
+                          />
+                          <Skeleton.Input
+                            active
+                            size="large"
+                            block
+                            style={{ height: 25 }}
+                          />
+                          <Skeleton.Input
+                            active
+                            size="large"
+                            block
+                            style={{ height: 25 }}
+                          />
                         </div>
-                      )}
+                      ) : (
+                        <>
+                          <div className="bg-[#F4F4F5] rounded-xl p-2">
+                            {activeTab === "maximumCost" && (
+                              <div className="space-y-2">
+                                <div className="flex justify-between text-sm">
+                                  <StrikethroughIfNull value={minROI}>
+                                    <span className="text-[#595959]">
+                                      Min. ROI
+                                    </span>
+                                  </StrikethroughIfNull>
+                                  <StrikethroughIfNull value={minROI}>
+                                    <span className="font-semibold text-black">
+                                      {minROI || 0}%
+                                    </span>
+                                  </StrikethroughIfNull>
+                                </div>
+                                <div className="flex justify-between text-sm">
+                                  <StrikethroughIfNull value={minProfit}>
+                                    <span className="text-[#595959]">
+                                      Min. Profit
+                                    </span>
+                                  </StrikethroughIfNull>
+                                  <StrikethroughIfNull value={minProfit}>
+                                    <span className="font-semibold text-black">
+                                      ${minProfit.toFixed(2)}
+                                    </span>
+                                  </StrikethroughIfNull>
+                                </div>
+                                <div className="border-t pt-2 font-semibold flex justify-between">
+                                  <span>Maximum Cost</span>
+                                  <span>${maxCost.toFixed(2)}</span>
+                                </div>
+                              </div>
+                            )}
 
-                      {activeTab === "totalFees" && (
-                        <div className="space-y-2">
-                          {Object.entries(fees).map(([key, value]) => (
-                            <div
-                              key={key}
-                              className="flex justify-between text-sm"
-                            >
-                              <StrikethroughIfNull value={value}>
-                                <span className="text-[#595959]">
-                                  {key
-                                    .replace(/([A-Z])/g, " $1")
-                                    .replace(/^./, (str) => str.toUpperCase())}
-                                </span>
+                            {activeTab === "totalFees" && (
+                              <div className="space-y-2">
+                                {Object.entries(fees).map(([key, value]) => (
+                                  <div
+                                    key={key}
+                                    className="flex justify-between text-sm"
+                                  >
+                                    <StrikethroughIfNull value={value}>
+                                      <span className="text-[#595959]">
+                                        {key
+                                          .replace(/([A-Z])/g, " $1")
+                                          .replace(/^./, (str) =>
+                                            str.toUpperCase()
+                                          )}
+                                      </span>
+                                    </StrikethroughIfNull>
+                                    <StrikethroughIfNull value={value}>
+                                      <span className="font-semibold text-black">
+                                        {formatValue(value)}
+                                      </span>
+                                    </StrikethroughIfNull>
+                                  </div>
+                                ))}
+
+                                <div className="border-t pt-2 font-semibold flex justify-between">
+                                  <span>Total Fees</span>
+                                  <span>${totalFees.toFixed(2)}</span>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Summary Items */}
+                          <div className="flex flex-col gap-2 text-[#595959]">
+                            <div className="flex justify-between text-sm">
+                              <StrikethroughIfNull value={vatOnFees}>
+                                <span>Sales Tax</span>
                               </StrikethroughIfNull>
-                              <StrikethroughIfNull value={value}>
+                              <StrikethroughIfNull value={vatOnFees}>
                                 <span className="font-semibold text-black">
-                                  {formatValue(value)}
+                                  {formatValue(vatOnFees)}
                                 </span>
                               </StrikethroughIfNull>
                             </div>
-                          ))}
-
-                          <div className="border-t pt-2 font-semibold flex justify-between">
-                            <span>Total Fees</span>
-                            <span>${totalFees.toFixed(2)}</span>
+                            <div className="flex justify-between text-sm">
+                              <StrikethroughIfNull value={discount}>
+                                <span>Discount</span>
+                              </StrikethroughIfNull>
+                              <StrikethroughIfNull value={discount}>
+                                <span className="font-semibold text-black">
+                                  {formatValue(discount)}
+                                </span>
+                              </StrikethroughIfNull>
+                            </div>
+                            <div className="flex justify-between text-sm">
+                              <StrikethroughIfNull value={profitMargin}>
+                                <span>Profit Margin</span>
+                              </StrikethroughIfNull>
+                              <StrikethroughIfNull value={profitMargin}>
+                                <span className="font-semibold text-black">
+                                  {profitMargin.toFixed(2)}%
+                                </span>
+                              </StrikethroughIfNull>
+                            </div>
+                            <div className="flex justify-between text-sm">
+                              <StrikethroughIfNull value={breakEvenPrice}>
+                                <span>Breakeven Sale Price</span>
+                              </StrikethroughIfNull>
+                              <StrikethroughIfNull value={breakEvenPrice}>
+                                <span className="font-semibold text-black">
+                                  ${breakEvenPrice.toFixed(2)}
+                                </span>
+                              </StrikethroughIfNull>
+                            </div>
+                            <div className="flex justify-between text-sm">
+                              <StrikethroughIfNull value={estimatedPayout}>
+                                <span>Estimated Amz. Payout</span>
+                              </StrikethroughIfNull>
+                              <StrikethroughIfNull value={estimatedPayout}>
+                                <span className="font-semibold text-black">
+                                  ${estimatedPayout.toFixed(2)}
+                                </span>
+                              </StrikethroughIfNull>
+                            </div>
                           </div>
-                        </div>
+                        </>
                       )}
-                    </div>
-
-                    {/* Summary Items */}
-                    <div className="flex flex-col gap-2 text-[#595959]">
-                      <div className="flex justify-between text-sm">
-                        <StrikethroughIfNull value={vatOnFees}>
-                          <span>Sales Tax</span>
-                        </StrikethroughIfNull>
-                        <StrikethroughIfNull value={vatOnFees}>
-                          <span className="font-semibold text-black">
-                            {formatValue(vatOnFees)}
-                          </span>
-                        </StrikethroughIfNull>
-                      </div>
-                      <div className="flex justify-between text-sm">
-                        <StrikethroughIfNull value={discount}>
-                          <span>Discount</span>
-                        </StrikethroughIfNull>
-                        <StrikethroughIfNull value={discount}>
-                          <span className="font-semibold text-black">
-                            {formatValue(discount)}
-                          </span>
-                        </StrikethroughIfNull>
-                      </div>
-                      <div className="flex justify-between text-sm">
-                        <StrikethroughIfNull value={profitMargin}>
-                          <span>Profit Margin</span>
-                        </StrikethroughIfNull>
-                        <StrikethroughIfNull value={profitMargin}>
-                          <span className="font-semibold text-black">
-                            {profitMargin.toFixed(2)}%
-                          </span>
-                        </StrikethroughIfNull>
-                      </div>
-                      <div className="flex justify-between text-sm">
-                        <StrikethroughIfNull value={breakEvenPrice}>
-                          <span>Breakeven Sale Price</span>
-                        </StrikethroughIfNull>
-                        <StrikethroughIfNull value={breakEvenPrice}>
-                          <span className="font-semibold text-black">
-                            ${breakEvenPrice.toFixed(2)}
-                          </span>
-                        </StrikethroughIfNull>
-                      </div>
-                      <div className="flex justify-between text-sm">
-                        <StrikethroughIfNull value={estimatedPayout}>
-                          <span>Estimated Amz. Payout</span>
-                        </StrikethroughIfNull>
-                        <StrikethroughIfNull value={estimatedPayout}>
-                          <span className="font-semibold text-black">
-                            ${estimatedPayout.toFixed(2)}
-                          </span>
-                        </StrikethroughIfNull>
-                      </div>
-                    </div>
-                  </>
-                )}
+                    </>
+                  )}
+                </>
               </div>
 
               {/* extra stats grid */}
@@ -1790,4 +1886,3 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
 };
 
 export default ProductDetails;
-
