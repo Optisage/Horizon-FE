@@ -1,23 +1,27 @@
 "use client";
 
-// import { CustomPagination } from "../../_components";
 import Image from "next/image";
 import { useParams, useRouter } from "next/navigation";
-
-// import SalesStats from "../../dashboard/_components/SalesStats";
-import { RiAttachment2 } from "react-icons/ri";
 import {
   useLazyGetSellerDetailsQuery,
   useLazyGetSellerProductsQuery,
 } from "@/redux/api/sellerApi";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useAppSelector } from "@/redux/hooks";
 import { message } from "antd";
 import CustomPagination from "../../_components/CustomPagination";
+import Link from "next/link";
+
+import { FaGoogle } from "react-icons/fa6";
+import AmazonIcon from "@/public/assets/svg/amazon-icon.svg";
+import { SearchInput } from "@/app/(dashboard)/_components";
+import FilterPopup, { FilterParams } from "./filter-popup";
+import { HiOutlineUsers } from "react-icons/hi2";
+import KeepaChart from "./keepa-chart";
+import { debounce } from "@/utils/debounce";
 
 // Define the Product interface
-interface Product {
-  id: string;
+export interface Product {
   basic_details: {
     product_image: string;
     product_name: string;
@@ -25,10 +29,49 @@ interface Product {
       stars: number;
       count: number;
     };
+    vendor: string;
     asin: string;
     category: string;
   };
+  buybox_details: {
+    bsr: number;
+    est_sales: number;
+    max_cost: number | null;
+    offers_count: {
+      amz: number;
+      fba: number;
+      fbm: number;
+    };
+    buybox_price: number;
+    store_stock: number | null;
+    currency: string;
+  };
+  top_five_offers: Array<{
+    seller_id: string;
+    seller_name: string;
+    rating: number;
+    review_count: number;
+    listing_price: number;
+    shipping: number;
+    avg_price: number;
+    weight_percentage: number;
+    percentage_won: number;
+    last_won: string;
+    stock_quantity: number;
+    is_buybox_winner: boolean;
+    seller_type: string;
+    currency: string;
+  }>;
+  amazon_link: string;
+  chart: {
+    [key: string]: {
+      amazon: Array<{ date: string; price: number }>;
+      sales_rank: Array<{ date: string; price: number }>;
+      new_fba: Array<{ date: string; price: number }>;
+    };
+  };
 }
+
 // Define the Brand interface
 interface Brand {
   amazon_link: string;
@@ -43,10 +86,25 @@ interface Category {
   count: number;
 }
 
+interface SellerProductsParams {
+  marketplaceId: number;
+  sellerId: string | number;
+  perPage: number;
+  pageToken?: string;
+  q?: string;
+  estimatedSale?: string;
+  buyboxAmount?: number;
+  offer?: string;
+  minBsr?: number;
+  maxBsr?: number;
+}
+
 const Seller = () => {
   const router = useRouter();
   const params = useParams();
-  const sellerId = params?.sellerId;
+  const sellerId = Array.isArray(params?.sellerId)
+    ? params.sellerId[0]
+    : params?.sellerId;
   const { marketplaceId } = useAppSelector((state) => state?.global);
   const [nextPageToken, setNextPageToken] = useState<string | null>(null);
   const [previousPageToken, setPreviousPageToken] = useState<string | null>(
@@ -58,7 +116,11 @@ const Seller = () => {
   const [getSellerProducts, { data: productsData, isLoading: productLoading }] =
     useLazyGetSellerProductsQuery();
   const [loading, setLoading] = useState(true);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [messageApi, contextHolder] = message.useMessage();
+  const [searchValue, setSearchValue] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filters, setFilters] = useState<FilterParams>({});
 
   useEffect(() => {
     if (sellerId && marketplaceId) {
@@ -66,17 +128,51 @@ const Seller = () => {
     }
   }, [sellerId, marketplaceId, getSellerDetails]);
 
-  // Fetch products with pagination (runs when pagination changes)
   useEffect(() => {
     if (sellerId && marketplaceId) {
       setLoading(true);
-      getSellerProducts({
-        marketplaceId: marketplaceId,
-        sellerId: sellerId,
-        pageToken: currentPageToken,
-      }).finally(() => setLoading(false));
+
+      const params: SellerProductsParams = {
+        marketplaceId,
+        sellerId,
+        perPage: 5,
+      };
+
+      // Only add pageToken if it exists
+      if (currentPageToken) {
+        params.pageToken = currentPageToken;
+      }
+
+      // Add search query if present
+      if (searchQuery) {
+        params.q = searchQuery;
+      }
+
+      // Add filters only if they exist
+      if (filters.estimatedSale) params.estimatedSale = filters.estimatedSale;
+      if (filters.buyboxAmount) params.buyboxAmount = filters.buyboxAmount;
+      if (filters.offer) params.offer = filters.offer;
+      if (filters.minBsr) params.minBsr = filters.minBsr;
+      if (filters.maxBsr) params.maxBsr = filters.maxBsr;
+
+      getSellerProducts(params)
+        .unwrap()
+        .catch((error) => {
+          // Handle API validation errors
+          if (error.data?.errors?.maxBsr) {
+            message.error(error.data.errors.maxBsr[0]);
+          }
+        })
+        .finally(() => setLoading(false));
     }
-  }, [currentPageToken, sellerId, marketplaceId, getSellerProducts]);
+  }, [
+    currentPageToken,
+    sellerId,
+    marketplaceId,
+    getSellerProducts,
+    filters,
+    searchQuery,
+  ]);
 
   useEffect(() => {
     if (productsData?.data?.pagination) {
@@ -89,121 +185,120 @@ const Seller = () => {
   const seller = data?.data;
   const products: Product[] = productsData?.data?.items || [];
 
-  const copyToClipboard = async (text: string) => {
-    try {
-      await navigator.clipboard.writeText(text);
-      messageApi.success("Link copied to clipboard");
-      console.log("Text copied to clipboard");
-    } catch (err) {
-      messageApi.error("Failed to copy to clipboard");
-      console.error("Failed to copy text: ", err);
-    }
+  const debouncedSearch = useCallback(
+    debounce((value: string) => {
+      setSearchQuery(value);
+      setCurrentPageToken(null);
+    }, 500),
+    [setSearchQuery, setCurrentPageToken]
+  );
+
+  const handleSearch = (value: string) => {
+    setSearchValue(value);
+    debouncedSearch(value);
+  };
+
+  useEffect(() => {
+    return () => {
+      debouncedSearch.cancel();
+    };
+  }, [debouncedSearch]);
+
+  const onSearchChange = (value: string) => {
+    setSearchValue(value);
+    handleSearch(value);
+  };
+
+  // Add this handler for filters
+  const handleFilterApply = (newFilters: FilterParams) => {
+    setFilters(newFilters);
+    setCurrentPageToken(null);
   };
 
   return (
     <section className="flex flex-col gap-8 min-h-[50dvh] md:min-h-[80dvh]">
       {contextHolder}
-      {(detailsLoading && productLoading) || loading ? (
-        <div className=" mx-auto animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-primary"></div>
+
+      {detailsLoading ? (
+        <div className="mx-auto animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-primary" />
       ) : (
         <>
-          <div className="grid sm:grid-cols-2 xl:grid-cols-[3fr_2fr_2fr] gap-6">
-            {/* deets */}
-            <div className="rounded-lg border border-border p-4 flex flex-col gap-6 lg:h-max">
-              {/* max-w-[451px] */}
-              <div className="flex items-center gap-4">
+          {/* nav */}
+          <div className="rounded-xl border border-border p-4 flex flex-col gap-2">
+            <p className="text-[#676A75] text-xs font-medium">Navigation</p>
+
+            <div className="flex items-center gap-4">
+              <Link
+                href={seller?.google_link || ""}
+                className="size-12 flex items-center justify-center rounded-lg bg-[#F3F4F6]"
+              >
+                <FaGoogle className="size-6 text-[#0F172A]" />
+              </Link>
+
+              <Link
+                href={seller?.amazon_link || ""}
+                target="_blank"
+                className="size-12 flex items-center justify-center rounded-lg bg-[#F3F4F6]"
+              >
                 <Image
-                  src="https://avatar.iran.liara.run/public/73"
-                  alt="Avatar"
-                  className="size-[80px] object-cover"
-                  width={80}
-                  height={80}
-                  quality={90}
-                  unoptimized
+                  src={AmazonIcon}
+                  alt="Amazon icon"
+                  width={32}
+                  height={32}
                 />
+              </Link>
+            </div>
+          </div>
 
-                <div className="flex flex-col gap-4">
-                  <span>
-                    <h4 className="text-[#020231] text-base font-medium">
-                      {seller?.name || "Seller Name"}
-                    </h4>
-                    <p className="text-[#787891] text-sm">
-                      ID: {seller?.id || "N/A"}
-                    </p>
-                  </span>
-
-                  <span className="flex flex-col lg:flex-row gap-2">
-                    <p className="text-black py-1 px-2.5 rounded-full border border-primary text-sm bg-[#0F2E230F]">
-                      Rating: {seller?.rating_percentage}% ({seller?.rating})
-                    </p>
-                    <p className="text-error-500 py-1 px-2.5 rounded-full border border-error-500 text-sm bg-[#FFF5F5]">
-                      ASIN Count: {seller?.asin_count || 0}
-                    </p>
-                  </span>
-                </div>
-              </div>
-
-              <div className="p-3 border border-border rounded-xl flex gap-3 items-center justify-between">
-                <span className="flex items-center gap-3 text-[#787891]">
-                  <div
-                    onClick={() => copyToClipboard(seller?.amazon_link)}
-                    className=" cursor-pointer"
-                  >
-                    <RiAttachment2 className="size-5" />
-                  </div>
-                  <p className="text-[#787891] text-sm">
-                    {" "}
-                    {seller?.amazon_link || "N/A"}
-                  </p>
-                </span>
-
-                <a
-                  href={seller?.amazon_link || ""}
-                  aria-label="Download"
-                  target="_blank"
-                >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="20"
-                    height="20"
-                    viewBox="0 0 20 20"
-                    fill="none"
-                  >
-                    <path
-                      d="M8.58498 3.40039H7.00063C4.91067 3.40039 3.6001 4.88021 3.6001 6.97444V12.6263C3.6001 14.7206 4.90427 16.2004 7.00063 16.2004H12.9982C15.0952 16.2004 16.4001 14.7206 16.4001 12.6263V11.3883"
-                      stroke="#787891"
-                      strokeWidth="1.44"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                    <path
-                      d="M10.5957 5.75898V9.20289M10.5957 9.20289H14.0396M10.5957 9.20289L15.9959 3.80273"
-                      stroke="#787891"
-                      strokeWidth="1.44"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </svg>
-                </a>
-              </div>
+          <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-4 gap-y-6">
+            {/* store details */}
+            <div className="rounded-lg border border-border flex flex-col divide-y divide-[#EDEDED] text-[#252525] text-sm">
+              <span className="p-4 border-b border-border mb-2">
+                <p className="bg-primary rounded-2xl py-2 px-4 text-white font-semibold w-max">
+                  Store Details
+                </p>
+              </span>
+              <span className="p-4 bg-[#F7F7F7] flex justify-between items-center font-medium">
+                <p>Seller Name</p>
+                <p>{seller?.name || "N/A"}</p>
+              </span>
+              <span className="p-4 flex justify-between items-center">
+                <p>Seller ID</p>
+                <p>{seller?.id || "N/A"}</p>
+              </span>
+              <span className="p-4 bg-[#F7F7F7] flex justify-between items-center">
+                <p>Rating</p>
+                <p>
+                  {seller?.rating_percentage}% ({seller?.rating})
+                </p>
+              </span>
+              <span className="p-4 flex justify-between items-center">
+                <p>ASIN Count</p>
+                <p>{seller?.asin_count || 0}</p>
+              </span>
+              <span className="p-4">
+                <p className="bg-[#F3F4F6] rounded-lg py-1 px-2">
+                  ASIN, brand and category counts are a guide and not exact
+                </p>
+              </span>
             </div>
 
             {/* top brands */}
-            <div className="border border-border rounded-xl flex flex-col divide-y divide-[#EDEDED] text-[#252525] text-base">
-              <span className="rounded-t-xl py-3 px-5 bg-[#FDFDFD]">
-                <h3 className="text-[#252525] font-semibold border-b-2 border-[#252525] w-max">
+            <div className="rounded-lg border border-border flex flex-col divide-y divide-[#EDEDED] text-[#252525] text-sm">
+              <span className="p-4 border-b border-border mb-2">
+                <p className="bg-[#F3F4F6] rounded-2xl py-2 px-4 text-[#676A75] font-semibold w-max">
                   Top Brands
-                </h3>
+                </p>
               </span>
-              <div className="grid grid-cols-[3fr_2fr] text-center p-3 bg-[#F7F7F7]">
-                <span className="">Brand Name</span>
-                <span className="">Count</span>
-              </div>
+              <span className="flex items-center justify-between p-4 bg-[#F7F7F7] font-medium">
+                <p className="">Brand Name</p>
+                <p className="">Product Count</p>
+              </span>
 
               {seller?.top_brands?.map((brand: Brand, index: number) => (
                 <div
                   key={index}
-                  className="grid grid-cols-[3fr_2fr] text-center p-3 hover:bg-gray-50"
+                  className="flex items-center justify-between p-4 hover:bg-gray-50"
                 >
                   <a
                     href={brand.amazon_link}
@@ -219,22 +314,22 @@ const Seller = () => {
             </div>
 
             {/* top category */}
-            <div className="border border-border rounded-xl flex flex-col divide-y divide-[#EDEDED] text-[#252525] text-base">
-              <span className="rounded-t-xl py-3 px-5 bg-[#FDFDFD]">
-                <h3 className="text-[#252525] font-semibold border-b-2 border-[#252525] w-max">
-                  Top Category
-                </h3>
+            <div className="rounded-lg border border-border flex flex-col divide-y divide-[#EDEDED] text-[#252525] text-sm">
+              <span className="p-4 border-b border-border mb-2">
+                <p className="bg-[#F3F4F6] rounded-2xl py-2 px-4 text-[#676A75] font-semibold w-max">
+                  Top Categories
+                </p>
               </span>
-              <div className="grid grid-cols-[3fr_2fr] text-center p-3 bg-[#F7F7F7]">
-                <span className="">Category Name</span>
-                <span className="">Count</span>
-              </div>
+              <span className="flex items-center justify-between p-4 bg-[#F7F7F7] font-medium">
+                <p className="">Category Name</p>
+                <p className="">Product Count</p>
+              </span>
               <div className="">
                 {seller?.top_categories?.map(
                   (category: Category, index: number) => (
                     <div
                       key={index}
-                      className="grid grid-cols-[3fr_2fr] text-center p-3 hover:bg-gray-50"
+                      className="flex items-center justify-between p-4 hover:bg-gray-50"
                     >
                       <a
                         href={category.amazon_link}
@@ -252,72 +347,289 @@ const Seller = () => {
             </div>
           </div>
 
-          {/* seller's products */}
-          <main className="flex flex-col gap-20 justify-between h-full">
-            <div className="p-2 rounded-lg border border-border flex flex-col divide-y divide-[#E4E4E7]">
-              <span className="bg-[#FAFAFA] px-4 py-3.5">
-                <h4 className="text-neutral-900 font-medium text-base md:text-lg">
-                  All {seller?.name || "Seller"}&apos;s Products
-                </h4>
-              </span>
-
-              {products?.map((product, index) => {
-                const basicDetails = product?.basic_details || {};
-                return (
-                  <div
-                    key={index}
-                    className="hover:bg-gray-50 duration-200 cursor-pointer px-4 py-3.5 flex flex-col sm:flex-row sm:items-center gap-4"
-                  >
-                    <Image
-                      onClick={() =>
-                        router.push(`/dashboard/product/${basicDetails?.asin}`)
-                      }
-                      src={basicDetails.product_image}
-                      alt={basicDetails.product_name}
-                      className="size-16 rounded-lg object-cover"
-                      width={64}
-                      height={64}
-                      quality={90}
-                      priority
-                      unoptimized
-                    />
-                    <div className="flex flex-col gap-1 text-[#09090B]">
-                      <p
-                        onClick={() =>
-                          router.push(
-                            `/dashboard/product/${basicDetails?.asin}`
-                          )
-                        }
-                        className="font-bold hover:underline duration-100"
-                      >
-                        {basicDetails.product_name}
-                      </p>
-                      {/* <p>
-                        {"⭐".repeat(basicDetails.rating.stars)}{" "}
-                        <span className="font-bold">
-                          {basicDetails.rating.count} ( reviews)
-                        </span>
-                      </p> */}
-                      <p className="text-sm">By ASIN: {basicDetails.asin}</p>
-                      <p className="text-sm">
-                        {/* {product.category} | <SalesStats /> */}
-                        {basicDetails.category} |
-                      </p>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-
-            {/* pagination */}
-
-            <CustomPagination
-              onNext={() => setCurrentPageToken(nextPageToken)}
-              onPrevious={() => setCurrentPageToken(previousPageToken)}
-              hasNext={!!nextPageToken}
-              hasPrevious={!!previousPageToken}
+          <div className="p-2 rounded-lg border border-border flex items-center gap-6">
+            <SearchInput
+              value={searchValue}
+              onChange={onSearchChange}
+              placeholder="Search for Products on Amazon (For best results use specific keywords, UPC code, ASIN or ISBN code)"
+              className="!max-w-[484px]"
             />
-          </main>
+
+            <FilterPopup onApply={handleFilterApply} />
+          </div>
+
+          {/* Show loading spinner only for products */}
+          {productLoading || loading ? (
+            <div className="mx-auto animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-primary"></div>
+          ) : (
+            /* seller's products */
+            <main className="flex flex-col gap-20 justify-between h-full">
+              <div className="flex flex-col gap-6">
+                {/* No results message */}
+                {!loading && !productLoading && products.length === 0 && (
+                  <div className="text-center py-8">
+                    <p className="text-lg font-medium text-gray-500">
+                      No products found matching your criteria
+                    </p>
+                    <p className="text-sm text-gray-400 mt-2">
+                      Try adjusting your search or filters
+                    </p>
+                  </div>
+                )}
+
+                {products?.map((product, index) => {
+                  const basicDetails = product?.basic_details || {};
+
+                  return (
+                    <div key={index}>
+                      <div className="grid sm:grid-cols-2 lg:grid-cols-[3fr_2fr_2fr] xl:grid-cols-[4fr_2fr_2fr] gap-2 gap-y-4">
+                        {/* Product Image and Basic Info */}
+                        <div className="flex flex-col divide-y divide-border rounded-xl border border-border">
+                          <div className="flex flex-col sm:flex-row items-center gap-4 p-3">
+                            <div
+                              className="relative w-full max-w-[166px] h-[197px] bg-[#F3F4F6]"
+                              onClick={() =>
+                                router.push(
+                                  `/dashboard/product/${basicDetails?.asin}`
+                                )
+                              }
+                            >
+                              <Image
+                                src={basicDetails.product_image}
+                                alt={basicDetails.product_name}
+                                className="size-full object-cover cursor-pointer rounded-lg"
+                                fill
+                                priority
+                                quality={90}
+                                unoptimized
+                              />
+                            </div>
+
+                            <div className="flex flex-col gap-1.5 text-[#5B656C]">
+                              <div className="flex items-center gap-4">
+                                <button
+                                  type="button"
+                                  aria-label="Search on Google"
+                                  onClick={() => {
+                                    const query = encodeURIComponent(
+                                      `${basicDetails.product_name} supplier`
+                                    );
+                                    window.open(
+                                      `https://www.google.com/search?q=${query}`,
+                                      "_blank"
+                                    );
+                                  }}
+                                  className="size-12 flex items-center justify-center rounded-lg bg-[#F3F4F6]"
+                                >
+                                  <FaGoogle className="size-6 text-[#0F172A]" />
+                                </button>
+
+                                <Link
+                                  href={product?.amazon_link || "#"}
+                                  {...(product?.amazon_link && {
+                                    target: "_blank",
+                                  })}
+                                  className="size-12 flex items-center justify-center rounded-lg bg-[#F3F4F6]"
+                                >
+                                  <Image
+                                    src={AmazonIcon}
+                                    alt="Amazon icon"
+                                    width={32}
+                                    height={32}
+                                  />
+                                </Link>
+                              </div>
+
+                              <p
+                                onClick={() =>
+                                  router.push(
+                                    `/dashboard/product/${basicDetails?.asin}`
+                                  )
+                                }
+                                className="font-bold hover:underline duration-100 cursor-pointer"
+                              >
+                                {basicDetails.product_name}
+                              </p>
+                              <div className="flex items-center gap-1 mt-1">
+                                <div className="flex">
+                                  {"⭐".repeat(
+                                    Math.floor(basicDetails.rating?.stars || 0)
+                                  )}
+                                </div>
+                                <span className="text-sm text-gray-600">
+                                  {basicDetails.rating?.stars}/5
+                                  {/* ({basicDetails.rating?.count} reviews) */}
+                                </span>
+                              </div>
+
+                              <p className="text-sm mt-1">
+                                ASIN: {basicDetails.asin}
+                              </p>
+                              <p className="text-sm">
+                                Category: {basicDetails.category}
+                              </p>
+                              <p className="text-lg font-bold mt-2">
+                                {product.buybox_details.currency}
+                                {product.buybox_details.buybox_price.toFixed(2)}
+                              </p>
+                            </div>
+                          </div>
+
+                          {/* Product stats */}
+                          <div className="text-sm p-3">
+                            <div className="bg-[#F3F4F6E0] text-[#596375] text-xs p-2 px-3 rounded-lg flex items-center gap-4 flex-wrap justify-between">
+                              <div className="flex flex-col">
+                                <span className="text-gray-500">BSR</span>
+                                <span className="font-semibold text-[#8E949F] text-sm">
+                                  {product.buybox_details.bsr.toLocaleString()}
+                                </span>
+                              </div>
+                              <div className="flex flex-col">
+                                <span className="text-gray-500">
+                                  Est. Sales
+                                </span>
+                                <span className="font-semibold text-[#8E949F] text-sm">
+                                  {product.buybox_details.est_sales.toLocaleString()}
+                                </span>
+                              </div>
+                              <div className="flex flex-col">
+                                <span className="text-gray-500">Max Cost</span>
+                                <span className="font-semibold text-[#8E949F] text-sm">
+                                  {product.buybox_details.max_cost || "N/A"}
+                                </span>
+                              </div>
+                              <div className="flex flex-col">
+                                <div className="text-gray-500">
+                                  Offer:{" "}
+                                  {product.buybox_details.offers_count.amz +
+                                    product.buybox_details.offers_count.fba +
+                                    product.buybox_details.offers_count.fbm}
+                                </div>
+                                <div className="font-semibold flex gap-2">
+                                  <span className="text-[#FFC56E] bg-white p-1 rounded-lg">
+                                    AMZ:{" "}
+                                    {product.buybox_details.offers_count.amz}
+                                  </span>
+                                  <span className="text-[#18CB96] bg-white p-1 rounded-lg">
+                                    FBA:{" "}
+                                    {product.buybox_details.offers_count.fba}
+                                  </span>
+                                  <span className="text-[#FF8551] bg-white p-1 rounded-lg">
+                                    FBM:{" "}
+                                    {product.buybox_details.offers_count.fbm}
+                                  </span>
+                                </div>
+                              </div>
+                              <div className="flex flex-col">
+                                <span className="text-gray-500">Buy Box</span>
+                                <span className="font-semibold text-[#8E949F] text-sm">
+                                  {product.buybox_details.currency}
+                                  {product.buybox_details.buybox_price.toFixed(
+                                    2
+                                  )}
+                                </span>
+                              </div>
+                              <div className="flex flex-col">
+                                <span className="text-gray-500">
+                                  Store Stock
+                                </span>
+                                <span className="font-semibold text-[#8E949F] text-sm">
+                                  {product.buybox_details.store_stock ?? "N/A"}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Top 5 Offers */}
+                        <div className="rounded-xl border border-border overflow-hidden">
+                          <div className="p-4">
+                            <p className="bg-primary flex items-center gap-1 rounded-2xl py-2 px-4 text-white font-semibold w-max text-xs">
+                              <HiOutlineUsers className="size-4" />
+                              Top 5 Offers
+                            </p>
+                          </div>
+
+                          <div className="overflow-x-auto">
+                            <table className="w-full text-sm">
+                              <thead>
+                                <tr className="bg-[#F7F7F7] text-[#252525]">
+                                  <th className="p-4 text-left">S/N</th>
+                                  <th className="p-4 text-left">Seller</th>
+                                  <th className="p-4 text-left">Price</th>
+                                  <th className="p-4 text-left">Stock</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {product.top_five_offers.map((offer, idx) => (
+                                  <tr
+                                    key={idx}
+                                    className={`border-t border-gray-100 hover:bg-gray-50 ${
+                                      offer.is_buybox_winner
+                                        ? "bg-yellow-50"
+                                        : ""
+                                    }`}
+                                  >
+                                    <td className="p-4">{idx + 1}</td>
+                                    <td className="p-4">
+                                      <span
+                                        className={`px-2 py-1 rounded text-xs font-semibold ${
+                                          offer.seller_type === "FBA"
+                                            ? "text-[#FF9B06] bg-[#FDF5E9]"
+                                            : "text-[#009F6D] bg-[#EDF7F5]"
+                                        }`}
+                                      >
+                                        {offer.seller_type}
+                                      </span>
+                                    </td>
+                                    <td className="p-4">
+                                      {offer.currency}
+                                      {(
+                                        offer.listing_price + offer.shipping
+                                      ).toFixed(2)}
+                                    </td>
+                                    <td className="p-4">
+                                      {offer.stock_quantity}
+                                    </td>
+                                  </tr>
+                                ))}
+                                {product.top_five_offers.length === 0 && (
+                                  <tr>
+                                    <td
+                                      colSpan={4}
+                                      className="p-4 text-center text-gray-500"
+                                    >
+                                      No offers available
+                                    </td>
+                                  </tr>
+                                )}
+                              </tbody>
+                            </table>
+                          </div>
+                        </div>
+
+                        {/* Keepa Chart */}
+                        <KeepaChart
+                          chartData={product?.chart}
+                          currency={product?.buybox_details.currency}
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* pagination */}
+              {products.length > 0 && (
+                <CustomPagination
+                  onNext={() => setCurrentPageToken(nextPageToken)}
+                  onPrevious={() => setCurrentPageToken(previousPageToken)}
+                  hasNext={!!nextPageToken}
+                  hasPrevious={!!previousPageToken}
+                />
+              )}
+            </main>
+          )}
         </>
       )}
     </section>
