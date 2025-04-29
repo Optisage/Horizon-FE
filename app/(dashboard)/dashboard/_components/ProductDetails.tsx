@@ -169,7 +169,7 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
     dayjs().add(1, "month").format("YYYY-MM-DD")
   ); // For date range end
 
-  const [calculateProfitability, { isLoading: isLoadingProfitability }] =
+  const [calculateProfitability] =
     useCalculateProfitablilityMutation();
 
   const { data, error, isLoading } = useGetItemQuery({
