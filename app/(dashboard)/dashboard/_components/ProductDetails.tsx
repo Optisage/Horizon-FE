@@ -188,6 +188,11 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
       setCostPrice(lastCostPrice);
     }
   }, [lastCostPrice]);
+  useEffect(() => {
+  return () => {
+    setCostPrice(""); // Clear cost price when component unmounts
+  };
+}, []);
 
   // Initialize state with last profitability calculation if available
   const [fees, setFees] = useState({
@@ -280,10 +285,23 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
     }
   }, [asin, marketplaceId, dispatch, getIpAlert, statStartDate, statEndDate]);
 
+  const {
+    data: buyboxDetailsData,
+    isLoading: isLoadingBuyboxDetails,
+    // error: buyboxDetailsError,
+  } = useGetBuyboxDetailsQuery({
+    marketplaceId,
+    itemAsin: asin,
+  });
+
+  const buyboxDetails: BuyboxItem[] = buyboxDetailsData?.data?.buybox ?? [];
+  const buyboxWinnerPrice =
+  buyboxDetails.find((offer) => offer.is_buybox_winner)?.listing_price ?? 0;
+
   // calculating profitability
   // Memoize the calculation handler
   const handleCalculateProfitability = useCallback(async () => {
-    if (!costPrice) return; // Skip if no cost price
+    if (!costPrice || !buyboxDetails) return;// Skip if no cost price
 
     setIsCalculating(true);
     try {
@@ -380,14 +398,7 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
     statEndDate,
   });
 
-  const {
-    data: buyboxDetailsData,
-    isLoading: isLoadingBuyboxDetails,
-    // error: buyboxDetailsError,
-  } = useGetBuyboxDetailsQuery({
-    marketplaceId,
-    itemAsin: asin,
-  });
+
 
   const {
     data: rankingsData,
@@ -527,7 +538,8 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
     );
 
   const buybox: BuyboxItem[] = buyboxData?.data?.buybox ?? [];
-  const buyboxDetails: BuyboxItem[] = buyboxDetailsData?.data?.buybox ?? [];
+  
+ 
   const extra = buyboxDetailsData?.data?.extra;
   const rankings = rankingsData?.data?.[activeTab4.toLowerCase()] ?? {};
 
@@ -590,8 +602,7 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
   };
 
   // for sales price in calculator
-  const buyboxWinnerPrice =
-    buyboxDetails.find((offer) => offer.is_buybox_winner)?.listing_price ?? 0;
+ 
 
   const handlePriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSalePrice(e.target.value);
@@ -982,7 +993,7 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
                     <label className="text-sm text-gray-600">Cost Price</label>
                     <input
                       aria-label="Cost Price"
-                      type="text"
+                      type="number"
                       placeholder={lastCostPrice}
                       value={costPrice}
                       onChange={(e) => setCostPrice(e.target.value)}
