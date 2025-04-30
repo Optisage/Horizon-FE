@@ -31,6 +31,7 @@ export interface Product {
     };
     vendor: string;
     asin: string;
+    upc: string;
     category: string;
   };
   buybox_details: {
@@ -463,7 +464,8 @@ const Seller = () => {
                               </div>
 
                               <p className="text-sm mt-1">
-                                ASIN: {basicDetails.asin}
+                                ASIN: {basicDetails.asin}, UPC:{" "}
+                                {basicDetails.upc || "N/A"}
                               </p>
                               <p className="text-sm">
                                 Category: {basicDetails.category}
