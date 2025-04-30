@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { BsStars } from "react-icons/bs";
-import { FiSend } from "react-icons/fi";
+import { IoSend } from "react-icons/io5";
 
 type Message = {
   sender: "ai" | "user";
@@ -112,7 +112,7 @@ const TotanChat = () => {
           className="absolute top-0 bottom-0 size-10 my-auto right-3 flex items-center justify-center gap-2 rounded-lg sm:w-[110px] sm:h-[42px] py-2 px-4 text-white font-semibold bg-primary hover:bg-primary/90 duration-150 transition-colors"
         >
           <span className="hidden sm:block">Send</span>
-          <FiSend className="size-10 sm:size-5" />
+          <IoSend className="size-10 sm:size-5" />
         </button>
         <input
           className="flex-1 outline-none bg-transparent border border-[#D1D1D1] p-4 pr-32 rounded-2xl w-full focus:border-primary"
