@@ -169,8 +169,7 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
     dayjs().add(1, "month").format("YYYY-MM-DD")
   ); // For date range end
 
-  const [calculateProfitability] =
-    useCalculateProfitablilityMutation();
+  const [calculateProfitability] = useCalculateProfitablilityMutation();
 
   const { data, error, isLoading } = useGetItemQuery({
     marketplaceId,
@@ -189,10 +188,10 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
     }
   }, [lastCostPrice]);
   useEffect(() => {
-  return () => {
-    setCostPrice(""); // Clear cost price when component unmounts
-  };
-}, []);
+    return () => {
+      setCostPrice(""); // Clear cost price when component unmounts
+    };
+  }, []);
 
   // Initialize state with last profitability calculation if available
   const [fees, setFees] = useState({
@@ -296,12 +295,12 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
 
   const buyboxDetails: BuyboxItem[] = buyboxDetailsData?.data?.buybox ?? [];
   const buyboxWinnerPrice =
-  buyboxDetails.find((offer) => offer.is_buybox_winner)?.listing_price ?? 0;
+    buyboxDetails.find((offer) => offer.is_buybox_winner)?.listing_price ?? 0;
 
   // calculating profitability
   // Memoize the calculation handler
   const handleCalculateProfitability = useCallback(async () => {
-    if (!costPrice || !buyboxDetails) return;// Skip if no cost price
+    if (!costPrice || !buyboxDetails) return; // Skip if no cost price
 
     setIsCalculating(true);
     try {
@@ -397,8 +396,6 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
     statStartDate,
     statEndDate,
   });
-
-
 
   const {
     data: rankingsData,
@@ -538,8 +535,7 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
     );
 
   const buybox: BuyboxItem[] = buyboxData?.data?.buybox ?? [];
-  
- 
+
   const extra = buyboxDetailsData?.data?.extra;
   const rankings = rankingsData?.data?.[activeTab4.toLowerCase()] ?? {};
 
@@ -602,7 +598,6 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
   };
 
   // for sales price in calculator
- 
 
   const handlePriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSalePrice(e.target.value);
@@ -878,7 +873,9 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
                       {product?.product_name}
                     </h2>
                     <p>{product?.category}</p>
-                    <p>ASIN: {product?.asin}, UPC: {product?.upc}</p>
+                    <p>
+                      ASIN: {product?.asin}, UPC: {product?.upc}
+                    </p>
                     <p>⭐⭐⭐⭐⭐ {product?.rating?.stars}/5</p>
                   </div>
                 </div>
@@ -1367,6 +1364,10 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
                       <span className="size-2 rounded-sm bg-[#00E4E4]" />
                       <span>FBM</span>
                     </div>
+                    <div className="flex items-center gap-2 text-sm">
+                      <span className="size-2 rounded-sm bg-orange-400" />
+                      <span>AMZ</span>
+                    </div>
                   </div>
                 </div>
 
@@ -1403,7 +1404,9 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
                                         className={`size-2 rounded-sm ${
                                           offer.seller_type === "FBA"
                                             ? "bg-black"
-                                            : "bg-[#00E4E4]"
+                                            : offer.seller_type === "FBM"
+                                            ? "bg-[#00E4E4]"
+                                            : "bg-orange-400"
                                         }`}
                                       />
                                       <p className="truncate">{offer.seller}</p>
@@ -1496,7 +1499,9 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
                                         className={`size-2 rounded-sm ${
                                           seller.seller_type === "FBA"
                                             ? "bg-black"
-                                            : "bg-[#00E4E4]"
+                                            : seller.seller_type === "FBM"
+                                            ? "bg-[#00E4E4]"
+                                            : "bg-orange-400"
                                         }`}
                                       />
                                       <p className="truncate">
@@ -1886,3 +1891,4 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
 };
 
 export default ProductDetails;
+
