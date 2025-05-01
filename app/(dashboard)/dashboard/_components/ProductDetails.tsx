@@ -130,6 +130,12 @@ interface ProfitabilityData {
   estimatedAmzPayout: number;
 }
 
+
+// utility functions at the top of the component
+function escapeRegExp(string: string) {
+  return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
   const dispatch = useDispatch();
   const [getIpAlert] = useLazyGetIpAlertQuery();
@@ -181,6 +187,25 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
 
   const lastProfitabilityCalc = product?.last_profitability_calculation;
   const lastCostPrice = lastProfitabilityCalc?.fba?.costPrice;
+
+  const highlightText = (text: string, search: string) => {
+    if (!search.trim()) return text;
+  
+    const regex = new RegExp(`(${escapeRegExp(search)})`, 'gi');
+    const parts = text.split(regex);
+  
+    return parts.map((part, index) => {
+      if (index % 2 === 1) {
+        return (
+          <span key={index} className="bg-green-200">
+            {part}
+          </span>
+        );
+      } else {
+        return part;
+      }
+    });
+  };
 
   useEffect(() => {
     if (lastCostPrice) {
@@ -1863,13 +1888,17 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
                     }
                     className="font-bold hover:underline duration-100"
                   >
-                    {product.title}
+                  {highlightText(product.title, debouncedSearch)}
                   </p>
                   {/*                  <p>
                     {"⭐".repeat(product.rating || 0)}{" "}
                     <span className="font-bold">({product.reviews || 0})</span>
                   </p> */}
-                  <p className="text-sm">By ASIN: {product.asin}</p>
+                  <p className="text-sm"> By ASIN: {highlightText(product.asin, debouncedSearch)},
+                    
+                  UPC:   {highlightText(product.upc || "N/A", debouncedSearch)}
+
+                  </p>
 
                   <p className="text-sm">
                     {product.category} | <SalesStats product={product} />
