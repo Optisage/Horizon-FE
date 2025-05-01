@@ -26,7 +26,6 @@ import { useRouter } from "next/navigation";
 import CustomDatePicker from "./CustomDatePicker";
 // import Loader from "@/utils/loader";
 import SalesStats from "./SalesStats";
-import { Product } from "./Dashboard";
 
 import AmazonIcon from "@/public/assets/svg/amazon-icon.svg";
 import ProductThumbnail from "@/public/assets/images/women-shoes.png";
@@ -66,74 +65,18 @@ import { useDispatch } from "react-redux";
 import { setIpAlert, setIpIssues } from "@/redux/slice/globalSlice";
 import { InfoCard } from "./info-card";
 import { FaGoogle } from "react-icons/fa6";
-
-interface ProductDetailsProps {
-  asin: string;
-  marketplaceId: number;
-}
-
-interface BuyboxItem {
-  seller: string;
-  seller_id: string;
-  seller_type: string;
-  rating: number;
-  review_count: number;
-  listing_price: number;
-  weight_percentage: number;
-  stock_quantity: number;
-  is_buybox_winner: boolean;
-  fulfillmentType: string;
-  currency: string;
-  seller_feedback: {
-    avg_price: number;
-    percentage_won: number;
-    last_won: string;
-  };
-}
-
-interface MarketAnalysisDataPoint {
-  date: string;
-  price: number;
-}
-
-interface MarketAnalysisData {
-  buybox: MarketAnalysisDataPoint[];
-  amazon: MarketAnalysisDataPoint[];
-}
-
-interface MergedDataPoint {
-  date: string;
-  buyBox: number | null;
-  amazon: number | null;
-}
-
-interface ProfitabilityData {
-  referralFee: number;
-  fulfillmentType: string;
-  fullfillmentFee: number;
-  closingFee: number;
-  storageFee: number;
-  prepFee: string | number;
-  shippingFee: string | number;
-  digitalServicesFee: number;
-  miscFee: string | number;
-  roi: number;
-  minRoi: number;
-  minProfit: number;
-  profitAmount: number;
-  maxCost: number;
-  totalFees: number;
-  vatOnFees: number;
-  discount: number;
-  profitMargin: number;
-  breakevenSalePrice: number;
-  estimatedAmzPayout: number;
-}
-
+import {
+  BuyboxItem,
+  MarketAnalysisData,
+  MergedDataPoint,
+  Product,
+  ProductDetailsProps,
+  ProfitabilityData,
+} from "@/types";
 
 // utility functions at the top of the component
 function escapeRegExp(string: string) {
-  return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return string.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
 const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
@@ -190,10 +133,10 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
 
   const highlightText = (text: string, search: string) => {
     if (!search.trim()) return text;
-  
-    const regex = new RegExp(`(${escapeRegExp(search)})`, 'gi');
+
+    const regex = new RegExp(`(${escapeRegExp(search)})`, "gi");
     const parts = text.split(regex);
-  
+
     return parts.map((part, index) => {
       if (index % 2 === 1) {
         return (
@@ -1888,16 +1831,16 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
                     }
                     className="font-bold hover:underline duration-100"
                   >
-                  {highlightText(product.title, debouncedSearch)}
+                    {highlightText(product.title, debouncedSearch)}
                   </p>
                   {/*                  <p>
                     {"⭐".repeat(product.rating || 0)}{" "}
                     <span className="font-bold">({product.reviews || 0})</span>
                   </p> */}
-                  <p className="text-sm"> By ASIN: {highlightText(product.asin, debouncedSearch)},
-                    
-                  UPC:   {highlightText(product.upc || "N/A", debouncedSearch)}
-
+                  <p className="text-sm">
+                    {" "}
+                    By ASIN: {highlightText(product.asin, debouncedSearch)},
+                    UPC: {highlightText(product.upc || "N/A", debouncedSearch)}
                   </p>
 
                   <p className="text-sm">
