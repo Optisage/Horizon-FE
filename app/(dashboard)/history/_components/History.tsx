@@ -27,6 +27,10 @@ export interface HistoryProduct {
   vendor?: string;
 }
 
+function escapeRegExp(string: string) {
+  return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 // Group items by date
 const groupByDate = (items: HistoryProduct[]) => {
   const grouped: Record<string, HistoryProduct[]> = {};
@@ -67,6 +71,25 @@ const History = () => {
 
   const router = useRouter();
   const { marketplaceId } = useAppSelector((state) => state?.global);
+
+  const highlightText = (text: string, search: string) => {
+    if (!search.trim()) return text;
+  
+    const regex = new RegExp(`(${escapeRegExp(search)})`, 'gi');
+    const parts = text.split(regex);
+  
+    return parts.map((part, index) => {
+      if (index % 2 === 1) {
+        return (
+          <span key={index} className="bg-green-200">
+            {part}
+          </span>
+        );
+      } else {
+        return part;
+      }
+    });
+  };
 
   // Debounce input to prevent excessive API calls
   useEffect(() => {
@@ -258,7 +281,7 @@ const History = () => {
                         }
                         className="font-bold hover:underline duration-100"
                       >
-                        {item.title}
+                        {highlightText(item.title, debouncedSearch)}
                       </p>
                       {item.rating !== undefined && item.rating > 0 && (
                         <p>
@@ -269,7 +292,8 @@ const History = () => {
                         </p>
                       )}
                       <p className="text-sm">
-                        By ASIN: {item.asin}, UPC: {item.upc}
+                        By ASIN: {highlightText(item.asin, debouncedSearch)}, UPC:{" "}
+  {highlightText(item.upc || "N/A", debouncedSearch)}
                       </p>
                       {item.category && (
                         <p className="text-sm">
