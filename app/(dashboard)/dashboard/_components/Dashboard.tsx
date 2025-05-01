@@ -87,6 +87,32 @@ const Dashboard = () => {
   const router = useRouter();
   const { marketplaceId } = useAppSelector((state) => state?.global);
 
+  // escapeRegExp function to handle special characters in search term
+function escapeRegExp(string: string) {
+  return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+
+ // Helper function to highlight search matches in text
+ const highlightText = (text: string, search: string) => {
+  if (!search.trim()) return text;
+
+  const regex = new RegExp(`(${escapeRegExp(search)})`, 'gi');
+  const parts = text.split(regex);
+
+  return parts.map((part, index) => {
+    if (index % 2 === 1) {
+      return (
+        <span key={index} className="bg-green-200">
+          {part}
+        </span>
+      );
+    } else {
+      return part;
+    }
+  });
+};
+
   // Debounce input to prevent excessive API calls
   useEffect(() => {
     const handler = setTimeout(() => setDebouncedSearch(searchValue), 500);
@@ -217,13 +243,13 @@ const Dashboard = () => {
                     }
                     className="font-bold hover:underline duration-100"
                   >
-                    {product.title}
+                    {highlightText(product.title, debouncedSearch)}
                   </p>
                   {/* <p>
                     {"⭐".repeat(product.rating || 0)}{" "}
                     <span className="font-bold">({product.reviews || 0})</span>
                   </p> */}
-                  <p className="text-sm">By ASIN: {product.asin}, UPC: {product.upc || "N/A"}</p>
+                  <p className="text-sm">By ASIN: {highlightText(product.asin, debouncedSearch)}, UPC:   {highlightText(product.upc || "N/A", debouncedSearch)}</p>
 
                   <p className="text-sm">
                     {product.category} | <SalesStats product={product} />
