@@ -31,6 +31,7 @@ export interface Product {
     };
     vendor: string;
     asin: string;
+    upc: string;
     category: string;
   };
   buybox_details: {
@@ -352,7 +353,7 @@ const Seller = () => {
               value={searchValue}
               onChange={onSearchChange}
               placeholder="Search for Products on Amazon (For best results use specific keywords, UPC code, ASIN or ISBN code)"
-              className="!max-w-[484px]"
+              className="!max-w-screen-md"
             />
 
             <FilterPopup onApply={handleFilterApply} />
@@ -463,7 +464,8 @@ const Seller = () => {
                               </div>
 
                               <p className="text-sm mt-1">
-                                ASIN: {basicDetails.asin}
+                                ASIN: {basicDetails.asin}, UPC:{" "}
+                                {basicDetails.upc || "N/A"}
                               </p>
                               <p className="text-sm">
                                 Category: {basicDetails.category}
@@ -506,15 +508,15 @@ const Seller = () => {
                                     product.buybox_details.offers_count.fbm}
                                 </div>
                                 <div className="font-semibold flex gap-2">
-                                  <span className="text-[#FFC56E] bg-white p-1 rounded-lg">
+                                  <span className="text-[#FF9B06] bg-white p-1 rounded-lg">
                                     AMZ:{" "}
                                     {product.buybox_details.offers_count.amz}
                                   </span>
-                                  <span className="text-[#18CB96] bg-white p-1 rounded-lg">
+                                  <span className="text-black bg-white p-1 rounded-lg">
                                     FBA:{" "}
                                     {product.buybox_details.offers_count.fba}
                                   </span>
-                                  <span className="text-[#FF8551] bg-white p-1 rounded-lg">
+                                  <span className="text-[#009F6D] bg-white p-1 rounded-lg">
                                     FBM:{" "}
                                     {product.buybox_details.offers_count.fbm}
                                   </span>
@@ -575,8 +577,10 @@ const Seller = () => {
                                       <span
                                         className={`px-2 py-1 rounded text-xs font-semibold ${
                                           offer.seller_type === "FBA"
-                                            ? "text-[#FF9B06] bg-[#FDF5E9]"
-                                            : "text-[#009F6D] bg-[#EDF7F5]"
+                                            ? "text-black bg-gray-100"
+                                            : offer.seller_type === "FBM"
+                                            ? "text-[#009F6D] bg-[#EDF7F5]"
+                                            : "text-[#FF9B06] bg-[#FDF5E9]"
                                         }`}
                                       >
                                         {offer.seller_type}

@@ -16,7 +16,7 @@ import SalesStats from "../../dashboard/_components/SalesStats";
 
 export interface HistoryProduct {
   asin: string;
-  upc?:string;
+  upc?: string;
   image?: string;
   title: string;
   rating?: number;
@@ -164,6 +164,12 @@ const History = () => {
   const displayItems = debouncedSearch ? productItems : historyItems;
   const groupedItems = groupByDate(displayItems);
 
+  const marketplaceMap: Record<string, { name: string; flag: string }> = {
+    "1": { name: "US", flag: "us" },
+    "6": { name: "Canada", flag: "ca" },
+    "11": { name: "Mexico", flag: "mx" },
+  };
+
   return (
     <section className="flex flex-col gap-8 min-h-[50dvh] md:min-h-[80dvh]">
       <div className="flex flex-col gap-4">
@@ -262,7 +268,9 @@ const History = () => {
                           </span>
                         </p>
                       )}
-                      <p className="text-sm">By ASIN: {item.asin}, UPC: {item.upc}</p>
+                      <p className="text-sm">
+                        By ASIN: {item.asin}, UPC: {item.upc}
+                      </p>
                       {item.category && (
                         <p className="text-sm">
                           {item.category === "NaN" ? "N/A" : item.category} |{" "}
@@ -272,6 +280,42 @@ const History = () => {
                       {item.vendor && (
                         <p className="text-sm">Store: {item.vendor}</p>
                       )}
+
+                      <div className="flex gap-2 items-center">
+                        {marketplaceId && marketplaceMap[marketplaceId] && (
+                          <p className="text-sm flex items-center gap-2">
+                            {/* Marketplace: */}
+                            <Image
+                              src={`https://flagcdn.com/w40/${marketplaceMap[marketplaceId].flag}.png`}
+                              alt={marketplaceMap[marketplaceId].name}
+                              className="w-5 h-auto object-cover"
+                              width={20}
+                              height={24}
+                              quality={90}
+                              priority
+                              unoptimized
+                            />
+                            {marketplaceMap[marketplaceId].name}
+                          </p>
+                        )}
+
+                        <span className="size-2 bg-black rounded-full" />
+
+                        {item.timestamp && (
+                          <p className="text-sm">
+                            {/* Date:{" "} */}
+                            {new Intl.DateTimeFormat("en-US", {
+                              year: "numeric",
+                              month: "long",
+                              day: "numeric",
+                              hour: "numeric",
+                              minute: "2-digit",
+                              hour12: true,
+                              timeZone: "UTC",
+                            }).format(new Date(item.timestamp))}
+                          </p>
+                        )}
+                      </div>
                     </div>
                   </div>
                 ))}

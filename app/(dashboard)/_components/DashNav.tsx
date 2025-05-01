@@ -62,8 +62,8 @@ const DashNav = () => {
         </button>
       </div>
 
-      <div className="flex gap-3 md:gap-6 items-center">
-        <div className="hidden lg:flex gap-6 items-center">
+      <div className="flex gap-8 md:gap-6 items-center">
+        <div className="flex gap-6 items-center">
           <Link
             href=""
             className="hidden xl:block text-sm font-medium text-[#090F0D]"
@@ -76,7 +76,7 @@ const DashNav = () => {
 
         <label
           htmlFor="my-drawer-2"
-          className="block lg:hidden text-primary-400 ml-4"
+          className="block lg:hidden text-primary-400 md:ml-4"
         >
           <CgMenuRightAlt size="25" />
         </label>
