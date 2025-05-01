@@ -26,7 +26,6 @@ import { useRouter } from "next/navigation";
 import CustomDatePicker from "./CustomDatePicker";
 // import Loader from "@/utils/loader";
 import SalesStats from "./SalesStats";
-import { Product } from "./Dashboard";
 
 import AmazonIcon from "@/public/assets/svg/amazon-icon.svg";
 import ProductThumbnail from "@/public/assets/images/women-shoes.png";
@@ -66,75 +65,21 @@ import { useDispatch } from "react-redux";
 import { setIpAlert, setIpIssues } from "@/redux/slice/globalSlice";
 import { InfoCard } from "./info-card";
 import { FaGoogle } from "react-icons/fa6";
-
-interface ProductDetailsProps {
-  asin: string;
-  marketplaceId: number;
-}
-
-interface BuyboxItem {
-  seller: string;
-  seller_id: string;
-  seller_type: string;
-  rating: number;
-  review_count: number;
-  listing_price: number;
-  weight_percentage: number;
-  stock_quantity: number;
-  is_buybox_winner: boolean;
-  fulfillmentType: string;
-  currency: string;
-  seller_feedback: {
-    avg_price: number;
-    percentage_won: number;
-    last_won: string;
-  };
-}
-
-interface MarketAnalysisDataPoint {
-  date: string;
-  price: number;
-}
-
-interface MarketAnalysisData {
-  buybox: MarketAnalysisDataPoint[];
-  amazon: MarketAnalysisDataPoint[];
-}
-
-interface MergedDataPoint {
-  date: string;
-  buyBox: number | null;
-  amazon: number | null;
-}
-
-interface ProfitabilityData {
-  referralFee: number;
-  fulfillmentType: string;
-  fullfillmentFee: number;
-  closingFee: number;
-  storageFee: number;
-  prepFee: string | number;
-  shippingFee: string | number;
-  digitalServicesFee: number;
-  miscFee: string | number;
-  roi: number;
-  minRoi: number;
-  minProfit: number;
-  profitAmount: number;
-  maxCost: number;
-  totalFees: number;
-  vatOnFees: number;
-  discount: number;
-  profitMargin: number;
-  breakevenSalePrice: number;
-  estimatedAmzPayout: number;
-}
-
+import {
+  BuyboxItem,
+  MarketAnalysisData,
+  MergedDataPoint,
+  Product,
+  ProductDetailsProps,
+  ProfitabilityData,
+} from "@/types";
 
 // utility functions at the top of the component
 function escapeRegExp(string: string) {
-  return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return string.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
+
+type Tab = "info" | "totan";
 
 const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
   const dispatch = useDispatch();
@@ -190,10 +135,10 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
 
   const highlightText = (text: string, search: string) => {
     if (!search.trim()) return text;
-  
-    const regex = new RegExp(`(${escapeRegExp(search)})`, 'gi');
+
+    const regex = new RegExp(`(${escapeRegExp(search)})`, "gi");
     const parts = text.split(regex);
-  
+
     return parts.map((part, index) => {
       if (index % 2 === 1) {
         return (
@@ -406,6 +351,7 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
   >("current");
   const [isRefetching, setIsRefetching] = useState(false);
   const [activeTab5, setActiveTab5] = useState("offers");
+  const [activeTab6, setActiveTab6] = useState<Tab>("info");
 
   const router = useRouter();
 
@@ -1300,61 +1246,174 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
                 </>
               </div>
 
-              {/* extra stats grid */}
-              <div className="border border-border p-4 rounded-xl flex flex-col gap-5">
-                <div className="grid grid-cols-2 gap-3">
-                  <InfoCard
-                    icon={<PriceTagIcon />}
-                    title="Buy Box Price"
-                    value={`$ ${extra?.buybox_price ?? "0"}`}
-                    bgColor="#F0FFF0"
-                  />
-                  <InfoCard
-                    icon={<ProductSalesIcon />}
-                    title="Estimated Product Sales"
-                    value={`${
-                      extra?.monthly_est_product_sales.toLocaleString() ?? "0"
-                    }/month`}
-                    bgColor="#F0F0FF"
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <InfoCard
-                    icon={<BSRIcon />}
-                    title="BSR"
-                    value={extra?.bsr ?? "0"}
-                    bgColor="#FFF0FF"
-                  />
-                  <InfoCard
-                    icon={<MaximumCostIcon />}
-                    title="Maximum Cost"
-                    value={`$ ${
-                      // convertPrice(extra?.max_cost) ?? "0"
-                      maxCost ?? "0"
+              {/* product info and totan ai */}
+              <div className="flex flex-col gap-4">
+                {/* tabs */}
+                <div className="flex gap-4 items-center text-sm font-semibold">
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab6("info")}
+                    className={`px-4 py-2 rounded-full ${
+                      activeTab6 === "info"
+                        ? "bg-primary text-white"
+                        : "bg-[#F3F4F6] text-[#676A75]"
                     }`}
-                    bgColor="#FFF0F3"
-                  />
+                  >
+                    Product info
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab6("totan")}
+                    className={`px-4 py-2 rounded-full ${
+                      activeTab6 === "totan"
+                        ? "bg-primary text-white"
+                        : "bg-[#F3F4F6] text-[#676A75]"
+                    }`}
+                  >
+                    Totan (AI)
+                  </button>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
-                  <InfoCard
-                    icon={<ROIIcon />}
-                    title="ROI"
-                    value={`${ROI ?? "0"}%`}
-                    bgColor="#F5EBFF"
-                  />
-                  <InfoCard
-                    icon={<PriceTagIcon />}
-                    title="Profit"
-                    value={`$ ${
-                      // convertPrice(extra?.profit) ?? "0"
-                      profitAmount ?? "0"
-                      // } (${extra?.profit_percentage ?? "0"}%)`}
-                    } (${profitMargin.toFixed(0) ?? "0"}%)`}
-                    bgColor="#EBFFFE"
-                  />
-                </div>
+                {/* Totan */}
+                {activeTab6 === "totan" && (
+                  <div className="border border-border rounded-xl shadow-sm p-4 flex flex-col gap-3">
+                    {/* Score and Info Row */}
+                    <div className="flex items-center justify-between">
+                      {/* Circular Score */}
+                      <div className="relative size-32">
+                        <svg
+                          className="w-full h-full transform -rotate-90"
+                          viewBox="0 0 36 36"
+                        >
+                          <path
+                            className="text-[#F3F4F6]"
+                            stroke="currentColor"
+                            strokeWidth="3"
+                            fill="none"
+                            d="M18 2.0845
+                         a 15.9155 15.9155 0 0 1 0 31.831
+                         a 15.9155 15.9155 0 0 1 0 -31.831"
+                          />
+                          <path
+                            className="text-primary"
+                            stroke="currentColor"
+                            strokeWidth="3"
+                            strokeDasharray="80, 100"
+                            fill="none"
+                            d="M18 2.0845
+                         a 15.9155 15.9155 0 0 1 0 31.831
+                         a 15.9155 15.9155 0 0 1 0 -31.831"
+                          />
+                        </svg>
+                        <div className="absolute inset-0 flex flex-col items-center justify-center text-xs">
+                          <span className="text-[10px] text-[#676A75] font-medium uppercase text-center">
+                            <p>ABOVE</p>
+                            <p>AVERAGE</p>
+                          </span>
+
+                          <span className="text-lg font-semibold text-[#060606]">
+                            5.19
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Analysis Box */}
+                      <div className="flex flex-col gap-2">
+                        <div className="bg-muted rounded-md px-3 py-1 text-sm font-medium text-muted-foreground">
+                          <div className="bg-[#F3F4F6] rounded-lg p-3 text-[#676A75] text-sm">
+                            <p className="font-semibold">Analysis</p>
+                            <p>Average Return on…</p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2 bg-muted rounded-md px-3 py-1 text-sm text-muted-foreground">
+                          <span className="bg-[#F3F4F6] rounded-lg p-2">
+                            <Image
+                              src={AmazonIcon}
+                              alt="Amazon icon"
+                              width={32}
+                              height={32}
+                            />
+                          </span>
+
+                          <span className="bg-[#F3F4F6] rounded-lg p-3 text-[#676A75] text-xs">
+                            Amazon Owns the buybox
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Quantity Selector */}
+                    <div className="flex items-center gap-4">
+                      <span className="text-sm text-[#676A75] font-medium">
+                        Suggested Purchase Quantity
+                      </span>
+                      <p className="border border-input rounded-md px-4 py-1 text-sm">
+                        5
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {/* extra stats grid */}
+                {activeTab6 === "info" && (
+                  <div className="border border-border p-4 rounded-xl flex flex-col gap-5">
+                    <div className="grid grid-cols-2 gap-3">
+                      <InfoCard
+                        icon={<PriceTagIcon />}
+                        title="Buy Box Price"
+                        value={`$ ${extra?.buybox_price ?? "0"}`}
+                        bgColor="#F0FFF0"
+                      />
+                      <InfoCard
+                        icon={<ProductSalesIcon />}
+                        title="Estimated Product Sales"
+                        value={`${
+                          extra?.monthly_est_product_sales.toLocaleString() ??
+                          "0"
+                        }/month`}
+                        bgColor="#F0F0FF"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <InfoCard
+                        icon={<BSRIcon />}
+                        title="BSR"
+                        value={extra?.bsr ?? "0"}
+                        bgColor="#FFF0FF"
+                      />
+                      <InfoCard
+                        icon={<MaximumCostIcon />}
+                        title="Maximum Cost"
+                        value={`$ ${
+                          // convertPrice(extra?.max_cost) ?? "0"
+                          maxCost ?? "0"
+                        }`}
+                        bgColor="#FFF0F3"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <InfoCard
+                        icon={<ROIIcon />}
+                        title="ROI"
+                        value={`${ROI ?? "0"}%`}
+                        bgColor="#F5EBFF"
+                      />
+                      <InfoCard
+                        icon={<PriceTagIcon />}
+                        title="Profit"
+                        value={`$ ${
+                          // convertPrice(extra?.profit) ?? "0"
+                          profitAmount ?? "0"
+                          // } (${extra?.profit_percentage ?? "0"}%)`}
+                        } (${profitMargin.toFixed(0) ?? "0"}%)`}
+                        bgColor="#EBFFFE"
+                      />
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -1888,16 +1947,16 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
                     }
                     className="font-bold hover:underline duration-100"
                   >
-                  {highlightText(product.title, debouncedSearch)}
+                    {highlightText(product.title, debouncedSearch)}
                   </p>
                   {/*                  <p>
                     {"⭐".repeat(product.rating || 0)}{" "}
                     <span className="font-bold">({product.reviews || 0})</span>
                   </p> */}
-                  <p className="text-sm"> By ASIN: {highlightText(product.asin, debouncedSearch)},
-                    
-                  UPC:   {highlightText(product.upc || "N/A", debouncedSearch)}
-
+                  <p className="text-sm">
+                    {" "}
+                    By ASIN: {highlightText(product.asin, debouncedSearch)},
+                    UPC: {highlightText(product.upc || "N/A", debouncedSearch)}
                   </p>
 
                   <p className="text-sm">

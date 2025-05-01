@@ -6,13 +6,13 @@ import { BsArrowDown, BsArrowUp } from "react-icons/bs";
 import Image from "next/image";
 import { FaCheckCircle } from "react-icons/fa";
 import CustomDatePicker from "./CustomDatePicker";
-import { Product } from "./Dashboard";
 import { useGetSalesStatisticsQuery } from "@/redux/api/productsApi";
 import { useAppSelector } from "@/redux/hooks";
 import dayjs from "dayjs";
 import { useRouter } from "next/navigation";
 // import ProgressLoader from "@/utils/progressLoader";
 import CircularLoader from "@/utils/circularLoader";
+import { Product } from "@/types";
 // import useCurrencyConverter from "@/utils/currencyConverter";
 
 interface BuyBoxItem {
@@ -350,3 +350,4 @@ const SalesStats = ({ product }: { product: Product }) => {
 };
 
 export default SalesStats;
+
