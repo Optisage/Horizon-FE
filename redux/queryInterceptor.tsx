@@ -90,7 +90,8 @@ export const baseQueryWithInterceptor: BaseQueryFn<
   FetchBaseQueryError
 > = async (args, api, extraOptions) => {
 
-  const isTestServer = (typeof args === 'object' && 'meta' in args && args.meta?.server === 'test');
+  const isTestServer = typeof args === 'object' && args !== null && 'meta' in args && typeof (args as any).meta === 'object' && (args as any).meta?.server === 'test';
+
   const selectedBaseQuery = isTestServer ? testQuery : baseQuery;
   const result: any = await selectedBaseQuery(args, api, extraOptions);
 
