@@ -1263,27 +1263,49 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
 
                             {activeTab === "totalFees" && (
                               <div className="space-y-2">
-                                {Object.entries(fees).map(([key, value]) => (
-                                  <div
-                                    key={key}
-                                    className="flex justify-between text-sm"
-                                  >
-                                    <StrikethroughIfNull value={value}>
-                                      <span className="text-[#595959]">
-                                        {key
-                                          .replace(/([A-Z])/g, " $1")
-                                          .replace(/^./, (str) =>
-                                            str.toUpperCase()
-                                          )}
-                                      </span>
-                                    </StrikethroughIfNull>
-                                    <StrikethroughIfNull value={value}>
-                                      <span className="font-semibold text-black">
-                                        {formatValue(value)}
-                                      </span>
-                                    </StrikethroughIfNull>
-                                  </div>
-                                ))}
+                                {Object.entries(fees).map(([key, value]) => {
+                                  // Define tooltips for fee types
+                                  const feeTooltips: Record<string, string> = {
+                                    referralFee: "Amazon's commission for selling your product on their platform, usually a percentage of the sale price.",
+                                    fulfillmentType: "The method used to fulfill orders (FBA: Fulfilled by Amazon, FBM: Fulfilled by Merchant).",
+                                    fullfillmentFee: "Fee charged by Amazon for picking, packing, and shipping your product (FBA only).",
+                                    closingFee: "Fixed fee applied to certain product categories.",
+                                    storageFee: "Fee charged for storing your product in Amazon's warehouses.",
+                                    prepFee: "Fee for any product preparation services provided by Amazon.",
+                                    shippingFee: "Cost to ship the product to the customer (primarily for FBM).",
+                                    digitalServicesFee: "Fee related to digital services or content.",
+                                    miscFee: "Any additional or miscellaneous fees not covered by other categories."
+                                  };
+                                  
+                                  // Format the key for display
+                                  const formattedKey = key.replace(/([A-Z])/g, " $1").replace(/^./, (str) => str.toUpperCase());
+                                  
+                                  return (
+                                    <div
+                                      key={key}
+                                      className="flex justify-between text-sm"
+                                    >
+                                      <StrikethroughIfNull value={value}>
+                                        {feeTooltips[key] ? (
+                                          <AntTooltip title={feeTooltips[key]} placement="top">
+                                            <span className="text-[#595959] cursor-help border-b border-dotted border-gray-400">
+                                              {formattedKey}
+                                            </span>
+                                          </AntTooltip>
+                                        ) : (
+                                          <span className="text-[#595959]">
+                                            {formattedKey}
+                                          </span>
+                                        )}
+                                      </StrikethroughIfNull>
+                                      <StrikethroughIfNull value={value}>
+                                        <span className="font-semibold text-black">
+                                          {formatValue(value)}
+                                        </span>
+                                      </StrikethroughIfNull>
+                                    </div>
+                                  );
+                                })}
 
                                 <div className="border-t pt-2 font-semibold flex justify-between">
                                   <AntTooltip title="The sum of all Amazon fees and expenses associated with selling this product." placement="top">
@@ -1532,13 +1554,21 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
                     <div className="grid grid-cols-2 gap-3">
                       <InfoCard
                         icon={<ROIIcon />}
-                        title="ROI"
+                        title={
+                          <AntTooltip title="Return on Investment - The percentage return you'll earn on your initial investment in this product." placement="top">
+                            <span className="cursor-help border-b border-dotted border-gray-400">ROI</span>
+                          </AntTooltip>
+                        }
                         value={`${ROI ?? "0"}%`}
                         bgColor="#F5EBFF"
                       />
                       <InfoCard
                         icon={<PriceTagIcon />}
-                        title="Profit"
+                        title={
+                          <AntTooltip title="The total profit amount in dollars and profit margin percentage you can expect from selling this product." placement="top">
+                            <span className="cursor-help border-b border-dotted border-gray-400">Profit</span>
+                          </AntTooltip>
+                        }
                         value={`$ ${
                           // convertPrice(extra?.profit) ?? "0"
                           profitAmount ?? "0"
