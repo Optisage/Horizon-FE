@@ -3,11 +3,10 @@ import Image from "next/image"
 import deckIco from "@/public/assets/svg/gocompare/deck.svg"
 import { useEffect, useState } from "react"
 import { DndContext, type DragEndEvent, DragOverlay, type DragStartEvent, PointerSensor, useSensor, useSensors } from "@dnd-kit/core"
-import QuickSearchTable from "./QuickSearchTable"
+import QuickSearchTable, { ProductObj } from "./QuickSearchTable"
 import { restrictToWindowEdges } from "@dnd-kit/modifiers"
 import { ProductCard } from "./ProductCard"
 import { Droppable } from "./dnd/Droppable"
-import type { Product } from "./QuickSearchTable"
 import Overlay from "./dnd/Overlay";
 import { TbListSearch } from "react-icons/tb";
 import ProductInformation from "./ProductInformation";
@@ -16,14 +15,14 @@ interface CreateProps {
   deck: string
   searchRe: {
     amazon_product: any;
-    opportunities: Product[];
+    opportunities: ProductObj[];
   },
   asin: string
 }
 
 const Create = ({ deck, searchRe, asin }: CreateProps) => {
-  const [selectedProducts, setSelectedProducts] = useState<Product[]>([])
-  const [activeProduct, setActiveProduct] = useState<Product | null>(null)
+  const [selectedProducts, setSelectedProducts] = useState<ProductObj[]>([])
+  const [activeProduct, setActiveProduct] = useState<ProductObj | null>(null)
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -60,7 +59,7 @@ const Create = ({ deck, searchRe, asin }: CreateProps) => {
     }
   }
 
-  const handleRowClick = (product: Product) => {
+  const handleRowClick = (product: ProductObj) => {
     setSelectedProducts([product])
   }
 
@@ -69,13 +68,13 @@ const Create = ({ deck, searchRe, asin }: CreateProps) => {
   }
 
   const productData = {
-    "Avg. Amazon 90 day price": searchRe?.amazon_product?.pricing?.avg_amazon_90_day_price ?? '-',
-    "Gross ROI": selectedProducts.length > 0 ? `${selectedProducts[0]?.roi_percentage.toFixed(1)}%` : 0,
-    "Match quality%": selectedProducts.length > 0 ? `${(selectedProducts[0]?.confidence * 100).toFixed(0)}` : 0,
-    "Sales rank": searchRe?.amazon_product?.metrics?.sales_rank ?? '-',
-    "Avg. 3 month sales rank": searchRe?.amazon_product?.metrics?.avg_3_month_sales_rank ?? '-',
+    "Avg. Amazon 90 day price": String(searchRe?.amazon_product?.pricing?.avg_amazon_90_day_price ?? '-'),
+    "Gross ROI": selectedProducts.length > 0 ? `${selectedProducts[0]?.roi_percentage.toFixed(1)}%` : '0%',
+    "Match quality%": selectedProducts.length > 0 ? `${(selectedProducts[0]?.confidence * 100).toFixed(0)}` : '0',
+    "Sales rank": String(searchRe?.amazon_product?.metrics?.sales_rank ?? '-'),
+    "Avg. 3 month sales rank": String(searchRe?.amazon_product?.metrics?.avg_3_month_sales_rank ?? '-'),
     ASIN: asin,
-    "Number of sellers": searchRe?.amazon_product?.metrics?.number_of_sellers ?? '-',
+    "Number of sellers": String(searchRe?.amazon_product?.metrics?.number_of_sellers ?? '-'),
     "Amazon on listing": searchRe?.amazon_product?.metrics?.amazon_on_listing ? 'YES' : 'NO',
   }
 
@@ -166,10 +165,6 @@ const Create = ({ deck, searchRe, asin }: CreateProps) => {
         </DndContext>
       )}
     </>
-
-
-
-
   )
 }
 

@@ -1,9 +1,9 @@
 import Image from 'next/image'
 import React from 'react'
-import { Product } from '../QuickSearchTable'
+import { ProductObj } from '../QuickSearchTable'
 
 interface ActiveProductProp {
-    activeProduct: Product
+    activeProduct: ProductObj
 }
 
 const Overlay = ({ activeProduct }: ActiveProductProp) => {
@@ -13,13 +13,13 @@ const Overlay = ({ activeProduct }: ActiveProductProp) => {
     return (
         <div className="bg-white rounded-lg shadow-lg border border-gray-200 p-3 w-64 cursor-pointer">
             <div className="flex items-center gap-2">
-                <div className="w-10 h-10 relative rounded overflow-hidden flex-shrink-0">
-                    {/* <Image
-                        src={scraped_product.storeLogo}
+                <div className="w-10 h-10 relative rounded overflow-hidden flex-shrink-0 flex items-center justify-center">
+                    <Image
+                        src={scraped_product.store_logo_url}
                         alt={scraped_product.product_name}
-                        fill
-                        className="object-cover"
-                    /> */}
+                        width={20} height={20}
+                        className="object-contain"
+                    />
                 </div>
                 <div className="flex-1">
                     <p className="text-sm font-medium line-clamp-1">{scraped_product.product_name}</p>

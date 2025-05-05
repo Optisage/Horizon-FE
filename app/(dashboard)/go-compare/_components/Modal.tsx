@@ -147,10 +147,9 @@ const Modal = ({ isOpen, onClose, setDeck, setSearchRe, setAsin }: {
                                     className="w-full text-[#9F9FA3] text-sm p-3 border border-gray-300 rounded-md bg-white flex items-center justify-between focus:outline-none focus:ring-2 focus:ring-[#4C3CC6] focus:border-transparent"
                                 >
                                     <div className="flex items-center">
-                                        {/* <Image src={selectedCountry?.flag} alt={selectedCountry?.short_code} className="mr-2" /> */}
                                         <span
                                             className="inline-block w-4 h-4 mr-2 mt-2"
-                                            dangerouslySetInnerHTML={{ __html: selectedCountry?.flag }}
+                                            dangerouslySetInnerHTML={{ __html: selectedCountry?.flag || "" }}
                                         />
                                         <span>{selectedCountry?.name}</span>
                                     </div>
@@ -172,7 +171,7 @@ const Modal = ({ isOpen, onClose, setDeck, setSearchRe, setAsin }: {
                                                 {/* <Image src={country?.flag} alt={country?.short_code} className="mr-2" /> */}
                                                 <span
                                                     className="inline-block w-4 h-4 mr-2 mt-2"
-                                                    dangerouslySetInnerHTML={{ __html: country?.flag }}
+                                                    dangerouslySetInnerHTML={{ __html: country?.flag || "" }}
                                                 />
                                                 <span>{country?.name}</span>
                                             </button>

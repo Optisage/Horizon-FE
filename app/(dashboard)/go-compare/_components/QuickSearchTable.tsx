@@ -6,7 +6,7 @@ import TablePagination from "./TablePagination"
 import placeholder from '../../../../public/assets/images/gocompare/placeholder.png'
 
 
-export type Product = {
+export type ProductObj = {
   scraped_product: {
     id: string
     product_name: string
@@ -41,11 +41,11 @@ export type Product = {
 }
 
 interface ProductTableProps {
-  products: Product[]
-  onRowClick: (product: Product) => void
+  products: ProductObj[]
+  onRowClick: (product: ProductObj) => void
 }
 
-function DraggableRow({ product, onRowClick }: { product: Product; onRowClick: (product: Product) => void }) {
+function DraggableRow({ product, onRowClick }: { product: ProductObj; onRowClick: (product: ProductObj) => void }) {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: product.scraped_product.id,
     data: { product },

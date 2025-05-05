@@ -92,7 +92,7 @@ const SearchHistory = () => {
                                             <div className="flex items-center gap-2">
                                                 <div
                                                     className="w-4 h-4 mt-2"
-                                                    dangerouslySetInnerHTML={{ __html: record.countryFlag.trim()}}
+                                                    dangerouslySetInnerHTML={{ __html: record.countryFlag.trim() || ""}}
                                                 />
                                                 <span className="font-normal">{record.country}</span>
                                             </div>
