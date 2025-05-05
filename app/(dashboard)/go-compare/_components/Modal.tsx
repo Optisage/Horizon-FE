@@ -3,10 +3,8 @@ import { useEffect, useRef, useState } from "react"
 import { GoChevronDown } from "react-icons/go"
 import { IoCloseOutline } from "react-icons/io5"
 import { RiCheckboxBlankCircleFill } from "react-icons/ri"
-import canada from '@/public/assets/svg/gocompare/canada.svg'
-import './styles.css'
-import Image from "next/image"
 import { useLazyGetAllCountriesQuery, useLazyQuickSearchQuery } from "@/redux/api/quickSearchApi"
+import { message } from "antd"
 
 interface Store {
     id: string;
@@ -59,6 +57,15 @@ const Modal = ({ isOpen, onClose, setDeck, setSearchRe, setAsin }: {
     const [triggerQuickSearch, { data: quickSearchResults, isFetching, isError }] = useLazyQuickSearchQuery();
     const [isCountryDropdownOpen, setIsCountryDropdownOpen] = useState(false)
     const dropdownRef = useRef<HTMLDivElement>(null);
+    const [messageApi, contextHolder] = message.useMessage();
+    const [isSearchTypeDropdown, setIsSearchTypeDropdown] = useState(false);
+
+    const searchTypes = [
+        { id: 1, type: 'Normal Search - (No Images, Less wait time)', value:false },
+        { id: 2, type: 'Deep Search - (Longer wait time)', value:true },
+    ]
+
+    const [selectedSearchType, setSelectedSearchType] = useState(searchTypes[0]);
 
     const toggleStore = (storeName: string) => {
         if (selectedStores.includes(storeName)) {
@@ -71,6 +78,7 @@ const Modal = ({ isOpen, onClose, setDeck, setSearchRe, setAsin }: {
         setAsinOrUpc("");
         setSelectedStores([]);
         setSelectedCountry(countries?.data[0]);
+        setSelectedSearchType(searchTypes[0]);
     };
 
     const handleClose = () => {
@@ -85,15 +93,18 @@ const Modal = ({ isOpen, onClose, setDeck, setSearchRe, setAsin }: {
             return;
         }
         const country_ids = [selectedCountry.id];
+        const queue = selectedSearchType.value;
         try {
             setAsin(asinOrUpc)
-            const response = await triggerQuickSearch({ asin: asinOrUpc, store_names: selectedStores, country_ids }).unwrap();
+            const response = await triggerQuickSearch({ asin: asinOrUpc, store_names: selectedStores, country_ids, queue }).unwrap();
             setSearchRe(response);
             console.log("Quick Search Response:", response);
             setDeck("quickSearch");
             handleClose();
-        } catch (error) {
-            console.error("Quick Search failed:", error);
+        } catch (error : any) {
+            const errorMessage = error?.data?.error || error?.error || "Unknown error";
+            console.error("Quick Search failed:", errorMessage);
+            message.error(`Quick Search failed: ${errorMessage}`);
         }
     }
 
@@ -113,7 +124,7 @@ const Modal = ({ isOpen, onClose, setDeck, setSearchRe, setAsin }: {
                     <div className="space-y-4 font-normal">
                         <div>
                             <label htmlFor="asin-upc" className="block text-xs text-[#737379] mb-1.5">
-                                Enter ASIN or UPC
+                                Enter ASIN, UPC or Product Name
                             </label>
                             <input
                                 id="asin-upc"
@@ -172,6 +183,41 @@ const Modal = ({ isOpen, onClose, setDeck, setSearchRe, setAsin }: {
                         </div>
 
                         <div>
+                            <label htmlFor="searchType" className="block text-xs text-[#737379] mb-1.5">
+                                Select Search Type
+                            </label>
+                            <div className="relative" ref={dropdownRef}>
+                                <button
+                                    id="searchType"
+                                    onClick={() => setIsSearchTypeDropdown(!isSearchTypeDropdown)}
+                                    className="w-full text-[#9F9FA3] text-sm p-3 border border-gray-300 rounded-md bg-white flex items-center justify-between focus:outline-none focus:ring-2 focus:ring-[#4C3CC6] focus:border-transparent"
+                                >
+                                    <div>
+                                        {selectedSearchType?.type}
+                                    </div>
+                                    <GoChevronDown size={18} color="black" />
+                                </button>
+
+                                {isSearchTypeDropdown && (
+                                    <div className="absolute z-10 mt-1 px-2 w-full text-sm bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-auto">
+                                        {searchTypes?.map((searchType) => (
+                                            <button
+                                                key={searchType?.id}
+                                                onClick={() => {
+                                                    setSelectedSearchType(searchType)
+                                                    setIsSearchTypeDropdown(false)
+                                                }}
+                                                className="w-full text-left px-4 py-2 hover:bg-gray-100 border-b"
+                                            >
+                                                <span>{searchType?.type}</span>
+                                            </button>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
+                        <div>
                             <label className="block text-xs text-[#737379] mb-1.5">{selectedCountry?.name} Stores</label>
                             <div className="space-y-2">
                                 {selectedCountry?.stores?.map((store) => (
@@ -206,7 +252,7 @@ const Modal = ({ isOpen, onClose, setDeck, setSearchRe, setAsin }: {
                     </button>
                     <button onClick={handleSearch} disabled={isFetching} className="px-4 py-1 shadow-lg bg-[#18cb96] text-white rounded-md hover:bg-[#15b588]">
                         {isFetching ? (
-                            <div className="h-4 w-4 border-2 border-white animate-spin rounded-full"></div>
+                            <div className="h-4 w-4 border-2 border-t-transparent border-white animate-spin rounded-full"></div>
                         ) : (
                             'Search'
                         )}

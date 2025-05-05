@@ -36,7 +36,6 @@ export const baseQuery = fetchBaseQuery({
 export const testQuery = fetchBaseQuery({
     baseUrl: `${testUrl}`,
     prepareHeaders: (headers) => {
-        //const token = sessionStorage.getItem('token')
         const token = Cookies.get('optisage-token');
         if (token) {
             headers.set('authorization', `Bearer ${token}`)
@@ -84,7 +83,7 @@ export const baseQueryWithInterceptor: BaseQueryFn<
     return result;
 }
 
-export const baseQueryForAuth: BaseQueryFn<
+export const baseQueryForAuth: BaseQueryFn< 
     string | FetchArgs,
     unknown,
     FetchBaseQueryError

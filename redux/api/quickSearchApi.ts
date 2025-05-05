@@ -1,7 +1,7 @@
 import { createApi } from "@reduxjs/toolkit/query/react";
 import { baseQueryWithInterceptor } from "../queryInterceptor";
 
-export const quickSearchApi = createApi({
+export const quickSearchApi = createApi({ 
     reducerPath: "quickSearchApi",
     refetchOnReconnect: true,
     refetchOnMountOrArgChange: 10,
@@ -15,24 +15,18 @@ export const quickSearchApi = createApi({
             }),
         }),
         quickSearch: builder.query({
-            query: ({ store_names, asin, country_ids }) => {
+            query: ({ store_names, asin, country_ids, queue }) => {
                 const storeNamesParam = store_names
                     .map(name => encodeURIComponent(name))
                     .join(',');
                 return {
-                    url: `quick-search?stores=${storeNamesParam}&asin=${asin}&country_id=${country_ids}`,
+                    url: `quick-search?stores=${storeNamesParam}&asin=${asin}&country_id=${country_ids}&queue=${queue}&group_by=flat`,
                     method: "GET",
                     meta: { server: 'test' }
                 }
-
             },
         }),
         searchHistory: builder.query({
-            // query: ({page, per_page}) => ({
-            //     url: `search?include=store,marketplace,country&page=${page}&per_page=${per_page}`,
-            //     method: "GET",
-            //     meta: { server: 'test' }
-            // }),
             query: () => ({
                 url: `search?include=store,marketplace,country`,
                 method: "GET",
