@@ -3,11 +3,12 @@
 import { useEffect, useState } from "react";
 import { CustomPagination, SearchInput } from "@/app/(dashboard)/_components";
 import Image from "next/image";
-import { message, Tooltip as Tooltip2, Skeleton } from "antd";
+import { message, Tooltip as AntTooltip, Skeleton, Tooltip as Tooltip2 } from "antd";
 import { evaluate } from "mathjs";
 import { useCallback } from "react";
 import { debounce } from "lodash";
 import { CustomSlider as Slider } from "@/lib/AntdComponents";
+import { InfoCircleOutlined } from "@ant-design/icons";
 
 import {
   PieChart,
@@ -81,6 +82,40 @@ function escapeRegExp(string: string) {
 
 type Tab = "info" | "totan";
 
+// StatCard component for displaying product statistics with tooltips
+const StatCard = ({
+  icon,
+  title,
+  value,
+  tooltip,
+  bgColor,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  value: string | number;
+  tooltip: string;
+  bgColor: string;
+}) => (
+  <div className="flex flex-col gap-2 p-4 border border-border rounded-xl">
+    <div className="flex items-center gap-2">
+      <span
+        className="size-10 rounded-lg flex items-center justify-center"
+        style={{ backgroundColor: bgColor }}
+      >
+        {icon}
+      </span>
+      <div className="flex items-center">
+        <AntTooltip title={tooltip} placement="top">
+          <h3 className="text-sm font-medium text-gray-700 cursor-help border-b border-dotted border-gray-400">
+            {title}
+          </h3>
+        </AntTooltip>
+      </div>
+    </div>
+    <p className="text-xl font-semibold">{value}</p>
+  </div>
+);
+
 const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
   const dispatch = useDispatch();
   const [getIpAlert] = useLazyGetIpAlertQuery();
@@ -97,7 +132,9 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
   const [currentPageToken, setCurrentPageToken] = useState<string | null>(null);
   const [isPaginationLoading, setIsPaginationLoading] = useState(false);
   const [nextPageToken, setNextPageToken] = useState<string | null>(null);
-
+  
+  const currencySymbol = "$"; // Default currency symbol
+  
   const [itemsToShow, setItemsToShow] = useState(10); // Show 10 items
   const [loading, setLoading] = useState(false); // Add loading state
   const [costPrice, setCostPrice] = useState<string>("");
@@ -266,6 +303,52 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
   const buyboxDetails: BuyboxItem[] = buyboxDetailsData?.data?.buybox ?? [];
   const buyboxWinnerPrice =
     buyboxDetails.find((offer) => offer.is_buybox_winner)?.listing_price ?? 0;
+    
+  // Product Statistics Section
+  const renderProductStatistics = () => {
+    if (isLoading || isLoadingBuyboxDetails) {
+      return (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {[1, 2, 3, 4].map((i) => (
+            <Skeleton key={i} active paragraph={{ rows: 2 }} />
+          ))}
+        </div>
+      );
+    }
+    
+    return (
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <StatCard
+          icon={<BSRIcon />}
+          title="Best Seller Rank"
+          value={product?.best_seller_rank || "N/A"}
+          tooltip="Amazon's Best Seller Rank indicates how well a product is selling compared to other products in its category. Lower numbers mean better sales performance."
+          bgColor="#F3E5F5"
+        />
+        <StatCard
+          icon={<PriceTagIcon />}
+          title="Current Price"
+          value={`${currencySymbol}${buyboxWinnerPrice.toFixed(2) || "N/A"}`}
+          tooltip="The current winning Buy Box price for this product. This is the price most customers will see when viewing the product."
+          bgColor="#E8F5E9"
+        />
+        <StatCard
+          icon={<ProductSalesIcon />}
+          title="Estimated Sales"
+          value={product?.sales_statistics?.estimated_sales_per_month?.amount?.toLocaleString() || "N/A"}
+          tooltip="Estimated monthly sales volume for this product based on historical data and market analysis."
+          bgColor="#E3F2FD"
+        />
+        <StatCard
+          icon={<ROIIcon />}
+          title="ROI Potential"
+          value={`${ROI.toFixed(2)}%` || "N/A"}
+          tooltip="Return on Investment potential based on current market conditions, pricing, and fees. Higher percentages indicate better profit potential."
+          bgColor="#EDE7F6"
+        />
+      </div>
+    );
+  };
 
   // calculating profitability
   // Memoize the calculation handler
@@ -856,7 +939,23 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
                     <p>
                       ASIN: {product?.asin}, UPC: {product?.upc}
                     </p>
-                    <p>⭐⭐⭐⭐⭐ {product?.rating?.stars}/5</p>
+                    <p className="flex items-center gap-1">
+                      <AntTooltip title="Average customer rating out of 5 stars. Higher ratings typically indicate better customer satisfaction and product quality." placement="top">
+                        <span className="cursor-help">
+                          ⭐⭐⭐⭐⭐ {product?.rating?.stars}/5
+                        </span>
+                      </AntTooltip>
+                      
+                      <span className="ml-2">
+                        {product?.rating?.count && (
+                          <AntTooltip title="The total number of customer reviews. More reviews generally indicate a more established product with reliable feedback." placement="top">
+                            <span className="cursor-help border-b border-dotted border-gray-400">
+                              ({product.rating.count} reviews)
+                            </span>
+                          </AntTooltip>
+                        )}
+                      </span>
+                    </p>
                   </div>
                 </div>
 
@@ -1125,9 +1224,11 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
                               <div className="space-y-2">
                                 <div className="flex justify-between text-sm">
                                   <StrikethroughIfNull value={minROI}>
-                                    <span className="text-[#595959]">
-                                      Min. ROI
-                                    </span>
+                                    <AntTooltip title="Minimum Return on Investment - The lowest acceptable percentage return on your investment for this product to be considered profitable." placement="top">
+                                      <span className="text-[#595959] cursor-help border-b border-dotted border-gray-400">
+                                        Min. ROI
+                                      </span>
+                                    </AntTooltip>
                                   </StrikethroughIfNull>
                                   <StrikethroughIfNull value={minROI}>
                                     <span className="font-semibold text-black">
@@ -1137,9 +1238,11 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
                                 </div>
                                 <div className="flex justify-between text-sm">
                                   <StrikethroughIfNull value={minProfit}>
-                                    <span className="text-[#595959]">
-                                      Min. Profit
-                                    </span>
+                                    <AntTooltip title="Minimum Profit - The smallest dollar amount of profit you should accept when selling this product." placement="top">
+                                      <span className="text-[#595959] cursor-help border-b border-dotted border-gray-400">
+                                        Min. Profit
+                                      </span>
+                                    </AntTooltip>
                                   </StrikethroughIfNull>
                                   <StrikethroughIfNull value={minProfit}>
                                     <span className="font-semibold text-black">
@@ -1148,7 +1251,11 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
                                   </StrikethroughIfNull>
                                 </div>
                                 <div className="border-t pt-2 font-semibold flex justify-between">
-                                  <span>Maximum Cost</span>
+                                  <AntTooltip title="The highest price you should pay for this product to maintain your target profit margin and ROI." placement="top">
+                                    <span className="cursor-help border-b border-dotted border-gray-400">
+                                      Maximum Cost
+                                    </span>
+                                  </AntTooltip>
                                   <span>${maxCost.toFixed(2)}</span>
                                 </div>
                               </div>
@@ -1179,7 +1286,9 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
                                 ))}
 
                                 <div className="border-t pt-2 font-semibold flex justify-between">
-                                  <span>Total Fees</span>
+                                  <AntTooltip title="The sum of all Amazon fees and expenses associated with selling this product." placement="top">
+                                    <span className="cursor-help border-b border-dotted border-gray-400">Total Fees</span>
+                                  </AntTooltip>
                                   <span>${totalFees.toFixed(2)}</span>
                                 </div>
                               </div>
@@ -1190,7 +1299,9 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
                           <div className="flex flex-col gap-2 text-[#595959]">
                             <div className="flex justify-between text-sm">
                               <StrikethroughIfNull value={vatOnFees}>
-                                <span>Sales Tax</span>
+                                <AntTooltip title="Tax charged on the sale of your product that you need to collect and remit to tax authorities." placement="top">
+                                  <span className="cursor-help border-b border-dotted border-gray-400">Sales Tax</span>
+                                </AntTooltip>
                               </StrikethroughIfNull>
                               <StrikethroughIfNull value={vatOnFees}>
                                 <span className="font-semibold text-black">
@@ -1200,7 +1311,9 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
                             </div>
                             <div className="flex justify-between text-sm">
                               <StrikethroughIfNull value={discount}>
-                                <span>Discount</span>
+                                <AntTooltip title="Any price reduction applied to the product, which reduces your overall revenue." placement="top">
+                                  <span className="cursor-help border-b border-dotted border-gray-400">Discount</span>
+                                </AntTooltip>
                               </StrikethroughIfNull>
                               <StrikethroughIfNull value={discount}>
                                 <span className="font-semibold text-black">
@@ -1210,7 +1323,9 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
                             </div>
                             <div className="flex justify-between text-sm">
                               <StrikethroughIfNull value={profitMargin}>
-                                <span>Profit Margin</span>
+                                <AntTooltip title="The percentage of profit relative to the sale price after all costs have been deducted." placement="top">
+                                  <span className="cursor-help border-b border-dotted border-gray-400">Profit Margin</span>
+                                </AntTooltip>
                               </StrikethroughIfNull>
                               <StrikethroughIfNull value={profitMargin}>
                                 <span className="font-semibold text-black">
@@ -1220,7 +1335,9 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
                             </div>
                             <div className="flex justify-between text-sm">
                               <StrikethroughIfNull value={breakEvenPrice}>
-                                <span>Breakeven Sale Price</span>
+                                <AntTooltip title="The minimum price you need to sell the product for to cover all costs without making or losing money." placement="top">
+                                  <span className="cursor-help border-b border-dotted border-gray-400">Breakeven Sale Price</span>
+                                </AntTooltip>
                               </StrikethroughIfNull>
                               <StrikethroughIfNull value={breakEvenPrice}>
                                 <span className="font-semibold text-black">
@@ -1230,7 +1347,9 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
                             </div>
                             <div className="flex justify-between text-sm">
                               <StrikethroughIfNull value={estimatedPayout}>
-                                <span>Estimated Amz. Payout</span>
+                                <AntTooltip title="The approximate amount Amazon will pay you after deducting all fees and commissions." placement="top">
+                                  <span className="cursor-help border-b border-dotted border-gray-400">Estimated Amz. Payout</span>
+                                </AntTooltip>
                               </StrikethroughIfNull>
                               <StrikethroughIfNull value={estimatedPayout}>
                                 <span className="font-semibold text-black">
@@ -1361,15 +1480,23 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
                     <div className="grid grid-cols-2 gap-3">
                       <InfoCard
                         icon={<PriceTagIcon />}
-                        title="Buy Box Price"
+                        title={
+                          <AntTooltip title="The current price of the product in the Amazon Buy Box. This is typically the price most customers see when viewing the product." placement="top">
+                            <span className="cursor-help border-b border-dotted border-gray-400">Buy Box Price</span>
+                          </AntTooltip>
+                        }
                         value={`$ ${extra?.buybox_price ?? "0"}`}
                         bgColor="#F0FFF0"
                       />
                       <InfoCard
                         icon={<ProductSalesIcon />}
-                        title="Estimated Product Sales"
+                        title={
+                          <AntTooltip title="The approximate number of units sold per month based on market analysis and sales rank data." placement="top">
+                            <span className="cursor-help border-b border-dotted border-gray-400">Estimated Product Sales</span>
+                          </AntTooltip>
+                        }
                         value={`${
-                          extra?.monthly_est_product_sales.toLocaleString() ??
+                          extra?.monthly_est_product_sales?.toLocaleString() ??
                           "0"
                         }/month`}
                         bgColor="#F0F0FF"
@@ -1379,13 +1506,21 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
                     <div className="grid grid-cols-2 gap-3">
                       <InfoCard
                         icon={<BSRIcon />}
-                        title="BSR"
+                        title={
+                          <AntTooltip title="Best Seller Rank (BSR) indicates how well a product is selling in its category. Lower numbers mean better sales performance." placement="top">
+                            <span className="cursor-help border-b border-dotted border-gray-400">BSR</span>
+                          </AntTooltip>
+                        }
                         value={extra?.bsr ?? "0"}
                         bgColor="#FFF0FF"
                       />
                       <InfoCard
                         icon={<MaximumCostIcon />}
-                        title="Maximum Cost"
+                        title={
+                          <AntTooltip title="The highest price you should pay for this product to maintain your target profit margin and ROI." placement="top">
+                            <span className="cursor-help border-b border-dotted border-gray-400">Maximum Cost</span>
+                          </AntTooltip>
+                        }
                         value={`$ ${
                           // convertPrice(extra?.max_cost) ?? "0"
                           maxCost ?? "0"
