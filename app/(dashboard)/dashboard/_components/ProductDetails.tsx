@@ -29,6 +29,8 @@ interface IpAlertState {
   eligibility: boolean
 }
 
+type Tab = "info" | "totan";
+
 const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
   const dispatch = useDispatch()
   const router = useRouter()

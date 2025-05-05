@@ -10,69 +10,7 @@ import { useSearchItemsQuery } from "@/redux/api/productsApi";
 import { useAppSelector } from "@/redux/hooks";
 
 import CircularLoader from "@/utils/circularLoader";
-
-export interface Product {
-  upc?: string;
-  asin: string;
-  image?: string;
-  title: string;
-  rating?: number;
-  reviews?: number;
-  category?: string;
-  brand?: string;
-  modelNumber?: string;
-  vendor?: string;
-  size?: string;
-  color?: string;
-  dimensions?: {
-    height: { value: number; unit: string };
-    length: { value: number; unit: string };
-    weight: { value: number; unit: string };
-    width: { value: number; unit: string };
-  };
-  classifications?: {
-    displayName: string;
-    classificationId: string;
-  }[];
-  sales_statistics?: {
-    estimated_sales_per_month: {
-      currency: string;
-      amount: number;
-    };
-    number_of_sellers: number;
-    sales_analytics: {
-      net_revenue: {
-        amount: number;
-        percentage: number;
-        currency: string;
-      };
-      price: {
-        amount: number;
-        percentage: number;
-        currency: string;
-      };
-      monthly_units_sold: {
-        amount: number;
-        percentage: number;
-      };
-      daily_units_sold: {
-        amount: number;
-        percentage: number;
-      };
-      monthly_revenue: {
-        amount: number;
-        percentage: number;
-        currency: string;
-      };
-    };
-    date_first_available: string;
-    seller_type: string;
-  };
-  buybox_timeline?: {
-    seller: string;
-    timestamp: string;
-  }[];
-}
+import { Product } from "@/types";
 
 const Dashboard = () => {
   const [searchValue, setSearchValue] = useState("");
@@ -88,30 +26,29 @@ const Dashboard = () => {
   const { marketplaceId } = useAppSelector((state) => state?.global);
 
   // escapeRegExp function to handle special characters in search term
-function escapeRegExp(string: string) {
-  return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-}
+  function escapeRegExp(string: string) {
+    return string.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  }
 
+  // Helper function to highlight search matches in text
+  const highlightText = (text: string, search: string) => {
+    if (!search.trim()) return text;
 
- // Helper function to highlight search matches in text
- const highlightText = (text: string, search: string) => {
-  if (!search.trim()) return text;
+    const regex = new RegExp(`(${escapeRegExp(search)})`, "gi");
+    const parts = text.split(regex);
 
-  const regex = new RegExp(`(${escapeRegExp(search)})`, 'gi');
-  const parts = text.split(regex);
-
-  return parts.map((part, index) => {
-    if (index % 2 === 1) {
-      return (
-        <span key={index} className="bg-green-200">
-          {part}
-        </span>
-      );
-    } else {
-      return part;
-    }
-  });
-};
+    return parts.map((part, index) => {
+      if (index % 2 === 1) {
+        return (
+          <span key={index} className="bg-green-200">
+            {part}
+          </span>
+        );
+      } else {
+        return part;
+      }
+    });
+  };
 
   // Debounce input to prevent excessive API calls
   useEffect(() => {
@@ -249,7 +186,10 @@ function escapeRegExp(string: string) {
                     {"⭐".repeat(product.rating || 0)}{" "}
                     <span className="font-bold">({product.reviews || 0})</span>
                   </p> */}
-                  <p className="text-sm">By ASIN: {highlightText(product.asin, debouncedSearch)}, UPC:   {highlightText(product.upc || "N/A", debouncedSearch)}</p>
+                  <p className="text-sm">
+                    By ASIN: {highlightText(product.asin, debouncedSearch)},
+                    UPC: {highlightText(product.upc || "N/A", debouncedSearch)}
+                  </p>
 
                   <p className="text-sm">
                     {product.category} | <SalesStats product={product} />
@@ -286,3 +226,4 @@ function escapeRegExp(string: string) {
 };
 
 export default Dashboard;
+
