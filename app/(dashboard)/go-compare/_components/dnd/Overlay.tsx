@@ -1,4 +1,3 @@
-import Image from 'next/image'
 import React from 'react'
 import { ProductObj } from '../QuickSearchTable'
 
@@ -14,11 +13,10 @@ const Overlay = ({ activeProduct }: ActiveProductProp) => {
         <div className="bg-white rounded-lg shadow-lg border border-gray-200 p-3 w-64 cursor-pointer">
             <div className="flex items-center gap-2">
                 <div className="w-10 h-10 relative rounded overflow-hidden flex-shrink-0 flex items-center justify-center">
-                    <Image
+                    <img
                         src={scraped_product.store_logo_url}
                         alt={scraped_product.product_name}
-                        width={20} height={20}
-                        className="object-contain"
+                        className="object-contain w-10 h-10"
                     />
                 </div>
                 <div className="flex-1">

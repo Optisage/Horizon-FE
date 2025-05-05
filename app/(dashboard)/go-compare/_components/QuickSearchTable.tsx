@@ -1,6 +1,5 @@
 "use client";
 import { useDraggable } from "@dnd-kit/core"
-import Image from "next/image"
 import { useState } from "react"
 import TablePagination from "./TablePagination"
 import placeholder from '../../../../public/assets/images/gocompare/placeholder.png'
@@ -76,7 +75,8 @@ function DraggableRow({ product, onRowClick }: { product: ProductObj; onRowClick
     >
       <td className="px-4 py-1.5 flex items-center gap-2">
         <div className="w-8 h-8 relative rounded overflow-hidden">
-          <Image src={product.scraped_product?.image_url} alt={product.store.name} width={32} height={32} className="object-cover" />
+          {/* <Image src={product.scraped_product?.image_url} alt={product.store.name} width={32} height={32} className="object-cover" /> */}
+          <img src={product.scraped_product?.image_url} alt={product.store.name} className="object-cover" />
         </div>
         <span className="text-sm line-clamp-1">
           {product.scraped_product.product_name.length > 25
@@ -87,8 +87,8 @@ function DraggableRow({ product, onRowClick }: { product: ProductObj; onRowClick
       <td className="px-4 py-1.5">
         <div className="w-12 h-12 relative">
           {product.scraped_product?.store_logo_url ?
-            <Image src={product.scraped_product?.store_logo_url} alt={product.store.name} width={20} height={20}  className="object-contain" /> : (
-              <Image src={placeholder} alt={product.store.name} fill className="object-contain" />
+            <img src={product.scraped_product?.store_logo_url} alt={product.store.name} className="object-contain w-10 h-10" /> : (
+              <img src={placeholder.src} alt={product.store.name} className="object-contain w-10 h-10" />
             )
           }
         </div>

@@ -98,12 +98,7 @@ const SearchHistory = () => {
                                             </div>
                                         </td>
                                         <td className="px-4 py-3">
-                                            <Image
-                                                src={record.storeLogo}
-                                                alt={record.store}
-                                                width={30}
-                                                height={30}
-                                                quality={90} priority unoptimized />
+                                            <img src={record.storeLogo} alt="" className="object-contain w-10 h-10" />
                                         </td>
                                         <td className="px-4 py-3">{record.results}</td>
                                     </tr>

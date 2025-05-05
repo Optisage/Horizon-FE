@@ -5,51 +5,22 @@ const nextConfig: NextConfig = {
   /* config options here */
   productionBrowserSourceMaps: true,
   images: {
-    unoptimized: true,
-    loader: 'custom',
-    loaderFile: 'public/image-loader.ts',
-  //   remotePatterns: [{
-  //     protocol: "https",
-  //     hostname: "avatar.iran.liara.run",
-  //     port: "",
-  //     pathname: "/**"
-  //   },{
-  //     protocol: "https",
-  //     hostname: "flagcdn.com",
-  //     port: "",
-  //     pathname: "/**"
-  //   }, {
-  //     protocol: "https",
-  //     hostname: "m.media-amazon.com",
-  //     port: "",
-  //     pathname: "/**"
-  //   }, {
-  //     protocol: "https",
-  //     hostname: "www.sportsdirect.com",
-  //     port: "",
-  //     pathname: "/**"
-  //   }, {
-  //     protocol: "https",
-  //     hostname: "assets.digitalcontent.marksandspencer.app",
-  //     port: "",
-  //     pathname: "/**"
-  //   }, {
-  //     protocol: "http",
-  //     hostname: "148.113.180.19",
-  //     port: "",
-  //     pathname: "/**"
-  //   }, {
-  //     protocol: "https",
-  //     hostname: "www.maqio.com",
-  //     port: "",
-  //     pathname: "/**"
-  //   }, {
-  //     protocol: "https",
-  //     hostname: "res.cloudinary.com",
-  //     port: "",
-  //     pathname: "/**"
-  //   }
-  // ]
+    remotePatterns: [{
+      protocol: "https",
+      hostname: "avatar.iran.liara.run",
+      port: "",
+      pathname: "/**"
+    },{
+      protocol: "https",
+      hostname: "flagcdn.com",
+      port: "",
+      pathname: "/**"
+    }, {
+      protocol: "https",
+      hostname: "m.media-amazon.com",
+      port: "",
+      pathname: "/**"
+    }]
   },
 };
 
