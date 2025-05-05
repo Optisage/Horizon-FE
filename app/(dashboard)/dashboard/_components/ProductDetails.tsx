@@ -3,10 +3,12 @@
 import { useEffect, useState } from "react";
 import { CustomPagination, SearchInput } from "@/app/(dashboard)/_components";
 import Image from "next/image";
-import { message, Tooltip as Tooltip2 } from "antd";
+import { message, Tooltip as Tooltip2, Skeleton } from "antd";
 import { evaluate } from "mathjs";
-
+import { useCallback } from "react";
+import { debounce } from "lodash";
 import { CustomSlider as Slider } from "@/lib/AntdComponents";
+
 import {
   PieChart,
   Pie,
@@ -24,8 +26,8 @@ import { useRouter } from "next/navigation";
 import CustomDatePicker from "./CustomDatePicker";
 // import Loader from "@/utils/loader";
 import SalesStats from "./SalesStats";
-import { Product } from "./Dashboard";
 
+import AmazonIcon from "@/public/assets/svg/amazon-icon.svg";
 import ProductThumbnail from "@/public/assets/images/women-shoes.png";
 import Illustration from "@/public/assets/svg/illustration.svg";
 import UFO from "@/public/assets/svg/ufo.svg";
@@ -62,69 +64,22 @@ import Link from "next/link";
 import { useDispatch } from "react-redux";
 import { setIpAlert, setIpIssues } from "@/redux/slice/globalSlice";
 import { InfoCard } from "./info-card";
+import { FaGoogle } from "react-icons/fa6";
+import {
+  BuyboxItem,
+  MarketAnalysisData,
+  MergedDataPoint,
+  Product,
+  ProductDetailsProps,
+  ProfitabilityData,
+} from "@/types";
 
-interface ProductDetailsProps {
-  asin: string;
-  marketplaceId: number;
+// utility functions at the top of the component
+function escapeRegExp(string: string) {
+  return string.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
-interface BuyboxItem {
-  seller: string;
-  seller_id: string;
-  seller_type: string;
-  rating: number;
-  review_count: number;
-  listing_price: number;
-  weight_percentage: number;
-  stock_quantity: number;
-  is_buybox_winner: boolean;
-  fulfillmentType: string;
-  currency: string;
-  seller_feedback: {
-    avg_price: number;
-    percentage_won: number;
-    last_won: string;
-  };
-}
-
-interface MarketAnalysisDataPoint {
-  date: string;
-  price: number;
-}
-
-interface MarketAnalysisData {
-  buybox: MarketAnalysisDataPoint[];
-  amazon: MarketAnalysisDataPoint[];
-}
-
-interface MergedDataPoint {
-  date: string;
-  buyBox: number | null;
-  amazon: number | null;
-}
-
-interface ProfitabilityData {
-  referralFee: number;
-  fulfillmentType: string;
-  fullfillmentFee: number;
-  closingFee: number;
-  storageFee: number;
-  prepFee: string | number;
-  shippingFee: string | number;
-  digitalServicesFee: number;
-  miscFee: string | number;
-  roi: number;
-  minRoi: number;
-  minProfit: number;
-  profitAmount: number;
-  maxCost: number;
-  totalFees: number;
-  vatOnFees: number;
-  discount: number;
-  profitMargin: number;
-  breakevenSalePrice: number;
-  estimatedAmzPayout: number;
-}
+type Tab = "info" | "totan";
 
 const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
   const dispatch = useDispatch();
@@ -165,8 +120,7 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
     dayjs().add(1, "month").format("YYYY-MM-DD")
   ); // For date range end
 
-  const [calculateProfitability, { isLoading: isLoadingProfitability }] =
-    useCalculateProfitablilityMutation();
+  const [calculateProfitability] = useCalculateProfitablilityMutation();
 
   const { data, error, isLoading } = useGetItemQuery({
     marketplaceId,
@@ -179,11 +133,35 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
   const lastProfitabilityCalc = product?.last_profitability_calculation;
   const lastCostPrice = lastProfitabilityCalc?.fba?.costPrice;
 
+  const highlightText = (text: string, search: string) => {
+    if (!search.trim()) return text;
+
+    const regex = new RegExp(`(${escapeRegExp(search)})`, "gi");
+    const parts = text.split(regex);
+
+    return parts.map((part, index) => {
+      if (index % 2 === 1) {
+        return (
+          <span key={index} className="bg-green-200">
+            {part}
+          </span>
+        );
+      } else {
+        return part;
+      }
+    });
+  };
+
   useEffect(() => {
     if (lastCostPrice) {
       setCostPrice(lastCostPrice);
     }
   }, [lastCostPrice]);
+  useEffect(() => {
+    return () => {
+      setCostPrice(""); // Clear cost price when component unmounts
+    };
+  }, []);
 
   // Initialize state with last profitability calculation if available
   const [fees, setFees] = useState({
@@ -227,6 +205,7 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
   const [estimatedPayout, setEstimatedPayout] = useState(
     lastProfitabilityCalc?.fba?.estimatedAmzPayout || 0
   );
+  const [isCalculating, setIsCalculating] = useState(false);
 
   // Initialize responseData with last calculation
   const [responseData, setResponseData] = useState({
@@ -275,39 +254,71 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
     }
   }, [asin, marketplaceId, dispatch, getIpAlert, statStartDate, statEndDate]);
 
-  // calculating profitability
-  const handleCalculateProfitability = async () => {
-    const body = {
-      asin: asin,
-      marketplaceId: `${marketplaceId}`,
-      isAmazonFulfilled: fulfillmentType === "FBA",
-      currencyCode: currencyCode,
-      storage: storageMonths,
-      costPrice: costPrice,
-      salePrice: salePrice || buyboxWinnerPrice, // Use price if entered, or else, fallback to the buybox winner price 🙂
-      pointsNumber: 0,
-      pointsAmount: 0,
-    };
+  const {
+    data: buyboxDetailsData,
+    isLoading: isLoadingBuyboxDetails,
+    // error: buyboxDetailsError,
+  } = useGetBuyboxDetailsQuery({
+    marketplaceId,
+    itemAsin: asin,
+  });
 
+  const buyboxDetails: BuyboxItem[] = buyboxDetailsData?.data?.buybox ?? [];
+  const buyboxWinnerPrice =
+    buyboxDetails.find((offer) => offer.is_buybox_winner)?.listing_price ?? 0;
+
+  // calculating profitability
+  // Memoize the calculation handler
+  const handleCalculateProfitability = useCallback(async () => {
+    if (!costPrice || !buyboxDetails) return; // Skip if no cost price
+
+    setIsCalculating(true);
     try {
+      const body = {
+        asin: asin,
+        marketplaceId: `${marketplaceId}`,
+        isAmazonFulfilled: fulfillmentType === "FBA",
+        currencyCode: currencyCode,
+        storage: storageMonths,
+        costPrice: costPrice,
+        salePrice: salePrice || buyboxWinnerPrice,
+        pointsNumber: 0,
+        pointsAmount: 0,
+      };
+
       const response = await calculateProfitability({ body }).unwrap();
       if (response.status === 200) {
-        // Store both FBA and FBM data in state
         setResponseData({
           fba: response.data.fba,
           fbm: response.data.fbm,
         });
-
-        // Set initial data based on the selected fulfillmentType
         const data =
           fulfillmentType === "FBA" ? response.data.fba : response.data.fbm;
         updateUIWithData(data);
       }
     } catch (error) {
-      console.error("Failed to calculate profitability:", error);
-      message.error("Failed to calculate profitability. Please try again.");
+      console.error("Calculation error:", error);
+      message.error("Calculation failed. Please check your inputs.");
+    } finally {
+      setIsCalculating(false);
     }
-  };
+  }, [costPrice, salePrice, storageMonths, fulfillmentType]);
+
+  const debouncedCalculation = useCallback(
+    debounce(() => handleCalculateProfitability(), 500),
+    [handleCalculateProfitability]
+  );
+
+  useEffect(() => {
+    debouncedCalculation();
+    return () => debouncedCalculation.cancel();
+  }, [
+    costPrice,
+    salePrice,
+    storageMonths,
+    fulfillmentType,
+    debouncedCalculation,
+  ]);
 
   // Helper function to update UI with selected data
   const updateUIWithData = (data: ProfitabilityData): void => {
@@ -340,6 +351,7 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
   >("current");
   const [isRefetching, setIsRefetching] = useState(false);
   const [activeTab5, setActiveTab5] = useState("offers");
+  const [activeTab6, setActiveTab6] = useState<Tab>("info");
 
   const router = useRouter();
 
@@ -354,15 +366,6 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
     itemAsin: asin,
     statStartDate,
     statEndDate,
-  });
-
-  const {
-    data: buyboxDetailsData,
-    isLoading: isLoadingBuyboxDetails,
-    // error: buyboxDetailsError,
-  } = useGetBuyboxDetailsQuery({
-    marketplaceId,
-    itemAsin: asin,
   });
 
   const {
@@ -503,7 +506,7 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
     );
 
   const buybox: BuyboxItem[] = buyboxData?.data?.buybox ?? [];
-  const buyboxDetails: BuyboxItem[] = buyboxDetailsData?.data?.buybox ?? [];
+
   const extra = buyboxDetailsData?.data?.extra;
   const rankings = rankingsData?.data?.[activeTab4.toLowerCase()] ?? {};
 
@@ -566,8 +569,6 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
   };
 
   // for sales price in calculator
-  const buyboxWinnerPrice =
-    buyboxDetails.find((offer) => offer.is_buybox_winner)?.listing_price ?? 0;
 
   const handlePriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSalePrice(e.target.value);
@@ -591,6 +592,15 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
 
   const displayedOffers = offersData.offers.slice(0, itemsToShow);
   const displayedFeedback = sellerFeedbackData.slice(0, itemsToShow);
+  const fbaCount = offersData.offers.filter(
+    (o) => o.seller_type === "FBA"
+  ).length;
+  const fbmCount = offersData.offers.filter(
+    (o) => o.seller_type === "FBM"
+  ).length;
+  const amzCount = offersData.offers.filter(
+    (o) => o.seller_type === "AMZ"
+  ).length;
 
   const handleLoadMore = () => {
     setLoading(true); // Start loading
@@ -772,16 +782,46 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
                   "_blank"
                 );
               }}
-              className="border border-border text-primary px-3 py-2 rounded-xl flex gap-1 items-center font-semibold hover:bg-gray-50 active:scale-95 duration-200 text-sm md:text-base"
+              className="border border-border text-primary px-3 py-2 rounded-xl hidden md:flex gap-1 items-center font-semibold hover:bg-gray-50 active:scale-95 duration-200 text-sm md:text-base"
             >
               Find Supplier
               <RxArrowTopRight className="size-5" />
             </button>
 
+            <button
+              type="button"
+              aria-label="Find Supplier"
+              onClick={() => {
+                const query = encodeURIComponent(
+                  `${product?.product_name} supplier`
+                );
+                window.open(
+                  `https://www.google.com/search?q=${query}`,
+                  "_blank"
+                );
+              }}
+              className="size-12 flex md:hidden items-center justify-center rounded-lg bg-[#F3F4F6]"
+            >
+              <FaGoogle className="size-6 text-[#0F172A]" />
+            </button>
+
             <Link
               href={productLink}
               target="_blank"
-              className="border border-border text-primary px-3 py-2 rounded-xl flex gap-1 items-center font-semibold hover:bg-gray-50 active:scale-95 duration-200 text-sm md:text-base"
+              className="size-12 flex md:hidden items-center justify-center rounded-lg bg-[#F3F4F6]"
+            >
+              <Image
+                src={AmazonIcon}
+                alt="Amazon icon"
+                width={32}
+                height={32}
+              />
+            </Link>
+
+            <Link
+              href={productLink}
+              target="_blank"
+              className="border border-border text-primary px-3 py-2 rounded-xl hidden md:flex gap-1 items-center font-semibold hover:bg-gray-50 active:scale-95 duration-200 text-sm md:text-base"
             >
               See this Product on Amazon
               <RxArrowTopRight className="size-5" />
@@ -813,7 +853,9 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
                       {product?.product_name}
                     </h2>
                     <p>{product?.category}</p>
-                    <p>ASIN: {product?.asin}</p>
+                    <p>
+                      ASIN: {product?.asin}, UPC: {product?.upc}
+                    </p>
                     <p>⭐⭐⭐⭐⭐ {product?.rating?.stars}/5</p>
                   </div>
                 </div>
@@ -928,7 +970,7 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
                     <label className="text-sm text-gray-600">Cost Price</label>
                     <input
                       aria-label="Cost Price"
-                      type="text"
+                      type="number"
                       placeholder={lastCostPrice}
                       value={costPrice}
                       onChange={(e) => setCostPrice(e.target.value)}
@@ -976,6 +1018,7 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
                 </div>
 
                 {/* Calculate Button */}
+                {/** 
                 <button
                   type="button"
                   onClick={handleCalculateProfitability}
@@ -986,223 +1029,398 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
                     ? "Calculating..."
                     : "Calculate Profitability"}
                 </button>
+                */}
 
-                {/* Fees Section with Tabs */}
-                <div className="flex flex-col gap-2">
-                  {/* mac cost & total fees tabs */}
-                  <div className="bg-[#F7F7F7] rounded-[10px] p-1 flex items-center gap-2 w-max mx-auto">
-                    <button
-                      type="button"
-                      onClick={() => setActiveTab("maximumCost")}
-                      className={`text-sm font-medium p-1.5 rounded-md border ${
-                        activeTab === "maximumCost"
-                          ? "border-border bg-white"
-                          : "border-transparent text-[#787891]"
-                      }`}
-                    >
-                      Maximum Cost
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setActiveTab("totalFees")}
-                      className={`text-sm font-medium p-1.5 rounded-md border ${
-                        activeTab === "totalFees"
-                          ? "border-border bg-white"
-                          : "border-transparent text-[#787891]"
-                      }`}
-                    >
-                      Total Fees
-                    </button>
+                <>
+                  {/* Fees Section with Tabs */}
+                  <div className="flex flex-col gap-2">
+                    {/* mac cost & total fees tabs */}
+                    <div className="bg-[#F7F7F7] rounded-[10px] p-1 flex items-center gap-2 w-max mx-auto">
+                      <button
+                        type="button"
+                        onClick={() => setActiveTab("maximumCost")}
+                        className={`text-sm font-medium p-1.5 rounded-md border ${
+                          activeTab === "maximumCost"
+                            ? "border-border bg-white"
+                            : "border-transparent text-[#787891]"
+                        }`}
+                      >
+                        Maximum Cost
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setActiveTab("totalFees")}
+                        className={`text-sm font-medium p-1.5 rounded-md border ${
+                          activeTab === "totalFees"
+                            ? "border-border bg-white"
+                            : "border-transparent text-[#787891]"
+                        }`}
+                      >
+                        Total Fees
+                      </button>
+                    </div>
                   </div>
-                </div>
 
-                {isSwitching ? (
-                  <div className="flex justify-center py-4">
-                    <Loader2 />
-                  </div>
-                ) : (
-                  <>
-                    <div className="bg-[#F4F4F5] rounded-xl p-2">
-                      {activeTab === "maximumCost" && (
-                        <div className="space-y-2">
-                          <div className="flex justify-between text-sm">
-                            <StrikethroughIfNull value={minROI}>
-                              <span className="text-[#595959]">Min. ROI</span>
-                            </StrikethroughIfNull>
-                            <StrikethroughIfNull value={minROI}>
-                              <span className="font-semibold text-black">
-                                {minROI || 0}%
-                              </span>
-                            </StrikethroughIfNull>
-                          </div>
-                          <div className="flex justify-between text-sm">
-                            <StrikethroughIfNull value={minProfit}>
-                              <span className="text-[#595959]">
-                                Min. Profit
-                              </span>
-                            </StrikethroughIfNull>
-                            <StrikethroughIfNull value={minProfit}>
-                              <span className="font-semibold text-black">
-                                ${minProfit.toFixed(2)}
-                              </span>
-                            </StrikethroughIfNull>
-                          </div>
-                          <div className="border-t pt-2 font-semibold flex justify-between">
-                            <span>Maximum Cost</span>
-                            <span>${maxCost.toFixed(2)}</span>
-                          </div>
+                  {isSwitching ? (
+                    <div className="flex justify-center py-4">
+                      <Loader2 />
+                    </div>
+                  ) : (
+                    <>
+                      {isCalculating ? (
+                        <div className=" gap-4 grid grid-cols-2">
+                          <Skeleton.Input
+                            active
+                            size="large"
+                            block
+                            style={{ height: 25 }}
+                          />
+                          <Skeleton.Input
+                            active
+                            size="large"
+                            block
+                            style={{ height: 25 }}
+                          />
+                          <Skeleton.Input
+                            active
+                            size="large"
+                            block
+                            style={{ height: 25 }}
+                          />
+                          <Skeleton.Input
+                            active
+                            size="large"
+                            block
+                            style={{ height: 25 }}
+                          />
+                          <Skeleton.Input
+                            active
+                            size="large"
+                            block
+                            style={{ height: 25 }}
+                          />
+                          <Skeleton.Input
+                            active
+                            size="large"
+                            block
+                            style={{ height: 25 }}
+                          />
+                          <Skeleton.Input
+                            active
+                            size="large"
+                            block
+                            style={{ height: 25 }}
+                          />
+                          <Skeleton.Input
+                            active
+                            size="large"
+                            block
+                            style={{ height: 25 }}
+                          />
                         </div>
-                      )}
+                      ) : (
+                        <>
+                          <div className="bg-[#F4F4F5] rounded-xl p-2">
+                            {activeTab === "maximumCost" && (
+                              <div className="space-y-2">
+                                <div className="flex justify-between text-sm">
+                                  <StrikethroughIfNull value={minROI}>
+                                    <span className="text-[#595959]">
+                                      Min. ROI
+                                    </span>
+                                  </StrikethroughIfNull>
+                                  <StrikethroughIfNull value={minROI}>
+                                    <span className="font-semibold text-black">
+                                      {minROI || 0}%
+                                    </span>
+                                  </StrikethroughIfNull>
+                                </div>
+                                <div className="flex justify-between text-sm">
+                                  <StrikethroughIfNull value={minProfit}>
+                                    <span className="text-[#595959]">
+                                      Min. Profit
+                                    </span>
+                                  </StrikethroughIfNull>
+                                  <StrikethroughIfNull value={minProfit}>
+                                    <span className="font-semibold text-black">
+                                      ${minProfit.toFixed(2)}
+                                    </span>
+                                  </StrikethroughIfNull>
+                                </div>
+                                <div className="border-t pt-2 font-semibold flex justify-between">
+                                  <span>Maximum Cost</span>
+                                  <span>${maxCost.toFixed(2)}</span>
+                                </div>
+                              </div>
+                            )}
 
-                      {activeTab === "totalFees" && (
-                        <div className="space-y-2">
-                          {Object.entries(fees).map(([key, value]) => (
-                            <div
-                              key={key}
-                              className="flex justify-between text-sm"
-                            >
-                              <StrikethroughIfNull value={value}>
-                                <span className="text-[#595959]">
-                                  {key
-                                    .replace(/([A-Z])/g, " $1")
-                                    .replace(/^./, (str) => str.toUpperCase())}
-                                </span>
+                            {activeTab === "totalFees" && (
+                              <div className="space-y-2">
+                                {Object.entries(fees).map(([key, value]) => (
+                                  <div
+                                    key={key}
+                                    className="flex justify-between text-sm"
+                                  >
+                                    <StrikethroughIfNull value={value}>
+                                      <span className="text-[#595959]">
+                                        {key
+                                          .replace(/([A-Z])/g, " $1")
+                                          .replace(/^./, (str) =>
+                                            str.toUpperCase()
+                                          )}
+                                      </span>
+                                    </StrikethroughIfNull>
+                                    <StrikethroughIfNull value={value}>
+                                      <span className="font-semibold text-black">
+                                        {formatValue(value)}
+                                      </span>
+                                    </StrikethroughIfNull>
+                                  </div>
+                                ))}
+
+                                <div className="border-t pt-2 font-semibold flex justify-between">
+                                  <span>Total Fees</span>
+                                  <span>${totalFees.toFixed(2)}</span>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Summary Items */}
+                          <div className="flex flex-col gap-2 text-[#595959]">
+                            <div className="flex justify-between text-sm">
+                              <StrikethroughIfNull value={vatOnFees}>
+                                <span>Sales Tax</span>
                               </StrikethroughIfNull>
-                              <StrikethroughIfNull value={value}>
+                              <StrikethroughIfNull value={vatOnFees}>
                                 <span className="font-semibold text-black">
-                                  {formatValue(value)}
+                                  {formatValue(vatOnFees)}
                                 </span>
                               </StrikethroughIfNull>
                             </div>
-                          ))}
-
-                          <div className="border-t pt-2 font-semibold flex justify-between">
-                            <span>Total Fees</span>
-                            <span>${totalFees.toFixed(2)}</span>
+                            <div className="flex justify-between text-sm">
+                              <StrikethroughIfNull value={discount}>
+                                <span>Discount</span>
+                              </StrikethroughIfNull>
+                              <StrikethroughIfNull value={discount}>
+                                <span className="font-semibold text-black">
+                                  {formatValue(discount)}
+                                </span>
+                              </StrikethroughIfNull>
+                            </div>
+                            <div className="flex justify-between text-sm">
+                              <StrikethroughIfNull value={profitMargin}>
+                                <span>Profit Margin</span>
+                              </StrikethroughIfNull>
+                              <StrikethroughIfNull value={profitMargin}>
+                                <span className="font-semibold text-black">
+                                  {profitMargin.toFixed(2)}%
+                                </span>
+                              </StrikethroughIfNull>
+                            </div>
+                            <div className="flex justify-between text-sm">
+                              <StrikethroughIfNull value={breakEvenPrice}>
+                                <span>Breakeven Sale Price</span>
+                              </StrikethroughIfNull>
+                              <StrikethroughIfNull value={breakEvenPrice}>
+                                <span className="font-semibold text-black">
+                                  ${breakEvenPrice.toFixed(2)}
+                                </span>
+                              </StrikethroughIfNull>
+                            </div>
+                            <div className="flex justify-between text-sm">
+                              <StrikethroughIfNull value={estimatedPayout}>
+                                <span>Estimated Amz. Payout</span>
+                              </StrikethroughIfNull>
+                              <StrikethroughIfNull value={estimatedPayout}>
+                                <span className="font-semibold text-black">
+                                  ${estimatedPayout.toFixed(2)}
+                                </span>
+                              </StrikethroughIfNull>
+                            </div>
                           </div>
-                        </div>
+                        </>
                       )}
-                    </div>
-
-                    {/* Summary Items */}
-                    <div className="flex flex-col gap-2 text-[#595959]">
-                      <div className="flex justify-between text-sm">
-                        <StrikethroughIfNull value={vatOnFees}>
-                          <span>Sales Tax</span>
-                        </StrikethroughIfNull>
-                        <StrikethroughIfNull value={vatOnFees}>
-                          <span className="font-semibold text-black">
-                            {formatValue(vatOnFees)}
-                          </span>
-                        </StrikethroughIfNull>
-                      </div>
-                      <div className="flex justify-between text-sm">
-                        <StrikethroughIfNull value={discount}>
-                          <span>Discount</span>
-                        </StrikethroughIfNull>
-                        <StrikethroughIfNull value={discount}>
-                          <span className="font-semibold text-black">
-                            {formatValue(discount)}
-                          </span>
-                        </StrikethroughIfNull>
-                      </div>
-                      <div className="flex justify-between text-sm">
-                        <StrikethroughIfNull value={profitMargin}>
-                          <span>Profit Margin</span>
-                        </StrikethroughIfNull>
-                        <StrikethroughIfNull value={profitMargin}>
-                          <span className="font-semibold text-black">
-                            {profitMargin.toFixed(2)}%
-                          </span>
-                        </StrikethroughIfNull>
-                      </div>
-                      <div className="flex justify-between text-sm">
-                        <StrikethroughIfNull value={breakEvenPrice}>
-                          <span>Breakeven Sale Price</span>
-                        </StrikethroughIfNull>
-                        <StrikethroughIfNull value={breakEvenPrice}>
-                          <span className="font-semibold text-black">
-                            ${breakEvenPrice.toFixed(2)}
-                          </span>
-                        </StrikethroughIfNull>
-                      </div>
-                      <div className="flex justify-between text-sm">
-                        <StrikethroughIfNull value={estimatedPayout}>
-                          <span>Estimated Amz. Payout</span>
-                        </StrikethroughIfNull>
-                        <StrikethroughIfNull value={estimatedPayout}>
-                          <span className="font-semibold text-black">
-                            ${estimatedPayout.toFixed(2)}
-                          </span>
-                        </StrikethroughIfNull>
-                      </div>
-                    </div>
-                  </>
-                )}
+                    </>
+                  )}
+                </>
               </div>
 
-              {/* extra stats grid */}
-              <div className="border border-border p-4 rounded-xl flex flex-col gap-5">
-                <div className="grid grid-cols-2 gap-3">
-                  <InfoCard
-                    icon={<PriceTagIcon />}
-                    title="Buy Box Price"
-                    value={`$ ${extra?.buybox_price ?? "0"}`}
-                    bgColor="#F0FFF0"
-                  />
-                  <InfoCard
-                    icon={<ProductSalesIcon />}
-                    title="Estimated Product Sales"
-                    value={`${
-                      extra?.monthly_est_product_sales.toLocaleString() ?? "0"
-                    }/month`}
-                    bgColor="#F0F0FF"
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <InfoCard
-                    icon={<BSRIcon />}
-                    title="BSR"
-                    value={extra?.bsr ?? "0"}
-                    bgColor="#FFF0FF"
-                  />
-                  <InfoCard
-                    icon={<MaximumCostIcon />}
-                    title="Maximum Cost"
-                    value={`$ ${
-                      // convertPrice(extra?.max_cost) ?? "0"
-                      maxCost ?? "0"
+              {/* product info and totan ai */}
+              <div className="flex flex-col gap-4">
+                {/* tabs */}
+                <div className="flex gap-4 items-center text-sm font-semibold">
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab6("info")}
+                    className={`px-4 py-2 rounded-full ${
+                      activeTab6 === "info"
+                        ? "bg-primary text-white"
+                        : "bg-[#F3F4F6] text-[#676A75]"
                     }`}
-                    bgColor="#FFF0F3"
-                  />
+                  >
+                    Product info
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab6("totan")}
+                    className={`px-4 py-2 rounded-full ${
+                      activeTab6 === "totan"
+                        ? "bg-primary text-white"
+                        : "bg-[#F3F4F6] text-[#676A75]"
+                    }`}
+                  >
+                    Totan (AI)
+                  </button>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
-                  <InfoCard
-                    icon={<ROIIcon />}
-                    title="ROI"
-                    value={`${ROI ?? "0"}%`}
-                    bgColor="#F5EBFF"
-                  />
-                  <InfoCard
-                    icon={<PriceTagIcon />}
-                    title="Profit"
-                    value={`$ ${
-                      // convertPrice(extra?.profit) ?? "0"
-                      profitAmount ?? "0"
-                      // } (${extra?.profit_percentage ?? "0"}%)`}
-                    } (${profitMargin.toFixed(0) ?? "0"}%)`}
-                    bgColor="#EBFFFE"
-                  />
-                </div>
+                {/* Totan */}
+                {activeTab6 === "totan" && (
+                  <div className="border border-border rounded-xl shadow-sm p-4 flex flex-col gap-3">
+                    {/* Score and Info Row */}
+                    <div className="flex items-center justify-between">
+                      {/* Circular Score */}
+                      <div className="relative size-32">
+                        <svg
+                          className="w-full h-full transform -rotate-90"
+                          viewBox="0 0 36 36"
+                        >
+                          <path
+                            className="text-[#F3F4F6]"
+                            stroke="currentColor"
+                            strokeWidth="3"
+                            fill="none"
+                            d="M18 2.0845
+                         a 15.9155 15.9155 0 0 1 0 31.831
+                         a 15.9155 15.9155 0 0 1 0 -31.831"
+                          />
+                          <path
+                            className="text-primary"
+                            stroke="currentColor"
+                            strokeWidth="3"
+                            strokeDasharray="80, 100"
+                            fill="none"
+                            d="M18 2.0845
+                         a 15.9155 15.9155 0 0 1 0 31.831
+                         a 15.9155 15.9155 0 0 1 0 -31.831"
+                          />
+                        </svg>
+                        <div className="absolute inset-0 flex flex-col items-center justify-center text-xs">
+                          <span className="text-[10px] text-[#676A75] font-medium uppercase text-center">
+                            <p>ABOVE</p>
+                            <p>AVERAGE</p>
+                          </span>
+
+                          <span className="text-lg font-semibold text-[#060606]">
+                            5.19
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Analysis Box */}
+                      <div className="flex flex-col gap-2">
+                        <div className="bg-muted rounded-md px-3 py-1 text-sm font-medium text-muted-foreground">
+                          <div className="bg-[#F3F4F6] rounded-lg p-3 text-[#676A75] text-sm">
+                            <p className="font-semibold">Analysis</p>
+                            <p>Average Return on…</p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2 bg-muted rounded-md px-3 py-1 text-sm text-muted-foreground">
+                          <span className="bg-[#F3F4F6] rounded-lg p-2">
+                            <Image
+                              src={AmazonIcon}
+                              alt="Amazon icon"
+                              width={32}
+                              height={32}
+                            />
+                          </span>
+
+                          <span className="bg-[#F3F4F6] rounded-lg p-3 text-[#676A75] text-xs">
+                            Amazon Owns the buybox
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Quantity Selector */}
+                    <div className="flex items-center gap-4">
+                      <span className="text-sm text-[#676A75] font-medium">
+                        Suggested Purchase Quantity
+                      </span>
+                      <p className="border border-input rounded-md px-4 py-1 text-sm">
+                        5
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {/* extra stats grid */}
+                {activeTab6 === "info" && (
+                  <div className="border border-border p-4 rounded-xl flex flex-col gap-5">
+                    <div className="grid grid-cols-2 gap-3">
+                      <InfoCard
+                        icon={<PriceTagIcon />}
+                        title="Buy Box Price"
+                        value={`$ ${extra?.buybox_price ?? "0"}`}
+                        bgColor="#F0FFF0"
+                      />
+                      <InfoCard
+                        icon={<ProductSalesIcon />}
+                        title="Estimated Product Sales"
+                        value={`${
+                          extra?.monthly_est_product_sales.toLocaleString() ??
+                          "0"
+                        }/month`}
+                        bgColor="#F0F0FF"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <InfoCard
+                        icon={<BSRIcon />}
+                        title="BSR"
+                        value={extra?.bsr ?? "0"}
+                        bgColor="#FFF0FF"
+                      />
+                      <InfoCard
+                        icon={<MaximumCostIcon />}
+                        title="Maximum Cost"
+                        value={`$ ${
+                          // convertPrice(extra?.max_cost) ?? "0"
+                          maxCost ?? "0"
+                        }`}
+                        bgColor="#FFF0F3"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <InfoCard
+                        icon={<ROIIcon />}
+                        title="ROI"
+                        value={`${ROI ?? "0"}%`}
+                        bgColor="#F5EBFF"
+                      />
+                      <InfoCard
+                        icon={<PriceTagIcon />}
+                        title="Profit"
+                        value={`$ ${
+                          // convertPrice(extra?.profit) ?? "0"
+                          profitAmount ?? "0"
+                          // } (${extra?.profit_percentage ?? "0"}%)`}
+                        } (${profitMargin.toFixed(0) ?? "0"}%)`}
+                        bgColor="#EBFFFE"
+                      />
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 
             {/* right */}
             <div className="flex flex-col gap-5">
               {/* Offers Section */}
-              <div className="border border-border flex flex-col rounded-xl max-h-[375px] overflow-scroll">
+              <div className="border border-border flex flex-col rounded-xl max-h-[375px] overflow-x-auto w-full">
                 <div className="flex items-center gap-x-8 gap-y-3 flex-wrap p-3">
                   <div className="flex items-center gap-6 font-semibold text-gray-700">
                     <button
@@ -1239,90 +1457,112 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
                       <span className="size-2 rounded-sm bg-[#00E4E4]" />
                       <span>FBM</span>
                     </div>
+                    <div className="flex items-center gap-2 text-sm">
+                      <span className="size-2 rounded-sm bg-orange-400" />
+                      <span>AMZ</span>
+                    </div>
                   </div>
                 </div>
 
                 {activeTab5 === "offers" ? (
                   <>
-                    <table className="w-full border-collapse text-sm">
-                      <thead>
-                        <tr className="border-b text-left bg-[#F7F7F7]">
-                          <th className="p-3">S/N</th>
-                          <th className="p-3">Seller</th>
-                          <th className="p-3">Stock</th>
-                          <th className="p-3">Price</th>
-                          <th className="p-3">Buybox Share</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {displayedOffers.length > 0 ? (
-                          displayedOffers.map((offer) => (
-                            <tr key={offer.id} className="border-b">
-                              <td className="p-3">{offer.id}</td>
-                              <td className="py-3">
-                                <Tooltip2
-                                  title={`Rating: ${offer.rating} (${offer.review_count})`}
-                                  placement="topLeft"
-                                >
-                                  <div
-                                    onClick={() =>
-                                      router.push(`/seller/${offer.seller_id}`)
-                                    }
-                                    className="cursor-pointer flex flex-col gap-0.5 flex-grow"
+                    {/* <div className="block overflow-x-auto whitespace-nowrap">
+                      <table className="!w-full table border-collapse text-sm"> */}
+                    <div className="w-full overflow-x-auto">
+                      <table className="min-w-full border-collapse text-sm">
+                        <thead>
+                          <tr className="border-b text-left bg-[#F7F7F7]">
+                            <th className="p-3">S/N</th>
+                            <th className="p-3">Seller</th>
+                            <th className="p-3">Stock</th>
+                            <th className="p-3">Price</th>
+                            <th className="p-3">Buybox Share</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {displayedOffers.length > 0 ? (
+                            displayedOffers.map((offer) => (
+                              <tr key={offer.id} className="border-b">
+                                <td className="p-3">{offer.id}</td>
+                                <td className="py-3">
+                                  <Tooltip2
+                                    title={`Rating: ${offer.rating} (${offer.review_count})`}
+                                    placement="topLeft"
                                   >
-                                    <span className="flex items-center gap-1">
-                                      <span
-                                        className={`size-2 rounded-sm ${
-                                          offer.seller_type === "FBA"
-                                            ? "bg-black"
-                                            : "bg-[#00E4E4]"
-                                        }`}
-                                      />
-                                      <p className="truncate">{offer.seller}</p>
-                                    </span>
-                                    {offer.leader && (
-                                      <span className="text-xs text-primary block">
-                                        BuyBox Leader
+                                    <div
+                                      onClick={() =>
+                                        router.push(
+                                          `/seller/${offer.seller_id}`
+                                        )
+                                      }
+                                      className="cursor-pointer flex flex-col gap-0.5 flex-grow"
+                                    >
+                                      <span className="flex items-center gap-1">
+                                        <span
+                                          className={`size-2 rounded-sm ${
+                                            offer.seller_type === "FBA"
+                                              ? "bg-black"
+                                              : offer.seller_type === "FBM"
+                                              ? "bg-[#00E4E4]"
+                                              : "bg-orange-400"
+                                          }`}
+                                        />
+                                        <p className="truncate">
+                                          {offer.seller}
+                                        </p>
                                       </span>
-                                    )}
+                                      {offer.leader && (
+                                        <span className="text-xs text-primary block">
+                                          BuyBox Leader
+                                        </span>
+                                      )}
+                                    </div>
+                                  </Tooltip2>
+                                </td>
+                                <td className="p-3">{offer.stock}</td>
+                                <td className="p-3">${offer.price}</td>
+                                <td className="px-3 py-4 flex gap-1 items-center h-full">
+                                  {offer.buyboxShare}
+                                  <div className="w-20 h-2 bg-gray-200 rounded-full">
+                                    <div
+                                      className="h-2 bg-green-500 rounded-full"
+                                      style={{
+                                        width:
+                                          offer.buyboxShare &&
+                                          offer.buyboxShare !== "N/A"
+                                            ? offer.buyboxShare
+                                            : "0",
+                                      }}
+                                    />
                                   </div>
-                                </Tooltip2>
-                              </td>
-                              <td className="p-3">{offer.stock}</td>
-                              <td className="p-3">${offer.price}</td>
-                              <td className="px-3 py-4 flex gap-1 items-center h-full">
-                                {offer.buyboxShare}
-                                <div className="w-20 h-2 bg-gray-200 rounded-full">
-                                  <div
-                                    className="h-2 bg-green-500 rounded-full"
-                                    style={{
-                                      width:
-                                        offer.buyboxShare &&
-                                        offer.buyboxShare !== "N/A"
-                                          ? offer.buyboxShare
-                                          : "0",
-                                    }}
-                                  />
-                                </div>
+                                </td>
+                              </tr>
+                            ))
+                          ) : (
+                            <tr>
+                              <td
+                                colSpan={5}
+                                className="p-3 py-8 text-center text-gray-500"
+                              >
+                                No offers available.
                               </td>
                             </tr>
-                          ))
-                        ) : (
-                          <tr>
-                            <td
-                              colSpan={5}
-                              className="p-3 py-8 text-center text-gray-500"
-                            >
-                              No offers available.
-                            </td>
-                          </tr>
-                        )}
-                      </tbody>
-                    </table>
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+
+                    {/* offers count */}
+                    <div className="p-3 flex gap-2 justify-between items-center w-full">
+                      Total Offers: {offersData.offers.length || 0}
+                      <span>
+                        FBA: {fbaCount} FBM: {fbmCount} AMZ: {amzCount}
+                      </span>
+                    </div>
                     {offersData.offers.length > itemsToShow && (
                       <button
                         onClick={handleLoadMore}
-                        className="px-4 py-2 bg-primary text-white rounded hover:bg-primary-hover flex items-center justify-center gap-2"
+                        className="w-full px-4 py-2 bg-primary text-white rounded hover:bg-primary-hover flex items-center justify-center gap-2"
                         disabled={loading}
                       >
                         {loading ? (
@@ -1337,71 +1577,78 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
                   </>
                 ) : (
                   <>
-                    <table className="w-full border-collapse text-sm">
-                      <thead>
-                        <tr className="border-b text-left bg-[#F7F7F7]">
-                          <th className="p-3">S/N</th>
-                          <th className="p-3">Seller</th>
-                          <th className="p-3">Avg. Price</th>
-                          <th className="p-3">Won</th>
-                          <th className="p-3">Last Won</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {displayedFeedback.length > 0 ? (
-                          displayedFeedback.map((seller) => (
-                            <tr key={seller.id} className="border-b">
-                              <td className="p-3">{seller.id}</td>
-                              <td className="p-3">
-                                <Tooltip2
-                                  title={`Rating: ${seller.rating} (${seller.review_count})`}
-                                  placement="topLeft"
-                                >
-                                  <div
-                                    onClick={() =>
-                                      router.push(`/seller/${seller.sellerId}`)
-                                    }
-                                    className="cursor-pointer flex flex-col"
-                                  >
-                                    <span className="flex items-center gap-1">
-                                      <span
-                                        className={`size-2 rounded-sm ${
-                                          seller.seller_type === "FBA"
-                                            ? "bg-black"
-                                            : "bg-[#00E4E4]"
-                                        }`}
-                                      />
-                                      <p className="truncate">
-                                        {seller.seller}
-                                      </p>
-                                    </span>
-                                    <div className="flex">
-                                      {renderStars(seller.rating)}
-                                    </div>
-                                  </div>
-                                </Tooltip2>
-                              </td>
-                              <td className="p-3">${seller.avgPrice}</td>
-                              <td className="p-3">{seller.won}</td>
-                              <td className="p-3">{seller.lastWon}</td>
-                            </tr>
-                          ))
-                        ) : (
-                          <tr>
-                            <td
-                              colSpan={5}
-                              className="p-3 py-8 text-center text-gray-500"
-                            >
-                              No seller feedback available.
-                            </td>
+                    <div className="w-full overflow-x-auto">
+                      <table className="min-w-full border-collapse text-sm">
+                        <thead>
+                          <tr className="border-b text-left bg-[#F7F7F7]">
+                            <th className="p-3">S/N</th>
+                            <th className="p-3">Seller</th>
+                            <th className="p-3">Avg. Price</th>
+                            <th className="p-3">Won</th>
+                            <th className="p-3">Last Won</th>
                           </tr>
-                        )}
-                      </tbody>
-                    </table>
+                        </thead>
+                        <tbody>
+                          {displayedFeedback.length > 0 ? (
+                            displayedFeedback.map((seller) => (
+                              <tr key={seller.id} className="border-b">
+                                <td className="p-3">{seller.id}</td>
+                                <td className="p-3">
+                                  <Tooltip2
+                                    title={`Rating: ${seller.rating} (${seller.review_count})`}
+                                    placement="topLeft"
+                                  >
+                                    <div
+                                      onClick={() =>
+                                        router.push(
+                                          `/seller/${seller.sellerId}`
+                                        )
+                                      }
+                                      className="cursor-pointer flex flex-col"
+                                    >
+                                      <span className="flex items-center gap-1">
+                                        <span
+                                          className={`size-2 rounded-sm ${
+                                            seller.seller_type === "FBA"
+                                              ? "bg-black"
+                                              : seller.seller_type === "FBM"
+                                              ? "bg-[#00E4E4]"
+                                              : "bg-orange-400"
+                                          }`}
+                                        />
+                                        <p className="truncate">
+                                          {seller.seller}
+                                        </p>
+                                      </span>
+                                      <div className="flex">
+                                        {renderStars(seller.rating)}
+                                      </div>
+                                    </div>
+                                  </Tooltip2>
+                                </td>
+                                <td className="p-3">${seller.avgPrice}</td>
+                                <td className="p-3">{seller.won}</td>
+                                <td className="p-3">{seller.lastWon}</td>
+                              </tr>
+                            ))
+                          ) : (
+                            <tr>
+                              <td
+                                colSpan={5}
+                                className="p-3 py-8 text-center text-gray-500"
+                              >
+                                No seller feedback available.
+                              </td>
+                            </tr>
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+
                     {sellerFeedbackData.length > itemsToShow && (
                       <button
                         onClick={handleLoadMore}
-                        className="px-4 py-2 bg-primary text-white rounded hover:bg-primary-hover flex items-center justify-center gap-2"
+                        className="w-full px-4 py-2 bg-primary text-white rounded hover:bg-primary-hover flex items-center justify-center gap-2"
                         disabled={loading}
                       >
                         {loading ? (
@@ -1545,7 +1792,7 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
                 </div>
 
                 {buybox.length > 0 ? (
-                  <div className="flex justify-between items-center mt-6">
+                  <div className="flex flex-col sm:flex-row justify-between items-center mt-6">
                     {isLoadingBuybox ? (
                       <div className="h-40 flex items-center justify-center font-medium">
                         Loading...
@@ -1700,13 +1947,17 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
                     }
                     className="font-bold hover:underline duration-100"
                   >
-                    {product.title}
+                    {highlightText(product.title, debouncedSearch)}
                   </p>
                   {/*                  <p>
                     {"⭐".repeat(product.rating || 0)}{" "}
                     <span className="font-bold">({product.reviews || 0})</span>
                   </p> */}
-                  <p className="text-sm">By ASIN: {product.asin}</p>
+                  <p className="text-sm">
+                    {" "}
+                    By ASIN: {highlightText(product.asin, debouncedSearch)},
+                    UPC: {highlightText(product.upc || "N/A", debouncedSearch)}
+                  </p>
 
                   <p className="text-sm">
                     {product.category} | <SalesStats product={product} />

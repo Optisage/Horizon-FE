@@ -3,6 +3,7 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   /* config options here */
+  productionBrowserSourceMaps: true,
   images: {
     unoptimized: true,
     loader: 'custom',
@@ -65,6 +66,9 @@ silent: !process.env.CI,
 // For all available options, see:
 // https://docs.sentry.io/platforms/javascript/guides/nextjs/manual-setup/
 
+// Pass the auth token
+authToken: process.env.SENTRY_AUTH_TOKEN,
+
 // Upload a larger set of source maps for prettier stack traces (increases build time)
 widenClientFileUpload: true,
 
@@ -76,6 +80,7 @@ tunnelRoute: "/monitoring",
 
 // Automatically tree-shake Sentry logger statements to reduce bundle size
 disableLogger: true,
+
 
 // Enables automatic instrumentation of Vercel Cron Monitors. (Does not yet work with App Router route handlers.)
 // See the following for more information:

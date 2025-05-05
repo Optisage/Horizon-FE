@@ -16,6 +16,7 @@ import SalesStats from "../../dashboard/_components/SalesStats";
 
 export interface HistoryProduct {
   asin: string;
+  upc?: string;
   image?: string;
   title: string;
   rating?: number;
@@ -24,6 +25,10 @@ export interface HistoryProduct {
   timestamp?: string;
   searchTerm?: string;
   vendor?: string;
+}
+
+function escapeRegExp(string: string) {
+  return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
 // Group items by date
@@ -66,6 +71,25 @@ const History = () => {
 
   const router = useRouter();
   const { marketplaceId } = useAppSelector((state) => state?.global);
+
+  const highlightText = (text: string, search: string) => {
+    if (!search.trim()) return text;
+  
+    const regex = new RegExp(`(${escapeRegExp(search)})`, 'gi');
+    const parts = text.split(regex);
+  
+    return parts.map((part, index) => {
+      if (index % 2 === 1) {
+        return (
+          <span key={index} className="bg-green-200">
+            {part}
+          </span>
+        );
+      } else {
+        return part;
+      }
+    });
+  };
 
   // Debounce input to prevent excessive API calls
   useEffect(() => {
@@ -132,6 +156,7 @@ const History = () => {
     ? // eslint-disable-next-line @typescript-eslint/no-explicit-any
       historyData.data.map((item: any) => ({
         asin: item.asin || "N/A",
+        upc: item.upc || "N/A",
         image: item.product_image,
         title: item.product_name || item.search_term || "Unknown search",
         rating: item.rating?.stars || 0,
@@ -147,6 +172,7 @@ const History = () => {
     ? // eslint-disable-next-line @typescript-eslint/no-explicit-any
       productsData.data.map((item: any) => ({
         asin: item.asin || "N/A",
+        upc: item.upc || "N/A",
         image: item.product_image,
         title: item.product_name || "Unknown product",
         rating: item.rating?.stars || 0,
@@ -160,6 +186,12 @@ const History = () => {
   // Use products if search is performed, otherwise use history
   const displayItems = debouncedSearch ? productItems : historyItems;
   const groupedItems = groupByDate(displayItems);
+
+  const marketplaceMap: Record<string, { name: string; flag: string }> = {
+    "1": { name: "US", flag: "us" },
+    "6": { name: "Canada", flag: "ca" },
+    "11": { name: "Mexico", flag: "mx" },
+  };
 
   return (
     <section className="flex flex-col gap-8 min-h-[50dvh] md:min-h-[80dvh]">
@@ -249,7 +281,7 @@ const History = () => {
                         }
                         className="font-bold hover:underline duration-100"
                       >
-                        {item.title}
+                        {highlightText(item.title, debouncedSearch)}
                       </p>
                       {item.rating !== undefined && item.rating > 0 && (
                         <p>
@@ -259,7 +291,10 @@ const History = () => {
                           </span>
                         </p>
                       )}
-                      <p className="text-sm">By ASIN: {item.asin}</p>
+                      <p className="text-sm">
+                        By ASIN: {highlightText(item.asin, debouncedSearch)}, UPC:{" "}
+  {highlightText(item.upc || "N/A", debouncedSearch)}
+                      </p>
                       {item.category && (
                         <p className="text-sm">
                           {item.category === "NaN" ? "N/A" : item.category} |{" "}
@@ -269,6 +304,42 @@ const History = () => {
                       {item.vendor && (
                         <p className="text-sm">Store: {item.vendor}</p>
                       )}
+
+                      <div className="flex gap-2 items-center">
+                        {marketplaceId && marketplaceMap[marketplaceId] && (
+                          <p className="text-sm flex items-center gap-2">
+                            {/* Marketplace: */}
+                            <Image
+                              src={`https://flagcdn.com/w40/${marketplaceMap[marketplaceId].flag}.png`}
+                              alt={marketplaceMap[marketplaceId].name}
+                              className="w-5 h-auto object-cover"
+                              width={20}
+                              height={24}
+                              quality={90}
+                              priority
+                              unoptimized
+                            />
+                            {marketplaceMap[marketplaceId].name}
+                          </p>
+                        )}
+
+                        <span className="size-2 bg-black rounded-full" />
+
+                        {item.timestamp && (
+                          <p className="text-sm">
+                            {/* Date:{" "} */}
+                            {new Intl.DateTimeFormat("en-US", {
+                              year: "numeric",
+                              month: "long",
+                              day: "numeric",
+                              hour: "numeric",
+                              minute: "2-digit",
+                              hour12: true,
+                              timeZone: "UTC",
+                            }).format(new Date(item.timestamp))}
+                          </p>
+                        )}
+                      </div>
                     </div>
                   </div>
                 ))}
