@@ -5,6 +5,8 @@ import { IoCloseOutline } from "react-icons/io5"
 import { RiCheckboxBlankCircleFill } from "react-icons/ri"
 import { useLazyGetAllCountriesQuery, useLazyQuickSearchQuery } from "@/redux/api/quickSearchApi"
 import { message } from "antd"
+import { AmazonProduct } from "./GoCompare"
+import { ProductObj } from "./QuickSearchTable"
 
 interface Store {
     id: string;
@@ -34,11 +36,14 @@ interface Country {
 }
 
 const Modal = ({ isOpen, onClose, setDeck, setSearchRe, setAsin }: {
-    isOpen: boolean
-    onClose: () => void
-    setDeck: React.Dispatch<React.SetStateAction<any>>
-    setSearchRe: React.Dispatch<React.SetStateAction<any>>
-    setAsin: React.Dispatch<React.SetStateAction<any>>
+    isOpen: boolean;
+    onClose: () => void;
+    setDeck: React.Dispatch<React.SetStateAction<string>>;
+    setSearchRe: React.Dispatch<React.SetStateAction<{
+        amazon_product: AmazonProduct | null;
+        opportunities: ProductObj[];
+    }>>;
+    setAsin: React.Dispatch<React.SetStateAction<string>>;
 }) => {
     const [getCountries, { data: countries }] = useLazyGetAllCountriesQuery();
     const [selectedCountry, setSelectedCountry] = useState<Country | undefined>();
@@ -54,15 +59,14 @@ const Modal = ({ isOpen, onClose, setDeck, setSearchRe, setAsin }: {
     }, [countries]);
     const [selectedStores, setSelectedStores] = useState<string[]>([])
     const [asinOrUpc, setAsinOrUpc] = useState("");
-    const [triggerQuickSearch, { data: quickSearchResults, isFetching, isError }] = useLazyQuickSearchQuery();
+    const [triggerQuickSearch, { isFetching }] = useLazyQuickSearchQuery();
     const [isCountryDropdownOpen, setIsCountryDropdownOpen] = useState(false)
     const dropdownRef = useRef<HTMLDivElement>(null);
-    const [messageApi, contextHolder] = message.useMessage();
     const [isSearchTypeDropdown, setIsSearchTypeDropdown] = useState(false);
 
     const searchTypes = [
-        { id: 1, type: 'Normal Search - (No Images, Less wait time)', value:false },
-        { id: 2, type: 'Deep Search - (Longer wait time)', value:true },
+        { id: 1, type: 'Normal Search - (No Images, Less wait time)', value: false },
+        { id: 2, type: 'Deep Search - (Longer wait time)', value: true },
     ]
 
     const [selectedSearchType, setSelectedSearchType] = useState(searchTypes[0]);
@@ -92,7 +96,7 @@ const Modal = ({ isOpen, onClose, setDeck, setSearchRe, setAsin }: {
             console.warn("Missing required fields");
             return;
         }
-        const country_ids = [selectedCountry.id];
+        const country_ids = (String(selectedCountry.id));
         const queue = selectedSearchType.value;
         try {
             setAsin(asinOrUpc)
@@ -101,8 +105,18 @@ const Modal = ({ isOpen, onClose, setDeck, setSearchRe, setAsin }: {
             console.log("Quick Search Response:", response);
             setDeck("quickSearch");
             handleClose();
-        } catch (error : any) {
-            const errorMessage = error?.data?.error || error?.error || "Unknown error";
+        } catch (error: unknown) {
+            let errorMessage = "Unknown error";
+            if (typeof error === "object" && error !== null) {
+                if ("data" in error && typeof (error as any).data === "object") {
+                    errorMessage =
+                        (error as any).data?.error ||
+                        (error as any).error ||
+                        errorMessage;
+                } else if ("message" in error) {
+                    errorMessage = String((error as { message?: string }).message);
+                }
+            }
             console.error("Quick Search failed:", errorMessage);
             message.error(`Quick Search failed: ${errorMessage}`);
         }

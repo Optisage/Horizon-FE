@@ -1,5 +1,10 @@
+import { ProductObj } from "./QuickSearchTable"
+import { AmazonProduct } from "./GoCompare"
+
+type ProductCardType = ProductObj | AmazonProduct;
+
 interface ProductCardProps {
-  product: any
+  product: ProductCardType;
 }
 
 const getCurrencySign = (currency: string | number | undefined): string => {
@@ -19,37 +24,52 @@ const getCurrencySign = (currency: string | number | undefined): string => {
 }
 
 export function ProductCard({ product }: ProductCardProps) {
-  const currencySign = getCurrencySign(product?.store?.country_id || product?.scraped_product?.price?.currency);
-
   if (!product) return null;
+
+  const isAmazonProduct = (p: ProductCardType): p is AmazonProduct => 'asin' in p;
+
+  const imageUrl = isAmazonProduct(product)
+    ? product.image_url
+    : product.scraped_product.image_url;
+
+  const productName = isAmazonProduct(product)
+    ? product.product_name
+    : product.scraped_product.product_name;
+
+  const logoUrl = isAmazonProduct(product)
+    ? product.store.logo
+    : product.scraped_product.store_logo_url;
+
+  const currencySign = isAmazonProduct(product)
+    ? getCurrencySign(product.store.country_id)
+    : getCurrencySign(product.scraped_product.price.currency);
+
+  const price = isAmazonProduct(product)
+    ? product.pricing.current_price
+    : product.scraped_product.price.amount;
 
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden p-2.5 pb-0 h-[326px]">
       <div className="relative h-48 bg-gray-100">
-        {/* <Image
-          src={product.image_url || product?.scraped_product?.image_url}
-          alt={product?.product_name || product?.scraped_product?.product_name}
-          fill
-          className="object-cover rounded-md"
-        /> */}
         <img
-          src={product.image_url || product?.scraped_product?.image_url}
-          alt={product?.product_name || product?.scraped_product?.product_name}
+          src={imageUrl}
+          alt={productName}
           className="object-fill w-full h-full rounded-md"
         />
       </div>
       <div className="mt-3">
-        <h3 className="text-sm text-left mb-1 line-clamp-2">{product?.product_name || product?.scraped_product?.product_name}</h3>
+        <h3 className="text-sm text-left mb-1 line-clamp-2">{productName}</h3>
         <div className="flex items-center justify-between">
-          <span className="font-bold">{currencySign}{product?.pricing?.current_price || product?.scraped_product?.price?.amount}</span>
+          <span className="font-bold">{currencySign}{price}</span>
           <img
-            src={product.store?.logo || product?.scraped_product?.store_logo_url}
-            alt={product.store}
+            src={logoUrl}
+            alt={productName}
             className="object-contain w-10 h-10"
           />
         </div>
       </div>
     </div>
-  )
+  );
 }
+
 

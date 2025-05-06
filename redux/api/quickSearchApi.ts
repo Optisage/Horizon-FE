@@ -15,7 +15,7 @@ export const quickSearchApi = createApi({
             }),
         }),
         quickSearch: builder.query({
-            query: ({ store_names, asin, country_ids, queue}: {store_names: string[]; asin: string; country_ids: string; queue: string}) => {
+            query: ({ store_names, asin, country_ids, queue}: {store_names: string[]; asin: string; country_ids: string; queue: boolean}) => {
                 const storeNamesParam = store_names
                     .map(name => encodeURIComponent(name))
                     .join(',');
