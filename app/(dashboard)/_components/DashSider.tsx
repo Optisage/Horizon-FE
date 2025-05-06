@@ -13,6 +13,7 @@ import {
   SubscriptionsIcon,
   CreditIcon,
   HistoryIcon,
+  GoCompareIcon
 } from "@/public/assets/svg/icons";
 import LogoutModal from "./LogoutModal";
 import { BiChevronRight } from "react-icons/bi";
@@ -26,18 +27,19 @@ import { BsStars } from "react-icons/bs";
 const menuData = [
   { id: "1", path: "/dashboard", label: "Dashboard", icon: DashboardIcon },
   { id: "2", path: "/history", label: "History", icon: HistoryIcon },
-  { id: "3", path: "", label: "Keepa", icon: KeepaIcon, comingSoon: true },
-  { id: "4", path: "/totan", label: "Totan (AI)", icon: BsStars },
+  { id: "3", path: "/go-compare", label: "Go Compare", icon: GoCompareIcon },
+  { id: "5", path: "", label: "Keepa", icon: KeepaIcon, comingSoon: true },
+  { id: "6", path: "/totan", label: "Totan (AI)", icon: BsStars },
 ];
 
 const secondaryMenu = [
-  { id: "5", path: "/settings", label: "Settings", icon: SettingsIcon },
-  { id: "6", path: "", label: "Credit", icon: CreditIcon, comingSoon: true },
+  { id: "7", path: "/settings", label: "Settings", icon: SettingsIcon },
+  { id: "8", path: "", label: "Credit", icon: CreditIcon, comingSoon: true },
 ];
 
 const billingMenu = [
   {
-    id: "7",
+    id: "9",
     path: "/subscriptions",
     label: "Subscriptions",
     icon: SubscriptionsIcon,
