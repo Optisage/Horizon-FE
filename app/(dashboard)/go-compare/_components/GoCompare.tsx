@@ -39,6 +39,54 @@ export type Product = {
     avgDailyPrice?: number
 }
 
+export interface AmazonProduct {
+    id: string;
+    store_id: string;
+    store_name: string;
+    asin: string;
+    sku: string;
+    product_name: string;
+    page_url: string;
+    image_url: string;
+    seller: string;
+    pricing: {
+        current_price: number;
+        original_price: number | null;
+        avg_amazon_90_day_price: number | null;
+        amazon_fees: number | null;
+    };
+    metrics: {
+        sales_rank: number | null;
+        avg_3_month_sales_rank: number | null;
+        number_of_sellers: number | null;
+        monthly_sellers: number | null;
+        amazon_on_listing: boolean;
+        estimated_monthly_sales: number | null;
+    };
+    ratings: {
+        rating: string;
+        rating_display: string;
+        review_count: number;
+    };
+    competition: string;
+    created_at: string;
+    updated_at: string;
+    store: {
+        id: string;
+        name: string;
+        logo: string;
+        marketplace_id: string | null;
+        country_id: number;
+        created_at: {
+            human: string;
+            string: string;
+            timestamp: number;
+            locale: string;
+        };
+    };
+}
+
+
 const GoCompare = () => {
     const [activeTab, setActiveTab] = useState("create");
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -46,12 +94,13 @@ const GoCompare = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
     const [searchRe, setSearchRe] = useState<{
-        amazon_product: any;
+        amazon_product: AmazonProduct | null;
         opportunities: ProductObj[];
     }>({
         amazon_product: null,
         opportunities: [],
     });
+    
 
     const [asin, setAsin] = useState('')
 
@@ -171,7 +220,8 @@ const GoCompare = () => {
                 )}
             </div>
             <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} setDeck={setDeck} setSearchRe={setSearchRe} setAsin={setAsin} />
-            {activeTab === 'create' ? <Create deck={deck} searchRe={searchRe} asin={asin} /> : <SearchHistory />}
+            {activeTab === 'create' ? 
+                <Create deck={deck} searchRe={searchRe} asin={asin} /> : <SearchHistory />}
         </section>
     )
 }
