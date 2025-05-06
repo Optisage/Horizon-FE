@@ -5,7 +5,7 @@ export const InfoCard = ({
   bgColor,
 }: {
   icon: React.ReactNode;
-  title: string;
+  title: React.ReactNode;
   value: string | number;
   bgColor: string;
 }) => (
