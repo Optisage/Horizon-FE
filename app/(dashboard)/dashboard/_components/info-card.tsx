@@ -4,8 +4,8 @@ export const InfoCard = ({
   value,
   bgColor,
 }: {
-  icon: React.ReactNode;
-  title: React.ReactNode;
+  icon: React.ReactNode
+  title: React.ReactNode
   value: string | number;
   bgColor: string;
 }) => (

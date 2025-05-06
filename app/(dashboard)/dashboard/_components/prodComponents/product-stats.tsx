@@ -2,7 +2,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { InfoCard } from "../info-card"
 import { BSRIcon, PriceTagIcon, ProductSalesIcon, MaximumCostIcon, ROIIcon } from "../icons"
-import { Skeleton } from "antd"
+import { Skeleton, Tooltip as AntTooltip } from "antd"
 import type { Product } from "./types"
 import { useState } from "react"
 import Image from "next/image"
@@ -112,7 +112,14 @@ const ProductStats = ({ product, isLoading, buyboxDetails }: ProductStatsProps) 
 
           {/* Quantity Selector */}
           <div className="flex items-center gap-4">
-            <span className="text-sm text-[#676A75] font-medium">Suggested Purchase Quantity</span>
+          <AntTooltip
+              title="The recommended quantity to purchase based on market demand, competition, and inventory turnover rate."
+              placement="top"
+            >
+              <span className="text-sm text-[#676A75] font-medium cursor-help border-b border-dotted border-gray-400">
+                Suggested Purchase Quantity
+              </span>
+            </AntTooltip>
             <p className="border border-input rounded-md px-4 py-1 text-sm">5</p>
           </div>
         </div>
@@ -124,33 +131,87 @@ const ProductStats = ({ product, isLoading, buyboxDetails }: ProductStatsProps) 
           <div className="grid grid-cols-2 gap-3">
             <InfoCard
               icon={<PriceTagIcon />}
-              title="Buy Box Price"
+              title={
+                <AntTooltip
+                  title="The current price of the product in the Amazon Buy Box. This is typically the price most customers see when viewing the product."
+                  placement="top"
+                >
+                  <span className="cursor-help border-b border-dotted border-gray-400">Buy Box Price</span>
+                </AntTooltip>
+              }
               value={`$ ${extra?.buybox_price ?? "0"}`}
               bgColor="#F0FFF0"
             />
             <InfoCard
               icon={<ProductSalesIcon />}
-              title="Estimated Product Sales"
+              title={
+                <AntTooltip
+                  title="The approximate number of units sold per month based on market analysis and sales rank data."
+                  placement="top"
+                >
+                  <span className="cursor-help border-b border-dotted border-gray-400">Estimated Product Sales</span>
+                </AntTooltip>
+              }
               value={`${extra?.monthly_est_product_sales?.toLocaleString() ?? "0"}/month`}
               bgColor="#F0F0FF"
             />
           </div>
 
           <div className="grid grid-cols-2 gap-3">
-            <InfoCard icon={<BSRIcon />} title="BSR" value={extra?.bsr ?? "0"} bgColor="#FFF0FF" />
-            <InfoCard
+          <InfoCard
+              icon={<BSRIcon />}
+              title={
+                <AntTooltip
+                  title="Best Seller Rank (BSR) indicates how well a product is selling in its category. Lower numbers mean better sales performance."
+                  placement="top"
+                >
+                  <span className="cursor-help border-b border-dotted border-gray-400">BSR</span>
+                </AntTooltip>
+              }
+              value={extra?.bsr ?? "0"}
+              bgColor="#FFF0FF"
+            />
+           <InfoCard
               icon={<MaximumCostIcon />}
-              title="Maximum Cost"
+              title={
+                <AntTooltip
+                  title="The highest price you should pay for this product to maintain your target profit margin and ROI."
+                  placement="top"
+                >
+                  <span className="cursor-help border-b border-dotted border-gray-400">Maximum Cost</span>
+                </AntTooltip>
+              }
               value={`$ ${profitabilityCalc?.maxCost ?? "0"}`}
               bgColor="#FFF0F3"
             />
           </div>
+        
 
           <div className="grid grid-cols-2 gap-3">
-            <InfoCard icon={<ROIIcon />} title="ROI" value={`${profitabilityCalc?.roi ?? "0"}%`} bgColor="#F5EBFF" />
+          <InfoCard
+              icon={<ROIIcon />}
+              title={
+                <AntTooltip
+                  title="Return on Investment - The percentage return you'll earn on your initial investment in this product."
+                  placement="top"
+                >
+                  <span className="cursor-help border-b border-dotted border-gray-400">ROI</span>
+                </AntTooltip>
+              }
+              value={`${profitabilityCalc?.roi ?? "0"}%`} 
+              bgColor="#F5EBFF"
+            />
+           
             <InfoCard
               icon={<PriceTagIcon />}
-              title="Profit"
+              title={
+                <AntTooltip
+                  title="The total profit amount in dollars and profit margin percentage you can expect from selling this product."
+                  placement="top"
+                >
+                  <span className="cursor-help border-b border-dotted border-gray-400">Profit</span>
+                </AntTooltip>
+              }
               value={`$ ${profitabilityCalc?.profitAmount ?? "0"} (${profitabilityCalc?.profitMargin?.toFixed(0) ?? "0"}%)`}
               bgColor="#EBFFFE"
             />

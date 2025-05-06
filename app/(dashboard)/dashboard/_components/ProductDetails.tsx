@@ -30,6 +30,7 @@ interface IpAlertState {
 }
 
 
+
 const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
   const dispatch = useDispatch()
   const router = useRouter()
