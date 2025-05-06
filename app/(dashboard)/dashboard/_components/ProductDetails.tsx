@@ -1,83 +1,32 @@
-"use client";
-/* eslint-disable @typescript-eslint/no-explicit-any */
-import { useEffect, useState } from "react";
-import { CustomPagination, SearchInput } from "@/app/(dashboard)/_components";
-import Image from "next/image";
-import { message, Tooltip as AntTooltip, Skeleton, Tooltip as Tooltip2 } from "antd";
-import { evaluate } from "mathjs";
-import { useCallback } from "react";
-import { debounce } from "lodash";
-import { CustomSlider as Slider } from "@/lib/AntdComponents";
-import { InfoCircleOutlined } from "@ant-design/icons";
+"use client"
+import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
+import { useAppSelector } from "@/redux/hooks"
+import { useDispatch } from "react-redux"
+import { setIpAlert, setIpIssues } from "@/redux/slice/globalSlice"
+import { SearchInput } from "@/app/(dashboard)/_components"
+import { useGetBuyboxDetailsQuery, useGetItemQuery, useLazyGetIpAlertQuery } from "@/redux/api/productsApi"
+import dayjs from "dayjs"
 
-import {
-  PieChart,
-  Pie,
-  Cell,
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-} from "recharts";
-import AlertsDrawer from "./AlertsDrawer";
-import { useRouter } from "next/navigation";
-import CustomDatePicker from "./CustomDatePicker";
-// import Loader from "@/utils/loader";
-import SalesStats from "./SalesStats";
+import ProductHeader from "./prodComponents/product-header"
+import ProductInfo from "./prodComponents/product-info"
+import ProfitabilityCalculator from "./prodComponents/profitability-calculator"
+import ProductStats from "./prodComponents/product-stats"
+import OffersSection from "./prodComponents/offers-section"
+import RanksPricesSection from "./prodComponents/ranks-prices-section"
+import BuyBoxAnalysis from "./prodComponents/buy-box-analysis"
+import MarketAnalysis from "./prodComponents/market-analysis"
+import SearchResults from "./prodComponents/search-results"
+import type { IpAlertData } from "./prodComponents/types"
 
-import AmazonIcon from "@/public/assets/svg/amazon-icon.svg";
-import ProductThumbnail from "@/public/assets/images/women-shoes.png";
-import Illustration from "@/public/assets/svg/illustration.svg";
-import UFO from "@/public/assets/svg/ufo.svg";
-import {
-  BSRIcon,
-  PriceTagIcon,
-  ProductSalesIcon,
-  MaximumCostIcon,
-  ROIIcon,
-} from "./icons";
-import { BsArrowUp } from "react-icons/bs";
-import { RxArrowTopRight } from "react-icons/rx";
-import { IoMdRefresh } from "react-icons/io";
-import { HiOutlineUsers } from "react-icons/hi";
-import { MdOutlineInsertChartOutlined } from "react-icons/md";
+interface ProductDetailsProps {
+  asin: string
+  marketplaceId: number
+}
 
-import {
-  useGetItemQuery,
-  useGetBuyboxInfoQuery,
-  useGetBuyboxDetailsQuery,
-  useGetRankingsAndPricesQuery,
-  useSearchItemsQuery,
-  useCalculateProfitablilityMutation,
-  useGetMarketAnalysisQuery,
-  useLazyGetIpAlertQuery,
-} from "@/redux/api/productsApi";
-import { useAppSelector } from "@/redux/hooks";
-import dayjs from "dayjs";
-import ExportToSheetsButton from "@/utils/exportGoogle";
-import { ImSpinner9 } from "react-icons/im";
-import CircularLoader from "@/utils/circularLoader";
-import Link from "next/link";
-
-import { useDispatch } from "react-redux";
-import { setIpAlert, setIpIssues } from "@/redux/slice/globalSlice";
-import { InfoCard } from "./info-card";
-import { FaGoogle } from "react-icons/fa6";
-import {
-  BuyboxItem,
-  MarketAnalysisData,
-  MergedDataPoint,
-  Product,
-  ProductDetailsProps,
-  ProfitabilityData,
-} from "@/types";
-
-// utility functions at the top of the component
-function escapeRegExp(string: string) {
-  return string.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+interface IpAlertState {
+  setIpIssue: number
+  eligibility: boolean
 }
 
 type Tab = "info" | "totan";
@@ -117,12 +66,13 @@ const StatCard = ({
 );
 
 const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
-  const dispatch = useDispatch();
-  const [getIpAlert] = useLazyGetIpAlertQuery();
-  const [ipData, setIpData] = useState<any>(null);
+  const dispatch = useDispatch()
+  const router = useRouter()
+  const [getIpAlert] = useLazyGetIpAlertQuery()
+  const [ipData, setIpData] = useState<IpAlertData | null>(null)
   const { setIpIssue, eligibility } = useAppSelector(
-    (state) => state?.global?.ipAlert || { setIpIssue: 0, eligibility: false }
-  );
+    (state) => (state?.global?.ipAlert as IpAlertState) || { setIpIssue: 0, eligibility: false },
+  )
 
   const [searchValue, setSearchValue] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
@@ -159,110 +109,33 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
 
   const [calculateProfitability] = useCalculateProfitablilityMutation();
 
-  const { data, error, isLoading } = useGetItemQuery({
+  const [searchValue, setSearchValue] = useState("")
+  const [debouncedSearch, setDebouncedSearch] = useState("")
+  const [previousPageToken, setPreviousPageToken] = useState<string | null>(null)
+  const [currentPageToken, setCurrentPageToken] = useState<string | null>(null)
+  const [isPaginationLoading, setIsPaginationLoading] = useState(false)
+  const [nextPageToken, setNextPageToken] = useState<string | null>(null)
+
+  const [statStartDate, setStatStartDate] = useState(dayjs().format("YYYY-MM-DD"))
+  const [statEndDate, setStatEndDate] = useState(dayjs().add(1, "month").format("YYYY-MM-DD"))
+
+  const { data: buyboxDetailsData } = useGetBuyboxDetailsQuery({
     marketplaceId,
     itemAsin: asin,
   });
+  
+  const { data, error, isLoading } = useGetItemQuery({
+    marketplaceId,
+    itemAsin: asin,
+  })
 
-  const product = data?.data;
-  const productLink = product?.amazon_link;
-
-  const lastProfitabilityCalc = product?.last_profitability_calculation;
-  const lastCostPrice = lastProfitabilityCalc?.fba?.costPrice;
-
-  const highlightText = (text: string, search: string) => {
-    if (!search.trim()) return text;
-
-    const regex = new RegExp(`(${escapeRegExp(search)})`, "gi");
-    const parts = text.split(regex);
-
-    return parts.map((part, index) => {
-      if (index % 2 === 1) {
-        return (
-          <span key={index} className="bg-green-200">
-            {part}
-          </span>
-        );
-      } else {
-        return part;
-      }
-    });
-  };
-
+  // Debounce input to prevent excessive API calls
   useEffect(() => {
-    if (lastCostPrice) {
-      setCostPrice(lastCostPrice);
-    }
-  }, [lastCostPrice]);
-  useEffect(() => {
-    return () => {
-      setCostPrice(""); // Clear cost price when component unmounts
-    };
-  }, []);
+    const handler = setTimeout(() => setDebouncedSearch(searchValue), 500)
+    return () => clearTimeout(handler)
+  }, [searchValue])
 
-  // Initialize state with last profitability calculation if available
-  const [fees, setFees] = useState({
-    referralFee: lastProfitabilityCalc?.fba?.referralFee || 0,
-    fulfillmentType: lastProfitabilityCalc?.fba?.fulfillmentType || "FBA",
-    fullfillmentFee: lastProfitabilityCalc?.fba?.fullfillmentFee || 0,
-    closingFee: lastProfitabilityCalc?.fba?.closingFee || 0,
-    storageFee: lastProfitabilityCalc?.fba?.storageFee || 0,
-    prepFee: lastProfitabilityCalc?.fba?.prepFee || 0,
-    shippingFee: lastProfitabilityCalc?.fba?.shippingFee || 0,
-    digitalServicesFee: lastProfitabilityCalc?.fba?.digitalServicesFee || 0,
-    miscFee: lastProfitabilityCalc?.fba?.miscFee || 0,
-  });
-
-  const [totalFees, setTotalFees] = useState(
-    lastProfitabilityCalc?.fba?.totalFees || 0
-  );
-  const [minROI, setMinROI] = useState(lastProfitabilityCalc?.fba?.minRoi || 0);
-  const [ROI, setROI] = useState(lastProfitabilityCalc?.fba?.roi || 0);
-  const [minProfit, setMinProfit] = useState(
-    lastProfitabilityCalc?.fba?.minProfit || 0
-  );
-  const [profitAmount, setProfitAmount] = useState(
-    lastProfitabilityCalc?.fba?.profitAmount || 0
-  );
-  const [maxCost, setMaxCost] = useState(
-    lastProfitabilityCalc?.fba?.maxCost || 0
-  );
-  const [vatOnFees, setVatOnFees] = useState(
-    lastProfitabilityCalc?.fba?.vatOnFees || 0
-  );
-  const [discount, setDiscount] = useState(
-    lastProfitabilityCalc?.fba?.discount || 0
-  );
-  const [profitMargin, setProfitMargin] = useState(
-    lastProfitabilityCalc?.fba?.profitMargin || 0
-  );
-  const [breakEvenPrice, setBreakEvenPrice] = useState(
-    lastProfitabilityCalc?.fba?.breakevenSalePrice || 0
-  );
-  const [estimatedPayout, setEstimatedPayout] = useState(
-    lastProfitabilityCalc?.fba?.estimatedAmzPayout || 0
-  );
-  const [isCalculating, setIsCalculating] = useState(false);
-
-  // Initialize responseData with last calculation
-  const [responseData, setResponseData] = useState({
-    fba: lastProfitabilityCalc?.fba || null,
-    fbm: lastProfitabilityCalc?.fbm || null,
-  });
-
-  const [isSwitching, setIsSwitching] = useState(false);
-
-  // Update UI when fulfillmentType changes
-  useEffect(() => {
-    if (lastProfitabilityCalc) {
-      const data =
-        fulfillmentType === "FBA"
-          ? lastProfitabilityCalc.fba
-          : lastProfitabilityCalc.fbm;
-      updateUIWithData(data);
-    }
-  }, [fulfillmentType, lastProfitabilityCalc]);
-
+  // Fetch IP data
   useEffect(() => {
     const fetchIpData = async () => {
       try {
@@ -271,23 +144,22 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
           marketplaceId,
           statStartDate,
           statEndDate,
-        }).unwrap();
+        }).unwrap()
         dispatch(
           setIpAlert({
-            setIpIssue: response?.data?.ip_analysis?.issues ?? [],
+            setIpIssue: response?.data?.ip_analysis?.issues?.length ?? 0,
             eligibility: response?.data?.eligible_to_sell ?? false,
-          })
-        );
-        dispatch(setIpIssues(response?.data?.ip_analysis?.issues ?? []));
-        // Store full IP data locally
-        setIpData(response.data);
+          }),
+        )
+        dispatch(setIpIssues(response?.data?.ip_analysis?.issues ?? []))
+        setIpData(response.data as IpAlertData)
       } catch (error) {
-        console.error("Error fetching IP alert:", error);
+        console.error("Error fetching IP alert:", error)
       }
-    };
+    }
 
     if (asin && marketplaceId) {
-      fetchIpData();
+      fetchIpData()
     }
   }, [asin, marketplaceId, dispatch, getIpAlert, statStartDate, statEndDate]);
 
@@ -736,180 +608,27 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
     );
 
   if (error)
+  }, [asin, marketplaceId, dispatch, getIpAlert, statStartDate, statEndDate])
+
+  if (error) {
     return (
       <div className="h-[400px] flex flex-col items-center justify-center">
         <h2 className="font-semibold">Error loading product details</h2>
-        <p className=" text-sm">
-          Product might not be available in the selected country
-        </p>
+        <p className="text-sm">Product might not be available in the selected country</p>
       </div>
-    );
-
-  const Loader2 = () => (
-    <div className="flex justify-center items-center py-4">
-      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-    </div>
-  );
-
-  const StrikethroughIfNull = ({
-    value,
-    children,
-  }: {
-    value: string;
-    children: React.ReactNode;
-  }) => {
-    if (value === null) {
-      return <span style={{ textDecoration: "line-through" }}>{children}</span>;
-    }
-    return <>{children}</>;
-  };
-
-  const formatValue = (value: string | number) => {
-    if (value === null || value === undefined) return "N/A";
-    if (typeof value === "number") return `$${value.toFixed(2)}`;
-    return value;
-  };
-
-  interface ChartDataPoint {
-    date: string; // ISO format like "2025-04-01T00:00:00.000"
-    amazon: number | null;
-    buyBox: number | null;
+    )
   }
 
-  type MonthTick = string; // ISO date strings (same as ChartDataPoint['date'])
-
-  const getMonthTicks = (data: ChartDataPoint[]): MonthTick[] => {
-    if (!data?.length) return [];
-
-    const ticks: MonthTick[] = [];
-    let lastMonth: number | null = null;
-
-    data.forEach((item: ChartDataPoint) => {
-      const date = new Date(item.date);
-      const currentMonth: number = date.getMonth();
-
-      if (currentMonth !== lastMonth) {
-        ticks.push(item.date);
-        lastMonth = currentMonth;
-      }
-    });
-
-    return ticks;
-  };
+ 
 
   return (
     <section className="flex flex-col gap-8 min-h-[50dvh] md:min-h-[80dvh]">
       <SearchInput value={searchValue} onChange={setSearchValue} />
 
-      {searchError && (
-        <div className="text-center text-red-500 mt-4">
-          Failed to load products.
-        </div>
-      )}
-
       {/* Show product details when there's no search */}
-      {!debouncedSearch && !isLoading && !error && (
+      {!debouncedSearch && (
         <main className="flex flex-col gap-5">
-          {/* WorkTools */}
-          <div className="flex flex-wrap gap-2 md:gap-4 items-center">
-            <p className="font-semibold">Your WorkTools</p>
-
-            <ExportToSheetsButton
-              productData={{
-                asin: product?.asin,
-                title: product?.product_name,
-                brand: product?.vendor,
-                category: product?.category,
-                upcEan: product?.upc || product?.ean,
-                buyBoxPrice: extra?.buybox_price,
-                lowestFBAPrice: rankings?.lowest_fba,
-                lowestFBMPrice: rankings?.lowest_fbm,
-                amazonPrice: rankings?.amazon,
-                monthlySales: extra?.monthly_est_product_sales,
-                roi: minROI,
-                profitMargin: profitMargin * 100,
-                totalProfit: profitAmount,
-                sellerCount: buybox?.length,
-                fbaSellers: buybox?.filter((s) => s.fulfillmentType === "FBA")
-                  .length,
-                fbmSellers: buybox?.filter((s) => s.fulfillmentType === "FBM")
-                  .length,
-                stockLevels: buybox?.reduce(
-                  (sum, seller) => sum + (seller.stock_quantity || 0),
-                  0
-                ),
-                referralFees: fees.referralFee,
-                fbaFees: fees.fullfillmentFee,
-                totalCost: maxCost,
-              }}
-              currencySymbol="$"
-            />
-            {/** 
-            <button
-              type="button"
-              className="border border-border text-primary px-3 py-2 rounded-xl flex gap-1 items-center font-semibold hover:bg-gray-50 active:scale-95 duration-200 text-sm md:text-base"
-              onClick={handleExport}
-            >
-              Export Data on Google Sheets
-              <RxArrowTopRight className="size-5" />
-            </button>
-*/}
-            <button
-              type="button"
-              onClick={() => {
-                const query = encodeURIComponent(
-                  `${product?.product_name} supplier`
-                );
-                window.open(
-                  `https://www.google.com/search?q=${query}`,
-                  "_blank"
-                );
-              }}
-              className="border border-border text-primary px-3 py-2 rounded-xl hidden md:flex gap-1 items-center font-semibold hover:bg-gray-50 active:scale-95 duration-200 text-sm md:text-base"
-            >
-              Find Supplier
-              <RxArrowTopRight className="size-5" />
-            </button>
-
-            <button
-              type="button"
-              aria-label="Find Supplier"
-              onClick={() => {
-                const query = encodeURIComponent(
-                  `${product?.product_name} supplier`
-                );
-                window.open(
-                  `https://www.google.com/search?q=${query}`,
-                  "_blank"
-                );
-              }}
-              className="size-12 flex md:hidden items-center justify-center rounded-lg bg-[#F3F4F6]"
-            >
-              <FaGoogle className="size-6 text-[#0F172A]" />
-            </button>
-
-            <Link
-              href={productLink}
-              target="_blank"
-              className="size-12 flex md:hidden items-center justify-center rounded-lg bg-[#F3F4F6]"
-            >
-              <Image
-                src={AmazonIcon}
-                alt="Amazon icon"
-                width={32}
-                height={32}
-              />
-            </Link>
-
-            <Link
-              href={productLink}
-              target="_blank"
-              className="border border-border text-primary px-3 py-2 rounded-xl hidden md:flex gap-1 items-center font-semibold hover:bg-gray-50 active:scale-95 duration-200 text-sm md:text-base"
-            >
-              See this Product on Amazon
-              <RxArrowTopRight className="size-5" />
-            </Link>
-          </div>
+          <ProductHeader product={data?.data} />
 
           {/* grid */}
           <div className="grid md:grid-cols-2 gap-5">
@@ -1580,598 +1299,74 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
                   </div>
                 )}
               </div>
+              <ProductInfo
+                product={data?.data}
+                ipData={ipData}
+                eligibility={eligibility}
+                setIpIssue={setIpIssue}
+                asin={asin}
+                marketplaceId={marketplaceId}
+                isLoading={isLoading}
+              />
+              <ProfitabilityCalculator
+                asin={asin}
+                marketplaceId={marketplaceId}
+                product={data?.data}
+                isLoading={isLoading}
+              />
+              <ProductStats product={data?.data}  buyboxDetails={buyboxDetailsData?.data} isLoading={isLoading} />
             </div>
 
             {/* right */}
             <div className="flex flex-col gap-5">
-              {/* Offers Section */}
-              <div className="border border-border flex flex-col rounded-xl max-h-[375px] overflow-x-auto w-full">
-                <div className="flex items-center gap-x-8 gap-y-3 flex-wrap p-3">
-                  <div className="flex items-center gap-6 font-semibold text-gray-700">
-                    <button
-                      type="button"
-                      className={`text-lg flex gap-1 items-center border-b-2 ${
-                        activeTab5 === "offers"
-                          ? "border-black"
-                          : "border-transparent"
-                      }`}
-                      onClick={() => setActiveTab5("offers")}
-                    >
-                      <HiOutlineUsers className="size-5" /> Offers
-                    </button>
-                    <button
-                      type="button"
-                      className={`text-lg flex gap-1 items-center border-b-2 ${
-                        activeTab5 === "feedback"
-                          ? "border-black"
-                          : "border-transparent"
-                      }`}
-                      onClick={() => setActiveTab5("feedback")}
-                    >
-                      <MdOutlineInsertChartOutlined className="size-5" /> Seller
-                      Feedback
-                    </button>
-                  </div>
-                  {/* Legend */}
-                  <div className="flex items-center gap-3">
-                    <div className="flex items-center gap-2 text-sm">
-                      <span className="size-2 rounded-sm bg-black" />
-                      <span>FBA</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-sm">
-                      <span className="size-2 rounded-sm bg-[#00E4E4]" />
-                      <span>FBM</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-sm">
-                      <span className="size-2 rounded-sm bg-orange-400" />
-                      <span>AMZ</span>
-                    </div>
-                  </div>
-                </div>
-
-                {activeTab5 === "offers" ? (
-                  <>
-                    {/* <div className="block overflow-x-auto whitespace-nowrap">
-                      <table className="!w-full table border-collapse text-sm"> */}
-                    <div className="w-full overflow-x-auto">
-                      <table className="min-w-full border-collapse text-sm">
-                        <thead>
-                          <tr className="border-b text-left bg-[#F7F7F7]">
-                            <th className="p-3">S/N</th>
-                            <th className="p-3">Seller</th>
-                            <th className="p-3">Stock</th>
-                            <th className="p-3">Price</th>
-                            <th className="p-3">Buybox Share</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {displayedOffers.length > 0 ? (
-                            displayedOffers.map((offer) => (
-                              <tr key={offer.id} className="border-b">
-                                <td className="p-3">{offer.id}</td>
-                                <td className="py-3">
-                                  <Tooltip2
-                                    title={`Rating: ${offer.rating} (${offer.review_count})`}
-                                    placement="topLeft"
-                                  >
-                                    <div
-                                      onClick={() =>
-                                        router.push(
-                                          `/seller/${offer.seller_id}`
-                                        )
-                                      }
-                                      className="cursor-pointer flex flex-col gap-0.5 flex-grow"
-                                    >
-                                      <span className="flex items-center gap-1">
-                                        <span
-                                          className={`size-2 rounded-sm ${
-                                            offer.seller_type === "FBA"
-                                              ? "bg-black"
-                                              : offer.seller_type === "FBM"
-                                              ? "bg-[#00E4E4]"
-                                              : "bg-orange-400"
-                                          }`}
-                                        />
-                                        <p className="truncate">
-                                          {offer.seller}
-                                        </p>
-                                      </span>
-                                      {offer.leader && (
-                                        <span className="text-xs text-primary block">
-                                          BuyBox Leader
-                                        </span>
-                                      )}
-                                    </div>
-                                  </Tooltip2>
-                                </td>
-                                <td className="p-3">{offer.stock}</td>
-                                <td className="p-3">${offer.price}</td>
-                                <td className="px-3 py-4 flex gap-1 items-center h-full">
-                                  {offer.buyboxShare}
-                                  <div className="w-20 h-2 bg-gray-200 rounded-full">
-                                    <div
-                                      className="h-2 bg-green-500 rounded-full"
-                                      style={{
-                                        width:
-                                          offer.buyboxShare &&
-                                          offer.buyboxShare !== "N/A"
-                                            ? offer.buyboxShare
-                                            : "0",
-                                      }}
-                                    />
-                                  </div>
-                                </td>
-                              </tr>
-                            ))
-                          ) : (
-                            <tr>
-                              <td
-                                colSpan={5}
-                                className="p-3 py-8 text-center text-gray-500"
-                              >
-                                No offers available.
-                              </td>
-                            </tr>
-                          )}
-                        </tbody>
-                      </table>
-                    </div>
-
-                    {/* offers count */}
-                    <div className="p-3 flex gap-2 justify-between items-center w-full">
-                      Total Offers: {offersData.offers.length || 0}
-                      <span>
-                        FBA: {fbaCount} FBM: {fbmCount} AMZ: {amzCount}
-                      </span>
-                    </div>
-                    {offersData.offers.length > itemsToShow && (
-                      <button
-                        onClick={handleLoadMore}
-                        className="w-full px-4 py-2 bg-primary text-white rounded hover:bg-primary-hover flex items-center justify-center gap-2"
-                        disabled={loading}
-                      >
-                        {loading ? (
-                          <>
-                            <ImSpinner9 className="animate-spin size-5" />
-                          </>
-                        ) : (
-                          "Load More"
-                        )}
-                      </button>
-                    )}
-                  </>
-                ) : (
-                  <>
-                    <div className="w-full overflow-x-auto">
-                      <table className="min-w-full border-collapse text-sm">
-                        <thead>
-                          <tr className="border-b text-left bg-[#F7F7F7]">
-                            <th className="p-3">S/N</th>
-                            <th className="p-3">Seller</th>
-                            <th className="p-3">Avg. Price</th>
-                            <th className="p-3">Won</th>
-                            <th className="p-3">Last Won</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {displayedFeedback.length > 0 ? (
-                            displayedFeedback.map((seller) => (
-                              <tr key={seller.id} className="border-b">
-                                <td className="p-3">{seller.id}</td>
-                                <td className="p-3">
-                                  <Tooltip2
-                                    title={`Rating: ${seller.rating} (${seller.review_count})`}
-                                    placement="topLeft"
-                                  >
-                                    <div
-                                      onClick={() =>
-                                        router.push(
-                                          `/seller/${seller.sellerId}`
-                                        )
-                                      }
-                                      className="cursor-pointer flex flex-col"
-                                    >
-                                      <span className="flex items-center gap-1">
-                                        <span
-                                          className={`size-2 rounded-sm ${
-                                            seller.seller_type === "FBA"
-                                              ? "bg-black"
-                                              : seller.seller_type === "FBM"
-                                              ? "bg-[#00E4E4]"
-                                              : "bg-orange-400"
-                                          }`}
-                                        />
-                                        <p className="truncate">
-                                          {seller.seller}
-                                        </p>
-                                      </span>
-                                      <div className="flex">
-                                        {renderStars(seller.rating)}
-                                      </div>
-                                    </div>
-                                  </Tooltip2>
-                                </td>
-                                <td className="p-3">${seller.avgPrice}</td>
-                                <td className="p-3">{seller.won}</td>
-                                <td className="p-3">{seller.lastWon}</td>
-                              </tr>
-                            ))
-                          ) : (
-                            <tr>
-                              <td
-                                colSpan={5}
-                                className="p-3 py-8 text-center text-gray-500"
-                              >
-                                No seller feedback available.
-                              </td>
-                            </tr>
-                          )}
-                        </tbody>
-                      </table>
-                    </div>
-
-                    {sellerFeedbackData.length > itemsToShow && (
-                      <button
-                        onClick={handleLoadMore}
-                        className="w-full px-4 py-2 bg-primary text-white rounded hover:bg-primary-hover flex items-center justify-center gap-2"
-                        disabled={loading}
-                      >
-                        {loading ? (
-                          <>
-                            <ImSpinner9 className="animate-spin size-5" />
-                            {/* Loading... */}
-                          </>
-                        ) : (
-                          "Load More"
-                        )}
-                      </button>
-                    )}
-                  </>
-                )}
-              </div>
-
-              {/* Ranks & Prices Section */}
-              <div className="border border-border p-4 flex flex-col gap-2 rounded-xl">
-                <div className="flex gap-4 items-center justify-between">
-                  <h2 className="text-lg font-semibold">Ranks & Prices</h2>
-                  <button
-                    type="button"
-                    className="flex gap-1.5 items-center px-3 py-1.5 rounded-md hover:bg-gray-100 outline-none active:scale-95 duration-200"
-                    onClick={handleRefetch}
-                    disabled={isLoadingRefetch}
-                  >
-                    <div className={isLoadingRefetch ? "animate-spin" : ""}>
-                      <IoMdRefresh className="size-5" />
-                    </div>
-                    {isRefetching ? "Refreshing..." : "Refresh"}
-                  </button>
-                </div>
-
-                {/* period tabs/filter */}
-                <div className="flex items-center gap-1 mt-4">
-                  {["current", "30", "90", "180", "all"].map((tab) => (
-                    <button
-                      key={tab}
-                      className={`px-3 py-1 rounded-full text-black border capitalize ${
-                        tab === activeTab4
-                          ? "bg-[#E7EBFE] border-transparent"
-                          : "bg-transparent border-border"
-                      }`}
-                      onClick={() =>
-                        setActiveTab4(
-                          tab as "current" | "30" | "90" | "180" | "all"
-                        )
-                      }
-                      disabled={isLoadingRefetch}
-                    >
-                      {tab}
-                    </button>
-                  ))}
-                </div>
-
-                {isLoadingRefetch ? (
-                  <div className="h-40 flex items-center justify-center font-medium">
-                    {isRefetching ? "Refreshing..." : "Loading..."}
-                  </div>
-                ) : rankingsError ? (
-                  <div className="h-40 flex items-center justify-center text-red-500 font-medium">
-                    Error fetching ranks
-                  </div>
-                ) : (
-                  <>
-                    <div className="p-3 bg-[#F6FEFC] rounded-2xl flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <span className="size-12 rounded-2xl bg-[#CEF8F5] text-[#08DCCF] flex items-center justify-center">
-                          <BsArrowUp className="size-6" />
-                        </span>
-                        <span>
-                          <p className="text-black font-semibold">
-                            {ranks.netBBPriceChanges}
-                          </p>
-                          <p>Net BB Price Changes</p>
-                        </span>
-                      </div>
-
-                      <div className="text-black text-xs bg-[#E7EBFE] rounded-full px-1 flex items-center gap-1">
-                        <BsArrowUp className="text-primary size-3" />{" "}
-                        {ranks.changePercent}
-                      </div>
-                    </div>
-
-                    <div className="mt-2 text-sm text-[#595959]">
-                      <div className="flex justify-between py-1">
-                        <span>Buy Box</span>
-                        <span className="font-semibold text-black">
-                          ${ranks.buyBox}
-                        </span>
-                      </div>
-                      <div className="flex justify-between py-1">
-                        <span>Amazon</span>
-                        <span className="font-semibold text-black">
-                          ${ranks.amazon}
-                        </span>
-                      </div>
-                      <div className="flex justify-between py-1">
-                        <span>Lowest FBA</span>
-                        <span className="font-semibold text-black">
-                          ${ranks.lowestFBA}
-                        </span>
-                      </div>
-                      <div className="flex justify-between py-1">
-                        <span>Lowest FBM</span>
-                        <span className="font-semibold text-black">
-                          ${ranks.lowestFBM}
-                        </span>
-                      </div>
-                      <div className="flex justify-between py-1">
-                        <span>Keepa BSR Drops</span>
-                        <span className="font-semibold text-black">
-                          {ranks.keepaBSRDrops}
-                        </span>
-                      </div>
-                      <div className="flex justify-between py-1">
-                        <span>Estimated Sales</span>
-                        <span className="font-semibold text-black">
-                          {ranks.estimatedSales}
-                        </span>
-                      </div>
-                      <div className="flex justify-between py-1">
-                        <span>Est. Time to Sale</span>
-                        <span className="font-semibold text-black">
-                          {ranks.estTimeToSale}
-                        </span>
-                      </div>
-                    </div>
-                  </>
-                )}
-              </div>
-
-              {/*  */}
-
-              {/* Buy Box Analysis */}
-              <div className="p-6 border rounded-lg">
-                <div className="flex flex-col xl:flex-row gap-4 justify-between xl:items-center">
-                  <h2 className="text-lg font-semibold">Buy Box Analysis</h2>
-
-                  <CustomDatePicker isRange onChange={handleDateChange} />
-                </div>
-
-                {buybox.length > 0 ? (
-                  <div className="flex flex-col sm:flex-row justify-between items-center mt-6">
-                    {isLoadingBuybox ? (
-                      <div className="h-40 flex items-center justify-center font-medium">
-                        Loading...
-                      </div>
-                    ) : buyboxError ? (
-                      <div className="h-40 flex items-center justify-center text-red-500 font-medium">
-                        Error loading buybox
-                      </div>
-                    ) : (
-                      <ResponsiveContainer width={250} height={250}>
-                        <PieChart>
-                          <Pie data={pieData} dataKey="value" outerRadius={90}>
-                            {pieData.map((entry, index) => (
-                              <Cell key={index} fill={entry.color} />
-                            ))}
-                          </Pie>
-                        </PieChart>
-                      </ResponsiveContainer>
-                    )}
-
-                    <ul className="max-h-56 overflow-y-scroll py-1">
-                      {pieData.map((entry, index) => (
-                        <li
-                          key={index}
-                          className="flex items-center gap-2 text-sm"
-                        >
-                          <span
-                            className="size-3 rounded-lg"
-                            style={{ backgroundColor: entry.color }}
-                          />
-                          {entry.name} &nbsp; - {entry.value}%
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                ) : (
-                  <div className="p-3 py-24 text-center text-gray-500">
-                    No buybox data available.
-                  </div>
-                )}
-              </div>
-
-              {/* Market Analysis */}
-              <div className="p-6 border rounded-lg">
-                <div className="flex flex-col xl:flex-row gap-4 justify-between xl:items-center">
-                  <h2 className="text-lg font-semibold">Market Analysis</h2>
-                  {/* Date Picker */}
-
-                  <CustomDatePicker isRange onChange={handleDateChange2} />
-                </div>
-
-                <p className="mt-4 text-black">Price</p>
-
-                {chartData.length > 0 ? (
-                  <div className="mt-6 flex flex-col gap-4">
-                    {/* Legend */}
-                    <div className="flex items-center gap-4">
-                      <div className="flex items-center gap-2">
-                        <span className="size-3 rounded-lg bg-[#FF0080]" />
-                        <span>Amazon</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="size-3 rounded-lg bg-[#00E4E4]" />
-                        <span>Buy Box</span>
-                      </div>
-                    </div>
-
-                    {isLoadingMarketAnalysis ? (
-                      <div className="h-40 flex items-center justify-center font-medium">
-                        Loading...
-                      </div>
-                    ) : marketAnalysisError ? (
-                      <div className="h-40 flex items-center justify-center text-red-500 font-medium">
-                        Error loading market analysis data
-                      </div>
-                    ) : (
-                      <ResponsiveContainer width="100%" height={300}>
-                        <LineChart data={chartData}>
-                          <CartesianGrid strokeDasharray="3 3" />
-                          <XAxis
-                            dataKey="date"
-                            tickFormatter={(value) =>
-                              new Date(value).toLocaleString("default", {
-                                month: "short",
-                              })
-                            }
-                            ticks={getMonthTicks(chartData)}
-                            interval={0}
-                            padding={{ left: 20, right: 20 }}
-                          />
-                          <YAxis />
-                          <Tooltip />
-                          <Line
-                            type="monotone"
-                            dataKey="amazon"
-                            stroke="#FF0080"
-                            strokeWidth={2}
-                          />
-                          <Line
-                            type="monotone"
-                            dataKey="buyBox"
-                            stroke="#00E4E4"
-                            strokeWidth={2}
-                          />
-                        </LineChart>
-                      </ResponsiveContainer>
-                    )}
-                  </div>
-                ) : (
-                  <div className="p-3 py-24 text-center text-gray-500">
-                    No market analysis data available.
-                  </div>
-                )}
-              </div>
+              <OffersSection asin={asin} marketplaceId={marketplaceId} router={router} isLoading={isLoading} />
+              <RanksPricesSection asin={asin} marketplaceId={marketplaceId} isLoading={isLoading} />
+              <BuyBoxAnalysis
+                asin={asin}
+                marketplaceId={marketplaceId}
+                statStartDate={statStartDate}
+                statEndDate={statEndDate}
+                onDateChange={(dates: dayjs.Dayjs | [dayjs.Dayjs, dayjs.Dayjs]) => {
+                  if (Array.isArray(dates) && dates.length === 2) {
+                    const [startDate, endDate] = dates
+                    setStatStartDate(startDate.format("YYYY-MM-DD"))
+                    setStatEndDate(endDate.format("YYYY-MM-DD"))
+                  }
+                }}
+                isLoading={isLoading}
+              />
+              <MarketAnalysis asin={asin} marketplaceId={marketplaceId} isLoading={isLoading} />
             </div>
           </div>
         </main>
       )}
 
       {/* Show search results when there's a search and results */}
-      {debouncedSearch && searchData?.data?.items?.length > 0 && (
-        <main className="flex flex-col gap-20 justify-between h-full">
-          <div className="p-2 rounded-lg border border-border flex flex-col divide-y divide-[#E4E4E7]">
-            <span className="bg-[#FAFAFA] px-4 py-3.5">
-              <h4 className="text-neutral-900 font-medium text-base md:text-lg">
-                Product
-              </h4>
-            </span>
-
-            {products.map((product: Product) => (
-              <div
-                key={product.asin}
-                className="hover:bg-gray-50 duration-200 cursor-pointer px-4 py-3.5 flex flex-col sm:flex-row sm:items-center gap-4"
-              >
-                <Image
-                  onClick={() =>
-                    router.push(`/dashboard/product/${product.asin}`)
-                  }
-                  src={product.image || UFO}
-                  alt="product"
-                  className="size-16 rounded-lg object-cover"
-                  width={64}
-                  height={64}
-                  quality={90}
-                  priority
-                  unoptimized
-                />
-                <div className="flex flex-col gap-1 text-[#09090B]">
-                  <p
-                    onClick={() =>
-                      router.push(`/dashboard/product/${product.asin}`)
-                    }
-                    className="font-bold hover:underline duration-100"
-                  >
-                    {highlightText(product.title, debouncedSearch)}
-                  </p>
-                  {/*                  <p>
-                    {"⭐".repeat(product.rating || 0)}{" "}
-                    <span className="font-bold">({product.reviews || 0})</span>
-                  </p> */}
-                  <p className="text-sm">
-                    {" "}
-                    By ASIN: {highlightText(product.asin, debouncedSearch)},
-                    UPC: {highlightText(product.upc || "N/A", debouncedSearch)}
-                  </p>
-
-                  <p className="text-sm">
-                    {product.category} | <SalesStats product={product} />
-                  </p>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          <CustomPagination
-            onNext={() => {
-              setIsPaginationLoading(true);
-              setCurrentPageToken(nextPageToken);
-            }}
-            onPrevious={() => {
-              setIsPaginationLoading(true);
-              setCurrentPageToken(previousPageToken);
-            }}
-            hasNext={!!nextPageToken}
-            hasPrevious={!!previousPageToken}
-          />
-        </main>
+      {debouncedSearch && (
+        <SearchResults
+          debouncedSearch={debouncedSearch}
+          marketplaceId={marketplaceId}
+          currentPageToken={currentPageToken}
+          setNextPageToken={setNextPageToken}
+          setPreviousPageToken={setPreviousPageToken}
+          router={router}
+          isLoading={isPaginationLoading}
+          onPagination={{
+            onNext: () => {
+              setIsPaginationLoading(true)
+              setCurrentPageToken(nextPageToken)
+            },
+            onPrevious: () => {
+              setIsPaginationLoading(true)
+              setCurrentPageToken(previousPageToken)
+            },
+            hasNext: !!nextPageToken,
+            hasPrevious: !!previousPageToken,
+          }}
+        />
       )}
-
-      {/* Show "no results" when there's a search but no results */}
-      {debouncedSearch &&
-        searchData?.data?.items?.length === 0 &&
-        !isLoadingSearch && (
-          <div className="flex flex-col gap-6 justify-center items-center py-16">
-            <Image
-              src={UFO}
-              alt="UFO"
-              className="sm:size-[200px]"
-              width={200}
-              height={200}
-            />
-            <span className="text-center space-y-1">
-              <h4 className="text-neutral-900 font-bold text-xl md:text-2xl">
-                No products found for &quot;{debouncedSearch}&quot;
-              </h4>
-              <p className="text-[#52525B] text-sm">
-                Try a different search term.
-              </p>
-            </span>
-          </div>
-        )}
     </section>
-  );
-};
+  )
+}
 
-export default ProductDetails;
-
+export default ProductDetails
