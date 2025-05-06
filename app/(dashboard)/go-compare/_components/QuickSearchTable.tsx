@@ -1,4 +1,5 @@
 "use client";
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useDraggable } from "@dnd-kit/core"
 import { useState } from "react"
 import TablePagination from "./TablePagination"
@@ -50,14 +51,7 @@ function DraggableRow({ product, onRowClick }: { product: ProductObj; onRowClick
     data: { product },
   })
 
-  const style = transform
-    ? {
-      transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`,
-      zIndex: isDragging ? 1000 : 1,
-      opacity: isDragging ? 0.5 : 1,
-      position: isDragging ? "relative" : "static",
-    }
-    : undefined
+ 
 
   const amazonPrice = (product.scraped_product.price.amount + product.price_difference).toFixed(2)
   const formattedAmazonPrice = `${product.scraped_product.price.currency} ${amazonPrice}`
@@ -67,7 +61,16 @@ function DraggableRow({ product, onRowClick }: { product: ProductObj; onRowClick
   return (
     <tr
       ref={setNodeRef}
-      style={style}
+      style={
+        transform
+          ? {
+              transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`,
+              zIndex: isDragging ? 1000 : 1,
+              opacity: isDragging ? 0.5 : 1,
+              position: isDragging ? "relative" : "static" as "static" | "relative",
+            }
+          : undefined
+      }
       {...listeners}
       {...attributes}
       onClick={() => onRowClick(product)}
