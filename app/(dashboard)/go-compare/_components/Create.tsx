@@ -10,14 +10,15 @@ import { Droppable } from "./dnd/Droppable"
 import Overlay from "./dnd/Overlay";
 import { TbListSearch } from "react-icons/tb";
 import ProductInformation from "./ProductInformation";
+import { AmazonProduct } from "./GoCompare";
 
 interface CreateProps {
-  deck: string
+  deck: string;
   searchRe: {
-    amazon_product: any;
+    amazon_product: AmazonProduct | null; // Allow amazon_product to be null
     opportunities: ProductObj[];
-  },
-  asin: string
+  };
+  asin: string;
 }
 
 const Create = ({ deck, searchRe, asin }: CreateProps) => {
@@ -74,7 +75,7 @@ const Create = ({ deck, searchRe, asin }: CreateProps) => {
     "Sales rank": String(searchRe?.amazon_product?.metrics?.sales_rank ?? '-'),
     "Avg. 3 month sales rank": String(searchRe?.amazon_product?.metrics?.avg_3_month_sales_rank ?? '-'),
     ASIN: asin,
-    "Number of sellers": String(searchRe?.amazon_product?.metrics?.number_of_sellers ?? '-'),
+    "Number of sellers": String(searchRe?.amazon_product?.metrics?.number_of_sellers ?? 'Not available'),
     "Amazon on listing": searchRe?.amazon_product?.metrics?.amazon_on_listing ? 'YES' : 'NO',
   }
 
@@ -104,7 +105,9 @@ const Create = ({ deck, searchRe, asin }: CreateProps) => {
               <div className="flex-1">
                 <p className="font-semibold">Comparison Workspace</p>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2.5">
-                  <ProductCard product={searchRe?.amazon_product} />
+                  {searchRe.amazon_product && (
+                    <ProductCard product={searchRe.amazon_product} />
+                  )}
                   <Droppable
                     id="droppable-area"
                     className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden p-2.5 h-[326px]"

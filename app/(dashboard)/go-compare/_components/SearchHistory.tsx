@@ -1,7 +1,6 @@
 "use client";
 import { useState } from "react";
 import TablePagination from "./TablePagination";
-import Image from "next/image";
 import { useSearchHistoryQuery } from "@/redux/api/quickSearchApi";
 import Loader from "@/utils/loader";
 
@@ -19,6 +18,44 @@ export interface SearchRecord {
     results: number
 }
 
+interface CreatedAt {
+    human: string;
+    string: string;
+    timestamp: number;
+    locale: string;
+}
+
+interface Store {
+    id: string;
+    name: string;
+    logo: string;
+    marketplace_id: string | null;
+    country_id: number;
+    created_at: CreatedAt;
+}
+
+interface Country {
+    id: number;
+    name: string;
+    flag: string;
+    short_code: string;
+    created_at: CreatedAt;
+}
+
+interface ApiSearchResponseItem {
+    id: string;
+    user_id: number;
+    query: string;
+    amazon_price: string;
+    number_of_results: number;
+    type_of_search: string;
+    created_at: CreatedAt;
+    updated_at: string;
+    store: Store;
+    country: Country;
+    marketplace: string | null;
+}
+
 const tableColumns = [
     { label: 'ASIN or UPC', key: 'asinOrUpc' },
     { label: 'Type of search', key: 'searchType' },
@@ -34,7 +71,7 @@ const SearchHistory = () => {
     const [perPage, setPerPage] = useState(10)
 
     const { data, isLoading, isError } = useSearchHistoryQuery({});
-    const searchData: SearchRecord[] = data?.data.map((item: any) => ({
+    const searchData: SearchRecord[] = data?.data.map((item: ApiSearchResponseItem) => ({
         id: item.id,
         asinOrUpc: item.query,
         searchType: item.type_of_search,
@@ -92,7 +129,7 @@ const SearchHistory = () => {
                                             <div className="flex items-center gap-2">
                                                 <div
                                                     className="w-4 h-4 mt-2"
-                                                    dangerouslySetInnerHTML={{ __html: record.countryFlag.trim() || ""}}
+                                                    dangerouslySetInnerHTML={{ __html: record.countryFlag.trim() || "" }}
                                                 />
                                                 <span className="font-normal">{record.country}</span>
                                             </div>
