@@ -55,7 +55,7 @@ function DraggableRow({ product, onRowClick }: { product: ProductObj; onRowClick
       transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`,
       zIndex: isDragging ? 1000 : 1,
       opacity: isDragging ? 0.5 : 1,
-      position: isDragging ? "relative" : ("static" as any),
+      position: isDragging ? "relative" : "static",
     }
     : undefined
 
@@ -98,7 +98,7 @@ function DraggableRow({ product, onRowClick }: { product: ProductObj; onRowClick
       <td className="px-4 py-1.5 text-sm">{formattedProfitMargin}</td>
       <td className="px-4 py-1.5 text-sm">{formattedROI}</td>
       <td className="px-4 py-1.5 text-sm">{product.potential_monthly_sales}</td>
-      <td className="px-4 py-1.5 text-sm">-</td>
+      <td className="px-4 py-1.5 text-sm">N/A</td>
     </tr>
   )
 }

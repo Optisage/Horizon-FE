@@ -8,7 +8,7 @@ interface ActiveProductProp {
 const Overlay = ({ activeProduct }: ActiveProductProp) => {
     if (!activeProduct) return null;
 
-    const { scraped_product, store, roi_percentage } = activeProduct;
+    const { scraped_product, store} = activeProduct;
     return (
         <div className="bg-white rounded-lg shadow-lg border border-gray-200 p-3 w-64 cursor-pointer">
             <div className="flex items-center gap-2">
