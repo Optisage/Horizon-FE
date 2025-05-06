@@ -147,13 +147,13 @@ const GoCompare = () => {
                     <div className="absolute z-10 bg-white rounded-lg shadow-2xl w-[290px] mt-1" ref={dropdownRef}>
                         <div className="px-5 pt-2">
                             <button onClick={toggleDropdown} className="">
-                                <IoCloseOutline size={22} className="text-[#737379]" />
+                                <IoCloseOutline size={22} className="text-gray-500" />
                             </button>
-                            <p className="text-[#737379] text-xs mt-1">Create</p>
+                            <p className="text-gray-500 text-xs mt-1">Create</p>
                         </div>
 
                         <div className="p-2 pt-0">
-                            <button onClick={toggleModal} className="flex items-center justify-between rounded-md w-full p-2 hover:bg-[#f6f6f7] text-[#737379]">
+                            <button onClick={toggleModal} className="flex items-center justify-between rounded-md w-full p-2 hover:bg-gray-100 text-gray-500">
                                 <div className="flex items-center gap-2.5">
                                     <CiSearch size={20} />
                                     <span className="text-sm">Quick Search (100 products)</span>
@@ -161,7 +161,7 @@ const GoCompare = () => {
                                 <GoChevronRight />
                             </button>
 
-                            <button className="flex items-center justify-between rounded-md w-full p-2 hover:bg-[#f6f6f7] text-[#737379]">
+                            <button className="flex items-center justify-between rounded-md w-full p-2 hover:bg-gray-100 text-gray-300">
                                 <div className="flex items-center gap-2.5">
                                     <CiSearch size={20} />
                                     <span className="text-sm">Search Seller Products</span>
@@ -169,7 +169,7 @@ const GoCompare = () => {
                                 <GoChevronRight />
                             </button>
 
-                            <button className="flex items-center justify-between rounded-md w-full p-2 hover:bg-[#f6f6f7] text-[#737379]">
+                            <button className="flex items-center justify-between rounded-md w-full p-2 hover:bg-gray-100 text-gray-300">
                                 <div className="flex items-center gap-2.5">
                                     <LuScanSearch size={20} />
                                     <span className="text-sm">Search with Filter</span>
@@ -177,7 +177,7 @@ const GoCompare = () => {
                                 <GoChevronRight />
                             </button>
 
-                            <button className="flex items-center justify-between rounded-md w-full p-2 hover:bg-[#f6f6f7] text-[#737379]">
+                            <button className="flex items-center justify-between rounded-md w-full p-2 hover:bg-gray-100 text-gray-300">
                                 <div className="flex items-center gap-2.5">
                                     {<ScanBrandsIcon />}
                                     <span className="text-sm">Scan Brands</span>
@@ -185,7 +185,7 @@ const GoCompare = () => {
                                 <GoChevronRight />
                             </button>
 
-                            <button className="flex items-center justify-between rounded-md w-full p-2 hover:bg-[#f6f6f7] text-[#737379]">
+                            <button className="flex items-center justify-between rounded-md w-full p-2 hover:bg-gray-100 text-gray-300">
                                 <div className="flex items-center gap-2.5">
                                     <Image src={wanted} alt="icon" />
                                     <span className="text-sm">Scan Most Wanted</span>
@@ -195,8 +195,8 @@ const GoCompare = () => {
                         </div>
 
                         <div className="py-1 px-2 border-t border-[#e1e0e5]">
-                            <div className="pt-2 px-3 text-xs text-[#737379]">Add</div>
-                            <button className="flex items-center justify-between rounded-md w-full p-2 hover:bg-[#f6f6f7] text-[#737379]">
+                            <div className="pt-2 px-3 text-xs text-gray-500">Add</div>
+                            <button className="flex items-center justify-between rounded-md w-full p-2 hover:bg-gray-100 text-gray-300">
                                 <div className="flex items-center gap-2.5">
                                     <CiImport size={20} />
                                     <span className="text-sm">Import Product Codes</span>
@@ -206,8 +206,8 @@ const GoCompare = () => {
                         </div>
 
                         <div className="py-1 px-2 border-t border-[#e1e0e5]">
-                            <div className="pt-2 px-3 text-xs text-[#737379]">Modify</div>
-                            <button onClick={() => setActiveTab("searchHistory")} className="flex items-center justify-between rounded-md w-full p-2 hover:bg-[#f6f6f7] text-[#737379]">
+                            <div className="pt-2 px-3 text-xs text-gray-500">Modify</div>
+                            <button onClick={() => setActiveTab("searchHistory")} className="flex items-center justify-between rounded-md w-full p-2 hover:bg-gray-100 text-gray-500">
                                 <div className="flex items-center gap-2.5">
                                     <MdOutlineHistory size={20} />
                                     <span className="text-sm">Search History</span>

@@ -110,7 +110,7 @@ const Create = ({ deck, searchRe, asin }: CreateProps) => {
                   )}
                   <Droppable
                     id="droppable-area"
-                    className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden p-2.5 h-[326px]"
+                    className={selectedProducts.length > 0 ? `` : 'bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden p-2.5 h-[326px]'}
                   >
                     {selectedProducts.length > 0 ? (
                       <div className="relative h-full">
