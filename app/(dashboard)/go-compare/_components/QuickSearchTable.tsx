@@ -1,4 +1,5 @@
 "use client";
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useDraggable } from "@dnd-kit/core"
 import { useState } from "react"
 import TablePagination from "./TablePagination"

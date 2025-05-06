@@ -1,4 +1,5 @@
 "use client";
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import Image from "next/image"
 import deckIco from "@/public/assets/svg/gocompare/deck.svg"
 import { useEffect, useState } from "react"

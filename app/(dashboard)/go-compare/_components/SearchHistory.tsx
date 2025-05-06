@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import TablePagination from "./TablePagination";
-import Image from "next/image";
+//import Image from "next/image";
 import { useSearchHistoryQuery } from "@/redux/api/quickSearchApi";
 import Loader from "@/utils/loader";
 
