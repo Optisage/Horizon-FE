@@ -14,6 +14,7 @@ import {
 import Cookies from "js-cookie";
 import { getExtensionToken } from "@/utils/extension";
 export const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
+export const testUrl = process.env.NEXT_PUBLIC_BASE_TEST_URL;
 
 export const baseQueryWithOutToken = fetchBaseQuery({
   baseUrl: `${baseUrl}`,
@@ -70,12 +71,30 @@ export const baseQuery = fetchBaseQuery({
   },
 });
 
+export const testQuery = fetchBaseQuery({
+  baseUrl: `${testUrl}`,
+  prepareHeaders: (headers) => {
+    const token = Cookies.get('optisage-token');
+    if (token) {
+      headers.set('authorization', `Bearer ${token}`)
+    }
+    headers.set('Accept', 'application/json')
+    return headers
+  },
+
+})
+
 export const baseQueryWithInterceptor: BaseQueryFn<
   string | FetchArgs,
   unknown,
   FetchBaseQueryError
 > = async (args, api, extraOptions) => {
-  const result: any = await baseQuery(args, api, extraOptions);
+
+  const isTestServer = typeof args === 'object' && args !== null && 'meta' in args && typeof (args as any).meta === 'object' && (args as any).meta?.server === 'test';
+
+  const selectedBaseQuery = isTestServer ? testQuery : baseQuery;
+  const result: any = await selectedBaseQuery(args, api, extraOptions);
+
   api.dispatch(updateIdleTimeOut());
   // Check if the response has a status code of 401
   if (result.error?.status === 401 || result.error?.originalStatus === 401) {

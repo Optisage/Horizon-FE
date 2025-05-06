@@ -8,6 +8,7 @@ import { persistReducer, persistStore } from "redux-persist";
 import storage from "redux-persist/lib/storage";
 import { userApi } from "./api/user";
 import { sellerApi } from "./api/sellerApi";
+import { quickSearchApi } from "./api/quickSearchApi";
 
 
 const rootReducer = combineReducers({
@@ -18,6 +19,7 @@ const rootReducer = combineReducers({
   [subscriptionApi.reducerPath]: subscriptionApi.reducer,
   [productsApi.reducerPath]: productsApi.reducer,
   [sellerApi.reducerPath]: sellerApi.reducer,
+  [quickSearchApi.reducerPath]: quickSearchApi.reducer,
 
 });
 
@@ -40,7 +42,7 @@ export const store = configureStore({
       userApi.middleware,
       productsApi.middleware,
       sellerApi.middleware,
-     
+      quickSearchApi.middleware
     ]),
 });
 
