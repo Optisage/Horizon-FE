@@ -16,7 +16,7 @@ import { AmazonProduct } from "./GoCompare";
 interface CreateProps {
   deck: string;
   searchRe: {
-    amazon_product: AmazonProduct | null; // Allow amazon_product to be null
+    amazon_product: AmazonProduct | null; 
     opportunities: ProductObj[];
   };
   asin: string;
