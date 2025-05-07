@@ -16,7 +16,7 @@ import { AmazonProduct } from "./GoCompare";
 interface CreateProps {
   deck: string;
   searchRe: {
-    amazon_product: AmazonProduct | null; // Allow amazon_product to be null
+    amazon_product: AmazonProduct | null; 
     opportunities: ProductObj[];
   };
   asin: string;
@@ -111,7 +111,7 @@ const Create = ({ deck, searchRe, asin }: CreateProps) => {
                   )}
                   <Droppable
                     id="droppable-area"
-                    className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden p-2.5 h-[326px]"
+                    className={selectedProducts.length > 0 ? `` : 'bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden p-2.5 h-[326px]'}
                   >
                     {selectedProducts.length > 0 ? (
                       <div className="relative h-full">
