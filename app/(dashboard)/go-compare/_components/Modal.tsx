@@ -68,6 +68,7 @@ const Modal = ({ isOpen, onClose, setDeck, setSearchRe, setAsin }: {
     const searchTypes = [
         { id: 1, type: 'Normal Search - (No Images, Less wait time)', value: false },
         { id: 2, type: 'Deep Search - (Longer wait time)', value: true },
+        // { id: 3, type: 'Pro Search - (Longer wait time)', value: true },
     ]
 
     const [selectedSearchType, setSelectedSearchType] = useState(searchTypes[0]);
