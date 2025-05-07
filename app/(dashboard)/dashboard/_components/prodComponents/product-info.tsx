@@ -1,6 +1,6 @@
 "use client"
 import Image from "next/image"
-import { Skeleton } from "antd"
+import { Skeleton, Tooltip as AntTooltip } from "antd"
 import ProductThumbnail from "@/public/assets/images/women-shoes.png"
 import Illustration from "@/public/assets/svg/illustration.svg"
 import AlertsDrawer from "../AlertsDrawer"
@@ -50,7 +50,9 @@ const ProductInfo = ({
           <p>
             ASIN: {product?.asin}, UPC: {product?.upc}
           </p>
+          <AntTooltip title="Average customer rating out of 5 stars. Higher ratings typically indicate better customer satisfaction and product quality." placement="top">
           <p>⭐⭐⭐⭐⭐ {product?.rating?.stars}/5</p>
+          </AntTooltip>
         </div>
       </div>
 
