@@ -45,10 +45,18 @@ const ProductInfo = ({
         </div>
 
         <div className="text-[#595959]">
-          <h2 className="text-[#252525] font-semibold text-lg md:text-xl">{product?.product_name}</h2>
+          <AntTooltip title="Product name as displayed on Amazon marketplace." placement="top">
+            <h2 className="text-[#252525] font-semibold text-lg md:text-xl">{product?.product_name}</h2>
+          </AntTooltip>
           <p>{product?.category}</p>
           <p>
-            ASIN: {product?.asin}, UPC: {product?.upc}
+            <AntTooltip title="Amazon Standard Identification Number - A unique product identifier assigned by Amazon." placement="top">
+              <span>ASIN: {product?.asin}</span>
+            </AntTooltip>
+            , 
+            <AntTooltip title="Universal Product Code - A barcode symbology used for tracking trade items in stores." placement="top">
+              <span> UPC: {product?.upc}</span>
+            </AntTooltip>
           </p>
           <AntTooltip title="Average customer rating out of 5 stars. Higher ratings typically indicate better customer satisfaction and product quality." placement="top">
           <p>⭐⭐⭐⭐⭐ {product?.rating?.stars}/5</p>
