@@ -50,11 +50,12 @@ export function ProductCard({ product }: ProductCardProps) {
 
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden p-2.5 pb-0 h-[326px]">
-      <div className="relative h-48 bg-gray-100">
+      <div className="relative h-48 ">
         <img
           src={imageUrl}
           alt={productName}
-          className="object-fill w-full h-full rounded-md"
+          className="object-contain w-full h-full rounded-md object-center"
+
         />
       </div>
       <div className="mt-3">

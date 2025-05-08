@@ -119,15 +119,21 @@ const OffersSection = ({ asin, marketplaceId, router, isLoading }: OffersSection
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2 text-sm">
             <span className="size-2 rounded-sm bg-black" />
-            <span>FBA</span>
+            <Tooltip2 title="Fulfillment by Amazon - Products stored, packed and shipped by Amazon" placement="top">
+              <span>FBA</span>
+            </Tooltip2>
           </div>
           <div className="flex items-center gap-2 text-sm">
             <span className="size-2 rounded-sm bg-[#00E4E4]" />
-            <span>FBM</span>
+            <Tooltip2 title="Fulfillment by Merchant - Products shipped directly by the seller" placement="top">
+              <span>FBM</span>
+            </Tooltip2>
           </div>
           <div className="flex items-center gap-2 text-sm">
             <span className="size-2 rounded-sm bg-orange-400" />
-            <span>AMZ</span>
+            <Tooltip2 title="Sold directly by Amazon as the retailer" placement="top">
+              <span>AMZ</span>
+            </Tooltip2>
           </div>
         </div>
       </div>
@@ -172,10 +178,20 @@ const OffersSection = ({ asin, marketplaceId, router, isLoading }: OffersSection
                           </div>
                         </Tooltip2>
                       </td>
-                      <td className="p-3">{offer.stock}</td>
-                      <td className="p-3">${offer.price}</td>
+                      <td className="p-3">
+                        <Tooltip2 title={`Current available inventory quantity: ${offer.stock} units`} placement="top">
+                          <span>{offer.stock}</span>
+                        </Tooltip2>
+                      </td>
+                      <td className="p-3">
+                        <Tooltip2 title={`Current listing price: $${offer.price}`} placement="top">
+                          <span>${offer.price}</span>
+                        </Tooltip2>
+                      </td>
                       <td className="px-3 py-4 flex gap-1 items-center h-full">
-                        {offer.buyboxShare}
+                        <Tooltip2 title={`This seller wins the Buy Box position ${offer.buyboxShare} of the time`} placement="top">
+                          <span>{offer.buyboxShare}</span>
+                        </Tooltip2>
                         <div className="w-20 h-2 bg-gray-200 rounded-full">
                           <div
                             className="h-2 bg-green-500 rounded-full"
@@ -200,9 +216,21 @@ const OffersSection = ({ asin, marketplaceId, router, isLoading }: OffersSection
 
           {/* offers count */}
           <div className="p-3 flex gap-2 justify-between items-center w-full">
-            Total Offers: {offersData.offers.length || 0}
+            <Tooltip2 title={`Total number of sellers offering this product: ${offersData.offers.length || 0}`} placement="top">
+              <span>Total Offers: {offersData.offers.length || 0}</span>
+            </Tooltip2>
             <span>
-              FBA: {fbaCount} FBM: {fbmCount} AMZ: {amzCount}
+              <Tooltip2 title="Number of Fulfillment by Amazon offers" placement="top">
+                <span>FBA: {fbaCount}</span>
+              </Tooltip2>
+              {" "}
+              <Tooltip2 title="Number of Fulfillment by Merchant offers" placement="top">
+                <span>FBM: {fbmCount}</span>
+              </Tooltip2>
+              {" "}
+              <Tooltip2 title="Number of direct Amazon offers" placement="top">
+                <span>AMZ: {amzCount}</span>
+              </Tooltip2>
             </span>
           </div>
           {offersData.offers.length > itemsToShow && (
@@ -257,13 +285,24 @@ const OffersSection = ({ asin, marketplaceId, router, isLoading }: OffersSection
                               />
                               <p className="truncate">{seller.seller}</p>
                             </span>
-                            <div className="flex">{renderStars(seller.rating)}</div>
                           </div>
                         </Tooltip2>
                       </td>
-                      <td className="p-3">${seller.avgPrice}</td>
-                      <td className="p-3">{seller.won}</td>
-                      <td className="p-3">{seller.lastWon}</td>
+                      <td className="p-3">
+                        <Tooltip2 title={`Average listing price: $${seller.avgPrice}`} placement="top">
+                          <span>${seller.avgPrice}</span>
+                        </Tooltip2>
+                      </td>
+                      <td className="p-3">
+                        <Tooltip2 title={`Percentage of time won the Buy Box: ${seller.won}`} placement="top">
+                          <span>{seller.won}</span>
+                        </Tooltip2>
+                      </td>
+                      <td className="p-3">
+                        <Tooltip2 title={`Last won the Buy Box on: ${seller.lastWon}`} placement="top">
+                          <span>{seller.lastWon}</span>
+                        </Tooltip2>
+                      </td>
                     </tr>
                   ))
                 ) : (
@@ -276,22 +315,6 @@ const OffersSection = ({ asin, marketplaceId, router, isLoading }: OffersSection
               </tbody>
             </table>
           </div>
-
-          {sellerFeedbackData.length > itemsToShow && (
-            <button
-              onClick={handleLoadMore}
-              className="w-full px-4 py-2 bg-primary text-white rounded hover:bg-primary-hover flex items-center justify-center gap-2"
-              disabled={loading}
-            >
-              {loading ? (
-                <>
-                  <ImSpinner9 className="animate-spin size-5" />
-                </>
-              ) : (
-                "Load More"
-              )}
-            </button>
-          )}
         </>
       )}
     </div>

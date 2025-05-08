@@ -5,6 +5,7 @@ import Image from "next/image"
 import Link from "next/link"
 import AmazonIcon from "@/public/assets/svg/amazon-icon.svg"
 import ExportToSheetsButton from "@/utils/exportGoogle"
+import { Tooltip as AntTooltip } from "antd"
 /* eslint-disable @typescript-eslint/no-explicit-any */
 interface ProductHeaderProps {
   product: any
@@ -36,16 +37,20 @@ const ProductHeader = ({
 
   return (
     <div className="flex flex-wrap gap-2 md:gap-4 items-center">
-      <p className="font-semibold">Your WorkTools</p>
+      <AntTooltip title="Tools to help you with product research and analysis" placement="top">
+        <p className="font-semibold">Your WorkTools</p>
+      </AntTooltip>
 
-      <ExportToSheetsButton
-        productData={{
-          asin: product?.asin,
-          title: product?.product_name,
-          brand: product?.vendor,
-          category: product?.category,
-          upcEan: product?.upc || product?.ean,
-          buyBoxPrice: buyboxWinnerPrice,
+      <AntTooltip title="Export this product's information to a Google Sheet for further analysis or record keeping" placement="top">
+        <span>
+          <ExportToSheetsButton
+            productData={{
+              asin: product?.asin,
+              title: product?.product_name,
+              brand: product?.vendor,
+              category: product?.category,
+              upcEan: product?.upc || product?.ean,
+              buyBoxPrice: buyboxWinnerPrice,
           lowestFBAPrice: lowestFBAPrice,
           lowestFBMPrice: lowestFBMPrice,
           monthlySales: monthlySales,
@@ -54,50 +59,60 @@ const ProductHeader = ({
           fbmSellers: fbmSellers,
           stockLevels: stockLevels,
           // Add other fields as needed
-        }}
-        currencySymbol="$"
-      />
+            }}
+            currencySymbol="$"
+          />
+        </span>
+      </AntTooltip>
 
-      <button
-        type="button"
-        onClick={() => {
-          const query = encodeURIComponent(`${product?.product_name} supplier`)
-          window.open(`https://www.google.com/search?q=${query}`, "_blank")
-        }}
-        className="border border-border text-primary px-3 py-2 rounded-xl hidden md:flex gap-1 items-center font-semibold hover:bg-gray-50 active:scale-95 duration-200 text-sm md:text-base"
-      >
-        Find Supplier
-        <RxArrowTopRight className="size-5" />
-      </button>
+      <AntTooltip title="Search Google for suppliers of this product to explore sourcing options" placement="top">
+        <button
+          type="button"
+          onClick={() => {
+            const query = encodeURIComponent(`${product?.product_name} supplier`)
+            window.open(`https://www.google.com/search?q=${query}`, "_blank")
+          }}
+          className="border border-border text-primary px-3 py-2 rounded-xl hidden md:flex gap-1 items-center font-semibold hover:bg-gray-50 active:scale-95 duration-200 text-sm md:text-base"
+        >
+          Find Supplier
+          <RxArrowTopRight className="size-5" />
+        </button>
+      </AntTooltip>
 
-      <button
-        type="button"
-        aria-label="Find Supplier"
-        onClick={() => {
-          const query = encodeURIComponent(`${product?.product_name} supplier`)
-          window.open(`https://www.google.com/search?q=${query}`, "_blank")
-        }}
-        className="size-12 flex md:hidden items-center justify-center rounded-lg bg-[#F3F4F6]"
-      >
-        <FaGoogle className="size-6 text-[#0F172A]" />
-      </button>
+      <AntTooltip title="Search Google for suppliers of this product" placement="top">
+        <button
+          type="button"
+          aria-label="Find Supplier"
+          onClick={() => {
+            const query = encodeURIComponent(`${product?.product_name} supplier`)
+            window.open(`https://www.google.com/search?q=${query}`, "_blank")
+          }}
+          className="size-12 flex md:hidden items-center justify-center rounded-lg bg-[#F3F4F6]"
+        >
+          <FaGoogle className="size-6 text-[#0F172A]" />
+        </button>
+      </AntTooltip>
 
-      <Link
-        href={productLink}
-        target="_blank"
-        className="size-12 flex md:hidden items-center justify-center rounded-lg bg-[#F3F4F6]"
-      >
-        <Image src={AmazonIcon || "/placeholder.svg"} alt="Amazon icon" width={32} height={32} />
-      </Link>
+      <AntTooltip title="View this product on Amazon's website" placement="top">
+        <Link
+          href={productLink}
+          target="_blank"
+          className="size-12 flex md:hidden items-center justify-center rounded-lg bg-[#F3F4F6]"
+        >
+          <Image src={AmazonIcon || "/placeholder.svg"} alt="Amazon icon" width={32} height={32} />
+        </Link>
+      </AntTooltip>
 
-      <Link
-        href={productLink}
-        target="_blank"
-        className="border border-border text-primary px-3 py-2 rounded-xl hidden md:flex gap-1 items-center font-semibold hover:bg-gray-50 active:scale-95 duration-200 text-sm md:text-base"
-      >
-        See this Product on Amazon
-        <RxArrowTopRight className="size-5" />
-      </Link>
+      <AntTooltip title="Visit the product's Amazon page to see listings, reviews, and more details" placement="top">
+        <Link
+          href={productLink}
+          target="_blank"
+          className="border border-border text-primary px-3 py-2 rounded-xl hidden md:flex gap-1 items-center font-semibold hover:bg-gray-50 active:scale-95 duration-200 text-sm md:text-base"
+        >
+          See this Product on Amazon
+          <RxArrowTopRight className="size-5" />
+        </Link>
+      </AntTooltip>
     </div>
   )
 }
