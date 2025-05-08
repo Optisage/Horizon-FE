@@ -42,6 +42,7 @@ const ProductStats = ({ product, isLoading, buyboxDetails }: ProductStatsProps) 
         >
           Product info
         </button>
+        {/** 
         <button
           type="button"
           onClick={() => setActiveTab("totan")}
@@ -51,9 +52,11 @@ const ProductStats = ({ product, isLoading, buyboxDetails }: ProductStatsProps) 
         >
           Totan (AI)
         </button>
+        */}
       </div>
 
       {/* Totan */}
+      {/** */}
       {activeTab === "totan" && (
         <div className="border border-border rounded-xl shadow-sm p-4 flex flex-col gap-3">
           {/* Score and Info Row */}
