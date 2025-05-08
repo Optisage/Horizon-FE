@@ -1,6 +1,6 @@
 "use client"
 import { useState } from "react"
-import { Skeleton } from "antd"
+import { Skeleton, Tooltip as AntTooltip } from "antd"
 import { IoMdRefresh } from "react-icons/io"
 import { BsArrowUp } from "react-icons/bs"
 import { useGetRankingsAndPricesQuery } from "@/redux/api/productsApi"
@@ -53,6 +53,24 @@ const RanksPricesSection = ({ asin, marketplaceId, isLoading }: RanksPricesSecti
     estTimeToSale: rankings?.estimated_time_to_sale ?? "N/A",
   }
 
+  // Helper function to get the tooltip for timeframe buttons
+  const getTimeframeTooltip = (tab: string) => {
+    switch(tab) {
+      case "current":
+        return "Current data at this moment";
+      case "30":
+        return "Data from the last 30 days";
+      case "90":
+        return "Data from the last 90 days";
+      case "180":
+        return "Data from the last 180 days";
+      case "all":
+        return "All historical data available";
+      default:
+        return "";
+    }
+  };
+
   if (isLoading || (isLoadingRankings && !isRefetching)) {
     return <RanksPricesSectionSkeleton />
   }
@@ -61,32 +79,35 @@ const RanksPricesSection = ({ asin, marketplaceId, isLoading }: RanksPricesSecti
     <div className="border border-border p-4 flex flex-col gap-2 rounded-xl">
       <div className="flex gap-4 items-center justify-between">
         <h2 className="text-lg font-semibold">Ranks & Prices</h2>
-        <button
-          type="button"
-          className="flex gap-1.5 items-center px-3 py-1.5 rounded-md hover:bg-gray-100 outline-none active:scale-95 duration-200"
-          onClick={handleRefetch}
-          disabled={isLoadingRefetch}
-        >
-          <div className={isLoadingRefetch ? "animate-spin" : ""}>
-            <IoMdRefresh className="size-5" />
-          </div>
-          {isRefetching ? "Refreshing..." : "Refresh"}
-        </button>
+        <AntTooltip title="Refresh data to get the latest rankings and prices" placement="top">
+          <button
+            type="button"
+            className="flex gap-1.5 items-center px-3 py-1.5 rounded-md hover:bg-gray-100 outline-none active:scale-95 duration-200"
+            onClick={handleRefetch}
+            disabled={isLoadingRefetch}
+          >
+            <div className={isLoadingRefetch ? "animate-spin" : ""}>
+              <IoMdRefresh className="size-5" />
+            </div>
+            {isRefetching ? "Refreshing..." : "Refresh"}
+          </button>
+        </AntTooltip>
       </div>
 
       {/* period tabs/filter */}
       <div className="flex items-center gap-1 mt-4">
         {["current", "30", "90", "180", "all"].map((tab) => (
-          <button
-            key={tab}
-            className={`px-3 py-1 rounded-full text-black border capitalize ${
-              tab === activeTab ? "bg-[#E7EBFE] border-transparent" : "bg-transparent border-border"
-            }`}
-            onClick={() => setActiveTab(tab as "current" | "30" | "90" | "180" | "all")}
-            disabled={isLoadingRefetch}
-          >
-            {tab}
-          </button>
+          <AntTooltip key={tab} title={getTimeframeTooltip(tab)} placement="top">
+            <button
+              className={`px-3 py-1 rounded-full text-black border capitalize ${
+                tab === activeTab ? "bg-[#E7EBFE] border-transparent" : "bg-transparent border-border"
+              }`}
+              onClick={() => setActiveTab(tab as "current" | "30" | "90" | "180" | "all")}
+              disabled={isLoadingRefetch}
+            >
+              {tab}
+            </button>
+          </AntTooltip>
         ))}
       </div>
 
@@ -104,44 +125,76 @@ const RanksPricesSection = ({ asin, marketplaceId, isLoading }: RanksPricesSecti
                 <BsArrowUp className="size-6" />
               </span>
               <span>
-                <p className="text-black font-semibold">{ranks.netBBPriceChanges}</p>
+                <AntTooltip title={`Net change in Buy Box price: ${ranks.netBBPriceChanges}`} placement="top">
+                  <p className="text-black font-semibold">{ranks.netBBPriceChanges}</p>
+                </AntTooltip>
                 <p>Net BB Price Changes</p>
               </span>
             </div>
 
-            <div className="text-black text-xs bg-[#E7EBFE] rounded-full px-1 flex items-center gap-1">
-              <BsArrowUp className="text-primary size-3" /> {ranks.changePercent}
-            </div>
+            <AntTooltip title={`Percentage change in Buy Box price: ${ranks.changePercent}`} placement="top">
+              <div className="text-black text-xs bg-[#E7EBFE] rounded-full px-1 flex items-center gap-1">
+                <BsArrowUp className="text-primary size-3" /> {ranks.changePercent}
+              </div>
+            </AntTooltip>
           </div>
 
           <div className="mt-2 text-sm text-[#595959]">
             <div className="flex justify-between py-1">
-              <span>Buy Box</span>
-              <span className="font-semibold text-black">${ranks.buyBox}</span>
+              <AntTooltip title="The current price of the product in the Buy Box - the featured offer shown on the product detail page." placement="top">
+                <span>Buy Box</span>
+              </AntTooltip>
+              <AntTooltip title={`Current Buy Box price: $${ranks.buyBox}`} placement="top">
+                <span className="font-semibold text-black">${ranks.buyBox}</span>
+              </AntTooltip>
             </div>
             <div className="flex justify-between py-1">
-              <span>Amazon</span>
-              <span className="font-semibold text-black">${ranks.amazon}</span>
+              <AntTooltip title="The price of the product when sold directly by Amazon as the seller." placement="top">
+                <span>Amazon</span>
+              </AntTooltip>
+              <AntTooltip title={`Current Amazon price: $${ranks.amazon}`} placement="top">
+                <span className="font-semibold text-black">${ranks.amazon}</span>
+              </AntTooltip>
             </div>
             <div className="flex justify-between py-1">
-              <span>Lowest FBA</span>
-              <span className="font-semibold text-black">${ranks.lowestFBA}</span>
+              <AntTooltip title="The lowest price offered by third-party sellers using Fulfillment by Amazon (FBA)." placement="top">
+                <span>Lowest FBA</span>
+              </AntTooltip>
+              <AntTooltip title={`Lowest FBA price: $${ranks.lowestFBA}`} placement="top">
+                <span className="font-semibold text-black">${ranks.lowestFBA}</span>
+              </AntTooltip>
             </div>
             <div className="flex justify-between py-1">
-              <span>Lowest FBM</span>
-              <span className="font-semibold text-black">${ranks.lowestFBM}</span>
+              <AntTooltip title="The lowest price offered by third-party sellers using Fulfillment by Merchant (FBM)." placement="top">
+                <span>Lowest FBM</span>
+              </AntTooltip>
+              <AntTooltip title={`Lowest FBM price: $${ranks.lowestFBM}`} placement="top">
+                <span className="font-semibold text-black">${ranks.lowestFBM}</span>
+              </AntTooltip>
             </div>
             <div className="flex justify-between py-1">
-              <span>Keepa BSR Drops</span>
-              <span className="font-semibold text-black">{ranks.keepaBSRDrops}</span>
+              <AntTooltip title="The number of times a product's Best Seller Rank has significantly dropped, indicating increased sales velocity, according to Keepa tracking data." placement="top">
+                <span>Keepa BSR Drops</span>
+              </AntTooltip>
+              <AntTooltip title={`Keepa Best Seller Rank drops: ${ranks.keepaBSRDrops}`} placement="top">
+                <span className="font-semibold text-black">{ranks.keepaBSRDrops}</span>
+              </AntTooltip>
             </div>
             <div className="flex justify-between py-1">
-              <span>Estimated Sales</span>
-              <span className="font-semibold text-black">{ranks.estimatedSales}</span>
+              <AntTooltip title="The projected number of units this product sells per month based on sales rank and category." placement="top">
+                <span>Estimated Sales</span>
+              </AntTooltip>
+              <AntTooltip title={`Estimated monthly sales: ${ranks.estimatedSales} units`} placement="top">
+                <span className="font-semibold text-black">{ranks.estimatedSales}</span>
+              </AntTooltip>
             </div>
             <div className="flex justify-between py-1">
-              <span>Est. Time to Sale</span>
-              <span className="font-semibold text-black">{ranks.estTimeToSale}</span>
+              <AntTooltip title="The estimated time it would take to sell through inventory based on current sales velocity." placement="top">
+                <span>Est. Time to Sale</span>
+              </AntTooltip>
+              <AntTooltip title={`Estimated time to sell inventory: ${ranks.estTimeToSale}`} placement="top">
+                <span className="font-semibold text-black">{ranks.estTimeToSale}</span>
+              </AntTooltip>
             </div>
           </div>
         </>
