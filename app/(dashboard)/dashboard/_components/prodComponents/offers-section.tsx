@@ -74,19 +74,7 @@ const OffersSection = ({ asin, marketplaceId, router, isLoading }: OffersSection
     }, 2000)
   }
 
-  const renderStars = (rating: number | string) => {
-    const validRating = Math.floor(Number(rating) ?? 0)
-
-    if (validRating <= 0) {
-      return <span className="text-gray-400">N/A</span>
-    }
-
-    return Array.from({ length: validRating }, (_, index) => (
-      <span key={index} className="text-[#FFD700] text-lg">
-        ★
-      </span>
-    ))
-  }
+  
 
   if (isLoading || isLoadingBuyboxDetails) {
     return <OffersSectionSkeleton />
