@@ -5,7 +5,7 @@
 import { useState, useEffect, useCallback } from "react"
 import type React from "react"
 
-import { message, Skeleton } from "antd"
+import { message, Skeleton, Tooltip as AntTooltip } from "antd"
 import { debounce } from "lodash"
 import { evaluate } from "mathjs"
 import { CustomSlider as Slider } from "@/lib/AntdComponents"
@@ -372,7 +372,9 @@ const ProfitabilityCalculator = ({ asin, marketplaceId, product, isLoading }: Pr
                   <div className="space-y-2">
                     <div className="flex justify-between text-sm">
                       <StrikethroughIfNull value={minROI}>
+                      <AntTooltip title="Minimum Return on Investment - The lowest acceptable percentage return on your investment for this product to be considered profitable." placement="top">
                         <span className="text-[#595959]">Min. ROI</span>
+                        </AntTooltip>
                       </StrikethroughIfNull>
                       <StrikethroughIfNull value={minROI}>
                         <span className="font-semibold text-black">{minROI || 0}%</span>
@@ -380,14 +382,18 @@ const ProfitabilityCalculator = ({ asin, marketplaceId, product, isLoading }: Pr
                     </div>
                     <div className="flex justify-between text-sm">
                       <StrikethroughIfNull value={minProfit}>
+                          <AntTooltip title="Minimum Profit - The smallest dollar amount of profit you should accept when selling this product." placement="top">
                         <span className="text-[#595959]">Min. Profit</span>
+                        </AntTooltip>
                       </StrikethroughIfNull>
                       <StrikethroughIfNull value={minProfit}>
                         <span className="font-semibold text-black">${minProfit.toFixed(2)}</span>
                       </StrikethroughIfNull>
                     </div>
                     <div className="border-t pt-2 font-semibold flex justify-between">
+                    <AntTooltip title="The highest price you should pay for this product to maintain your target profit margin and ROI." placement="top">
                       <span>Maximum Cost</span>
+                      </AntTooltip>
                       <span>${maxCost.toFixed(2)}</span>
                     </div>
                   </div>
@@ -395,21 +401,49 @@ const ProfitabilityCalculator = ({ asin, marketplaceId, product, isLoading }: Pr
 
                 {activeTab === "totalFees" && (
                   <div className="space-y-2">
-                    {Object.entries(fees).map(([key, value]) => (
+                    {Object.entries(fees).map(([key, value]) => {
+                      // Define tooltips for fee types
+                      const feeTooltips: Record<string, string> = {
+                        referralFee: "Amazon's commission for selling your product on their platform, usually a percentage of the sale price.",
+                        fulfillmentType: "The method used to fulfill orders (FBA: Fulfilled by Amazon, FBM: Fulfilled by Merchant).",
+                        fullfillmentFee: "Fee charged by Amazon for picking, packing, and shipping your product (FBA only).",
+                        closingFee: "Fixed fee applied to certain product categories.",
+                        storageFee: "Fee charged for storing your product in Amazon's warehouses.",
+                        prepFee: "Fee for any product preparation services provided by Amazon.",
+                        shippingFee: "Cost to ship the product to the customer (primarily for FBM).",
+                        digitalServicesFee: "Fee related to digital services or content.",
+                        miscFee: "Any additional or miscellaneous fees not covered by other categories."
+                      };
+
+                      // Format the key for display
+                      const formattedKey = key.replace(/([A-Z])/g, " $1").replace(/^./, (str) => str.toUpperCase());
+
+                      return(
                       <div key={key} className="flex justify-between text-sm">
                         <StrikethroughIfNull value={value}>
-                          <span className="text-[#595959]">
-                            {key.replace(/([A-Z])/g, " $1").replace(/^./, (str) => str.toUpperCase())}
-                          </span>
+                        {feeTooltips[key] ? (
+                                          <AntTooltip title={feeTooltips[key]} placement="top">
+                                            <span className="text-[#595959] cursor-help border-b border-dotted border-gray-400">
+                                              {formattedKey}
+                                            </span>
+                                          </AntTooltip>
+                                        ) : (
+                                          <span className="text-[#595959]">
+                                            {formattedKey}
+                                          </span>
+                                        )}
                         </StrikethroughIfNull>
                         <StrikethroughIfNull value={value}>
                           <span className="font-semibold text-black">{formatValue(value)}</span>
                         </StrikethroughIfNull>
                       </div>
-                    ))}
+                      )
+})}
 
                     <div className="border-t pt-2 font-semibold flex justify-between">
+                    <AntTooltip title="The sum of all Amazon fees and expenses associated with selling this product." placement="top">
                       <span>Total Fees</span>
+                      </AntTooltip>
                       <span>${totalFees.toFixed(2)}</span>
                     </div>
                   </div>
@@ -420,7 +454,9 @@ const ProfitabilityCalculator = ({ asin, marketplaceId, product, isLoading }: Pr
               <div className="flex flex-col gap-2 text-[#595959]">
                 <div className="flex justify-between text-sm">
                   <StrikethroughIfNull value={vatOnFees}>
+                  <AntTooltip title="Tax charged on the sale of your product that you need to collect and remit to tax authorities." placement="top">
                     <span>Sales Tax</span>
+                    </AntTooltip>
                   </StrikethroughIfNull>
                   <StrikethroughIfNull value={vatOnFees}>
                     <span className="font-semibold text-black">{formatValue(vatOnFees)}</span>
@@ -428,7 +464,9 @@ const ProfitabilityCalculator = ({ asin, marketplaceId, product, isLoading }: Pr
                 </div>
                 <div className="flex justify-between text-sm">
                   <StrikethroughIfNull value={discount}>
+                    <AntTooltip title="Any price reduction applied to the product, which reduces your overall revenue." placement="top">
                     <span>Discount</span>
+                    </AntTooltip>
                   </StrikethroughIfNull>
                   <StrikethroughIfNull value={discount}>
                     <span className="font-semibold text-black">{formatValue(discount)}</span>
@@ -436,7 +474,9 @@ const ProfitabilityCalculator = ({ asin, marketplaceId, product, isLoading }: Pr
                 </div>
                 <div className="flex justify-between text-sm">
                   <StrikethroughIfNull value={profitMargin}>
+                  <AntTooltip title="The percentage of profit relative to the sale price after all costs have been deducted." placement="top">
                     <span>Profit Margin</span>
+                    </AntTooltip>
                   </StrikethroughIfNull>
                   <StrikethroughIfNull value={profitMargin}>
                     <span className="font-semibold text-black">{profitMargin.toFixed(2)}%</span>
@@ -444,7 +484,9 @@ const ProfitabilityCalculator = ({ asin, marketplaceId, product, isLoading }: Pr
                 </div>
                 <div className="flex justify-between text-sm">
                   <StrikethroughIfNull value={breakEvenPrice}>
+                     <AntTooltip title="The minimum price you need to sell the product for to cover all costs without making or losing money." placement="top">
                     <span>Breakeven Sale Price</span>
+                    </AntTooltip>
                   </StrikethroughIfNull>
                   <StrikethroughIfNull value={breakEvenPrice}>
                     <span className="font-semibold text-black">${breakEvenPrice.toFixed(2)}</span>
@@ -452,7 +494,9 @@ const ProfitabilityCalculator = ({ asin, marketplaceId, product, isLoading }: Pr
                 </div>
                 <div className="flex justify-between text-sm">
                   <StrikethroughIfNull value={estimatedPayout}>
+                  <AntTooltip title="The approximate amount Amazon will pay you after deducting all fees and commissions." placement="top">
                     <span>Estimated Amz. Payout</span>
+                    </AntTooltip>
                   </StrikethroughIfNull>
                   <StrikethroughIfNull value={estimatedPayout}>
                     <span className="font-semibold text-black">${estimatedPayout.toFixed(2)}</span>
