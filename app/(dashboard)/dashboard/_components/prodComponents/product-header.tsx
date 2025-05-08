@@ -8,9 +8,28 @@ import ExportToSheetsButton from "@/utils/exportGoogle"
 /* eslint-disable @typescript-eslint/no-explicit-any */
 interface ProductHeaderProps {
   product: any
+  buyboxWinnerPrice: number;
+  lowestFBAPrice: number;
+  lowestFBMPrice: number;
+  monthlySales: number;
+  sellerCount: number;
+  fbaSellers: number;
+  fbmSellers: number;
+  stockLevels: number;
 }
 
-const ProductHeader = ({ product }: ProductHeaderProps) => {
+const ProductHeader = ({ 
+  product,
+  buyboxWinnerPrice,
+  lowestFBAPrice,
+  lowestFBMPrice,
+  monthlySales,
+  sellerCount,
+  fbaSellers,
+  fbmSellers,
+  stockLevels
+
+ }: ProductHeaderProps) => {
   if (!product) return null
 
   const productLink = product?.amazon_link
@@ -26,6 +45,14 @@ const ProductHeader = ({ product }: ProductHeaderProps) => {
           brand: product?.vendor,
           category: product?.category,
           upcEan: product?.upc || product?.ean,
+          buyBoxPrice: buyboxWinnerPrice,
+          lowestFBAPrice: lowestFBAPrice,
+          lowestFBMPrice: lowestFBMPrice,
+          monthlySales: monthlySales,
+          sellerCount: sellerCount,
+          fbaSellers: fbaSellers,
+          fbmSellers: fbmSellers,
+          stockLevels: stockLevels,
           // Add other fields as needed
         }}
         currencySymbol="$"
