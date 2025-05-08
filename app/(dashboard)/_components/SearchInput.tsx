@@ -8,7 +8,7 @@ interface SearchInputProps {
 }
 
 const SearchInput: React.FC<SearchInputProps> = ({
-  placeholder = "Search for Products on Amazon (For example; Nivea for Men Invisible or ASIN: B0093HZW6I)",
+  placeholder = "Search for products on Amazon (For best results use specific keywords, UPC Code, ASIN or ISBN code)",
   value,
   onChange,
   className = "",

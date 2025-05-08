@@ -1,4 +1,5 @@
 "use client"
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { useAppSelector } from "@/redux/hooks"
@@ -59,6 +60,29 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
     itemAsin: asin,
   })
 
+  const buyboxWinner = buyboxDetailsData?.data?.buybox?.find(
+    (offer: any) => offer.is_buybox_winner
+  );
+  const buyboxWinnerPrice = buyboxWinner?.listing_price || 0;
+  
+  const fbaOffers = buyboxDetailsData?.data?.buybox?.filter(
+    (offer: any) => offer.seller_type === "FBA"
+  );
+  const fbmOffers = buyboxDetailsData?.data?.buybox?.filter(
+    (offer: any) => offer.seller_type === "FBM"
+  );
+  
+  const lowestFBAPrice = fbaOffers?.length
+    ? Math.min(...fbaOffers.map((o: any) => o.listing_price))
+    : 0;
+  
+  const lowestFBMPrice = fbmOffers?.length
+    ? Math.min(...fbmOffers.map((o: any) => o.listing_price))
+    : 0;
+  
+  const monthlySales =
+    data?.data?.sales_statistics?.estimated_sales_per_month?.amount;
+
   // Debounce input to prevent excessive API calls
   useEffect(() => {
     const handler = setTimeout(() => setDebouncedSearch(searchValue), 500)
@@ -111,7 +135,20 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
       {/* Show product details when there's no search */}
       {!debouncedSearch && (
         <main className="flex flex-col gap-5">
-          <ProductHeader product={data?.data} />
+          <ProductHeader
+           product={data?.data} 
+           buyboxWinnerPrice={buyboxWinnerPrice}
+           lowestFBAPrice={lowestFBAPrice}
+           lowestFBMPrice={lowestFBMPrice}
+           monthlySales={monthlySales}
+           sellerCount={buyboxDetailsData?.data?.buybox?.length || 0}
+           fbaSellers={fbaOffers?.length || 0}
+           fbmSellers={fbmOffers?.length || 0}
+           stockLevels={buyboxDetailsData?.data?.buybox?.reduce(
+             (sum: number, seller: any) => sum + (seller.stock_quantity || 0),
+             0
+           )}
+           />
 
           {/* grid */}
           <div className="grid md:grid-cols-2 gap-5">
