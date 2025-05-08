@@ -13,6 +13,7 @@ import {
   SubscriptionsIcon,
   CreditIcon,
   HistoryIcon,
+  //GoCompareIcon
 } from "@/public/assets/svg/icons";
 import LogoutModal from "./LogoutModal";
 import { BiChevronRight } from "react-icons/bi";
@@ -20,22 +21,25 @@ import { RiVerifiedBadgeFill } from "react-icons/ri";
 import { useAppSelector } from "@/redux/hooks";
 import { useDispatch } from "react-redux";
 import { logout } from "@/redux/slice/authSlice";
+import { BsStars } from "react-icons/bs";
 
 // Sidebar data
 const menuData = [
   { id: "1", path: "/dashboard", label: "Dashboard", icon: DashboardIcon },
   { id: "2", path: "/history", label: "History", icon: HistoryIcon },
-  { id: "3", path: "", label: "Keepa", icon: KeepaIcon, comingSoon: true },
+  //{ id: "3", path: "/go-compare", label: "Go Compare", icon: GoCompareIcon },
+  { id: "5", path: "", label: "Keepa", icon: KeepaIcon, comingSoon: true },
+  { id: "6", path: "", label: "Totan (AI)", icon: BsStars, comingSoon: true },
 ];
 
 const secondaryMenu = [
-  { id: "4", path: "/settings", label: "Settings", icon: SettingsIcon },
-  { id: "5", path: "", label: "Credit", icon: CreditIcon, comingSoon: true },
+  { id: "7", path: "/settings", label: "Settings", icon: SettingsIcon },
+  { id: "8", path: "", label: "Credit", icon: CreditIcon, comingSoon: true },
 ];
 
 const billingMenu = [
   {
-    id: "6",
+    id: "9",
     path: "/subscriptions",
     label: "Subscriptions",
     icon: SubscriptionsIcon,
@@ -72,7 +76,12 @@ const DashSider = () => {
             : "text-[#787891] hover:bg-white"
         }`}
       >
-        <item.icon className="size-5 mr-3 text-inherit" />
+        <item.icon
+          className={`size-5 mr-3 text-inherit ${
+            item.id === "4" ? "rotate-90" : ""
+          }`}
+        />
+
         <span>{item.label}</span>
         {item.comingSoon && (
           <span className="ml-auto bg-primary text-white text-xs px-1.5 py-0.5 rounded-md">

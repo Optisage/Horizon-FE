@@ -25,6 +25,36 @@ img {
 }
 
 .morope-font {
-  font-family: 'Manrope ', sans-serif;
+  font-family: "Manrope ", sans-serif;
+}
+
+/* chatAnimations */
+@keyframes bounceY {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+.bounce-dot {
+  display: inline-block;
+  font-size: 1.5rem;
+  animation: bounceY 0.6s infinite;
+}
+
+.animation-delay-0 {
+  animation-delay: 0s;
+}
+.animation-delay-200 {
+  animation-delay: 0.2s;
+}
+.animation-delay-200 {
+  animation-delay: 0.3s;
+}
+.animation-delay-400 {
+  animation-delay: 0.4s;
 }
 
