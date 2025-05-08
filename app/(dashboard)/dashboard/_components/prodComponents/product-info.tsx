@@ -55,7 +55,7 @@ const ProductInfo = ({
             </AntTooltip>
             , 
             <AntTooltip title="Universal Product Code - A barcode symbology used for tracking trade items in stores." placement="top">
-              <span> UPC: {product?.upc}</span>
+              <span> UPC: {product?.upc || "N/A"}</span>
             </AntTooltip>
           </p>
           <AntTooltip title="Average customer rating out of 5 stars. Higher ratings typically indicate better customer satisfaction and product quality." placement="top">
