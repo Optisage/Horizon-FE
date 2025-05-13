@@ -337,6 +337,7 @@ const SalesStats = ({ product }: { product: Product }) => {
                   <span className="font-bold">({product.reviews || 0})</span>
                 </p> */}
                 <p>By ASIN: {product.asin}</p>
+                <p>By UPC: {product.upc || "N/A"}</p>
               </span>
             </div>
 
