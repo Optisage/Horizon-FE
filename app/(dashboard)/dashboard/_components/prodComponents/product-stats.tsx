@@ -4,7 +4,7 @@ import { InfoCard } from "../info-card"
 import { BSRIcon, PriceTagIcon, ProductSalesIcon, MaximumCostIcon, ROIIcon } from "../icons"
 import { Skeleton, Tooltip as AntTooltip } from "antd"
 import type { Product } from "./types"
-import { useState } from "react"
+import { useState, forwardRef, useImperativeHandle } from "react"
 import Image from "next/image"
 import AmazonIcon from "@/public/assets/svg/amazon-icon.svg"
 
@@ -16,18 +16,44 @@ interface ProductStatsProps {
 
 type Tab = "info" | "totan"
 
-const ProductStats = ({ product, isLoading, buyboxDetails }: ProductStatsProps) => {
+const ProductStats = forwardRef(({ product, isLoading, buyboxDetails }: ProductStatsProps, ref) => {
   const [activeTab, setActiveTab] = useState<Tab>("info")
+  const [latestProfitCalc, setLatestProfitCalc] = useState<any>(product?.last_profitability_calculation?.fba)
+
+  // Get the data from the correct sources
+  const extra = buyboxDetails?.extra || product?.extra
+  const profitabilityCalc = latestProfitCalc || product?.last_profitability_calculation?.fba
+
+  // Expose the update function to the parent component
+  useImperativeHandle(ref, () => ({
+    handleProfitabilityUpdate: (data: any) => {
+      setLatestProfitCalc(data)
+    },
+  }))
 
   if (isLoading || !product) {
     return <ProductStatsSkeleton />
   }
 
-  
+  // Get ROI text color based on roiIsOk
+  const getRoiTextColor = () => {
+    if (profitabilityCalc?.buying_criteria?.roiIsOk === true) {
+      return "text-green-600" // Green text for good ROI
+    } else if (profitabilityCalc?.buying_criteria?.roiIsOk === false) {
+      return "text-red-600" // Red text for bad ROI
+    }
+    return "" // Default text color
+  }
 
-  // Get the data from the correct sources
-  const extra = buyboxDetails?.extra || product?.extra;
-  const profitabilityCalc = product?.last_profitability_calculation?.fba
+  // Get Profit text color based on profitIsOk
+  const getProfitTextColor = () => {
+    if (profitabilityCalc?.buying_criteria?.profitIsOk === true) {
+      return "text-green-600" // Green text for good profit
+    } else if (profitabilityCalc?.buying_criteria?.profitIsOk === false) {
+      return "text-red-600" // Red text for bad profit
+    }
+    return "" // Default text color
+  }
 
   return (
     <div className="flex flex-col gap-4">
@@ -42,6 +68,7 @@ const ProductStats = ({ product, isLoading, buyboxDetails }: ProductStatsProps) 
         >
           Product info
         </button>
+        {/** 
         <button
           type="button"
           onClick={() => setActiveTab("totan")}
@@ -51,6 +78,7 @@ const ProductStats = ({ product, isLoading, buyboxDetails }: ProductStatsProps) 
         >
           Totan (AI)
         </button>
+        */}
       </div>
 
       {/* Totan */}
@@ -112,7 +140,7 @@ const ProductStats = ({ product, isLoading, buyboxDetails }: ProductStatsProps) 
 
           {/* Quantity Selector */}
           <div className="flex items-center gap-4">
-          <AntTooltip
+            <AntTooltip
               title="The recommended quantity to purchase based on market demand, competition, and inventory turnover rate."
               placement="top"
             >
@@ -158,7 +186,7 @@ const ProductStats = ({ product, isLoading, buyboxDetails }: ProductStatsProps) 
           </div>
 
           <div className="grid grid-cols-2 gap-3">
-          <InfoCard
+            <InfoCard
               icon={<BSRIcon />}
               title={
                 <AntTooltip
@@ -171,7 +199,7 @@ const ProductStats = ({ product, isLoading, buyboxDetails }: ProductStatsProps) 
               value={extra?.bsr ?? "0"}
               bgColor="#FFF0FF"
             />
-           <InfoCard
+            <InfoCard
               icon={<MaximumCostIcon />}
               title={
                 <AntTooltip
@@ -185,10 +213,9 @@ const ProductStats = ({ product, isLoading, buyboxDetails }: ProductStatsProps) 
               bgColor="#FFF0F3"
             />
           </div>
-        
 
           <div className="grid grid-cols-2 gap-3">
-          <InfoCard
+            <InfoCard
               icon={<ROIIcon />}
               title={
                 <AntTooltip
@@ -198,10 +225,10 @@ const ProductStats = ({ product, isLoading, buyboxDetails }: ProductStatsProps) 
                   <span className="cursor-help border-b border-dotted border-gray-400">ROI</span>
                 </AntTooltip>
               }
-              value={`${profitabilityCalc?.roi ?? "0"}%`} 
+              value={<span className={getRoiTextColor()}>{`${profitabilityCalc?.roi ?? "0"}%`}</span>}
               bgColor="#F5EBFF"
             />
-           
+
             <InfoCard
               icon={<PriceTagIcon />}
               title={
@@ -212,7 +239,11 @@ const ProductStats = ({ product, isLoading, buyboxDetails }: ProductStatsProps) 
                   <span className="cursor-help border-b border-dotted border-gray-400">Profit</span>
                 </AntTooltip>
               }
-              value={`$ ${profitabilityCalc?.profitAmount ?? "0"} (${profitabilityCalc?.profitMargin?.toFixed(0) ?? "0"}%)`}
+              value={
+                <span className={getProfitTextColor()}>
+                  {`$ ${profitabilityCalc?.profitAmount ?? "0"} (${profitabilityCalc?.profitMargin?.toFixed(0) ?? "0"}%)`}
+                </span>
+              }
               bgColor="#EBFFFE"
             />
           </div>
@@ -220,7 +251,9 @@ const ProductStats = ({ product, isLoading, buyboxDetails }: ProductStatsProps) 
       )}
     </div>
   )
-}
+})
+
+ProductStats.displayName = "ProductStats";
 
 const ProductStatsSkeleton = () => {
   return (
