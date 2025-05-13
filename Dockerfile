@@ -5,7 +5,7 @@ RUN apk add --no-cache libc6-compat
 FROM base AS builder
 WORKDIR /app
 COPY . .
-RUN apk add --update python3 make g++ && rm -rf /var/cache/apk/*
+RUN apk add --update python3 make g++ git && rm -rf /var/cache/apk/*
 RUN pnpm install
 RUN pnpm run build
 

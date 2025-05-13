@@ -4,10 +4,10 @@ export const InfoCard = ({
   value,
   bgColor,
 }: {
-  icon: React.ReactNode;
-  title: string;
-  value: string | number;
-  bgColor: string;
+ icon: React.ReactNode
+  title: React.ReactNode
+  value: React.ReactNode | string
+  bgColor?: string
 }) => (
   <div className="flex flex-col sm:flex-row gap-2 sm:items-center">
     <span
