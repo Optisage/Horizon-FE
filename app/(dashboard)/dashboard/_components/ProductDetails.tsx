@@ -1,5 +1,6 @@
 "use client"
-import { useState, useEffect } from "react"
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { useState, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
 import { useAppSelector } from "@/redux/hooks"
 import { useDispatch } from "react-redux"
@@ -29,9 +30,8 @@ interface IpAlertState {
   eligibility: boolean
 }
 
-
-
 const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
+    const productStatsRef = useRef<{ handleProfitabilityUpdate: (data: any) => void } | null>(null)
   const dispatch = useDispatch()
   const router = useRouter()
   const [getIpAlert] = useLazyGetIpAlertQuery()
@@ -53,12 +53,24 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
   const { data: buyboxDetailsData } = useGetBuyboxDetailsQuery({
     marketplaceId,
     itemAsin: asin,
-  });
-  
+  })
+
   const { data, error, isLoading } = useGetItemQuery({
     marketplaceId,
     itemAsin: asin,
   })
+
+  const buyboxWinner = buyboxDetailsData?.data?.buybox?.find((offer: any) => offer.is_buybox_winner)
+  const buyboxWinnerPrice = buyboxWinner?.listing_price || 0
+
+  const fbaOffers = buyboxDetailsData?.data?.buybox?.filter((offer: any) => offer.seller_type === "FBA")
+  const fbmOffers = buyboxDetailsData?.data?.buybox?.filter((offer: any) => offer.seller_type === "FBM")
+
+  const lowestFBAPrice = fbaOffers?.length ? Math.min(...fbaOffers.map((o: any) => o.listing_price)) : 0
+
+  const lowestFBMPrice = fbmOffers?.length ? Math.min(...fbmOffers.map((o: any) => o.listing_price)) : 0
+
+  const monthlySales = data?.data?.sales_statistics?.estimated_sales_per_month?.amount
 
   // Debounce input to prevent excessive API calls
   useEffect(() => {
@@ -103,7 +115,13 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
     )
   }
 
- 
+
+
+  const handleCalculationComplete = (data: any) => {
+    if (productStatsRef.current) {
+      productStatsRef.current.handleProfitabilityUpdate(data)
+    }
+  }
 
   return (
     <section className="flex flex-col gap-8 min-h-[50dvh] md:min-h-[80dvh]">
@@ -112,7 +130,20 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
       {/* Show product details when there's no search */}
       {!debouncedSearch && (
         <main className="flex flex-col gap-5">
-          <ProductHeader product={data?.data} />
+          <ProductHeader
+            product={data?.data}
+            buyboxWinnerPrice={buyboxWinnerPrice}
+            lowestFBAPrice={lowestFBAPrice}
+            lowestFBMPrice={lowestFBMPrice}
+            monthlySales={monthlySales}
+            sellerCount={buyboxDetailsData?.data?.buybox?.length || 0}
+            fbaSellers={fbaOffers?.length || 0}
+            fbmSellers={fbmOffers?.length || 0}
+            stockLevels={buyboxDetailsData?.data?.buybox?.reduce(
+              (sum: number, seller: any) => sum + (seller.stock_quantity || 0),
+              0,
+            )}
+          />
 
           {/* grid */}
           <div className="grid md:grid-cols-2 gap-5">
@@ -132,8 +163,14 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
                 marketplaceId={marketplaceId}
                 product={data?.data}
                 isLoading={isLoading}
+                onCalculationComplete={handleCalculationComplete}
               />
-              <ProductStats product={data?.data}  buyboxDetails={buyboxDetailsData?.data} isLoading={isLoading} />
+              <ProductStats
+                product={data?.data}
+                buyboxDetails={buyboxDetailsData?.data}
+                isLoading={isLoading}
+                ref={productStatsRef}
+              />
             </div>
 
             {/* right */}

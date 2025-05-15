@@ -1,6 +1,6 @@
 "use client"
 import { useState } from "react"
-import { Skeleton } from "antd"
+import { Skeleton, Tooltip as AntTooltip } from "antd"
 import dayjs from "dayjs"
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts"
 import { useGetMarketAnalysisQuery } from "@/redux/api/productsApi"
@@ -55,6 +55,27 @@ const MarketAnalysis = ({ asin, marketplaceId, isLoading }: MarketAnalysisProps)
 
   const chartData = transformData(marketAnalysisData?.data)
 
+  // Get price range for tooltips
+  const getMinMaxPrices = () => {
+    if (!chartData.length) return { min: 'N/A', max: 'N/A' };
+    
+    const allPrices = chartData.flatMap(item => {
+      const prices = [];
+      if (item.amazon !== null) prices.push(item.amazon);
+      if (item.buyBox !== null) prices.push(item.buyBox);
+      return prices;
+    });
+    
+    if (!allPrices.length) return { min: 'N/A', max: 'N/A' };
+    
+    return {
+      min: `$${Math.min(...allPrices).toFixed(2)}`,
+      max: `$${Math.max(...allPrices).toFixed(2)}`
+    };
+  };
+
+  const priceRange = getMinMaxPrices();
+
   const getMonthTicks = (data: MergedDataPoint[]): string[] => {
     if (!data?.length) return []
 
@@ -74,6 +95,24 @@ const MarketAnalysis = ({ asin, marketplaceId, isLoading }: MarketAnalysisProps)
     return ticks
   }
 
+  // Custom tooltip formatter for the chart
+  const CustomTooltipFormatter = (props: any) => {
+    const { active, payload, label } = props;
+    if (active && payload && payload.length) {
+      return (
+        <div className="bg-white p-2 border border-gray-200 rounded shadow-sm">
+          <p className="font-medium">{label}</p>
+          {payload.map((entry: any, index: number) => (
+            <p key={index} style={{ color: entry.color }}>
+              {entry.name}: ${entry.value?.toFixed(2) || 'N/A'}
+            </p>
+          ))}
+        </div>
+      );
+    }
+    return null;
+  };
+
   if (isLoading || isLoadingMarketAnalysis) {
     return <MarketAnalysisSkeleton />
   }
@@ -81,7 +120,9 @@ const MarketAnalysis = ({ asin, marketplaceId, isLoading }: MarketAnalysisProps)
   return (
     <div className="p-6 border rounded-lg">
       <div className="flex flex-col xl:flex-row gap-4 justify-between xl:items-center">
-        <h2 className="text-lg font-semibold">Market Analysis</h2>
+        <AntTooltip title={`Price analysis from ${statStartDate} to ${statEndDate}. Price range: ${priceRange.min} - ${priceRange.max}`} placement="top">
+          <h2 className="text-lg font-semibold">Market Analysis</h2>
+        </AntTooltip>
         <CustomDatePicker isRange onChange={handleDateChange} />
       </div>
 
@@ -93,11 +134,15 @@ const MarketAnalysis = ({ asin, marketplaceId, isLoading }: MarketAnalysisProps)
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2">
               <span className="size-3 rounded-lg bg-[#FF0080]" />
-              <span>Amazon</span>
+              <AntTooltip title="Price history when sold directly by Amazon" placement="top">
+                <span>Amazon</span>
+              </AntTooltip>
             </div>
             <div className="flex items-center gap-2">
               <span className="size-3 rounded-lg bg-[#00E4E4]" />
-              <span>Buy Box</span>
+              <AntTooltip title="Price history of the Buy Box (featured offer on Amazon)" placement="top">
+                <span>Buy Box</span>
+              </AntTooltip>
             </div>
           </div>
 
@@ -108,26 +153,28 @@ const MarketAnalysis = ({ asin, marketplaceId, isLoading }: MarketAnalysisProps)
               Error loading market analysis data
             </div>
           ) : (
-            <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={chartData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis
-                  dataKey="date"
-                  tickFormatter={(value) =>
-                    new Date(value).toLocaleString("default", {
-                      month: "short",
-                    })
-                  }
-                  ticks={getMonthTicks(chartData)}
-                  interval={0}
-                  padding={{ left: 20, right: 20 }}
-                />
-                <YAxis />
-                <Tooltip />
-                <Line type="monotone" dataKey="amazon" stroke="#FF0080" strokeWidth={2} />
-                <Line type="monotone" dataKey="buyBox" stroke="#00E4E4" strokeWidth={2} />
-              </LineChart>
-            </ResponsiveContainer>
+            <AntTooltip title={`Price trends from ${statStartDate} to ${statEndDate}. Hover over the chart to see exact prices.`} placement="top">
+              <ResponsiveContainer width="100%" height={300}>
+                <LineChart data={chartData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis
+                    dataKey="date"
+                    tickFormatter={(value) =>
+                      new Date(value).toLocaleString("default", {
+                        month: "short",
+                      })
+                    }
+                    ticks={getMonthTicks(chartData)}
+                    interval={0}
+                    padding={{ left: 20, right: 20 }}
+                  />
+                  <YAxis />
+                  <Tooltip content={<CustomTooltipFormatter />} />
+                  <Line type="monotone" dataKey="amazon" name="Amazon" stroke="#FF0080" strokeWidth={2} />
+                  <Line type="monotone" dataKey="buyBox" name="Buy Box" stroke="#00E4E4" strokeWidth={2} />
+                </LineChart>
+              </ResponsiveContainer>
+            </AntTooltip>
           )}
         </div>
       ) : (

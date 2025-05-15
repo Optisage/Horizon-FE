@@ -1,5 +1,5 @@
 "use client"
-import { Skeleton } from "antd"
+import { Skeleton, Tooltip as AntTooltip } from "antd"
 import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts"
 import { useGetBuyboxInfoQuery } from "@/redux/api/productsApi"
 import CustomDatePicker from "../CustomDatePicker"
@@ -50,6 +50,11 @@ const BuyBoxAnalysis = ({
       value: seller.weight_percentage,
       color: colorPalette[index % colorPalette.length], // Cycles through predefined colors
     })) || []
+    
+  // Find the buybox winner for the tooltip
+  const buyboxWinner = buybox.find(seller => seller.is_buybox_winner)
+  const buyboxWinnerName = buyboxWinner?.seller || "No current winner"
+  const totalSellers = buybox.length
 
   if (isLoading || isLoadingBuybox) {
     return <BuyBoxAnalysisSkeleton />
@@ -58,7 +63,9 @@ const BuyBoxAnalysis = ({
   return (
     <div className="p-6 border rounded-lg">
       <div className="flex flex-col xl:flex-row gap-4 justify-between xl:items-center">
-        <h2 className="text-lg font-semibold">Buy Box Analysis</h2>
+        <AntTooltip title={`Analysis of Buy Box ownership across ${totalSellers} sellers from ${statStartDate} to ${statEndDate}. The current Buy Box winner is ${buyboxWinnerName}.`} placement="top">
+          <h2 className="text-lg font-semibold">Buy Box Analysis</h2>
+        </AntTooltip>
         <CustomDatePicker isRange onChange={onDateChange} />
       </div>
 
@@ -69,22 +76,29 @@ const BuyBoxAnalysis = ({
           ) : buyboxError ? (
             <div className="h-40 flex items-center justify-center text-red-500 font-medium">Error loading buybox</div>
           ) : (
-            <ResponsiveContainer width={250} height={250}>
-              <PieChart>
-                <Pie data={pieData} dataKey="value" outerRadius={90}>
-                  {pieData.map((entry, index) => (
-                    <Cell key={index} fill={entry.color} />
-                  ))}
-                </Pie>
-              </PieChart>
-            </ResponsiveContainer>
+            <AntTooltip title={`Buy Box distribution chart showing ${totalSellers} sellers competing for the Buy Box. Date range: ${statStartDate} to ${statEndDate}.`} placement="top">
+              <ResponsiveContainer width={250} height={250}>
+                <PieChart>
+                  <Pie data={pieData} dataKey="value" outerRadius={90}>
+                    {pieData.map((entry, index) => (
+                      <Cell key={index} fill={entry.color} />
+                    ))}
+                  </Pie>
+                </PieChart>
+              </ResponsiveContainer>
+            </AntTooltip>
           )}
 
           <ul className="max-h-56 overflow-y-scroll py-1">
             {pieData.map((entry, index) => (
               <li key={index} className="flex items-center gap-2 text-sm">
                 <span className="size-3 rounded-lg" style={{ backgroundColor: entry.color }} />
-                {entry.name} &nbsp; - {entry.value}%
+                <AntTooltip 
+                  title={`Seller: ${entry.name} | Buy Box Share: ${entry.value}% | ${buybox[index]?.is_buybox_winner ? 'Current Buy Box Winner' : 'Not currently winning the Buy Box'} | Rating: ${buybox[index]?.rating || 'N/A'} | Reviews: ${buybox[index]?.review_count || 'N/A'}`} 
+                  placement="top"
+                >
+                  <span>{entry.name} &nbsp; - {entry.value}%</span>
+                </AntTooltip>
               </li>
             ))}
           </ul>
