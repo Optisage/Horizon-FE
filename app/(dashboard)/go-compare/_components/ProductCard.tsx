@@ -1,5 +1,5 @@
-import { ProductObj } from "./QuickSearchTable"
-import { AmazonProduct } from "./GoCompare"
+import Link from "next/link";
+import { AmazonProduct, ProductObj } from "@/types/goCompare";
 
 type ProductCardType = ProductObj | AmazonProduct;
 
@@ -32,6 +32,10 @@ export function ProductCard({ product }: ProductCardProps) {
     ? product.image_url
     : product.scraped_product.image_url;
 
+  const productUrl = isAmazonProduct(product)
+    ? product.page_url
+    : product.scraped_product.product_url;
+
   const productName = isAmazonProduct(product)
     ? product.product_name
     : product.scraped_product.product_name;
@@ -59,7 +63,7 @@ export function ProductCard({ product }: ProductCardProps) {
         />
       </div>
       <div className="mt-3">
-        <h3 className="text-sm text-left mb-1 line-clamp-2">{productName}</h3>
+        <Link className="text-sm text-left mb-1 line-clamp-2 hover:underline" target="_blank" rel="noopener noreferrer" href={productUrl}>{productName}</Link>
         <div className="flex items-center justify-between">
           <span className="font-bold">{currencySign}{price}</span>
           <img
