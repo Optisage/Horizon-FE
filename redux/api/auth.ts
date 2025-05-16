@@ -43,6 +43,16 @@ export const authApi = createApi({
               "*"
             );
           }
+          // Notify extension parent window (if in iframe)
+          if (window.parent !== window) {
+            window.parent.postMessage(
+              {
+                type: "LOGIN_SUCCESS",
+                token: token,
+              },
+              "https://app.optisage.ai" // Restrict target origin for security
+            );
+          }
         } catch (error) {
           console.error("Login failed:", error);
         }
