@@ -1,4 +1,4 @@
-name: 'Dev Server Deployment'
+name: 'Staging Two Server Deployment'
 
 on:
   push:
