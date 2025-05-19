@@ -55,8 +55,8 @@ jobs:
           script: |
             echo "$TOKEN" | docker login ghcr.io -u USERNAME --password-stdin
             export DOCKER_IMAGE="$IMAGE"
-            envsubst < /home/ubuntu/docker/dev-"$APP".yaml > /home/ubuntu/qace/dev-"$APP"/compose.yaml
+            envsubst < /home/ubuntu/docker/dev-"$APP".yaml > /home/ubuntu/optisage/dev-"$APP"/compose.yaml
             docker rm -f dev-"$APP"
             docker system prune -af
-            docker compose -f /home/ubuntu/qace/dev-"$APP"/compose.yaml up -d
+            docker compose -f /home/ubuntu/optisage/dev-"$APP"/compose.yaml up -d
             docker ps
