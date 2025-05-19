@@ -12,6 +12,8 @@ import Overlay from "../_components/dnd/Overlay";
 import ProductInformation from "../_components/ProductInformation";
 import QuickSearchTable from "../_components/QuickSearchTable";
 import { ProductObj, QuickSearchData } from "@/types/goCompare";
+import { FetchBaseQueryError } from "@reduxjs/toolkit/query";
+import { SerializedError } from "@reduxjs/toolkit";
 
 export default function QuickDatasult() {
     const params = useSearchParams();
@@ -30,7 +32,7 @@ export default function QuickDatasult() {
 
     const { data, isLoading, isError, isFetching, error } = useQuickSearchQuery({
         asin, store_names, country_ids, queue
-    }, { refetchOnMountOrArgChange: true }) as { data: QuickSearchData | undefined, isLoading: boolean, isError: boolean, isFetching: boolean, error?: any }
+    }, { refetchOnMountOrArgChange: true }) as { data: QuickSearchData | undefined, isLoading: boolean, isError: boolean, isFetching: boolean, error?: FetchBaseQueryError | SerializedError }
 
     const [selectedProducts, setSelectedProducts] = useState<ProductObj[]>([])
     const [activeProduct, setActiveProduct] = useState<ProductObj | null>(null)
@@ -117,19 +119,21 @@ export default function QuickDatasult() {
     if (isLoading || isRouteChanging) return <Loader />;
     if (isError) {
         let errorMessage = "Unknown error";
-        if (typeof error === "object" && error !== null) {
-            if ("data" in error && typeof (error as any).data === "object") {
-                errorMessage =
-                    (error as any).data?.error ||
-                    (error as any).error ||
-                    errorMessage;
-            } else if ("message" in error) {
-                errorMessage = String((error as { message?: string }).message);
+        if (error && typeof error === 'object') {
+            if ('status' in error) {
+                if (typeof error.data === 'string') {
+                    errorMessage = error.data;
+                } else if (typeof error.data === 'object' && error.data !== null) {
+                    errorMessage = (error.data as { error?: string })?.error ?? errorMessage;
+                }
+            } else if ('message' in error) {
+                errorMessage = error.message ?? errorMessage;
             }
         }
         console.error("Quick Search failed:", errorMessage);
         return <div style={{ color: 'red' }}>Error: {errorMessage}</div>;
     }
+
 
     return (
         <DndContext
