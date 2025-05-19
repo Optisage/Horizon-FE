@@ -3,11 +3,12 @@ name: 'Dev Server Deployment'
 on:
   push:
     branches:
-      - staging
+      - stagingv2
 
 env:
   REGISTRY: ghcr.io
   REPO_NAME: ${{ vars.ORG_NAME }}
+  APP_NAME: horizon-frontend-two
 
 jobs:
   deployOptisageFrontend:
@@ -30,7 +31,7 @@ jobs:
     - name: Build, tag, and push image to GHCR
       id: build-image
       env:
-        IMAGE_NAME: horizon-frontend
+        IMAGE_NAME: ${{ env.APP_NAME }}
         COMMIT_ID: ${{ github.sha }}
         ENV: ${{ secrets.STAGING_ENV }}
       run: |
@@ -44,15 +45,18 @@ jobs:
       env:
           IMAGE: ${{ steps.build-image.outputs.image }}
           TOKEN: ${{ secrets.DOCKER_TOKEN }}
+          APP: ${{ env.APP_NAME }}
       uses: appleboy/ssh-action@master
       with:
           host: ${{ secrets.DEPLOY_SERVER }}
           username: ${{ secrets.USERNAME }}
           key: ${{ secrets.PRIVATE_KEY }}
-          envs: IMAGE,TOKEN
+          envs: IMAGE,TOKEN,APP
           script: |
             echo "$TOKEN" | docker login ghcr.io -u USERNAME --password-stdin
-            export HORIZON_FRONTEND_IMAGE="$IMAGE"
-            docker compose -f /home/ubuntu/optisage/dev-horizon-frontend/compose.yaml up -d
+            export DOCKER_IMAGE="$IMAGE"
+            envsubst < /home/ubuntu/docker/dev-"$APP".yaml > /home/ubuntu/qace/dev-"$APP"/compose.yaml
+            docker rm -f dev-"$APP"
             docker system prune -af
+            docker compose -f /home/ubuntu/qace/dev-"$APP"/compose.yaml up -d
             docker ps
