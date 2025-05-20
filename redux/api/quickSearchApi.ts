@@ -27,8 +27,8 @@ export const quickSearchApi = createApi({
             },
         }),
         searchHistory: builder.query({
-            query: () => ({
-                url: `search?include=store,marketplace,country`,
+            query: ({page, perPage}) => ({
+                url: `search-history?include=store,marketplace,country&page=${page}&perPage=${perPage}`,
                 method: "GET",
                 meta: { server: 'test' }
             }),
@@ -38,6 +38,6 @@ export const quickSearchApi = createApi({
 
 export const {
     useLazyGetAllCountriesQuery,
-    useLazyQuickSearchQuery,
+    useQuickSearchQuery,
     useSearchHistoryQuery
 } = quickSearchApi;

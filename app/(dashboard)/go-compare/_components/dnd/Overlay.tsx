@@ -1,5 +1,5 @@
+import { ProductObj } from '@/types/goCompare';
 import React from 'react'
-import { ProductObj } from '../QuickSearchTable'
 
 interface ActiveProductProp {
     activeProduct: ProductObj
