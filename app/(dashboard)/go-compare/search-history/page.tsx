@@ -1,60 +1,9 @@
 "use client";
 import { useState } from "react";
-import TablePagination from "./TablePagination";
 import { useSearchHistoryQuery } from "@/redux/api/quickSearchApi";
 import Loader from "@/utils/loader";
-
-export interface SearchRecord {
-    id: number
-    asinOrUpc: string
-    searchType: string
-    searchDate: string
-    amazonPrice: string
-    country: string
-    countryCode: string
-    countryFlag: string
-    store: string
-    storeLogo: string
-    results: number
-}
-
-interface CreatedAt {
-    human: string;
-    string: string;
-    timestamp: number;
-    locale: string;
-}
-
-interface Store {
-    id: string;
-    name: string;
-    logo: string;
-    marketplace_id: string | null;
-    country_id: number;
-    created_at: CreatedAt;
-}
-
-interface Country {
-    id: number;
-    name: string;
-    flag: string;
-    short_code: string;
-    created_at: CreatedAt;
-}
-
-interface ApiSearchResponseItem {
-    id: string;
-    user_id: number;
-    query: string;
-    amazon_price: string;
-    number_of_results: number;
-    type_of_search: string;
-    created_at: CreatedAt;
-    updated_at: string;
-    store: Store;
-    country: Country;
-    marketplace: string | null;
-}
+import TablePagination from "../_components/TablePagination";
+import { ApiSearchResponseItem, SearchRecord } from "@/types/goCompare";
 
 const tableColumns = [
     { label: 'ASIN or UPC', key: 'asinOrUpc' },
@@ -67,10 +16,10 @@ const tableColumns = [
 ]
 
 const SearchHistory = () => {
-    const [page, setPage] = useState(1)
-    const [perPage, setPerPage] = useState(10)
+    const [perPage, setPerPage] = useState(10);
+    const [page, setPage] = useState(1);
 
-    const { data, isLoading, isError } = useSearchHistoryQuery({});
+    const { data, isLoading, isFetching, isError } = useSearchHistoryQuery({ page, perPage });
     const searchData: SearchRecord[] = data?.data.map((item: ApiSearchResponseItem) => ({
         id: item.id,
         asinOrUpc: item.query,
@@ -83,13 +32,7 @@ const SearchHistory = () => {
         store: item.store.name,
         storeLogo: item.store.logo,
         results: item.number_of_results,
-    })) || [];
-
-
-    const totalPages = Math.ceil(searchData.length / perPage)
-    const startIndex = (page - 1) * perPage
-    const endIndex = startIndex + perPage
-    const currentData = searchData.slice(startIndex, endIndex)
+    })) || []
 
 
     const handlePageChange = (page: number) => {
@@ -100,13 +43,17 @@ const SearchHistory = () => {
         setPerPage(value)
         setPage(1)
     }
+
+    if (isLoading || isFetching) return (
+        <div className="flex items-center justify-center">
+            <Loader />
+        </div>
+    )
+
     return (
         <div>
             <p className="font-semibold">Search History</p>
             {isError && <p>Error fetching history</p>}
-            <div className="flex items-center justify-center">
-                {isLoading && <Loader />}
-            </div>
             {data?.data &&
                 <div className="w-full bg-white mt-5 border border-gray-200 rounded-lg ">
                     <div className="overflow-x-auto ">
@@ -119,7 +66,7 @@ const SearchHistory = () => {
                                 </tr>
                             </thead>
                             <tbody className="">
-                                {currentData.map((record) => (
+                                {searchData.map((record) => (
                                     <tr key={record.id} className="font-medium">
                                         <td className="px-4 pr-20 py-3 ">{record.asinOrUpc}</td>
                                         <td className="px-4 py-3">{record.searchType}</td>
@@ -143,7 +90,7 @@ const SearchHistory = () => {
                             </tbody>
                         </table>
                     </div>
-                    <TablePagination page={page} perPage={perPage} totalPages={totalPages} handlePageChange={handlePageChange} handlePerPageChange={handlePerPageChange} />
+                    <TablePagination page={page} perPage={perPage} totalPages={data?.meta?.last_page} handlePageChange={handlePageChange} handlePerPageChange={handlePerPageChange} />
                 </div>
             }
         </div>
