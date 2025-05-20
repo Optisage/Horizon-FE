@@ -4,48 +4,21 @@ import { useEffect, useRef, useState } from "react"
 import { GoChevronDown } from "react-icons/go"
 import { IoCloseOutline } from "react-icons/io5"
 import { RiCheckboxBlankCircleFill } from "react-icons/ri"
-import { useLazyGetAllCountriesQuery, useLazyQuickSearchQuery } from "@/redux/api/quickSearchApi"
+import { useLazyGetAllCountriesQuery } from "@/redux/api/quickSearchApi"
+import { useRouter } from "next/navigation"
+import { Country } from "@/types/goCompare"
 import { message } from "antd"
-import { AmazonProduct } from "./GoCompare"
-import { ProductObj } from "./QuickSearchTable"
+import { useDispatch } from "react-redux"
+import { setMarketPlaceId } from "@/redux/slice/globalSlice"
 
-interface Store {
-    id: string;
-    name: string;
-    marketplace_id: string | null;
-    country_id: number;
-    created_at: {
-        human: string;
-        string: string;
-        timestamp: number;
-        locale: string;
-    };
+interface QuickSearchModalProps {
+    isOpen: boolean
+    onClose: () => void
 }
 
-interface Country {
-    id: number;
-    name: string;
-    flag: string;
-    short_code: string;
-    created_at: {
-        human: string;
-        string: string;
-        timestamp: number;
-        locale: string;
-    };
-    stores: Store[];
-}
-
-const Modal = ({ isOpen, onClose, setDeck, setSearchRe, setAsin }: {
-    isOpen: boolean;
-    onClose: () => void;
-    setDeck: React.Dispatch<React.SetStateAction<string>>;
-    setSearchRe: React.Dispatch<React.SetStateAction<{
-        amazon_product: AmazonProduct | null;
-        opportunities: ProductObj[];
-    }>>;
-    setAsin: React.Dispatch<React.SetStateAction<string>>;
-}) => {
+export function QuickSearchModal({ isOpen, onClose }: QuickSearchModalProps) {
+    const router = useRouter();
+    const dispatch = useDispatch();
     const [getCountries, { data: countries }] = useLazyGetAllCountriesQuery();
     const [selectedCountry, setSelectedCountry] = useState<Country | undefined>();
     useEffect(() => {
@@ -60,7 +33,6 @@ const Modal = ({ isOpen, onClose, setDeck, setSearchRe, setAsin }: {
     }, [countries]);
     const [selectedStores, setSelectedStores] = useState<string[]>([])
     const [asinOrUpc, setAsinOrUpc] = useState("");
-    const [triggerQuickSearch, { isFetching }] = useLazyQuickSearchQuery();
     const [isCountryDropdownOpen, setIsCountryDropdownOpen] = useState(false)
     const dropdownRef = useRef<HTMLDivElement>(null);
     const [isSearchTypeDropdown, setIsSearchTypeDropdown] = useState(false);
@@ -68,7 +40,6 @@ const Modal = ({ isOpen, onClose, setDeck, setSearchRe, setAsin }: {
     const searchTypes = [
         { id: 1, type: 'Normal Search - (No Images, Less wait time)', value: false },
         { id: 2, type: 'Deep Search - (Longer wait time)', value: true },
-        // { id: 3, type: 'Pro Search - (Longer wait time)', value: true },
     ]
 
     const [selectedSearchType, setSelectedSearchType] = useState(searchTypes[0]);
@@ -92,37 +63,25 @@ const Modal = ({ isOpen, onClose, setDeck, setSearchRe, setAsin }: {
         onClose();
     };
 
-
-    const handleSearch = async () => {
+    const handleSearch = () => {
         if (!asinOrUpc || !selectedCountry || selectedStores.length === 0) {
-            console.warn("Missing required fields");
+            message.error("Missing required fields");
             return;
         }
-        const country_ids = (String(selectedCountry.id));
-        const queue = selectedSearchType.value;
-        try {
-            setAsin(asinOrUpc)
-            const response = await triggerQuickSearch({ asin: asinOrUpc, store_names: selectedStores, country_ids, queue }).unwrap();
-            setSearchRe(response);
-            console.log("Quick Search Response:", response);
-            setDeck("quickSearch");
-            handleClose();
-        } catch (error: unknown) {
-            let errorMessage = "Unknown error";
-            if (typeof error === "object" && error !== null) {
-                if ("data" in error && typeof (error as any).data === "object") {
-                    errorMessage =
-                        (error as any).data?.error ||
-                        (error as any).error ||
-                        errorMessage;
-                } else if ("message" in error) {
-                    errorMessage = String((error as { message?: string }).message);
-                }
-            }
-            console.error("Quick Search failed:", errorMessage);
-            message.error(`Quick Search failed: ${errorMessage}`);
-        }
+        router.push(`/go-compare/quick-search?asin=${asinOrUpc}&country=${(String(selectedCountry.id))}&stores=${selectedStores}&queue=${selectedSearchType.value}`)
+        handleClose()
     }
+
+    useEffect(() => {
+        if (countries && countries?.data?.length > 0) {
+            setSelectedCountry(countries?.data[0]);
+            let defaultCountryId = countries?.data[0]?.id;
+            if (defaultCountryId === 3) {
+                defaultCountryId = 6;  
+            }
+            dispatch(setMarketPlaceId(defaultCountryId));
+        }
+    }, [countries, dispatch]);
 
     if (!isOpen) return null
 
@@ -130,8 +89,9 @@ const Modal = ({ isOpen, onClose, setDeck, setSearchRe, setAsin }: {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
             <div className="bg-white rounded-lg w-full max-w-md mx-4 overflow-hidden shadow-xl">
                 <div className="flex justify-between items-center p-5 pb-4 font-medium">
-                    <h2 className="text-lg">Quick Search (100 Products)</h2>
-                    <button onClick={handleClose} className="text-gray-400 hover:text-gray-500">
+                    {/* <h2 className="font-medium">Quick Search (100 Products)</h2> */}
+                    <h2 className="font-medium">Quick Search</h2>
+                    <button onClick={onClose} className="text-gray-400 hover:text-gray-500">
                         <IoCloseOutline size={22} />
                     </button>
                 </div>
@@ -181,10 +141,16 @@ const Modal = ({ isOpen, onClose, setDeck, setSearchRe, setAsin }: {
                                                     setSelectedCountry(country)
                                                     setSelectedStores([]);
                                                     setIsCountryDropdownOpen(false)
+                                                    let countryId = country?.id;
+                                                    if (country?.id === 3) {
+                                                        countryId = 6;  
+                                                    }
+                                                    dispatch(setMarketPlaceId(Number(countryId)));
+                                                    // dispatch(setCurrencyCode(country.currencyCode));
+                                                    // dispatch(setCurrencySymbol(country.currencySymbol));
                                                 }}
                                                 className="w-full text-left px-4 py-2 hover:bg-gray-100 flex items-center border-b"
                                             >
-                                                {/* <Image src={country?.flag} alt={country?.short_code} className="mr-2" /> */}
                                                 <span
                                                     className="inline-block w-4 h-4 mr-2 mt-2"
                                                     dangerouslySetInnerHTML={{ __html: country?.flag || "" }}
@@ -265,16 +231,16 @@ const Modal = ({ isOpen, onClose, setDeck, setSearchRe, setAsin }: {
                     >
                         Cancel
                     </button>
-                    <button onClick={handleSearch} disabled={isFetching} className="px-4 py-1 shadow-lg bg-[#18cb96] text-white rounded-md hover:bg-[#15b588]">
-                        {isFetching ? (
-                            <div className="h-4 w-4 border-2 border-t-transparent border-white animate-spin rounded-full"></div>
-                        ) : (
-                            'Search'
-                        )}
+                    <button
+                        onClick={handleSearch}
+                        className="px-4 py-1 shadow-lg bg-[#18cb96] text-white rounded-md hover:bg-[#15b588]">
+                        Search
                     </button>
                 </div>
+
             </div>
         </div>
     )
 }
-export default Modal
+
+

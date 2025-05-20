@@ -4,41 +4,7 @@ import { useDraggable } from "@dnd-kit/core"
 import { useState } from "react"
 import TablePagination from "./TablePagination"
 import placeholder from '../../../../public/assets/images/gocompare/placeholder.png'
-
-
-export type ProductObj = {
-  scraped_product: {
-    id: string
-    product_name: string
-    image_url: string
-    store_logo_url: string
-    price: {
-      amount: number
-      currency: string
-      formatted: string
-    }
-    original_price?: {
-      amount: number
-      currency: string
-      formatted: string
-    }
-  }
-  price_difference: number
-  roi_percentage: number
-  profit_margin: number
-  estimated_profit: number
-  amazon_fees: number
-  potential_monthly_sales: number
-  store: {
-    id: string
-    name: string
-  }
-  links: {
-    amazon_product: string
-    scraped_product: string
-  }
-  confidence: number
-}
+import { ProductObj } from "@/types/goCompare";
 
 interface ProductTableProps {
   products: ProductObj[]
@@ -51,8 +17,6 @@ function DraggableRow({ product, onRowClick }: { product: ProductObj; onRowClick
     data: { product },
   })
 
- 
-
   const amazonPrice = (product.scraped_product.price.amount + product.price_difference).toFixed(2)
   const formattedAmazonPrice = `${product.scraped_product.price.currency} ${amazonPrice}`
   const formattedProfitMargin = `${product.profit_margin.toFixed(1)}%`
@@ -64,11 +28,11 @@ function DraggableRow({ product, onRowClick }: { product: ProductObj; onRowClick
       style={
         transform
           ? {
-              transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`,
-              zIndex: isDragging ? 1000 : 1,
-              opacity: isDragging ? 0.5 : 1,
-              position: isDragging ? "relative" : "static" as "static" | "relative",
-            }
+            transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`,
+            zIndex: isDragging ? 1000 : 1,
+            opacity: isDragging ? 0.5 : 1,
+            position: isDragging ? "relative" : "static" as "static" | "relative",
+          }
           : undefined
       }
       {...listeners}

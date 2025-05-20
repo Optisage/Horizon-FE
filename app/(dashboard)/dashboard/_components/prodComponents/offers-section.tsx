@@ -1,7 +1,7 @@
 "use client"
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState } from "react"
-import { Tooltip as Tooltip2, Skeleton } from "antd"
+import { Tooltip as Tooltip2 } from "antd"
 import { HiOutlineUsers } from "react-icons/hi"
 import { MdOutlineInsertChartOutlined } from "react-icons/md"
 import { ImSpinner9 } from "react-icons/im"
@@ -16,14 +16,12 @@ interface OffersSectionProps {
   isLoading?: boolean
 }
 
-
-
 const OffersSection = ({ asin, marketplaceId, router, isLoading }: OffersSectionProps) => {
   const [activeTab, setActiveTab] = useState("offers")
   const [itemsToShow, setItemsToShow] = useState(10)
   const [loading, setLoading] = useState(false)
 
-  const { data: buyboxDetailsData, isLoading: isLoadingBuyboxDetails } = useGetBuyboxDetailsQuery({
+  const { data: buyboxDetailsData } = useGetBuyboxDetailsQuery({
     marketplaceId,
     itemAsin: asin,
   })
@@ -74,10 +72,14 @@ const OffersSection = ({ asin, marketplaceId, router, isLoading }: OffersSection
     }, 2000)
   }
 
-  
-
-  if (isLoading || isLoadingBuyboxDetails) {
-    return <OffersSectionSkeleton />
+  if (isLoading) {
+    return (
+      <div className="border border-border flex flex-col rounded-xl max-h-[375px] overflow-x-auto w-full p-6">
+        <div className="h-full flex items-center justify-center">
+          <ImSpinner9 className="animate-spin size-8 text-primary" />
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -177,7 +179,10 @@ const OffersSection = ({ asin, marketplaceId, router, isLoading }: OffersSection
                         </Tooltip2>
                       </td>
                       <td className="px-3 py-4 flex gap-1 items-center h-full">
-                        <Tooltip2 title={`This seller wins the Buy Box position ${offer.buyboxShare} of the time`} placement="top">
+                        <Tooltip2
+                          title={`This seller wins the Buy Box position ${offer.buyboxShare} of the time`}
+                          placement="top"
+                        >
                           <span>{offer.buyboxShare}</span>
                         </Tooltip2>
                         <div className="w-20 h-2 bg-gray-200 rounded-full">
@@ -204,18 +209,19 @@ const OffersSection = ({ asin, marketplaceId, router, isLoading }: OffersSection
 
           {/* offers count */}
           <div className="p-3 flex gap-2 justify-between items-center w-full">
-            <Tooltip2 title={`Total number of sellers offering this product: ${offersData.offers.length || 0}`} placement="top">
+            <Tooltip2
+              title={`Total number of sellers offering this product: ${offersData.offers.length || 0}`}
+              placement="top"
+            >
               <span>Total Offers: {offersData.offers.length || 0}</span>
             </Tooltip2>
             <span>
               <Tooltip2 title="Number of Fulfillment by Amazon offers" placement="top">
                 <span>FBA: {fbaCount}</span>
-              </Tooltip2>
-              {" "}
+              </Tooltip2>{" "}
               <Tooltip2 title="Number of Fulfillment by Merchant offers" placement="top">
                 <span>FBM: {fbmCount}</span>
-              </Tooltip2>
-              {" "}
+              </Tooltip2>{" "}
               <Tooltip2 title="Number of direct Amazon offers" placement="top">
                 <span>AMZ: {amzCount}</span>
               </Tooltip2>
@@ -305,18 +311,6 @@ const OffersSection = ({ asin, marketplaceId, router, isLoading }: OffersSection
           </div>
         </>
       )}
-    </div>
-  )
-}
-
-const OffersSectionSkeleton = () => {
-  return (
-    <div className="border border-border flex flex-col rounded-xl max-h-[375px] overflow-x-auto w-full">
-      <div className="flex items-center gap-x-8 gap-y-3 flex-wrap p-3">
-        <Skeleton.Button active size="small" style={{ width: 120 }} />
-        <Skeleton.Button active size="small" style={{ width: 120 }} />
-      </div>
-      <Skeleton active paragraph={{ rows: 6 }} />
     </div>
   )
 }
