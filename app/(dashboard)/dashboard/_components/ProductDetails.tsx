@@ -141,7 +141,7 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
       const timer = setTimeout(() => {
         setIsFullyLoaded(true)
       }, 1000)
-      return () => clearTimeout(timer)
+      return () => clearTimeout(timer) 
     }
   }, [loadingStep, isLoadingItem, isLoadingBuybox, isLoadingIpData])
 
