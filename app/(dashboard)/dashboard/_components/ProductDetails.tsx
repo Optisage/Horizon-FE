@@ -6,7 +6,7 @@ import { useAppSelector } from "@/redux/hooks"
 import { useDispatch } from "react-redux"
 import { setIpAlert, setIpIssues } from "@/redux/slice/globalSlice"
 import { SearchInput } from "@/app/(dashboard)/_components"
-import { useGetBuyboxDetailsQuery, useGetItemQuery, useLazyGetIpAlertQuery } from "@/redux/api/productsApi"
+import { useGetBuyboxDetailsQuery, useGetItemQuery, useGetMarketAnalysisQuery, useLazyGetIpAlertQuery } from "@/redux/api/productsApi"
 import dayjs from "dayjs"
 
 import FinalLoader from "./loader"
@@ -55,6 +55,8 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
   const [loadingStep, setLoadingStep] = useState(0)
   const [isFullyLoaded, setIsFullyLoaded] = useState(false)
 
+  const hasMounted = useRef(false)
+
   const { data: buyboxDetailsData, isLoading: isLoadingBuybox } = useGetBuyboxDetailsQuery({
     marketplaceId,
     itemAsin: asin,
@@ -68,6 +70,17 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
     marketplaceId,
     itemAsin: asin,
   })
+
+  const {
+  data: marketAnalysisData,
+  isLoading: isLoadingMarketAnalysis,
+} = useGetMarketAnalysisQuery({
+  marketplaceId,
+  itemAsin: asin,
+  statStartDate: dayjs().format("YYYY-MM-DD"),
+  statEndDate: dayjs().add(1, "month").format("YYYY-MM-DD"),
+})
+
 
   const [isLoadingIpData, setIsLoadingIpData] = useState(true)
 
@@ -134,16 +147,28 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
     }
   }, [isLoadingBuybox, buyboxDetailsData])
 
+  useEffect(() => {
+  if (!isLoadingMarketAnalysis && marketAnalysisData) {
+    setLoadingStep((prev) => Math.min(prev + 1, 4))
+  }
+}, [isLoadingMarketAnalysis, marketAnalysisData])
+
   // Set fully loaded when all steps are complete
   useEffect(() => {
-    if (loadingStep >= 4 && !isLoadingItem && !isLoadingBuybox && !isLoadingIpData) {
-      // Add a slight delay to show the final step
-      const timer = setTimeout(() => {
-        setIsFullyLoaded(true)
-      }, 1000)
-      return () => clearTimeout(timer) 
-    }
-  }, [loadingStep, isLoadingItem, isLoadingBuybox, isLoadingIpData])
+  if (loadingStep >= 4 && 
+      !isLoadingItem && 
+      !isLoadingBuybox && 
+      !isLoadingIpData && 
+      !isLoadingMarketAnalysis &&
+       !hasMounted.current
+    ) {
+   hasMounted.current = true
+    const timer = setTimeout(() => {
+      setIsFullyLoaded(true)
+    }, 1000)
+    return () => clearTimeout(timer)
+  }
+}, [loadingStep, isLoadingItem, isLoadingBuybox, isLoadingIpData, isLoadingMarketAnalysis])
 
   if (error) {
     return (
@@ -161,7 +186,7 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
   }
 
   // Show loader while data is loading
-  if (!isFullyLoaded || isLoadingItem || isLoadingBuybox || isLoadingIpData) {
+  if (!isFullyLoaded ) {
     return (
       <div className="min-h-[80vh] flex items-center justify-center">
         <FinalLoader currentStep={loadingStep} />
@@ -237,7 +262,7 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
                 }}
                 isLoading={false}
               />
-              <MarketAnalysis asin={asin} marketplaceId={marketplaceId} isLoading={false} />
+              <MarketAnalysis asin={asin} marketplaceId={marketplaceId} isLoading={false}  data={marketAnalysisData?.data} />
             </div>
           </div>
         </main>
