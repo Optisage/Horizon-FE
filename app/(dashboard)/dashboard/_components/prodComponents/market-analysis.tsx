@@ -11,6 +11,7 @@ interface MarketAnalysisProps {
   asin: string
   marketplaceId: number
   isLoading?: boolean
+  data: MarketAnalysisData | undefined
 }
 
 const MarketAnalysis = ({ asin, marketplaceId, isLoading }: MarketAnalysisProps) => {

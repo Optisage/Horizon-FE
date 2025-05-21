@@ -1,17 +1,17 @@
-"use client"
+"use client";
 
-import type React from "react"
-import { useEffect, useState } from "react"
-
-
+import type React from "react";
+import { useEffect, useState } from "react";
 
 interface FinalLoaderProps {
-  currentStep: number
+  currentStep: number;
 }
 
 const FinalLoader: React.FC<FinalLoaderProps> = ({ currentStep }) => {
   // State to track animated progress values
-  const [animatedProgress, setAnimatedProgress] = useState<number[]>([0, 0, 0, 0, 0])
+  const [animatedProgress, setAnimatedProgress] = useState<number[]>([
+    0, 0, 0, 0, 0,
+  ]);
 
   // Define the steps with exact progress percentages to match the image
   const steps = [
@@ -22,7 +22,8 @@ const FinalLoader: React.FC<FinalLoaderProps> = ({ currentStep }) => {
     },
     {
       percent: "25%",
-      description: "Filtering out the noise, keeping only what drives decisions...",
+      description:
+        "Filtering out the noise, keeping only what drives decisions...",
       progress: currentStep >= 1 ? 100 : 0,
     },
     {
@@ -40,35 +41,35 @@ const FinalLoader: React.FC<FinalLoaderProps> = ({ currentStep }) => {
       description: "All set, let's make data your secret weapon.",
       progress: currentStep >= 4 ? 100 : 0,
     },
-  ]
+  ];
 
   // Update animated progress when currentStep changes
   useEffect(() => {
     // For the current step, animate from 0 to 100 smoothly
     if (currentStep >= 0 && currentStep < 5) {
       // Create a new array with updated values
-      const newProgress = [...animatedProgress]
+      const newProgress = [...animatedProgress];
 
       // Set all previous steps to 100%
       for (let i = 0; i < currentStep; i++) {
-        newProgress[i] = 100
+        newProgress[i] = 100;
       }
 
       // Animate the current step
-      let progress = 0
+      let progress = 0;
       const interval = setInterval(() => {
-        progress += 2
+        progress += 2;
         if (progress <= 100) {
-          newProgress[currentStep] = progress
-          setAnimatedProgress([...newProgress])
+          newProgress[currentStep] = progress;
+          setAnimatedProgress([...newProgress]);
         } else {
-          clearInterval(interval)
+          clearInterval(interval);
         }
-      }, 20)
+      }, 20);
 
-      return () => clearInterval(interval)
+      return () => clearInterval(interval);
     }
-  }, [currentStep])
+  }, [currentStep]);
 
   return (
     <div className="flex flex-col space-y-5 max-w-[80%]  w-full min-w-3xl mx-auto p-6">
@@ -79,24 +80,30 @@ const FinalLoader: React.FC<FinalLoaderProps> = ({ currentStep }) => {
             {/* Vertical dotted line - updated to match the image exactly */}
             {index < steps.length - 1 && (
               <div
-  className="absolute h-full z-0"
-  style={{
-    left: "5px",
-    top: "0", // Start from the top of the container
-    height: "calc(100% + 70px)", // Extend into the next step's space
-    width: "2px",
-    backgroundImage: "linear-gradient(to bottom, #D1D5DB 1px, transparent 1px)",
-    backgroundSize: "2px 4px",
-    backgroundRepeat: "repeat-y",
-  }}
-/>
+                className="absolute h-full z-0"
+                style={{
+                  left: "5px",
+                  top: "0", // Start from the top of the container
+                  height: "calc(100% + 70px)", // Extend into the next step's space
+                  width: "2px",
+                  backgroundImage:
+                    "linear-gradient(to bottom, #D1D5DB 1px, transparent 1px)",
+                  backgroundSize: "2px 4px",
+                  backgroundRepeat: "repeat-y",
+                }}
+              />
             )}
 
             {/* Step dot with pulse animation when active */}
-            <div className="relative z-10 bg-white" style={{ width: "12px", height: "12px" }}>
+            <div
+              className="relative z-10 bg-white"
+              style={{ width: "12px", height: "12px" }}
+            >
               <div
                 className={`w-3 h-3 rounded-full ${
-                  index === currentStep ? "bg-green-500 animate-pulse" : "bg-gray-300"
+                  index === currentStep
+                    ? "bg-green-500 animate-pulse"
+                    : "bg-gray-300"
                 } ${index < currentStep ? "bg-green-500" : ""}`}
               ></div>
             </div>
@@ -108,7 +115,9 @@ const FinalLoader: React.FC<FinalLoaderProps> = ({ currentStep }) => {
                   index <= currentStep ? "opacity-100" : "opacity-50"
                 }`}
               >
-                <span className="text-sm font-medium text-green-500">{step.percent}</span>
+                <span className="text-sm font-medium text-green-500">
+                  {step.percent}
+                </span>
               </div>
             </div>
           </div>
@@ -134,7 +143,7 @@ const FinalLoader: React.FC<FinalLoaderProps> = ({ currentStep }) => {
         </div>
       ))}
     </div>
-  )
-}
+  );
+};
 
-export default FinalLoader
+export default FinalLoader;
