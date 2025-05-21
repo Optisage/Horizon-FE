@@ -136,7 +136,7 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
 
   // Set fully loaded when all steps are complete
   useEffect(() => {
-    if (loadingStep >= 4 && !isLoadingItem && !isLoadingBuybox && !isLoadingIpData) {
+    if (loadingStep >= 3 && !isLoadingItem && !isLoadingBuybox && !isLoadingIpData) {
       // Add a slight delay to show the final step
       const timer = setTimeout(() => {
         setIsFullyLoaded(true)
