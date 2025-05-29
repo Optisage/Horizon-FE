@@ -19,6 +19,7 @@ import FilterPopup, { FilterParams } from "./filter-popup";
 import { HiOutlineUsers } from "react-icons/hi2";
 import KeepaChart from "./keepa-chart";
 import { debounce } from "@/utils/debounce";
+import FinalLoader from "../../dashboard/_components/loader";
 
 // Define the Product interface
 export interface Product {
@@ -136,7 +137,7 @@ const Seller = () => {
       const params: SellerProductsParams = {
         marketplaceId,
         sellerId,
-        perPage: 5,
+        perPage: 10,
       };
 
       // Only add pageToken if it exists
@@ -216,12 +217,27 @@ const Seller = () => {
     setCurrentPageToken(null);
   };
 
+   const isLoading = detailsLoading || productLoading;
+
+  // Track loader steps
+  const [currentStep, setCurrentStep] = useState(0);
+
+  // Update steps based on loading progress
+  useEffect(() => {
+    if (!isLoading) return;
+    
+    let step = 0;
+    if (!detailsLoading) step += 2;
+    if (!productLoading) step += 2;
+    setCurrentStep(Math.min(step, 4));
+  }, [detailsLoading, productLoading, isLoading]);
+
   return (
     <section className="flex flex-col gap-8 min-h-[50dvh] md:min-h-[80dvh]">
       {contextHolder}
 
-      {detailsLoading ? (
-        <div className="mx-auto animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-primary" />
+      {isLoading  ? (
+         <FinalLoader currentStep={currentStep} />
       ) : (
         <>
           {/* nav */}
@@ -641,4 +657,3 @@ const Seller = () => {
 };
 
 export default Seller;
-
