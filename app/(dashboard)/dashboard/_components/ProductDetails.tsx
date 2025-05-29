@@ -139,7 +139,7 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
     if (!isLoadingItem && data) {
       setLoadingStep((prev) => Math.min(prev + 1, 4))
     }
-  }, [isLoadingItem, data])
+  }, [isLoadingItem, data]) 
 
   useEffect(() => {
     if (!isLoadingBuybox && buyboxDetailsData) {
