@@ -132,7 +132,7 @@ const Login: React.FC = () => {
         )}
       </Formik>
 
-      <div className="flex flex-col gap-2 items-center">
+      <div className="flex flex-col gap-2 items-center text-center">
         <p>
           Forgot your password? You can reset it{" "}
           <Link href="/forgot-password" className="underline hover:font-medium">
@@ -146,6 +146,8 @@ const Login: React.FC = () => {
           <Link
             href="https://optisage.ai/pricing/"
             className="underline hover:font-semibold"
+            target="_blank"
+            rel="noopener noreferrer"
           >
             Create an Account
           </Link>

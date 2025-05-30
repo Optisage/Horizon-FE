@@ -65,7 +65,7 @@ const DashNav = () => {
       <div className="flex gap-8 md:gap-6 items-center">
         <div className="flex gap-6 items-center">
           <Link
-            href=""
+            href="https://chromewebstore.google.com/detail/optisage/dmdfkdhmbanaldplibbnlgdonafbfaaj?authuser=3&hl=en"
             className="hidden xl:block text-sm font-medium text-[#090F0D]"
           >
             For a better experience, please install the optisage Chrome

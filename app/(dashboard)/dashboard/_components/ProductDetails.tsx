@@ -6,9 +6,10 @@ import { useAppSelector } from "@/redux/hooks"
 import { useDispatch } from "react-redux"
 import { setIpAlert, setIpIssues } from "@/redux/slice/globalSlice"
 import { SearchInput } from "@/app/(dashboard)/_components"
-import { useGetBuyboxDetailsQuery, useGetItemQuery, useLazyGetIpAlertQuery } from "@/redux/api/productsApi"
+import { useGetBuyboxDetailsQuery, useGetItemQuery, useGetMarketAnalysisQuery, useLazyGetIpAlertQuery } from "@/redux/api/productsApi"
 import dayjs from "dayjs"
 
+import FinalLoader from "./loader"
 import ProductHeader from "./prodComponents/product-header"
 import ProductInfo from "./prodComponents/product-info"
 import ProfitabilityCalculator from "./prodComponents/profitability-calculator"
@@ -31,7 +32,7 @@ interface IpAlertState {
 }
 
 const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
-    const productStatsRef = useRef<{ handleProfitabilityUpdate: (data: any) => void } | null>(null)
+  const productStatsRef = useRef<{ handleProfitabilityUpdate: (data: any) => void } | null>(null)
   const dispatch = useDispatch()
   const router = useRouter()
   const [getIpAlert] = useLazyGetIpAlertQuery()
@@ -50,15 +51,38 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
   const [statStartDate, setStatStartDate] = useState(dayjs().format("YYYY-MM-DD"))
   const [statEndDate, setStatEndDate] = useState(dayjs().add(1, "month").format("YYYY-MM-DD"))
 
-  const { data: buyboxDetailsData } = useGetBuyboxDetailsQuery({
+  // Loading state management
+  const [loadingStep, setLoadingStep] = useState(0)
+  const [isFullyLoaded, setIsFullyLoaded] = useState(false)
+
+  const hasMounted = useRef(false)
+
+  const { data: buyboxDetailsData, isLoading: isLoadingBuybox } = useGetBuyboxDetailsQuery({
     marketplaceId,
     itemAsin: asin,
   })
 
-  const { data, error, isLoading } = useGetItemQuery({
+  const {
+    data,
+    error,
+    isLoading: isLoadingItem,
+  } = useGetItemQuery({
     marketplaceId,
     itemAsin: asin,
   })
+
+  const {
+  data: marketAnalysisData,
+  isLoading: isLoadingMarketAnalysis,
+} = useGetMarketAnalysisQuery({
+  marketplaceId,
+  itemAsin: asin,
+  statStartDate: dayjs().format("YYYY-MM-DD"),
+  statEndDate: dayjs().add(1, "month").format("YYYY-MM-DD"),
+})
+
+
+  const [isLoadingIpData, setIsLoadingIpData] = useState(true)
 
   const buyboxWinner = buyboxDetailsData?.data?.buybox?.find((offer: any) => offer.is_buybox_winner)
   const buyboxWinnerPrice = buyboxWinner?.listing_price || 0
@@ -81,6 +105,7 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
   // Fetch IP data
   useEffect(() => {
     const fetchIpData = async () => {
+      setIsLoadingIpData(true)
       try {
         const response = await getIpAlert({
           itemAsin: asin,
@@ -96,8 +121,11 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
         )
         dispatch(setIpIssues(response?.data?.ip_analysis?.issues ?? []))
         setIpData(response.data as IpAlertData)
+        setLoadingStep((prev) => Math.min(prev + 1, 4))
       } catch (error) {
         console.error("Error fetching IP alert:", error)
+      } finally {
+        setIsLoadingIpData(false)
       }
     }
 
@@ -105,6 +133,42 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
       fetchIpData()
     }
   }, [asin, marketplaceId, dispatch, getIpAlert, statStartDate, statEndDate])
+
+  // Update loading steps based on API responses
+  useEffect(() => {
+    if (!isLoadingItem && data) {
+      setLoadingStep((prev) => Math.min(prev + 1, 4))
+    }
+  }, [isLoadingItem, data]) 
+
+  useEffect(() => {
+    if (!isLoadingBuybox && buyboxDetailsData) {
+      setLoadingStep((prev) => Math.min(prev + 1, 4))
+    }
+  }, [isLoadingBuybox, buyboxDetailsData])
+
+  useEffect(() => {
+  if (!isLoadingMarketAnalysis && marketAnalysisData) {
+    setLoadingStep((prev) => Math.min(prev + 1, 4))
+  }
+}, [isLoadingMarketAnalysis, marketAnalysisData])
+
+  // Set fully loaded when all steps are complete
+  useEffect(() => {
+  if (loadingStep >= 4 && 
+      !isLoadingItem && 
+      !isLoadingBuybox && 
+      !isLoadingIpData && 
+      !isLoadingMarketAnalysis &&
+       !hasMounted.current
+    ) {
+   hasMounted.current = true
+    const timer = setTimeout(() => {
+      setIsFullyLoaded(true)
+    }, 1000)
+    return () => clearTimeout(timer)
+  }
+}, [loadingStep, isLoadingItem, isLoadingBuybox, isLoadingIpData, isLoadingMarketAnalysis])
 
   if (error) {
     return (
@@ -115,12 +179,19 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
     )
   }
 
-
-
   const handleCalculationComplete = (data: any) => {
     if (productStatsRef.current) {
       productStatsRef.current.handleProfitabilityUpdate(data)
     }
+  }
+
+  // Show loader while data is loading
+  if (!isFullyLoaded ) {
+    return (
+      <div className="min-h-[80vh] flex items-center justify-center">
+        <FinalLoader currentStep={loadingStep} />
+      </div>
+    )
   }
 
   return (
@@ -156,27 +227,27 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
                 setIpIssue={setIpIssue}
                 asin={asin}
                 marketplaceId={marketplaceId}
-                isLoading={isLoading}
+                isLoading={false}
               />
               <ProfitabilityCalculator
                 asin={asin}
                 marketplaceId={marketplaceId}
                 product={data?.data}
-                isLoading={isLoading}
+                isLoading={false}
                 onCalculationComplete={handleCalculationComplete}
               />
               <ProductStats
                 product={data?.data}
                 buyboxDetails={buyboxDetailsData?.data}
-                isLoading={isLoading}
+                isLoading={false}
                 ref={productStatsRef}
               />
             </div>
 
             {/* right */}
             <div className="flex flex-col gap-5">
-              <OffersSection asin={asin} marketplaceId={marketplaceId} router={router} isLoading={isLoading} />
-              <RanksPricesSection asin={asin} marketplaceId={marketplaceId} isLoading={isLoading} />
+              <OffersSection asin={asin} marketplaceId={marketplaceId} router={router} isLoading={false} />
+              <RanksPricesSection asin={asin} marketplaceId={marketplaceId} isLoading={false} />
               <BuyBoxAnalysis
                 asin={asin}
                 marketplaceId={marketplaceId}
@@ -189,9 +260,9 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
                     setStatEndDate(endDate.format("YYYY-MM-DD"))
                   }
                 }}
-                isLoading={isLoading}
+                isLoading={false}
               />
-              <MarketAnalysis asin={asin} marketplaceId={marketplaceId} isLoading={isLoading} />
+              <MarketAnalysis asin={asin} marketplaceId={marketplaceId} isLoading={false}  data={marketAnalysisData?.data} />
             </div>
           </div>
         </main>

@@ -1,6 +1,6 @@
 "use client"
 import Image from "next/image"
-import { Skeleton, Tooltip as AntTooltip } from "antd"
+import { Tooltip as AntTooltip } from "antd"
 import ProductThumbnail from "@/public/assets/images/women-shoes.png"
 import Illustration from "@/public/assets/svg/illustration.svg"
 import AlertsDrawer from "../AlertsDrawer"
@@ -15,17 +15,13 @@ interface ProductInfoProps {
   isLoading?: boolean
 }
 
-const ProductInfo = ({
-  product,
-  ipData,
-  eligibility,
-  setIpIssue,
-  asin,
-  
-  isLoading,
-}: ProductInfoProps) => {
+const ProductInfo = ({ product, ipData, eligibility, setIpIssue, asin, isLoading }: ProductInfoProps) => {
   if (isLoading || !product) {
-    return <ProductInfoSkeleton />
+    return (
+      <div className="border border-border px-4 pt-4 rounded-xl flex flex-col gap-4 h-[300px] items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    )
   }
 
   return (
@@ -50,16 +46,25 @@ const ProductInfo = ({
           </AntTooltip>
           <p>{product?.category}</p>
           <p>
-            <AntTooltip title="Amazon Standard Identification Number - A unique product identifier assigned by Amazon." placement="top">
+            <AntTooltip
+              title="Amazon Standard Identification Number - A unique product identifier assigned by Amazon."
+              placement="top"
+            >
               <span>ASIN: {product?.asin}</span>
             </AntTooltip>
-            , 
-            <AntTooltip title="Universal Product Code - A barcode symbology used for tracking trade items in stores." placement="top">
+            ,
+            <AntTooltip
+              title="Universal Product Code - A barcode symbology used for tracking trade items in stores."
+              placement="top"
+            >
               <span> UPC: {product?.upc}</span>
             </AntTooltip>
           </p>
-          <AntTooltip title="Average customer rating out of 5 stars. Higher ratings typically indicate better customer satisfaction and product quality." placement="top">
-          <p>⭐⭐⭐⭐⭐ {product?.rating?.stars}/5</p>
+          <AntTooltip
+            title="Average customer rating out of 5 stars. Higher ratings typically indicate better customer satisfaction and product quality."
+            placement="top"
+          >
+            <p>⭐⭐⭐⭐⭐ {product?.rating?.stars}/5</p>
           </AntTooltip>
         </div>
       </div>
@@ -102,20 +107,6 @@ const ProductInfo = ({
           />
         </div>
       </div>
-    </div>
-  )
-}
-
-const ProductInfoSkeleton = () => {
-  return (
-    <div className="border border-border px-4 pt-4 rounded-xl flex flex-col gap-4">
-      <div className="grid xl:grid-cols-[2fr_5fr] gap-3">
-        <Skeleton.Image active style={{ width: 150, height: 150 }} />
-        <div>
-          <Skeleton active paragraph={{ rows: 3 }} />
-        </div>
-      </div>
-      <Skeleton.Button active size="large" block style={{ height: 120 }} />
     </div>
   )
 }
