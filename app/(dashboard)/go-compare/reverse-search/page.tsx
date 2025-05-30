@@ -1,48 +1,49 @@
 "use client";
-import { DndContext, type DragEndEvent, DragOverlay, type DragStartEvent, PointerSensor, useSensor, useSensors } from "@dnd-kit/core"
-import { restrictToWindowEdges } from "@dnd-kit/modifiers"
-import { useGetSearchByIdQuery, useQuickSearchQuery } from '@/redux/api/quickSearchApi';
+import { useGetSearchByIdQuery, useReverseSearchQuery } from '@/redux/api/quickSearchApi';
+import { ReverseSearchData } from '@/types/goCompare';
 import Loader from '@/utils/loader';
+import { DndContext, DragEndEvent, DragOverlay, DragStartEvent, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
+import { SerializedError } from '@reduxjs/toolkit';
+import { FetchBaseQueryError } from '@reduxjs/toolkit/query';
 import { usePathname, useSearchParams } from 'next/navigation';
 import React, { useEffect, useState } from 'react'
-import { TbListSearch } from "react-icons/tb";
-import { Droppable } from "../_components/dnd/Droppable";
-import { ProductCard } from "../_components/ProductCard";
-import Overlay from "../_components/dnd/Overlay";
-import ProductInformation from "../_components/ProductInformation";
-import QuickSearchTable from "../_components/QuickSearchTable";
-import { ProductObj, QuickSearchData } from "@/types/goCompare";
-import { FetchBaseQueryError } from "@reduxjs/toolkit/query";
-import { SerializedError } from "@reduxjs/toolkit";
+import { ProductCard } from '../_components/ProductCard';
+import ReverseSearchTable from '../_components/ReverseSearchTable';
+import { restrictToWindowEdges } from '@dnd-kit/modifiers';
+import { Droppable } from '../_components/dnd/Droppable';
+import { TbListSearch } from 'react-icons/tb';
+import Overlay from '../_components/dnd/Overlay';
+import ProductInformation from '../_components/ProductInformation';
 
-export default function QuickSearch() {
+export default function ReverseSearch() {
     const params = useSearchParams();
     const pathname = usePathname();
-    const asin = params.get('asin') ?? '';
-    const country_ids = params.get('country') ?? '';
-    const store_names = params.get('stores')?.split(',') || [];
-    const queueParam = params.get('queue');
-    const queue = queueParam === 'true';
+    const query = params.get('query') ?? '';
+    const store = params.get('store') ?? '';
     const searchId = params.get('searchId');
 
     const [lastQueryParams, setLastQueryParams] = useState({
-        asin, country_ids, store_names: store_names.join(','), queue
+        query, store
     });
 
     const [isRouteChanging, setIsRouteChanging] = useState(false);
+    const [page, setPage] = useState(1);
+    const [perPage, setPerPage] = useState(10);
+    const [sortBy, setSortBy] = useState("roi");
+    const [sortOrder, setSortOrder] = useState("desc");
 
     const searchByIdResult = useGetSearchByIdQuery(
         { id: searchId ?? '' },
         { skip: !searchId, refetchOnMountOrArgChange: true }
     );
 
-    const quickSearchResult = useQuickSearchQuery(
-        { asin, store_names, country_ids, queue },
+    const reverseSearchResult = useReverseSearchQuery(
+        { store, queryName: query, page, perPage, sortBy, sortOrder },
         { skip: !!searchId, refetchOnMountOrArgChange: true }
     );
 
     type QueryResult = {
-        data: QuickSearchData | undefined;
+        data: ReverseSearchData[] | undefined ;
         isLoading: boolean;
         isError: boolean;
         isFetching: boolean;
@@ -50,23 +51,20 @@ export default function QuickSearch() {
     };
 
     const result: QueryResult = searchId ? {
-        data: searchByIdResult.data,
+        data: searchByIdResult?.data?.data,
         isLoading: searchByIdResult.isLoading,
         isError: searchByIdResult.isError,
         isFetching: searchByIdResult.isFetching,
         error: searchByIdResult.error,
     } : {
-        data: quickSearchResult.data,
-        isLoading: quickSearchResult.isLoading,
-        isError: quickSearchResult.isError,
-        isFetching: quickSearchResult.isFetching,
-        error: quickSearchResult.error,
+        data: reverseSearchResult?.data?.data,
+        isLoading: reverseSearchResult.isLoading,
+        isError: reverseSearchResult.isError,
+        isFetching: reverseSearchResult.isFetching,
+        error: reverseSearchResult.error,
     };
 
     const { data, isLoading, isError, isFetching, error } = result;
-    
-    const [selectedProducts, setSelectedProducts] = useState<ProductObj[]>([])
-    const [activeProduct, setActiveProduct] = useState<ProductObj | null>(null)
 
     const sensors = useSensors(
         useSensor(PointerSensor, {
@@ -78,63 +76,17 @@ export default function QuickSearch() {
         }),
     )
 
-    const handleDragStart = (event: DragStartEvent) => {
-        console.log("Drag started:", event)
-        const { active } = event
-        const draggedProduct = data?.opportunities.find(
-            (product) => product.scraped_product.id === active.id
-        )
-        if (draggedProduct) {
-            setActiveProduct(draggedProduct)
-        }
-    }
-
-    const handleDragEnd = (event: DragEndEvent) => {
-        const { active, over } = event
-        console.log("Drag ended:", { active, over })
-        setActiveProduct(null)
-        if (over && over.id === "droppable-area") {
-            const draggedProduct = data?.opportunities.find(
-                (product) => product.scraped_product.id === active.id
-            )
-            if (draggedProduct) {
-                setSelectedProducts([draggedProduct])
-            }
-        }
-    }
-
-    const handleRowClick = (product: ProductObj) => {
-        setSelectedProducts([product])
-    }
-
-    const handleRemoveProduct = (productId: string) => {
-        setSelectedProducts(selectedProducts.filter((product) => product.scraped_product.id !== productId))
-    }
-
-    const productData = {
-        "Avg. Amazon 90 day price": String(data?.amazon_product?.pricing?.avg_amazon_90_day_price ?? '-'),
-        "Gross ROI": selectedProducts.length > 0 ? `${selectedProducts[0]?.roi_percentage.toFixed(1)}%` : '0%',
-        "Match quality%": selectedProducts.length > 0 ? `${(selectedProducts[0]?.confidence * 100).toFixed(0)}` : '0',
-        "Sales rank": String(data?.amazon_product?.metrics?.sales_rank ?? '-'),
-        "Avg. 3 month sales rank": String(data?.amazon_product?.metrics?.avg_3_month_sales_rank ?? '-'),
-        ASIN: String(asin ?? '-'),
-        "Number of sellers": String(data?.amazon_product?.metrics?.number_of_sellers ?? 'Not available'),
-        "Amazon on listing": data?.amazon_product?.metrics?.amazon_on_listing ? 'YES' : 'NO',
-    }
-
     useEffect(() => {
-        const currentParams = { asin, country_ids, store_names: store_names.join(','), queue };
+        const currentParams = { query, store };
         const hasParamsChanged =
-            lastQueryParams.asin !== currentParams.asin ||
-            lastQueryParams.country_ids !== currentParams.country_ids ||
-            lastQueryParams.store_names !== currentParams.store_names ||
-            lastQueryParams.queue !== currentParams.queue;
+            lastQueryParams.query !== currentParams.query ||
+            lastQueryParams.store !== currentParams.store
 
         if (hasParamsChanged) {
             setIsRouteChanging(true);
             setLastQueryParams(currentParams);
         }
-    }, [asin, country_ids, store_names, queue, pathname]);
+    }, [query, store, pathname]);
 
     useEffect(() => {
         if (!isFetching) {
@@ -142,9 +94,69 @@ export default function QuickSearch() {
         }
     }, [isFetching]);
 
+    const [selectedProducts, setSelectedProducts] = useState<ReverseSearchData | null>(null);
+
+    const [activeProduct, setActiveProduct] = useState<ReverseSearchData | null>(null)
+
+    const handleRowClick = (product: ReverseSearchData) => {
+        setSelectedProducts(product)
+    }
+
+    const transformedData: ReverseSearchData[] = (data || [])
+        .filter((item): item is ReverseSearchData => item.scraped_product !== null)
+        .map((item, index) => {
+            const sharedId = item.id;
+            return {
+                ...item,
+                amazon_product: item.amazon_product ? { ...item.amazon_product, id: sharedId } : null,
+                scraped_product: { ...item.scraped_product!, id: sharedId },
+            };
+        });
+
+    const handleDragStart = (event: DragStartEvent) => {
+        const { active } = event;
+
+        const draggedProduct = transformedData.find(item =>
+            item.scraped_product?.id === active.id || item.amazon_product?.id === active.id
+        );
+
+        if (draggedProduct) {
+            setActiveProduct(draggedProduct);
+        }
+
+        console.log("Drag started:", draggedProduct);
+    };
+
+    const handleDragEnd = (event: DragEndEvent) => {
+        const { active, over } = event;
+
+        if (over && over.id === 'droppable-area' && activeProduct) {
+            setSelectedProducts(activeProduct);
+        }
+
+        setActiveProduct(null);
+        console.log("Drag ended:", { active, over });
+    };
+
+
+    const handleRemoveProduct = () => {
+        setSelectedProducts(null);
+    }
+
+    const productData = {
+        "Avg. Amazon 90 day price": '-',
+        "Gross ROI": typeof selectedProducts?.roi_percentage === 'number' ? `${selectedProducts.roi_percentage.toFixed(1)}%` : '0%',
+        "Match quality%": '-',
+        "Sales rank": '-',
+        "Avg. 3 month sales rank": '-',
+        ASIN: String(selectedProducts?.amazon_product?.asin ?? '-'),
+        "Number of sellers": 'Not available',
+        "Amazon on listing": '-',
+    }
+
     useEffect(() => {
-        setSelectedProducts([]);
-    }, [data?.amazon_product]);
+        setSelectedProducts(null);
+    }, [data]);
 
     if (isLoading || isRouteChanging) return <Loader />;
     if (isError) {
@@ -160,10 +172,9 @@ export default function QuickSearch() {
                 errorMessage = error.message ?? errorMessage;
             }
         }
-        console.error("Quick Search failed:", errorMessage);
+        console.error("Reverse Search failed:", errorMessage);
         return <div style={{ color: 'red' }}>Error: {errorMessage}</div>;
     }
-
 
     return (
         <DndContext
@@ -177,18 +188,21 @@ export default function QuickSearch() {
                     <div className="flex-1">
                         <p className="font-semibold">Comparison Workspace</p>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2.5">
-                            {data?.amazon_product && (
-                                <ProductCard product={data?.amazon_product} />
+                            {selectedProducts && selectedProducts?.amazon_product ? (
+                                <ProductCard product={selectedProducts.amazon_product ?? selectedProducts.scraped_product} />
+                            ) : (
+                                data?.[0]?.amazon_product ? <ProductCard product={data[0].amazon_product} /> :
+                                <div className='flex items-center justify-center border rounded-lg'>{selectedProducts?.reason || data?.[0]?.reason}</div>
                             )}
                             <Droppable
                                 id="droppable-area"
-                                className={selectedProducts.length > 0 ? `` : 'bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden p-2.5 h-[326px]'}
+                                className={selectedProducts ? `` : 'bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden p-2.5 h-[326px]'}
                             >
-                                {selectedProducts.length > 0 ? (
+                                {selectedProducts ? (
                                     <div className="relative h-full">
-                                        <ProductCard product={selectedProducts[0]} />
+                                        <ProductCard product={selectedProducts.scraped_product} />
                                         <button
-                                            onClick={() => handleRemoveProduct(selectedProducts[0].scraped_product.id)}
+                                            onClick={() => handleRemoveProduct()}
                                             className="absolute top-2 right-2 bg-white rounded-full p-1 shadow-md hover:bg-gray-100 z-10"
                                         >
                                             <svg
@@ -219,14 +233,14 @@ export default function QuickSearch() {
 
                     <ProductInformation
                         productData={productData}
-                        isSelected={selectedProducts.length > 0}
+                        isSelected={selectedProducts ? true : false}
                     />
                 </div>
 
                 <div>
-                    <h2 className="font-semibold mb-4">Quick Search Results</h2>
-                    <QuickSearchTable
-                        products={data?.opportunities || []}
+                    <h2 className="font-semibold mb-4">Reverse Search Results</h2>
+                    <ReverseSearchTable
+                        products={transformedData || []}
                         onRowClick={handleRowClick}
                     />
                 </div>
@@ -234,7 +248,7 @@ export default function QuickSearch() {
 
             <DragOverlay>
                 {activeProduct ? (
-                    <Overlay activeProduct={activeProduct} />
+                    <Overlay activeProduct={activeProduct.scraped_product} />
                 ) : null}
             </DragOverlay>
         </DndContext>

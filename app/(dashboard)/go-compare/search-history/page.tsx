@@ -4,9 +4,10 @@ import { useSearchHistoryQuery } from "@/redux/api/quickSearchApi";
 import Loader from "@/utils/loader";
 import TablePagination from "../_components/TablePagination";
 import { ApiSearchResponseItem, SearchRecord } from "@/types/goCompare";
+import { useRouter } from "next/navigation";
 
 const tableColumns = [
-    { label: 'ASIN or UPC', key: 'asinOrUpc' },
+    { label: 'ASIN, UPC or Query Name', key: 'asinOrUpc' },
     { label: 'Type of search', key: 'searchType' },
     { label: 'Search Date', key: 'searchDate' },
     { label: 'Amazon Price', key: 'amazonPrice' },
@@ -18,6 +19,7 @@ const tableColumns = [
 const SearchHistory = () => {
     const [perPage, setPerPage] = useState(10);
     const [page, setPage] = useState(1);
+    const router = useRouter();
 
     const { data, isLoading, isFetching, isError } = useSearchHistoryQuery({ page, perPage });
     const searchData: SearchRecord[] = data?.data.map((item: ApiSearchResponseItem) => ({
@@ -28,6 +30,7 @@ const SearchHistory = () => {
         amazonPrice: item.amazon_price ? `$${item.amazon_price}` : "-",
         country: item.country.name,
         countryCode: item.country.short_code,
+        countryId: item.country.id,
         countryFlag: item.country.flag,
         store: item.store.name,
         storeLogo: item.store.logo,
@@ -42,6 +45,14 @@ const SearchHistory = () => {
     const handlePerPageChange = (value: number) => {
         setPerPage(value)
         setPage(1)
+    }
+
+    const handleRouting = (record: SearchRecord) => {
+        if(record.searchType === 'quick_search'){
+            router.push(`/go-compare/quick-search?asin=${record.asinOrUpc}&country=${record.countryId}&stores=${record.store}&queue=false&searchId=${record.id}`)
+        } else{
+            router.push(`/go-compare/reverse-search?queryName=${record.asinOrUpc}&store=${record.store}&searchId=${record.id}`)
+        }
     }
 
     if (isLoading || isFetching) return (
@@ -67,7 +78,7 @@ const SearchHistory = () => {
                             </thead>
                             <tbody className="">
                                 {searchData.map((record) => (
-                                    <tr key={record.id} className="font-medium">
+                                    <tr key={record.id} className="font-medium cursor-pointer" onClick={() => handleRouting(record)}>
                                         <td className="px-4 pr-20 py-3 ">{record.asinOrUpc}</td>
                                         <td className="px-4 py-3">{record.searchType}</td>
                                         <td className="px-4 py-3">{record.searchDate}</td>
@@ -91,6 +102,8 @@ const SearchHistory = () => {
                         </table>
                     </div>
                     <TablePagination page={page} perPage={perPage} totalPages={data?.meta?.last_page} handlePageChange={handlePageChange} handlePerPageChange={handlePerPageChange} />
+                    <p className="text-green-600 text-end mx-4 mb-2 text-sm">Results will be cleared after 7 days</p>
+
                 </div>
             }
         </div>

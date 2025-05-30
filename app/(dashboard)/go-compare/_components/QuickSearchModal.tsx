@@ -100,7 +100,7 @@ export function QuickSearchModal({ isOpen, onClose }: QuickSearchModalProps) {
                     <div className="space-y-4 font-normal">
                         <div>
                             <label htmlFor="asin-upc" className="block text-xs text-[#737379] mb-1.5">
-                                Enter ASIN, UPC or Product Name
+                                Enter ASIN, UPC or Product Name 
                             </label>
                             <input
                                 id="asin-upc"

@@ -15,7 +15,7 @@ export const quickSearchApi = createApi({
             }),
         }),
         quickSearch: builder.query({
-            query: ({ store_names, asin, country_ids, queue}: {store_names: string[]; asin: string; country_ids: string; queue: boolean}) => {
+            query: ({ store_names, asin, country_ids, queue }: { store_names: string[]; asin: string; country_ids: string; queue: boolean }) => {
                 const storeNamesParam = store_names
                     .map(name => encodeURIComponent(name))
                     .join(',');
@@ -27,8 +27,22 @@ export const quickSearchApi = createApi({
             },
         }),
         searchHistory: builder.query({
-            query: ({page, perPage}) => ({
+            query: ({ page, perPage }) => ({
                 url: `search-history?include=store,marketplace,country&page=${page}&perPage=${perPage}`,
+                method: "GET",
+                meta: { server: 'test' }
+            }),
+        }),
+        getSearchById: builder.query({
+            query: ({ id }) => ({
+                url: `search-history/${id}/results`,
+                method: "GET",
+                meta: { server: 'test' }
+            }),
+        }),
+        reverseSearch: builder.query({
+            query: ({ queryName, store, page, perPage, sortBy, sortOrder }) => ({
+                url: `reverse-arbitrage?store=${encodeURIComponent(store)}&product_name=${queryName}&page=${page}&limit=${perPage}&sort_by=${sortBy}&sort_order=${sortOrder}`,
                 method: "GET",
                 meta: { server: 'test' }
             }),
@@ -39,5 +53,7 @@ export const quickSearchApi = createApi({
 export const {
     useLazyGetAllCountriesQuery,
     useQuickSearchQuery,
-    useSearchHistoryQuery
+    useSearchHistoryQuery,
+    useGetSearchByIdQuery,
+    useReverseSearchQuery
 } = quickSearchApi;

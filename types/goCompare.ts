@@ -6,6 +6,7 @@ export interface SearchRecord {
     amazonPrice: string
     country: string
     countryCode: string
+    countryId: string
     countryFlag: string
     store: string
     storeLogo: string
@@ -34,7 +35,7 @@ export interface Country {
     flag: string;
     short_code: string;
     created_at: CreatedAt;
-    stores? : Store[]
+    stores?: Store[]
 }
 
 export interface ApiSearchResponseItem {
@@ -92,6 +93,30 @@ export interface QuickSearchData {
     opportunities: ProductObj[];
 }
 
+export interface ReverseSearchData {
+    id: string
+    display_message: string
+    reason: string
+    amazon_product: AmazonProduct | null;
+    scraped_product: {
+        id: string
+        name: string
+        price: string
+        url: string
+        image: string
+        brand: string
+        currency: string
+        store: {
+            name: string
+            logo: string
+        }
+    }
+    price_difference: number;
+    roi_percentage: number;
+    profit_margin: number;
+    source: string;
+}
+
 export type ProductObj = {
     scraped_product: {
         id: string
@@ -125,4 +150,33 @@ export type ProductObj = {
         scraped_product: string
     }
     confidence: number
+}
+
+
+export type ReverseAmazon = {
+    asin: string
+    sku: string
+    product_name: string
+    price: number,
+    url: string
+    image: string
+    currency: string
+    store: {
+        name: string
+        logo: string
+    }
+}
+
+export type ReverseAmazonScraped = {
+    id: string
+    name: string
+    price: string
+    url: string
+    image: string
+    brand: string
+    currency: string
+    store: {
+        name: string
+        logo: string
+    }
 }
