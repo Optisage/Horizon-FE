@@ -80,7 +80,7 @@ const KeepaChart = ({ chartData, currency = "" }: KeepaChartProps) => {
       <div className="rounded-xl border border-border p-4 bg-white">
         <div className="flex justify-between items-center mb-4">
           <p className="bg-[#F3F4F6] rounded-2xl py-2 px-4 text-[#676A75] font-semibold w-max text-xs">
-            Keepa
+            Keepa(beta)
           </p>
         </div>
         <div className="h-64 flex items-center justify-center text-gray-500">

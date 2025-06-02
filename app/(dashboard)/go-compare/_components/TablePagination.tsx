@@ -9,6 +9,11 @@ interface PaginationProps {
 }
 
 const TablePagination = ({ page, totalPages, perPage, handlePageChange, handlePerPageChange }: PaginationProps) => {
+    const pagesToShow = 5;
+    const startPage = Math.max(1, page - Math.floor(pagesToShow / 2));
+    const endPage = Math.min(totalPages, startPage + pagesToShow - 1);
+    const adjustedStartPage = Math.max(1, endPage - pagesToShow + 1);
+
     return (
         <div className="flex items-center justify-between px-4 py-3 flex-wrap border-t border-gray-200 pb-16">
             <div className="text-sm text-gray-600">
@@ -24,8 +29,8 @@ const TablePagination = ({ page, totalPages, perPage, handlePageChange, handlePe
                     <GoChevronLeft className="h-5 w-5" />
                 </button>
 
-                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                    const pageNumber = i + 1
+                {Array.from({ length: endPage - adjustedStartPage + 1 }, (_, i) => {
+                    const pageNumber = adjustedStartPage + i;
                     return (
                         <button
                             key={pageNumber}
@@ -35,7 +40,7 @@ const TablePagination = ({ page, totalPages, perPage, handlePageChange, handlePe
                         >
                             {pageNumber}
                         </button>
-                    )
+                    );
                 })}
 
                 <button

@@ -13,7 +13,7 @@ import {
   SubscriptionsIcon,
   CreditIcon,
   HistoryIcon,
-  GoCompareIcon
+  GoCompareIcon,
 } from "@/public/assets/svg/icons";
 import LogoutModal from "./LogoutModal";
 import { BiChevronRight } from "react-icons/bi";
@@ -21,7 +21,7 @@ import { RiVerifiedBadgeFill } from "react-icons/ri";
 import { useAppSelector } from "@/redux/hooks";
 import { useDispatch } from "react-redux";
 import { logout } from "@/redux/slice/authSlice";
-import { BsStars } from "react-icons/bs";
+//import { BsStars } from "react-icons/bs";
 
 // Sidebar data
 const menuData = [
@@ -29,7 +29,7 @@ const menuData = [
   { id: "2", path: "/history", label: "History", icon: HistoryIcon },
   { id: "3", path: "/go-compare", label: "Go Compare", icon: GoCompareIcon },
   { id: "5", path: "", label: "Keepa", icon: KeepaIcon, comingSoon: true },
-  { id: "6", path: "/totan", label: "Totan (AI)", icon: BsStars },
+  //{ id: "6", path: "", label: "Totan (AI)", icon: BsStars, comingSoon: true },
 ];
 
 const secondaryMenu = [
@@ -200,4 +200,3 @@ const DashSider = () => {
 };
 
 export default DashSider;
-

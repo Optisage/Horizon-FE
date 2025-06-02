@@ -33,14 +33,30 @@ export const authApi = createApi({
 
           dispatch(setUser(data?.data.user));
 
+          // Determine allowed origin for message
+          const currentOrigin = window.location.origin;
+          const targetOrigin = currentOrigin.includes("staging.")
+            ? "https://staging.optisage.ai"
+            : "https://app.optisage.ai";
+
           // Send token to extension if in iframe
           if (window.parent !== window) {
+            // Send STORE_TOKEN message
             window.parent.postMessage(
               {
                 type: "STORE_TOKEN",
                 token: token,
               },
-              "*"
+              targetOrigin
+            );
+
+            // Send LOGIN_SUCCESS message
+            window.parent.postMessage(
+              {
+                type: "LOGIN_SUCCESS",
+                token: token,
+              },
+              targetOrigin
             );
           }
         } catch (error) {
