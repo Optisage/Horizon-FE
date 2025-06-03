@@ -19,6 +19,7 @@ interface ProfitabilityCalculatorProps {
   product: Product | undefined
   isLoading?: boolean
   onCalculationComplete?: (data: ProfitabilityData) => void
+   offers: BuyboxItem[];
 }
 
 interface FeesState {
@@ -48,6 +49,7 @@ interface CalculationBody {
   salePrice: number | string
   pointsNumber: number
   pointsAmount: number
+   
 }
 
 const ProfitabilityCalculator = ({
@@ -56,6 +58,7 @@ const ProfitabilityCalculator = ({
   product,
   isLoading,
   onCalculationComplete,
+    offers
 }: ProfitabilityCalculatorProps) => {
   const [costPrice, setCostPrice] = useState<string>("")
   const [costPriceInput, setCostPriceInput] = useState<string>("")
@@ -109,6 +112,11 @@ const ProfitabilityCalculator = ({
     fbm: lastProfitabilityCalc?.fbm || null,
   })
 
+    // Calculate cheapest price from offers
+  const cheapestPrice = offers.length > 0 
+    ? Math.min(...offers.map(offer => offer.listing_price)) 
+    : 0;
+
   useEffect(() => {
     if (lastCostPrice) {
       setCostPrice(lastCostPrice)
@@ -116,9 +124,11 @@ const ProfitabilityCalculator = ({
     }
   }, [lastCostPrice])
 
-  useEffect(() => {
-    setSalePrice(buyboxWinnerPrice.toString())
-  }, [buyboxWinnerPrice])
+ useEffect(() => {
+    // Use buybox winner price if available, otherwise use cheapest offer price
+    const initialSalePrice = buyboxWinnerPrice > 0 ? buyboxWinnerPrice : cheapestPrice;
+    setSalePrice(initialSalePrice.toString());
+  }, [buyboxWinnerPrice, cheapestPrice]);
 
   useEffect(() => {
     if (lastProfitabilityCalc) {
