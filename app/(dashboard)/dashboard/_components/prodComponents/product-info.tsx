@@ -73,17 +73,40 @@ const ProductInfo = ({ product, ipData, eligibility, setIpIssue, asin, isLoading
         <div className="flex flex-col gap-4">
           <span className="flex flex-col gap-2">
             {eligibility ? (
-              <p className="text-green-500 font-semibold">You are authorised to sell this product</p>
+              <AntTooltip
+                title="✅ Great news! You have the necessary permissions to sell this product on Amazon. This means you've met all requirements including brand approval, category restrictions, and gating requirements."
+                placement="top"
+              >
+                <p className="text-green-500 font-semibold cursor-help">
+                  You are authorised to sell this product
+                </p>
+              </AntTooltip>
             ) : (
-              <p className="text-red-500 font-semibold">You are not authorized to sell this product</p>
+              <AntTooltip
+                title="❌ You cannot sell this product due to restrictions. Common reasons include: Brand approval required, Category gating (need approval for restricted categories), Product safety requirements not met, Professional seller account required, or Geographic restrictions. Check the issues below for specific details."
+                placement="top"
+              >
+                <p className="text-red-500 font-semibold cursor-help">
+                  You are not authorized to sell this product
+                </p>
+              </AntTooltip>
             )}
-            <p className={`text-sm ${setIpIssue ? "text-red-500" : "text-[#09090B]"}`}>
-              {setIpIssue === 1
-                ? "There is 1 issue"
-                : setIpIssue > 1
-                  ? `There are ${setIpIssue} issues`
-                  : "No issues found"}
-            </p>
+            <AntTooltip
+              title={
+                setIpIssue > 0 
+                  ? "⚠️ Issues detected that prevent you from selling this product. Click 'View Alerts' below to see detailed information about each issue and potential solutions."
+                  : "✅ No restrictions found! This product appears to be available for sale without any known barriers or requirements."
+              }
+              placement="top"
+            >
+              <p className={`text-sm cursor-help ${setIpIssue ? "text-red-500" : "text-[#09090B]"}`}>
+                {setIpIssue === 1
+                  ? "There is 1 issue"
+                  : setIpIssue > 1
+                    ? `There are ${setIpIssue} issues`
+                    : "No issues found"}
+              </p>
+            </AntTooltip>
           </span>
 
           <div>
