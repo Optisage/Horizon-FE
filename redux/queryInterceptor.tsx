@@ -73,12 +73,13 @@ export const baseQuery = fetchBaseQuery({
 
 export const testQuery = fetchBaseQuery({
   baseUrl: `${testUrl}`,
-  prepareHeaders: (headers) => {
+  prepareHeaders: (headers, {endpoint}) => {
     const token = Cookies.get('optisage-token');
     if (token) {
       headers.set('authorization', `Bearer ${token}`)
     }
     headers.set('Accept', 'application/json')
+    headers.set('x-endpoint', '/search-history')
     return headers
   },
 

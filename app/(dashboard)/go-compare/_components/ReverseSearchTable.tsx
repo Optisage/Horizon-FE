@@ -11,7 +11,7 @@ interface ProductTableProps {
     onRowClick: (product: ReverseSearchData) => void
 }
 
-type SortColumn = 'profit_margin' | 'roi_percentage' | null;
+type SortColumn = 'profit_margin' | 'roi_percentage' | 'estimated_monthly_sales' | null;
 type SortDirection = 'asc' | 'desc'
 
 function DraggableRow({ product, onRowClick }: { product: ReverseSearchData; onRowClick: (product: ReverseSearchData) => void }) {
@@ -75,11 +75,10 @@ function DraggableRow({ product, onRowClick }: { product: ReverseSearchData; onR
                 </div>
             </td>
             <td className="px-4 py-1.5 text-sm">{product.scraped_product.currency} {product.scraped_product.price}</td>
-            {/* <td className="px-4 py-1.5 text-sm">-</td> */}
             <td className="px-4 py-1.5 text-sm">{formattedProfitMargin}</td>
             <td className="px-4 py-1.5 text-sm">{formattedROI}</td>
-            <td className="px-4 py-1.5 text-sm">-</td>
-            <td className="px-4 py-1.5 text-sm">N/A</td>
+            <td className="px-4 py-1.5 text-sm">{product.amazon_product?.metrics.estimated_monthly_sales ?? '-'}</td>
+            <td className="px-4 py-1.5 text-sm">{product.amazon_product?.metrics.number_of_sellers ?? 'N/A'}</td>
         </tr>
     )
 }
@@ -127,19 +126,23 @@ export default function ReverseSearchTable({ products, onRowClick }: ProductTabl
         setSortDirection(direction);
         setPage(1);
     };
-
     const sortedProducts = [...products].sort((a, b) => {
         if (!sortColumn) return 0;
 
-        const aValue = a[sortColumn];
-        const bValue = b[sortColumn];
+        let aValue: number = 0;
+        let bValue: number = 0;
 
-        if (sortDirection === 'asc') {
-            return aValue - bValue;
+        if (sortColumn === 'estimated_monthly_sales') {
+            aValue = a.amazon_product?.metrics?.estimated_monthly_sales ?? 0;
+            bValue = b.amazon_product?.metrics?.estimated_monthly_sales ?? 0;
         } else {
-            return bValue - aValue;
+            aValue = a[sortColumn] ?? 0;
+            bValue = b[sortColumn] ?? 0;
         }
+
+        return sortDirection === 'asc' ? aValue - bValue : bValue - aValue;
     });
+
 
     const totalPages = Math.ceil(sortedProducts.length / perPage)
     const startIndex = (page - 1) * perPage
@@ -165,7 +168,6 @@ export default function ReverseSearchTable({ products, onRowClick }: ProductTabl
                                 <th className="px-4 py-3 text-left font-medium text-gray-600">Product name</th>
                                 <th className="px-4 py-3 text-left font-medium text-gray-600">Store</th>
                                 <th className="px-4 py-3 text-left font-medium text-gray-600">Store Price</th>
-                                {/* <th className="px-4 py-3 text-left font-medium text-gray-600">Amazon Price</th> */}
                                 <th className="px-4 py-3 text-left font-medium text-gray-600">
                                     <div className="flex items-center">
                                         Profit Margin
@@ -178,7 +180,12 @@ export default function ReverseSearchTable({ products, onRowClick }: ProductTabl
                                         <SortButton column="roi_percentage" currentColumn={sortColumn} currentDirection={sortDirection} onSort={handleSort} />
                                     </div>
                                 </th>
-                                <th className="px-4 py-3 text-left font-medium text-gray-600">Estimated Monthly Sales</th>
+                                <th className="px-4 py-3 text-left font-medium text-gray-600">
+                                    <div className="flex items-center">
+                                        Estimated Monthly Sales
+                                        <SortButton column="estimated_monthly_sales" currentColumn={sortColumn} currentDirection={sortDirection} onSort={handleSort} />
+                                    </div>
+                                </th>
                                 <th className="px-4 py-3 text-left font-medium text-gray-600">No. of Sellers</th>
                             </tr>
                         </thead>

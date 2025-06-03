@@ -76,6 +76,7 @@ export interface AmazonProduct {
         monthly_sellers: number | null;
         amazon_on_listing: boolean;
         estimated_monthly_sales: number | null;
+        avg_amazon_90_day_price: number | null
     };
     ratings: {
         rating: string;

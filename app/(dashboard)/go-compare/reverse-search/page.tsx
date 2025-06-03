@@ -1,7 +1,6 @@
 "use client";
 import { useGetSearchByIdQuery, useReverseSearchQuery } from '@/redux/api/quickSearchApi';
 import { ReverseSearchData } from '@/types/goCompare';
-import Loader from '@/utils/loader';
 import { DndContext, DragEndEvent, DragOverlay, DragStartEvent, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { SerializedError } from '@reduxjs/toolkit';
 import { FetchBaseQueryError } from '@reduxjs/toolkit/query';
@@ -14,6 +13,8 @@ import { Droppable } from '../_components/dnd/Droppable';
 import { TbListSearch } from 'react-icons/tb';
 import Overlay from '../_components/dnd/Overlay';
 import ProductInformation from '../_components/ProductInformation';
+import GoCompareLoader from '../_components/Loader';
+import Loader from '@/utils/loader';
 
 export default function ReverseSearch() {
     const params = useSearchParams();
@@ -28,7 +29,7 @@ export default function ReverseSearch() {
 
     const [isRouteChanging, setIsRouteChanging] = useState(false);
     const [page, setPage] = useState(1);
-    const [perPage, setPerPage] = useState(10);
+    const [perPage, setPerPage] = useState(15);
     const [sortBy, setSortBy] = useState("roi");
     const [sortOrder, setSortOrder] = useState("desc");
 
@@ -43,7 +44,7 @@ export default function ReverseSearch() {
     );
 
     type QueryResult = {
-        data: ReverseSearchData[] | undefined ;
+        data: ReverseSearchData[] | undefined;
         isLoading: boolean;
         isError: boolean;
         isFetching: boolean;
@@ -144,21 +145,31 @@ export default function ReverseSearch() {
     }
 
     const productData = {
-        "Avg. Amazon 90 day price": '-',
+        "Avg. Amazon 90 day price": String(selectedProducts?.amazon_product?.metrics?.avg_amazon_90_day_price ?? '-'),
         "Gross ROI": typeof selectedProducts?.roi_percentage === 'number' ? `${selectedProducts.roi_percentage.toFixed(1)}%` : '0%',
         "Match quality%": '-',
-        "Sales rank": '-',
-        "Avg. 3 month sales rank": '-',
+        "Sales rank": String(selectedProducts?.amazon_product?.metrics?.sales_rank ?? '-'),
+        "Avg. 3 month sales rank": String(selectedProducts?.amazon_product?.metrics?.avg_3_month_sales_rank ?? '-'),
         ASIN: String(selectedProducts?.amazon_product?.asin ?? '-'),
-        "Number of sellers": 'Not available',
-        "Amazon on listing": '-',
-    }
+        "Number of sellers": String(selectedProducts?.amazon_product?.metrics?.number_of_sellers ?? 'Not available'),
+        "Amazon on listing": selectedProducts?.amazon_product?.metrics?.amazon_on_listing ? 'YES' : 'NO',
+    };
+
 
     useEffect(() => {
         setSelectedProducts(null);
     }, [data]);
 
-    if (isLoading || isRouteChanging) return <Loader />;
+    if ((isLoading || isRouteChanging) && searchId) return <Loader />;
+    if (isLoading || isRouteChanging) {
+        return (
+            <GoCompareLoader
+                asin={query}
+                storeNames={[store]}
+                isLoading={isLoading || isRouteChanging}
+            />
+        );
+    }
     if (isError) {
         let errorMessage = "Unknown error";
         if (error && typeof error === 'object') {
@@ -192,7 +203,7 @@ export default function ReverseSearch() {
                                 <ProductCard product={selectedProducts.amazon_product ?? selectedProducts.scraped_product} />
                             ) : (
                                 data?.[0]?.amazon_product ? <ProductCard product={data[0].amazon_product} /> :
-                                <div className='flex items-center justify-center border rounded-lg'>{selectedProducts?.reason || data?.[0]?.reason}</div>
+                                    <div className='flex items-center justify-center border rounded-lg'>{selectedProducts?.reason || data?.[0]?.reason}</div>
                             )}
                             <Droppable
                                 id="droppable-area"

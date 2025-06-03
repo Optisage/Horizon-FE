@@ -2,7 +2,6 @@
 import { DndContext, type DragEndEvent, DragOverlay, type DragStartEvent, PointerSensor, useSensor, useSensors } from "@dnd-kit/core"
 import { restrictToWindowEdges } from "@dnd-kit/modifiers"
 import { useGetSearchByIdQuery, useQuickSearchQuery } from '@/redux/api/quickSearchApi';
-import Loader from '@/utils/loader';
 import { usePathname, useSearchParams } from 'next/navigation';
 import React, { useEffect, useState } from 'react'
 import { TbListSearch } from "react-icons/tb";
@@ -14,6 +13,8 @@ import QuickSearchTable from "../_components/QuickSearchTable";
 import { ProductObj, QuickSearchData } from "@/types/goCompare";
 import { FetchBaseQueryError } from "@reduxjs/toolkit/query";
 import { SerializedError } from "@reduxjs/toolkit";
+import GoCompareLoader from "../_components/Loader";
+import Loader from "@/utils/loader";
 
 export default function QuickSearch() {
     const params = useSearchParams();
@@ -64,7 +65,7 @@ export default function QuickSearch() {
     };
 
     const { data, isLoading, isError, isFetching, error } = result;
-    
+
     const [selectedProducts, setSelectedProducts] = useState<ProductObj[]>([])
     const [activeProduct, setActiveProduct] = useState<ProductObj | null>(null)
 
@@ -146,7 +147,16 @@ export default function QuickSearch() {
         setSelectedProducts([]);
     }, [data?.amazon_product]);
 
-    if (isLoading || isRouteChanging) return <Loader />;
+    if ((isLoading || isRouteChanging) && searchId) return <Loader />;
+    if (isLoading || isRouteChanging) {
+        return (
+            <GoCompareLoader
+                asin={asin}
+                storeNames={store_names}
+                isLoading={isLoading || isRouteChanging}
+            />
+        );
+    }
     if (isError) {
         let errorMessage = "Unknown error";
         if (error && typeof error === 'object') {

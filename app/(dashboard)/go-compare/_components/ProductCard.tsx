@@ -13,6 +13,7 @@ const getCurrencySign = (currency: string | number | undefined): string => {
     case 2:
       return "£"
     case "USD":
+    case "$":
     case 1:
       return "$"
     case "CAD":
@@ -59,7 +60,7 @@ export function ProductCard({ product }: ProductCardProps) {
     productUrl = product.url;
     productName = product.name;
     logoUrl = product.store.logo;
-        logoUrl = product.store.logo;
+    logoUrl = product.store.logo;
     currencySign = getCurrencySign(product.currency);
     price = product.price;
   } else {
@@ -67,7 +68,7 @@ export function ProductCard({ product }: ProductCardProps) {
     productUrl = product.url;
     productName = product.product_name;
     logoUrl = product.store.logo;
-        logoUrl = product.store.logo;
+    logoUrl = product.store.logo;
     currencySign = getCurrencySign(product.currency);
     price = product.price;
   }
