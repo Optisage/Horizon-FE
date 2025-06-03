@@ -64,6 +64,7 @@ const OffersSection = ({ asin, marketplaceId, router, isLoading }: OffersSection
   const fbmCount = offersData.offers.filter((o) => o.seller_type === "FBM").length
   const amzCount = offersData.offers.filter((o) => o.seller_type === "AMZ").length
 
+  
   const handleLoadMore = () => {
     setLoading(true)
     setTimeout(() => {
