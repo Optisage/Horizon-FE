@@ -194,6 +194,9 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
     )
   }
 
+  const offers = buyboxDetailsData?.data?.buybox || [];
+
+
   return (
     <section className="flex flex-col gap-8 min-h-[50dvh] md:min-h-[80dvh]">
       <SearchInput value={searchValue} onChange={setSearchValue} />
@@ -234,6 +237,7 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
                 marketplaceId={marketplaceId}
                 product={data?.data}
                 isLoading={false}
+                 offers={offers}
                 onCalculationComplete={handleCalculationComplete}
               />
               <ProductStats
