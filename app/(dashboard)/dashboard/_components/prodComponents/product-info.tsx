@@ -74,7 +74,7 @@ const ProductInfo = ({ product, ipData, eligibility, setIpIssue, asin, isLoading
           <span className="flex flex-col gap-2">
             {eligibility ? (
               <AntTooltip
-                title="✅ Great news! You have the necessary permissions to sell this product on Amazon. This means you've met all requirements including brand approval, category restrictions, and gating requirements."
+                title="✅ You can list and sell this product! You have the necessary approvals and this product is not restricted (GATED) for your seller account."
                 placement="top"
               >
                 <p className="text-green-500 font-semibold cursor-help">
@@ -83,7 +83,7 @@ const ProductInfo = ({ product, ipData, eligibility, setIpIssue, asin, isLoading
               </AntTooltip>
             ) : (
               <AntTooltip
-                title="❌ You cannot sell this product due to restrictions. Common reasons include: Brand approval required, Category gating (need approval for restricted categories), Product safety requirements not met, Professional seller account required, or Geographic restrictions. Check the issues below for specific details."
+                title="❌ You can't list or sell this product yet because it's restricted (GATED) by the brand or category. You'll need approval first."
                 placement="top"
               >
                 <p className="text-red-500 font-semibold cursor-help">
