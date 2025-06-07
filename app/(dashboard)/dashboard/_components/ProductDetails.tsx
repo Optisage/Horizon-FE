@@ -102,10 +102,22 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
     return () => clearTimeout(handler)
   }, [searchValue])
 
+  // Reset IP data immediately when ASIN changes
+  useEffect(() => {
+    setIpData(null)
+    dispatch(
+      setIpAlert({
+        setIpIssue: 0,
+        eligibility: false,
+      }),
+    )
+    dispatch(setIpIssues([]))
+    setIsLoadingIpData(true)
+  }, [asin, dispatch])
+
   // Fetch IP data
   useEffect(() => {
     const fetchIpData = async () => {
-      setIsLoadingIpData(true)
       try {
         const response = await getIpAlert({
           itemAsin: asin,
@@ -231,6 +243,7 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
                 asin={asin}
                 marketplaceId={marketplaceId}
                 isLoading={false}
+                isLoadingIpData={isLoadingIpData}
               />
               <ProfitabilityCalculator
                 asin={asin}
