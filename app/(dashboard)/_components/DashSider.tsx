@@ -24,11 +24,19 @@ import { logout } from "@/redux/slice/authSlice";
 //import { BsStars } from "react-icons/bs";
 
 // Sidebar data
-const menuData = [
+interface MenuItem {
+  id: string;
+  path: string;
+  label: string;
+  icon: React.ComponentType<{className?: string}>;
+  comingSoon?: boolean;
+}
+
+const menuData: MenuItem[] = [
   { id: "1", path: "/dashboard", label: "Dashboard", icon: DashboardIcon },
   { id: "2", path: "/history", label: "History", icon: HistoryIcon },
   { id: "3", path: "/go-compare", label: "Go Compare", icon: GoCompareIcon },
-  { id: "5", path: "", label: "Keepa", icon: KeepaIcon, comingSoon: true },
+  { id: "5", path: "/keepa", label: "Keepa", icon: KeepaIcon },
   //{ id: "6", path: "", label: "Totan (AI)", icon: BsStars, comingSoon: true },
 ];
 
