@@ -5,7 +5,6 @@ import { useState } from "react"
 
 import KeepaSearch from "./_components/KeepaSearch"
 import KeepaChart from "./_components/KeepaChart"
-import KeepaLegend from "./_components/KeepaLegend"
 
 interface ProductData {
   title: string
@@ -56,7 +55,6 @@ export default function KeepaPage() {
             isLoading={isLoading}
           />
         )}
-        <KeepaLegend />
       </div>
     </div>
   )

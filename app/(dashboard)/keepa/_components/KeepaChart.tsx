@@ -535,7 +535,7 @@ export default function KeepaChart({ product, isLoading }: KeepaChartProps) {
             break
         }
         
-        const x = closeUpView ? (i / (dataToUse.length - 1)) * 400 : ((i + Math.floor(chartData.length * 0.75)) / (chartData.length - 1)) * 400
+        const x = (i / (dataToUse.length - 1)) * 400
         const y = Math.max(10, Math.min(110, normalizedValue))
         
         points.push(`${x},${y}`)
@@ -993,8 +993,6 @@ export default function KeepaChart({ product, isLoading }: KeepaChartProps) {
         
         {/* Chart Footer Info */}
         <div className="mt-4 text-xs text-[#787891] space-y-1">
-          <p>Select area to zoom in. Double-click to reset.</p>
-          <p>Toggle shown data by clicking on the legend.</p>
           <div className="flex items-center gap-4 mt-2">
             <span>Sales Rank Current: #{chartData[chartData.length - 1]?.salesRank.toFixed(0)}</span>
             <span>90d: #111,451</span>
