@@ -111,7 +111,7 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
         eligibility: false,
       }),
     )
-    dispatch(setIpIssues([]))
+    dispatch(setIpIssues([] as any))
     setIsLoadingIpData(true)
   }, [asin, dispatch])
 
