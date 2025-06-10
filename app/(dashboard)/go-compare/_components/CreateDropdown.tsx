@@ -27,6 +27,7 @@ export function CreateDropdown() {
     const toggleModal = (modalType: "quickSearch" | "reverseSearch" | null) => {
         setShowModal(prev => (prev === modalType ? null : modalType));
         toggleDropdown();
+        setIsOpen(false);
     };
     useEffect(() => {
         document.addEventListener("mousedown", handleClickOutside);
@@ -37,7 +38,7 @@ export function CreateDropdown() {
 
     return (
         <>
-            <div className="bg-white border border-gray-200 rounded-lg">
+            <div className="bg-white border border-gray-200 rounded-lg z-20">
                 <div
                     onClick={() => setIsOpen(true)}
                     className={`border px-2 py-3 rounded-lg flex flex-col cursor-pointer gap-1.5 ${isCreateActive ? 'bg-gray-100' : 'bg-white'} `}

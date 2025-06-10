@@ -6,15 +6,17 @@ import {
 } from "@reduxjs/toolkit/query";
 
 import {
-  setNotAuthorized,
-  setServerError,
   updateIdleTimeOut,
 } from "./slice/authSlice";
 
 import Cookies from "js-cookie";
 import { getExtensionToken } from "@/utils/extension";
+
+interface GocompareFetchArgs extends FetchArgs {
+  meta?: { endpointHeader?: string };
+}
+
 export const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
-export const testUrl = process.env.NEXT_PUBLIC_BASE_TEST_URL;
 
 export const baseQueryWithOutToken = fetchBaseQuery({
   baseUrl: `${baseUrl}`,
@@ -23,20 +25,6 @@ export const baseQueryWithOutToken = fetchBaseQuery({
     return headers;
   },
 });
-
-// export const baseQuery = fetchBaseQuery({
-//     baseUrl: `${baseUrl}`,
-//     prepareHeaders: (headers) => {
-//         //const token = sessionStorage.getItem('token')
-//         const token = Cookies.get('optisage-token');
-//         if (token) {
-//             headers.set('authorization', `Bearer ${token}`)
-//         }
-//         headers.set('Accept', 'application/json')
-//         return headers
-//     },
-
-// })
 
 export const baseQuery = fetchBaseQuery({
   baseUrl: `${baseUrl}`,
@@ -71,55 +59,26 @@ export const baseQuery = fetchBaseQuery({
   },
 });
 
-export const testQuery = fetchBaseQuery({
-  baseUrl: `${testUrl}`,
-  prepareHeaders: (headers, {endpoint}) => {
-    const token = Cookies.get('optisage-token');
-    if (token) {
-      headers.set('authorization', `Bearer ${token}`)
-    }
-    headers.set('Accept', 'application/json')
-    headers.set('x-endpoint', '/search-history')
-    return headers
-  },
 
-})
+export const goCompareQuery: BaseQueryFn<string | FetchArgs, unknown, FetchBaseQueryError> = async (args, api, extraOptions) => {
+  let modifiedArgs: FetchArgs | string = args;
 
-export const baseQueryWithInterceptor: BaseQueryFn<
-  string | FetchArgs,
-  unknown,
-  FetchBaseQueryError
-> = async (args, api, extraOptions) => {
+  if (typeof args === "object") {
+    const customArgs = args as GocompareFetchArgs;
+    const endpointPath = customArgs.meta?.endpointHeader;
 
-  const isTestServer = typeof args === 'object' && args !== null && 'meta' in args && typeof (args as any).meta === 'object' && (args as any).meta?.server === 'test';
+    modifiedArgs = {
+      ...args,
+      headers: {
+        ...(args.headers || {}),
+        ...(endpointPath ? { "x-endpoint": endpointPath } : {}),
+      },
+    };
+  }
 
-  const selectedBaseQuery = isTestServer ? testQuery : baseQuery;
-  const result: any = await selectedBaseQuery(args, api, extraOptions);
-
-  api.dispatch(updateIdleTimeOut());
-  // Check if the response has a status code of 401
-  if (result.error?.status === 401 || result.error?.originalStatus === 401) {
-    api.dispatch(setNotAuthorized());
-    sessionStorage.removeItem("token");
-  }
-  if (result.error?.status === 403 || result.error?.originalStatus === 403) {
-    // api.dispatch(setNotAuthorized())
-    // message.error("Method Not Allowed");
-  }
-  if (result.error?.status === 404 || result.error?.originalStatus === 404) {
-    // message.error("Not Found");
-  }
-  if (result.error?.status === 503 || result.error?.originalStatus === 503) {
-    // api.dispatch(setNotAuthorized())
-    // message.error("Under Maintenance");
-  }
-  if (result.error?.status === 500 || result.error?.originalStatus === 500) {
-    api.dispatch(setServerError());
-    // message.error("Server Error");
-    // window.location.href = "/serverError";
-  }
-  return result;
+  return baseQuery(modifiedArgs, api, extraOptions);
 };
+
 
 export const baseQueryForAuth: BaseQueryFn<
   string | FetchArgs,

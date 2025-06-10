@@ -22,7 +22,7 @@ const SearchHistory = () => {
     const router = useRouter();
 
     const { data, isLoading, isFetching, isError } = useSearchHistoryQuery({ page, perPage });
-    const searchData: SearchRecord[] = data?.data.map((item: ApiSearchResponseItem) => ({
+    const searchData: SearchRecord[] = data?.data?.data?.map((item: ApiSearchResponseItem) => ({
         id: item.id,
         asinOrUpc: item.query,
         searchType: item.type_of_search,
@@ -32,8 +32,7 @@ const SearchHistory = () => {
         countryCode: item.country.short_code,
         countryId: item.country.id,
         countryFlag: item.country.flag,
-        store: item.store.name,
-        storeLogo: item.store.logo,
+        stores: item.stores,
         results: item.number_of_results,
     })) || []
 
@@ -48,10 +47,11 @@ const SearchHistory = () => {
     }
 
     const handleRouting = (record: SearchRecord) => {
-        if(record.searchType === 'quick_search'){
-            router.push(`/go-compare/quick-search?asin=${record.asinOrUpc}&country=${record.countryId}&stores=${record.store}&queue=false&searchId=${record.id}`)
-        } else{
-            router.push(`/go-compare/reverse-search?queryName=${record.asinOrUpc}&store=${record.store}&searchId=${record.id}`)
+        if (record.searchType === 'quick_search') {
+            router.push(`/go-compare/quick-search?asin=${record.asinOrUpc}&country=${record.countryId}&stores=${record.stores[0].name}&queue=false&searchId=${record.id}`)
+        } else {
+            const storeNames = record.stores.map(store => store.name).join(',');
+            router.push(`/go-compare/reverse-search?queryName=${record.asinOrUpc}&store=${encodeURIComponent(storeNames)}&searchId=${record.id}`);
         }
     }
 
@@ -72,12 +72,12 @@ const SearchHistory = () => {
                             <thead>
                                 <tr className="border-b bg-[#FCFCFC]">
                                     {tableColumns.map((column) => (
-                                        <th key={column.key} className="px-4 py-3 text-left text-[#737379] font-normal">{column.label}</th>
+                                        <th key={column.key} className={`px-4 py-3 text-left text-[#737379] font-normal ${column.key === 'storeLogo' && 'text-center'}`}>{column.label}</th>
                                     ))}
                                 </tr>
                             </thead>
                             <tbody className="">
-                                {searchData.map((record) => (
+                                {searchData?.map((record) => (
                                     <tr key={record.id} className="font-medium cursor-pointer" onClick={() => handleRouting(record)}>
                                         <td className="px-4 pr-20 py-3 ">{record.asinOrUpc}</td>
                                         <td className="px-4 py-3">{record.searchType}</td>
@@ -93,7 +93,12 @@ const SearchHistory = () => {
                                             </div>
                                         </td>
                                         <td className="px-4 py-3">
-                                            <img src={record.storeLogo} alt="" className="object-contain w-10 h-10" />
+                                            <div className="flex gap-2 items-center justify-center">
+                                                {[...new Map(record.stores.filter(store => store.logo).map(store => [store.name || store.id, store])).values()].map((store) => (
+                                                    <img key={store.id} src={store.logo} alt="" className="object-contain w-10 h-10" />
+                                                ))}
+                                            </div>
+
                                         </td>
                                         <td className="px-4 py-3">{record.results}</td>
                                     </tr>
@@ -101,7 +106,7 @@ const SearchHistory = () => {
                             </tbody>
                         </table>
                     </div>
-                    <TablePagination page={page} perPage={perPage} totalPages={data?.meta?.last_page} handlePageChange={handlePageChange} handlePerPageChange={handlePerPageChange} />
+                    <TablePagination page={page} perPage={perPage} totalPages={data?.data?.meta?.last_page} handlePageChange={handlePageChange} handlePerPageChange={handlePerPageChange} />
                     <p className="text-green-600 text-end mx-4 mb-2 text-sm">Results will be cleared after 7 days</p>
 
                 </div>

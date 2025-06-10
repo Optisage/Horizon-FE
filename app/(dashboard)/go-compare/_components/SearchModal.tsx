@@ -40,8 +40,8 @@ export function SearchModal({ isOpen, onClose, title, inputLabel, isMultiStore =
     }, []);
 
     useEffect(() => {
-        if (countries?.data?.length > 0) {
-            const defaultCountry = countries.data[0];
+        if (countries?.data?.data?.length > 0) {
+            const defaultCountry = countries?.data?.data[0];
             setSelectedCountry(defaultCountry);
             let id = defaultCountry.id === 3 ? 6 : defaultCountry.id;
             dispatch(setMarketPlaceId(id));
@@ -62,7 +62,7 @@ export function SearchModal({ isOpen, onClose, title, inputLabel, isMultiStore =
         setAsinOrUpc("");
         setSelectedStores([]);
         setSelectedSearchType(searchTypes[0]);
-        setSelectedCountry(countries?.data[0]);
+        setSelectedCountry(countries?.data?.data[0]);
         onClose();
     };
 
@@ -130,7 +130,7 @@ export function SearchModal({ isOpen, onClose, title, inputLabel, isMultiStore =
 
                             {isCountryDropdownOpen && (
                                 <div className="absolute z-10 mt-1 px-2 w-full text-sm bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-auto">
-                                    {countries?.data.map((country: Country) => (
+                                    {countries?.data?.data.map((country: Country) => (
                                         <button
                                             key={country.id}
                                             onClick={() => {

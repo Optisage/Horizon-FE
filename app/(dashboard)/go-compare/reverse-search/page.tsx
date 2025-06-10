@@ -29,7 +29,7 @@ export default function ReverseSearch() {
 
     const [isRouteChanging, setIsRouteChanging] = useState(false);
     const [page, setPage] = useState(1);
-    const [perPage, setPerPage] = useState(15);
+    const [perPage, setPerPage] = useState(300);
     const [sortBy, setSortBy] = useState("roi");
     const [sortOrder, setSortOrder] = useState("desc");
 
@@ -39,7 +39,7 @@ export default function ReverseSearch() {
     );
 
     const reverseSearchResult = useReverseSearchQuery(
-        { store, queryName: query, page, perPage, sortBy, sortOrder },
+        { store, queryName: query, perPage, sortBy, sortOrder },
         { skip: !!searchId, refetchOnMountOrArgChange: true }
     );
 
@@ -52,13 +52,13 @@ export default function ReverseSearch() {
     };
 
     const result: QueryResult = searchId ? {
-        data: searchByIdResult?.data?.data,
+        data: searchByIdResult?.data?.data?.data,
         isLoading: searchByIdResult.isLoading,
         isError: searchByIdResult.isError,
         isFetching: searchByIdResult.isFetching,
         error: searchByIdResult.error,
     } : {
-        data: reverseSearchResult?.data?.data,
+        data: reverseSearchResult?.data?.data?.data,
         isLoading: reverseSearchResult.isLoading,
         isError: reverseSearchResult.isError,
         isFetching: reverseSearchResult.isFetching,

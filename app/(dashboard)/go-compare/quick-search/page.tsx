@@ -51,13 +51,13 @@ export default function QuickSearch() {
     };
 
     const result: QueryResult = searchId ? {
-        data: searchByIdResult.data,
+        data: searchByIdResult.data?.data,
         isLoading: searchByIdResult.isLoading,
         isError: searchByIdResult.isError,
         isFetching: searchByIdResult.isFetching,
         error: searchByIdResult.error,
     } : {
-        data: quickSearchResult.data,
+        data: quickSearchResult.data?.data,
         isLoading: quickSearchResult.isLoading,
         isError: quickSearchResult.isError,
         isFetching: quickSearchResult.isFetching,

@@ -1,17 +1,17 @@
 import { createApi } from "@reduxjs/toolkit/query/react";
-import { baseQueryWithInterceptor } from "../queryInterceptor";
+import { goCompareQuery } from "../queryInterceptor";
 
 export const quickSearchApi = createApi({
     reducerPath: "quickSearchApi",
     refetchOnReconnect: true,
     refetchOnMountOrArgChange: 10,
-    baseQuery: baseQueryWithInterceptor,
+    baseQuery: goCompareQuery,
     endpoints: (builder) => ({
         getAllCountries: builder.query({
             query: () => ({
-                url: "countries?include=stores",
+                url: "team-b/reroute?include=stores",
                 method: "GET",
-                meta: { server: 'test' }
+                meta: { endpointHeader: '/countries', }
             }),
         }),
         quickSearch: builder.query({
@@ -20,31 +20,31 @@ export const quickSearchApi = createApi({
                     .map(name => encodeURIComponent(name))
                     .join(',');
                 return {
-                    url: `quick-search?stores=${storeNamesParam}&asin=${asin}&country_id=${country_ids}&queue=${queue}&group_by=flat`,
+                    url: `team-b/reroute?stores=${storeNamesParam}&asin=${asin}&country_id=${country_ids}&queue=${queue}&group_by=flat`,
                     method: "GET",
-                    meta: { server: 'test' }
+                    meta: { endpointHeader: '/quick-search', }
                 }
             },
         }),
         searchHistory: builder.query({
             query: ({ page, perPage }) => ({
-                url: `search-history?include=store,marketplace,country&page=${page}&perPage=${perPage}`,
+                url: `team-b/reroute?include=store,marketplace,country&page=${page}&perPage=${perPage}`,
                 method: "GET",
-                meta: { server: 'test' }
+                meta: { endpointHeader: '/search-histories', }
             }),
         }),
         getSearchById: builder.query({
             query: ({ id }) => ({
-                url: `search-history/${id}/results`,
+                url: `team-b/reroute?id=${id}`,
                 method: "GET",
-                meta: { server: 'test' }
+                meta: { endpointHeader: 'search-history/results' }
             }),
         }),
         reverseSearch: builder.query({
-            query: ({ queryName, store, page, perPage, sortBy, sortOrder }) => ({
-                url: `reverse-arbitrage?store=${encodeURIComponent(store)}&product_name=${queryName}&page=${page}&limit=${perPage}&sort_by=${sortBy}&sort_order=${sortOrder}`,
+            query: ({ queryName, store, perPage, sortBy, sortOrder }) => ({
+                url: `team-b/reroute?store=${encodeURIComponent(store)}&product_name=${queryName}&limit=${perPage}&sort_by=${sortBy}&sort_order=${sortOrder}`,
                 method: "GET",
-                meta: { server: 'test' }
+                meta: { endpointHeader: '/reverse-arbitrage', }
             }),
         }),
     }),
@@ -57,3 +57,6 @@ export const {
     useGetSearchByIdQuery,
     useReverseSearchQuery
 } = quickSearchApi;
+
+
+

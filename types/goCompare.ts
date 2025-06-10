@@ -8,8 +8,8 @@ export interface SearchRecord {
     countryCode: string
     countryId: string
     countryFlag: string
-    store: string
-    storeLogo: string
+    stores: Store[]
+    // storeLogo: string
     results: number
 }
 
@@ -47,7 +47,7 @@ export interface ApiSearchResponseItem {
     type_of_search: string;
     created_at: CreatedAt;
     updated_at: string;
-    store: Store;
+    stores: Store[];
     country: Country;
     marketplace: string | null;
 }
