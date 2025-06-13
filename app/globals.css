@@ -58,3 +58,16 @@ img {
   animation-delay: 0.4s;
 }
 
+.custom-select-dropdown::-webkit-scrollbar {
+  width: 8px;
+}
+
+.custom-select-dropdown::-webkit-scrollbar-thumb {
+  background-color: rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
+}
+
+.custom-select-dropdown {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
+}

@@ -48,7 +48,9 @@ export const sellerApi = createApi({
         if (params.minBsr) queryParams.minBsr = params.minBsr;
         if (params.maxBsr) queryParams.maxBsr = params.maxBsr;
         if (params.q) queryParams.q = params.q;
+        if (params.brandName) queryParams.brandName = params.brandName;
         if (params.pageToken) queryParams.pageToken = params.pageToken;
+        if (params.categoryId) queryParams.categoryId = params.categoryId;
 
         return {
           url: `sellers/${sellerId}/products`,
