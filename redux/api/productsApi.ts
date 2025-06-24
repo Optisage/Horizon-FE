@@ -16,10 +16,10 @@ export const productsApi = createApi({
     }),
 
     getSearchHistory: builder.query({
-      query: ({ marketplaceId, pageSize = 5, pageToken }) => ({
+      query: ({ marketplaceId, pageSize = 5, pageToken, page = 2  }) => ({
         url: "catalog/search-history",
         method: "GET",
-        params: { marketplaceId, pageSize, ...(pageToken && { pageToken }) },
+        params: { page ,marketplaceId, pageSize, ...(pageToken && { pageToken }) },
         // https://api-staging.optisage.ai/api/catalog/search-history?marketplaceId=1&q=tv&perPage=5
       }),
     }),
