@@ -15,12 +15,25 @@ function DraggableRow({ product, onRowClick }: { product: ProductObj; onRowClick
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: product.scraped_product.id,
     data: { product },
-  })
+  });
 
-  const amazonPrice = (product.scraped_product.price.amount + product.price_difference).toFixed(2)
-  const formattedAmazonPrice = `${product.scraped_product.price.currency} ${amazonPrice}`
-  const formattedProfitMargin = `${product.profit_margin.toFixed(1)}%`
-  const formattedROI = `${product.roi_percentage.toFixed(1)}%`
+  const [mouseDownTime, setMouseDownTime] = useState<number | null>(null);
+
+  const handleMouseDown = () => {
+    setMouseDownTime(Date.now());
+  };
+
+  const handleMouseUp = () => {
+    if (mouseDownTime && Date.now() - mouseDownTime < 200) {
+      onRowClick(product);
+    }
+    setMouseDownTime(null);
+  };
+
+  const amazonPrice = (product.scraped_product.price.amount + product.price_difference).toFixed(2);
+  const formattedAmazonPrice = `${product.scraped_product.price.currency} ${amazonPrice}`;
+  const formattedProfitMargin = `${product.profit_margin.toFixed(1)}%`;
+  const formattedROI = `${product.roi_percentage.toFixed(1)}%`;
 
   return (
     <tr
@@ -35,10 +48,11 @@ function DraggableRow({ product, onRowClick }: { product: ProductObj; onRowClick
           }
           : undefined
       }
+      onMouseDown={handleMouseDown}
+      onMouseUp={handleMouseUp}
+      className={`hover:bg-gray-50 cursor-pointer ${isDragging ? "opacity-50 bg-gray-100" : ""}`}
       {...listeners}
       {...attributes}
-      onClick={() => onRowClick(product)}
-      className={`hover:bg-gray-50 cursor-pointer ${isDragging ? "opacity-50 bg-gray-100" : ""}`}
     >
       <td className="px-4 py-1.5 flex items-center gap-2">
         <div className="w-8 h-8 relative rounded overflow-hidden">

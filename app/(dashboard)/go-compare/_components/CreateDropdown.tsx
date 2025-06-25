@@ -8,12 +8,12 @@ import { ScanBrandsIcon } from "./icons";
 import wanted from '../../../../public/assets/svg/gocompare/wanted.svg';
 import Image from "next/image";
 import { MdOutlineHistory } from "react-icons/md";
-import { QuickSearchModal } from "./QuickSearchModal";
 import { usePathname, useRouter } from "next/navigation";
+import { SearchModal } from "./SearchModal";
 
 export function CreateDropdown() {
     const [isOpen, setIsOpen] = useState(false)
-    const [showQuickSearch, setShowQuickSearch] = useState(false)
+    const [showModal, setShowModal] = useState<"quickSearch" | "reverseSearch" | null>(null);
     const dropdownRef = useRef<HTMLDivElement>(null);
     const toggleDropdown = () => setIsOpen(prev => !prev);
     const pathname = usePathname();
@@ -24,9 +24,10 @@ export function CreateDropdown() {
             setIsOpen(false);
         }
     };
-    const toggleModal = () => {
-        setShowQuickSearch(prev => !prev);
+    const toggleModal = (modalType: "quickSearch" | "reverseSearch" | null) => {
+        setShowModal(prev => (prev === modalType ? null : modalType));
         toggleDropdown();
+        setIsOpen(false);
     };
     useEffect(() => {
         document.addEventListener("mousedown", handleClickOutside);
@@ -37,7 +38,7 @@ export function CreateDropdown() {
 
     return (
         <>
-            <div className="bg-white border border-gray-200 rounded-lg">
+            <div className="bg-white border border-gray-200 rounded-lg z-20">
                 <div
                     onClick={() => setIsOpen(true)}
                     className={`border px-2 py-3 rounded-lg flex flex-col cursor-pointer gap-1.5 ${isCreateActive ? 'bg-gray-100' : 'bg-white'} `}
@@ -56,8 +57,8 @@ export function CreateDropdown() {
                         </div>
 
                         <div className="p-2 pt-0">
-                            <DropdownItem onClick={toggleModal} icon={CiSearch} label="Quick Search (100 products)" />
-                            <DropdownItem onClick={() => { }} icon={CiSearch} label="Search Seller Products" disabled />
+                            <DropdownItem onClick={() => toggleModal("quickSearch")} icon={CiSearch} label="Quick Search" />
+                            <DropdownItem onClick={() => toggleModal("reverseSearch")} icon={CiSearch} label="Reverse Search" />
                             <DropdownItem onClick={() => { }} icon={LuScanSearch} label="Search with Filter" disabled />
                             <DropdownItem onClick={() => { }} icon={ScanBrandsIcon} label="Scan Brands" disabled />
                             <DropdownItem onClick={() => { }} icon={WantedIcon} label="Scan Most Wanted" disabled />
@@ -73,7 +74,7 @@ export function CreateDropdown() {
                             <DropdownItem
                                 onClick={() => {
                                     router.push("/go-compare/search-history");
-                                    setIsOpen(false); 
+                                    setIsOpen(false);
                                 }}
                                 icon={MdOutlineHistory} label="Search History"
                             />
@@ -83,7 +84,17 @@ export function CreateDropdown() {
                 )}
             </div>
 
-            <QuickSearchModal isOpen={showQuickSearch} onClose={() => setShowQuickSearch(false)} />
+            {/* {showModal === "quickSearch" && <QuickSearchModal isOpen={true} onClose={() => toggleModal(null)} />} */}
+            {/* {showModal === "reverseSearch" && <ReverseSearchModal isOpen={true} onClose={() => toggleModal(null)} />} */}
+            {showModal === "quickSearch" && <SearchModal
+                isOpen={true} onClose={() => toggleModal(null)}
+                title="Quick Search" inputLabel="Enter ASIN, UPC or Product Name" isMultiStore={true}
+            />}
+
+            {showModal === "reverseSearch" && <SearchModal
+                isOpen={true} onClose={() => toggleModal(null)}
+                title="Reverse Search" inputLabel="Query Name" isMultiStore={false}
+            />}
         </>
     )
 }

@@ -6,9 +6,10 @@ export interface SearchRecord {
     amazonPrice: string
     country: string
     countryCode: string
+    countryId: string
     countryFlag: string
-    store: string
-    storeLogo: string
+    stores: Store[]
+    // storeLogo: string
     results: number
 }
 
@@ -34,7 +35,7 @@ export interface Country {
     flag: string;
     short_code: string;
     created_at: CreatedAt;
-    stores? : Store[]
+    stores?: Store[]
 }
 
 export interface ApiSearchResponseItem {
@@ -46,7 +47,7 @@ export interface ApiSearchResponseItem {
     type_of_search: string;
     created_at: CreatedAt;
     updated_at: string;
-    store: Store;
+    stores: Store[];
     country: Country;
     marketplace: string | null;
 }
@@ -75,6 +76,7 @@ export interface AmazonProduct {
         monthly_sellers: number | null;
         amazon_on_listing: boolean;
         estimated_monthly_sales: number | null;
+        avg_amazon_90_day_price: number | null
     };
     ratings: {
         rating: string;
@@ -90,6 +92,30 @@ export interface AmazonProduct {
 export interface QuickSearchData {
     amazon_product: AmazonProduct | null;
     opportunities: ProductObj[];
+}
+
+export interface ReverseSearchData {
+    id: string
+    display_message: string
+    reason: string
+    amazon_product: AmazonProduct | null;
+    scraped_product: {
+        id: string
+        name: string
+        price: string
+        url: string
+        image: string
+        brand: string
+        currency: string
+        store: {
+            name: string
+            logo: string
+        }
+    }
+    price_difference: number;
+    roi_percentage: number;
+    profit_margin: number;
+    source: string;
 }
 
 export type ProductObj = {
@@ -125,4 +151,33 @@ export type ProductObj = {
         scraped_product: string
     }
     confidence: number
+}
+
+
+export type ReverseAmazon = {
+    asin: string
+    sku: string
+    product_name: string
+    price: number,
+    url: string
+    image: string
+    currency: string
+    store: {
+        name: string
+        logo: string
+    }
+}
+
+export type ReverseAmazonScraped = {
+    id: string
+    name: string
+    price: string
+    url: string
+    image: string
+    brand: string
+    currency: string
+    store: {
+        name: string
+        logo: string
+    }
 }
