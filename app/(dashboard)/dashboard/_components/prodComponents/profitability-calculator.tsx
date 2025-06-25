@@ -211,9 +211,9 @@ const ProfitabilityCalculator = ({
           onCalculationComplete(data)
         }
       }
-    } catch (error) {
+    } catch (error:any) {
       console.error("Calculation error:", error)
-      message.error("Calculation failed. Please check your inputs.")
+      message.error(error?.data?.message as string)
     } finally {
       setIsCalculating(false)
     }
