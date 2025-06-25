@@ -1,4 +1,6 @@
 "use client"
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { useState, useEffect, useRef } from "react"
 import { SearchInput } from "@/app/(dashboard)/_components"
 import { useRouter } from "next/navigation"
@@ -210,11 +212,12 @@ const History = () => {
         <SearchInput placeholder="Search your history..." value={searchValue} onChange={setSearchValue} />
       </div>
 
-      {isLoading && !isPaginationLoading && (
-        <div className="h-[50dvh] flex justify-center items-center">
-          <CircularLoader duration={1000} color="#18CB96" size={64} strokeWidth={4} />
-        </div>
-      )}
+     {isLoading && !isPaginationLoading && (
+  <div className="fixed inset-0 pl-20 flex justify-center items-center bg-white z-50">
+    <CircularLoader duration={1000} color="#18CB96" size={64} strokeWidth={4} />
+  </div>
+)}
+
 
       {error && <div className="text-center text-red-500 mt-4">Failed to load search history.</div>}
 

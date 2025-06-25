@@ -144,7 +144,7 @@ const Login: React.FC = () => {
         <p className="font-medium">
           New here?{" "}
           <Link
-            href="https://optisage.ai/pricing/"
+            href="https://optisage.ai/#pricing/"
             className="underline hover:font-semibold"
             target="_blank"
             rel="noopener noreferrer"
