@@ -14,6 +14,7 @@ import {
   CreditIcon,
   HistoryIcon,
   GoCompareIcon,
+  UPCScannerIcon,
 } from "@/public/assets/svg/icons";
 import LogoutModal from "./LogoutModal";
 import { BiChevronRight } from "react-icons/bi";
@@ -29,17 +30,25 @@ const menuData = [
   { id: "2", path: "/history", label: "History", icon: HistoryIcon },
   { id: "3", path: "/go-compare", label: "Go Compare", icon: GoCompareIcon },
   { id: "5", path: "", label: "Keepa", icon: KeepaIcon, comingSoon: true },
-  { id: "6", path: "/totan", label: "Totan (AI)", icon: BsStars, comingSoon: false, beta:true },
+  {
+    id: "6",
+    path: "/totan",
+    label: "Totan (AI)",
+    icon: BsStars,
+    comingSoon: false,
+    beta: true,
+  },
+  { id: "7", path: "/upc-scanner", label: "UPC Scanner", icon: UPCScannerIcon },
 ];
 
 const secondaryMenu = [
-  { id: "7", path: "/settings", label: "Settings", icon: SettingsIcon },
-  { id: "8", path: "", label: "Credit", icon: CreditIcon, comingSoon: true },
+  { id: "8", path: "/settings", label: "Settings", icon: SettingsIcon },
+  { id: "9", path: "", label: "Credit", icon: CreditIcon, comingSoon: true },
 ];
 
 const billingMenu = [
   {
-    id: "9",
+    id: "10",
     path: "/subscriptions",
     label: "Subscriptions",
     icon: SubscriptionsIcon,
@@ -205,3 +214,4 @@ const DashSider = () => {
 };
 
 export default DashSider;
+
