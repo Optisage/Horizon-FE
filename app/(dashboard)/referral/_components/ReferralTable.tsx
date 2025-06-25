@@ -134,11 +134,11 @@ const ReferralTable = ({
           <p className="text-[#4B4B62] text-sm font-bold  flex items-center gap-2">
             Your referral link:{" "}
             <span className="font-normal">
-              https://optisage.ai/pricing/?ref={username}
+              https://optisage.ai/#pricing/?ref={username}
             </span>
             <div
               onClick={() =>
-                copyToClipboard(`https://optisage.ai/pricing/?ref=${username}`)
+                copyToClipboard(`https://optisage.ai/#pricing/?ref=${username}`)
               }
               className=" cursor-pointer"
             >
