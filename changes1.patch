@@ -1,0 +1,1822 @@
+diff --git a/app/(dashboard)/dashboard/_components/AlertsDrawer.tsx b/app/(dashboard)/dashboard/_components/AlertsDrawer.tsx
+index 7225b34..5ae765c 100644
+--- a/app/(dashboard)/dashboard/_components/AlertsDrawer.tsx
++++ b/app/(dashboard)/dashboard/_components/AlertsDrawer.tsx
+@@ -27,6 +27,7 @@ const AlertsDrawer = ({
+     isMeltable: false,
+     hasVariations: false,
+     ipDescription: "No known IP issues",
++    ipHarzadous: "N/A"
+   });
+ 
+   useEffect(() => {
+@@ -38,6 +39,7 @@ const AlertsDrawer = ({
+         isMeltable: ipData?.is_meltable ?? false,
+         hasVariations: ipData?.has_variations ?? false,
+         ipDescription: getFirstDescription(ipData?.ip_analysis?.description),
++        ipHarzadous: ipData?.is_hazardous_or_dangerous,
+       });
+     }
+   }, [ipData]); // Update when IP data changes
+@@ -137,6 +139,10 @@ const AlertsDrawer = ({
+                   label: "Variations",
+                   value: additionalData.hasVariations ? "Yes" : "No",
+                 },
++                {
++                  label: "Hazardous or Dangerous",
++                  value: additionalData.ipHarzadous ? "Yes" : "No",
++                },
+               ].map((item, index) => (
+                 <div
+                   key={index}
+diff --git a/app/(dashboard)/dashboard/_components/ProductDetails.tsx b/app/(dashboard)/dashboard/_components/ProductDetails.tsx
+index cff78c0..e564a30 100644
+--- a/app/(dashboard)/dashboard/_components/ProductDetails.tsx
++++ b/app/(dashboard)/dashboard/_components/ProductDetails.tsx
+@@ -1,14 +1,19 @@
+ "use client"
+ /* eslint-disable @typescript-eslint/no-explicit-any */
++/* eslint-disable @typescript-eslint/no-unused-vars */
+ import { useState, useEffect, useRef } from "react"
+ import { useRouter } from "next/navigation"
+ import { useAppSelector } from "@/redux/hooks"
+ import { useDispatch } from "react-redux"
+ import { setIpAlert, setIpIssues } from "@/redux/slice/globalSlice"
+ import { SearchInput } from "@/app/(dashboard)/_components"
+-import { useGetBuyboxDetailsQuery, useGetItemQuery, useLazyGetIpAlertQuery } from "@/redux/api/productsApi"
++import {
++  useGetBuyboxDetailsQuery,
++  useGetItemQuery,
++  useGetMarketAnalysisQuery,
++  useLazyGetIpAlertQuery,
++} from "@/redux/api/productsApi"
+ import dayjs from "dayjs"
+-
+ import ProductHeader from "./prodComponents/product-header"
+ import ProductInfo from "./prodComponents/product-info"
+ import ProfitabilityCalculator from "./prodComponents/profitability-calculator"
+@@ -19,6 +24,9 @@ import BuyBoxAnalysis from "./prodComponents/buy-box-analysis"
+ import MarketAnalysis from "./prodComponents/market-analysis"
+ import SearchResults from "./prodComponents/search-results"
+ import type { IpAlertData } from "./prodComponents/types"
++import CircularLoader from "@/utils/circularLoader"
++
++
+ 
+ interface ProductDetailsProps {
+   asin: string
+@@ -31,7 +39,7 @@ interface IpAlertState {
+ }
+ 
+ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
+-    const productStatsRef = useRef<{ handleProfitabilityUpdate: (data: any) => void } | null>(null)
++  const productStatsRef = useRef<{ handleProfitabilityUpdate: (data: any) => void } | null>(null)
+   const dispatch = useDispatch()
+   const router = useRouter()
+   const [getIpAlert] = useLazyGetIpAlertQuery()
+@@ -50,16 +58,48 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
+   const [statStartDate, setStatStartDate] = useState(dayjs().format("YYYY-MM-DD"))
+   const [statEndDate, setStatEndDate] = useState(dayjs().add(1, "month").format("YYYY-MM-DD"))
+ 
+-  const { data: buyboxDetailsData } = useGetBuyboxDetailsQuery({
++  // Track marketplace changes for loader
++  const [isMarketplaceChanging, setIsMarketplaceChanging] = useState(false)
++  const [isLoadingIpData, setIsLoadingIpData] = useState(false)
++  const previousMarketplaceId = useRef(marketplaceId)
++
++  // RTK Query hooks with isFetching
++  const {
++    data: buyboxDetailsData,
++    isLoading: isLoadingBuybox,
++    isFetching: isFetchingBuybox,
++  } = useGetBuyboxDetailsQuery({
+     marketplaceId,
+     itemAsin: asin,
+   })
+ 
+-  const { data, error, isLoading } = useGetItemQuery({
++  const {
++    data,
++    error,
++    isLoading: isLoadingItem,
++    isFetching: isFetchingItem,
++  } = useGetItemQuery({
+     marketplaceId,
+     itemAsin: asin,
+   })
+ 
++  const {
++    data: marketAnalysisData,
++    isLoading: isLoadingMarketAnalysis,
++    isFetching: isFetchingMarketAnalysis,
++  } = useGetMarketAnalysisQuery({
++    marketplaceId,
++    itemAsin: asin,
++    statStartDate: dayjs().format("YYYY-MM-DD"),
++    statEndDate: dayjs().add(1, "month").format("YYYY-MM-DD"),
++  })
++
++  // Combined fetching state
++  const isAnyQueryFetching = isFetchingItem || isFetchingBuybox || isFetchingMarketAnalysis || isLoadingIpData
++
++  // Show loader when marketplace changes or any query is fetching
++  const shouldShowLoader = isMarketplaceChanging || isAnyQueryFetching
++
+   const buyboxWinner = buyboxDetailsData?.data?.buybox?.find((offer: any) => offer.is_buybox_winner)
+   const buyboxWinnerPrice = buyboxWinner?.listing_price || 0
+ 
+@@ -67,9 +107,7 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
+   const fbmOffers = buyboxDetailsData?.data?.buybox?.filter((offer: any) => offer.seller_type === "FBM")
+ 
+   const lowestFBAPrice = fbaOffers?.length ? Math.min(...fbaOffers.map((o: any) => o.listing_price)) : 0
+-
+   const lowestFBMPrice = fbmOffers?.length ? Math.min(...fbmOffers.map((o: any) => o.listing_price)) : 0
+-
+   const monthlySales = data?.data?.sales_statistics?.estimated_sales_per_month?.amount
+ 
+   // Debounce input to prevent excessive API calls
+@@ -78,9 +116,52 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
+     return () => clearTimeout(handler)
+   }, [searchValue])
+ 
++  // Track marketplace changes
++  useEffect(() => {
++    if (previousMarketplaceId.current !== marketplaceId) {
++      setIsMarketplaceChanging(true)
++      previousMarketplaceId.current = marketplaceId
++
++      // Reset states when marketplace changes
++      setIpData(null)
++      dispatch(
++        setIpAlert({
++          setIpIssue: 0,
++          eligibility: false,
++        }),
++      )
++      dispatch(setIpIssues([] as any))
++    }
++  }, [marketplaceId, dispatch])
++
++  // Reset marketplace changing state when all queries finish
++  useEffect(() => {
++    if (isMarketplaceChanging && !isAnyQueryFetching) {
++      // Add a small delay to ensure smooth transition
++      const timer = setTimeout(() => {
++        setIsMarketplaceChanging(false)
++      }, 300)
++      return () => clearTimeout(timer)
++    }
++  }, [isMarketplaceChanging, isAnyQueryFetching])
++
++  // Reset IP data immediately when ASIN changes
++  useEffect(() => {
++    setIpData(null)
++    dispatch(
++      setIpAlert({
++        setIpIssue: 0,
++        eligibility: false,
++      }),
++    )
++    dispatch(setIpIssues([] as any))
++    setIsLoadingIpData(true)
++  }, [asin, dispatch])
++
+   // Fetch IP data
+   useEffect(() => {
+     const fetchIpData = async () => {
++      setIsLoadingIpData(true)
+       try {
+         const response = await getIpAlert({
+           itemAsin: asin,
+@@ -90,7 +171,7 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
+         }).unwrap()
+         dispatch(
+           setIpAlert({
+-            setIpIssue: response?.data?.ip_analysis?.issues?.length ?? 0,
++            setIpIssue: response?.data?.ip_analysis?.issues ?? 0,
+             eligibility: response?.data?.eligible_to_sell ?? false,
+           }),
+         )
+@@ -98,6 +179,8 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
+         setIpData(response.data as IpAlertData)
+       } catch (error) {
+         console.error("Error fetching IP alert:", error)
++      } finally {
++        setIsLoadingIpData(false)
+       }
+     }
+ 
+@@ -115,113 +198,129 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
+     )
+   }
+ 
+-
+-
+   const handleCalculationComplete = (data: any) => {
+     if (productStatsRef.current) {
+       productStatsRef.current.handleProfitabilityUpdate(data)
+     }
+   }
+ 
++  const offers = buyboxDetailsData?.data?.buybox || []
++
+   return (
+-    <section className="flex flex-col gap-8 min-h-[50dvh] md:min-h-[80dvh]">
+-      <SearchInput value={searchValue} onChange={setSearchValue} />
+-
+-      {/* Show product details when there's no search */}
+-      {!debouncedSearch && (
+-        <main className="flex flex-col gap-5">
+-          <ProductHeader
+-            product={data?.data}
+-            buyboxWinnerPrice={buyboxWinnerPrice}
+-            lowestFBAPrice={lowestFBAPrice}
+-            lowestFBMPrice={lowestFBMPrice}
+-            monthlySales={monthlySales}
+-            sellerCount={buyboxDetailsData?.data?.buybox?.length || 0}
+-            fbaSellers={fbaOffers?.length || 0}
+-            fbmSellers={fbmOffers?.length || 0}
+-            stockLevels={buyboxDetailsData?.data?.buybox?.reduce(
+-              (sum: number, seller: any) => sum + (seller.stock_quantity || 0),
+-              0,
+-            )}
+-          />
++    <>
++      {/* Full screen loader overlay */}
++      {shouldShowLoader && (
++        <div className="fixed inset-0 pl-20 flex justify-center items-center bg-white z-50">
++          <CircularLoader duration={1000} color="#18CB96" size={64} strokeWidth={4} />
++        </div>
++      )}
+ 
+-          {/* grid */}
+-          <div className="grid md:grid-cols-2 gap-5">
+-            {/* left */}
+-            <div className="flex flex-col gap-5">
+-              <ProductInfo
+-                product={data?.data}
+-                ipData={ipData}
+-                eligibility={eligibility}
+-                setIpIssue={setIpIssue}
+-                asin={asin}
+-                marketplaceId={marketplaceId}
+-                isLoading={isLoading}
+-              />
+-              <ProfitabilityCalculator
+-                asin={asin}
+-                marketplaceId={marketplaceId}
+-                product={data?.data}
+-                isLoading={isLoading}
+-                onCalculationComplete={handleCalculationComplete}
+-              />
+-              <ProductStats
+-                product={data?.data}
+-                buyboxDetails={buyboxDetailsData?.data}
+-                isLoading={isLoading}
+-                ref={productStatsRef}
+-              />
+-            </div>
++      <section className="flex flex-col gap-8 min-h-[50dvh] md:min-h-[80dvh]">
++        <SearchInput value={searchValue} onChange={setSearchValue} />
++
++        {/* Show product details when there's no search */}
++        {!debouncedSearch && (
++          <main className="flex flex-col gap-5">
++            <ProductHeader
++              product={data?.data}
++              buyboxWinnerPrice={buyboxWinnerPrice}
++              lowestFBAPrice={lowestFBAPrice}
++              lowestFBMPrice={lowestFBMPrice}
++              monthlySales={monthlySales}
++              sellerCount={buyboxDetailsData?.data?.buybox?.length || 0}
++              fbaSellers={fbaOffers?.length || 0}
++              fbmSellers={fbmOffers?.length || 0}
++              stockLevels={buyboxDetailsData?.data?.buybox?.reduce(
++                (sum: number, seller: any) => sum + (seller.stock_quantity || 0),
++                0,
++              )}
++            />
+ 
+-            {/* right */}
+-            <div className="flex flex-col gap-5">
+-              <OffersSection asin={asin} marketplaceId={marketplaceId} router={router} isLoading={isLoading} />
+-              <RanksPricesSection asin={asin} marketplaceId={marketplaceId} isLoading={isLoading} />
+-              <BuyBoxAnalysis
+-                asin={asin}
+-                marketplaceId={marketplaceId}
+-                statStartDate={statStartDate}
+-                statEndDate={statEndDate}
+-                onDateChange={(dates: dayjs.Dayjs | [dayjs.Dayjs, dayjs.Dayjs]) => {
+-                  if (Array.isArray(dates) && dates.length === 2) {
+-                    const [startDate, endDate] = dates
+-                    setStatStartDate(startDate.format("YYYY-MM-DD"))
+-                    setStatEndDate(endDate.format("YYYY-MM-DD"))
+-                  }
+-                }}
+-                isLoading={isLoading}
+-              />
+-              <MarketAnalysis asin={asin} marketplaceId={marketplaceId} isLoading={isLoading} />
++            {/* grid */}
++            <div className="grid md:grid-cols-2 gap-5">
++              {/* left */}
++              <div className="flex flex-col gap-5">
++                <ProductInfo
++                  product={data?.data}
++                  ipData={ipData}
++                  eligibility={eligibility}
++                  setIpIssue={setIpIssue}
++                  asin={asin}
++                  marketplaceId={marketplaceId}
++                  isLoading={false}
++                  isLoadingIpData={isLoadingIpData}
++                />
++                <ProfitabilityCalculator
++                  asin={asin}
++                  marketplaceId={marketplaceId}
++                  product={data?.data}
++                  isLoading={false}
++                  offers={offers}
++                  onCalculationComplete={handleCalculationComplete}
++                />
++                <ProductStats
++                  product={data?.data}
++                  buyboxDetails={buyboxDetailsData?.data}
++                  isLoading={false}
++                  ref={productStatsRef}
++                />
++              </div>
++
++              {/* right */}
++              <div className="flex flex-col gap-5">
++                <OffersSection asin={asin} marketplaceId={marketplaceId} router={router} isLoading={false} />
++                <RanksPricesSection asin={asin} marketplaceId={marketplaceId} isLoading={false} />
++                <BuyBoxAnalysis
++                  asin={asin}
++                  marketplaceId={marketplaceId}
++                  statStartDate={statStartDate}
++                  statEndDate={statEndDate}
++                  onDateChange={(dates: dayjs.Dayjs | [dayjs.Dayjs, dayjs.Dayjs]) => {
++                    if (Array.isArray(dates) && dates.length === 2) {
++                      const [startDate, endDate] = dates
++                      setStatStartDate(startDate.format("YYYY-MM-DD"))
++                      setStatEndDate(endDate.format("YYYY-MM-DD"))
++                    }
++                  }}
++                  isLoading={false}
++                />
++                <MarketAnalysis
++                  asin={asin}
++                  marketplaceId={marketplaceId}
++                  isLoading={false}
++                  data={marketAnalysisData?.data}
++                />
++              </div>
+             </div>
+-          </div>
+-        </main>
+-      )}
++          </main>
++        )}
+ 
+-      {/* Show search results when there's a search and results */}
+-      {debouncedSearch && (
+-        <SearchResults
+-          debouncedSearch={debouncedSearch}
+-          marketplaceId={marketplaceId}
+-          currentPageToken={currentPageToken}
+-          setNextPageToken={setNextPageToken}
+-          setPreviousPageToken={setPreviousPageToken}
+-          router={router}
+-          isLoading={isPaginationLoading}
+-          onPagination={{
+-            onNext: () => {
+-              setIsPaginationLoading(true)
+-              setCurrentPageToken(nextPageToken)
+-            },
+-            onPrevious: () => {
+-              setIsPaginationLoading(true)
+-              setCurrentPageToken(previousPageToken)
+-            },
+-            hasNext: !!nextPageToken,
+-            hasPrevious: !!previousPageToken,
+-          }}
+-        />
+-      )}
+-    </section>
++        {/* Show search results when there's a search and results */}
++        {debouncedSearch && (
++          <SearchResults
++            debouncedSearch={debouncedSearch}
++            marketplaceId={marketplaceId}
++            currentPageToken={currentPageToken}
++            setNextPageToken={setNextPageToken}
++            setPreviousPageToken={setPreviousPageToken}
++            router={router}
++            isLoading={isPaginationLoading}
++            onPagination={{
++              onNext: () => {
++                setIsPaginationLoading(true)
++                setCurrentPageToken(nextPageToken)
++              },
++              onPrevious: () => {
++                setIsPaginationLoading(true)
++                setCurrentPageToken(previousPageToken)
++              },
++              hasNext: !!nextPageToken,
++              hasPrevious: !!previousPageToken,
++            }}
++          />
++        )}
++      </section>
++    </>
+   )
+ }
+ 
+diff --git a/app/(dashboard)/dashboard/_components/loader.tsx b/app/(dashboard)/dashboard/_components/loader.tsx
+new file mode 100644
+index 0000000..eaddac4
+--- /dev/null
++++ b/app/(dashboard)/dashboard/_components/loader.tsx
+@@ -0,0 +1,149 @@
++"use client";
++
++import type React from "react";
++import { useEffect, useState } from "react";
++
++interface FinalLoaderProps {
++  currentStep: number;
++}
++
++const FinalLoader: React.FC<FinalLoaderProps> = ({ currentStep }) => {
++  // State to track animated progress values
++  const [animatedProgress, setAnimatedProgress] = useState<number[]>([
++    0, 0, 0, 0, 0,
++  ]);
++
++  // Define the steps with exact progress percentages to match the image
++  const steps = [
++    {
++      percent: "0%",
++      description: "Importing smart insights that fuel your next big sale...",
++      progress: currentStep >= 0 ? 100 : 0,
++    },
++    {
++      percent: "25%",
++      description:
++        "Filtering out the noise, keeping only what drives decisions...",
++      progress: currentStep >= 1 ? 100 : 0,
++    },
++    {
++      percent: "50%",
++      description: "Analyzing historical trends for winning product signals...",
++      progress: currentStep >= 2 ? 100 : 0,
++    },
++    {
++      percent: "75%",
++      description: "Prioritizing profitability over clutter...",
++      progress: currentStep >= 3 ? 100 : 0,
++    },
++    {
++      percent: "100%",
++      description: "All set, let's make data your secret weapon.",
++      progress: currentStep >= 4 ? 100 : 0,
++    },
++  ];
++
++  // Update animated progress when currentStep changes
++  useEffect(() => {
++    // For the current step, animate from 0 to 100 smoothly
++    if (currentStep >= 0 && currentStep < 5) {
++      // Create a new array with updated values
++      const newProgress = [...animatedProgress];
++
++      // Set all previous steps to 100%
++      for (let i = 0; i < currentStep; i++) {
++        newProgress[i] = 100;
++      }
++
++      // Animate the current step
++      let progress = 0;
++      const interval = setInterval(() => {
++        progress += 2;
++        if (progress <= 100) {
++          newProgress[currentStep] = progress;
++          setAnimatedProgress([...newProgress]);
++        } else {
++          clearInterval(interval);
++        }
++      }, 20);
++
++      return () => clearInterval(interval);
++    }
++  }, [currentStep]);
++
++  return (
++    <div className="flex flex-col space-y-5 max-w-[80%]  w-full min-w-3xl mx-auto p-6">
++      {steps.map((step, index) => (
++        <div key={index} className="flex justify-between items-center">
++          {/* Timeline and percentage indicator */}
++          <div className="relative mr-40" style={{ width: "100px" }}>
++            {/* Vertical dotted line - updated to match the image exactly */}
++            {index < steps.length - 1 && (
++              <div
++                className="absolute h-full z-0"
++                style={{
++                  left: "5px",
++                  top: "0", // Start from the top of the container
++                  height: "calc(100% + 70px)", // Extend into the next step's space
++                  width: "2px",
++                  backgroundImage:
++                    "linear-gradient(to bottom, #D1D5DB 1px, transparent 1px)",
++                  backgroundSize: "2px 4px",
++                  backgroundRepeat: "repeat-y",
++                }}
++              />
++            )}
++
++            {/* Step dot with pulse animation when active */}
++            <div
++              className="relative z-10 bg-white"
++              style={{ width: "12px", height: "12px" }}
++            >
++              <div
++                className={`w-3 h-3 rounded-full ${
++                  index === currentStep
++                    ? "bg-green-500 animate-pulse"
++                    : "bg-gray-300"
++                } ${index < currentStep ? "bg-green-500" : ""}`}
++              ></div>
++            </div>
++
++            {/* Percentage pill */}
++            <div className="absolute left-5 -top-2">
++              <div
++                className={`px-3 text-xs py-0.5 rounded-full bg-green-50 transition-all duration-300 ${
++                  index <= currentStep ? "opacity-100" : "opacity-50"
++                }`}
++              >
++                <span className="text-sm font-medium text-green-500">
++                  {step.percent}
++                </span>
++              </div>
++            </div>
++          </div>
++
++          {/* Content */}
++          <div className="flex-1">
++            <div
++              className={`mb-2 text-xs text-gray-400 transition-opacity duration-300 ${
++                index <= currentStep ? "opacity-100" : "opacity-50"
++              }`}
++            >
++              {step.description}
++            </div>
++
++            {/* Custom progress bar with smooth animation */}
++            <div className="h-3 w-full bg-gray-200 rounded-full overflow-hidden">
++              <div
++                className="h-full bg-green-500 rounded-full transition-all duration-500 ease-out"
++                style={{ width: `${animatedProgress[index]}%` }}
++              ></div>
++            </div>
++          </div>
++        </div>
++      ))}
++    </div>
++  );
++};
++
++export default FinalLoader;
+diff --git a/app/(dashboard)/dashboard/_components/prodComponents/buy-box-analysis.tsx b/app/(dashboard)/dashboard/_components/prodComponents/buy-box-analysis.tsx
+index 4bde087..d24dd7a 100644
+--- a/app/(dashboard)/dashboard/_components/prodComponents/buy-box-analysis.tsx
++++ b/app/(dashboard)/dashboard/_components/prodComponents/buy-box-analysis.tsx
+@@ -1,17 +1,18 @@
+ "use client"
+-import { Skeleton, Tooltip as AntTooltip } from "antd"
++import { Tooltip as AntTooltip } from "antd"
+ import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts"
+ import { useGetBuyboxInfoQuery } from "@/redux/api/productsApi"
+ import CustomDatePicker from "../CustomDatePicker"
+ import type { BuyboxItem } from "./types"
+ import type dayjs from "dayjs"
++import { ImSpinner9 } from "react-icons/im"
+ 
+ interface BuyBoxAnalysisProps {
+   asin: string
+   marketplaceId: number
+   statStartDate: string
+   statEndDate: string
+-  onDateChange?: (dates: dayjs.Dayjs | [dayjs.Dayjs, dayjs.Dayjs]) => void;
++  onDateChange?: (dates: dayjs.Dayjs | [dayjs.Dayjs, dayjs.Dayjs]) => void
+   isLoading?: boolean
+ }
+ 
+@@ -50,20 +51,27 @@ const BuyBoxAnalysis = ({
+       value: seller.weight_percentage,
+       color: colorPalette[index % colorPalette.length], // Cycles through predefined colors
+     })) || []
+-    
++
+   // Find the buybox winner for the tooltip
+-  const buyboxWinner = buybox.find(seller => seller.is_buybox_winner)
++  const buyboxWinner = buybox.find((seller) => seller.is_buybox_winner)
+   const buyboxWinnerName = buyboxWinner?.seller || "No current winner"
+   const totalSellers = buybox.length
+ 
+   if (isLoading || isLoadingBuybox) {
+-    return <BuyBoxAnalysisSkeleton />
++    return (
++      <div className="p-6 border rounded-lg h-[400px] flex items-center justify-center">
++        <ImSpinner9 className="animate-spin size-8 text-primary" />
++      </div>
++    )
+   }
+ 
+   return (
+     <div className="p-6 border rounded-lg">
+       <div className="flex flex-col xl:flex-row gap-4 justify-between xl:items-center">
+-        <AntTooltip title={`Analysis of Buy Box ownership across ${totalSellers} sellers from ${statStartDate} to ${statEndDate}. The current Buy Box winner is ${buyboxWinnerName}.`} placement="top">
++        <AntTooltip
++          title={`Analysis of Buy Box ownership across ${totalSellers} sellers from ${statStartDate} to ${statEndDate}. The current Buy Box winner is ${buyboxWinnerName}.`}
++          placement="top"
++        >
+           <h2 className="text-lg font-semibold">Buy Box Analysis</h2>
+         </AntTooltip>
+         <CustomDatePicker isRange onChange={onDateChange} />
+@@ -76,7 +84,10 @@ const BuyBoxAnalysis = ({
+           ) : buyboxError ? (
+             <div className="h-40 flex items-center justify-center text-red-500 font-medium">Error loading buybox</div>
+           ) : (
+-            <AntTooltip title={`Buy Box distribution chart showing ${totalSellers} sellers competing for the Buy Box. Date range: ${statStartDate} to ${statEndDate}.`} placement="top">
++            <AntTooltip
++              title={`Buy Box distribution chart showing ${totalSellers} sellers competing for the Buy Box. Date range: ${statStartDate} to ${statEndDate}.`}
++              placement="top"
++            >
+               <ResponsiveContainer width={250} height={250}>
+                 <PieChart>
+                   <Pie data={pieData} dataKey="value" outerRadius={90}>
+@@ -93,11 +104,13 @@ const BuyBoxAnalysis = ({
+             {pieData.map((entry, index) => (
+               <li key={index} className="flex items-center gap-2 text-sm">
+                 <span className="size-3 rounded-lg" style={{ backgroundColor: entry.color }} />
+-                <AntTooltip 
+-                  title={`Seller: ${entry.name} | Buy Box Share: ${entry.value}% | ${buybox[index]?.is_buybox_winner ? 'Current Buy Box Winner' : 'Not currently winning the Buy Box'} | Rating: ${buybox[index]?.rating || 'N/A'} | Reviews: ${buybox[index]?.review_count || 'N/A'}`} 
++                <AntTooltip
++                  title={`Seller: ${entry.name} | Buy Box Share: ${entry.value}% | ${buybox[index]?.is_buybox_winner ? "Current Buy Box Winner" : "Not currently winning the Buy Box"} | Rating: ${buybox[index]?.rating || "N/A"} | Reviews: ${buybox[index]?.review_count || "N/A"}`}
+                   placement="top"
+                 >
+-                  <span>{entry.name} &nbsp; - {entry.value}%</span>
++                  <span>
++                    {entry.name} &nbsp; - {entry.value}%
++                  </span>
+                 </AntTooltip>
+               </li>
+             ))}
+@@ -110,19 +123,4 @@ const BuyBoxAnalysis = ({
+   )
+ }
+ 
+-const BuyBoxAnalysisSkeleton = () => {
+-  return (
+-    <div className="p-6 border rounded-lg">
+-      <div className="flex flex-col xl:flex-row gap-4 justify-between xl:items-center">
+-        <h2 className="text-lg font-semibold">Buy Box Analysis</h2>
+-        <Skeleton.Button active size="small" style={{ width: 200 }} />
+-      </div>
+-      <div className="flex flex-col sm:flex-row justify-between items-center mt-6">
+-        <Skeleton.Image active style={{ width: 250, height: 250 }} />
+-        <Skeleton active paragraph={{ rows: 5 }} style={{ width: 200 }} />
+-      </div>
+-    </div>
+-  )
+-}
+-
+ export default BuyBoxAnalysis
+diff --git a/app/(dashboard)/dashboard/_components/prodComponents/market-analysis.tsx b/app/(dashboard)/dashboard/_components/prodComponents/market-analysis.tsx
+index 197e0be..c50518b 100644
+--- a/app/(dashboard)/dashboard/_components/prodComponents/market-analysis.tsx
++++ b/app/(dashboard)/dashboard/_components/prodComponents/market-analysis.tsx
+@@ -11,6 +11,7 @@ interface MarketAnalysisProps {
+   asin: string
+   marketplaceId: number
+   isLoading?: boolean
++  data: MarketAnalysisData | undefined
+ }
+ 
+ const MarketAnalysis = ({ asin, marketplaceId, isLoading }: MarketAnalysisProps) => {
+diff --git a/app/(dashboard)/dashboard/_components/prodComponents/offers-section.tsx b/app/(dashboard)/dashboard/_components/prodComponents/offers-section.tsx
+index 26e01eb..1e91fa6 100644
+--- a/app/(dashboard)/dashboard/_components/prodComponents/offers-section.tsx
++++ b/app/(dashboard)/dashboard/_components/prodComponents/offers-section.tsx
+@@ -1,7 +1,7 @@
+ "use client"
+ /* eslint-disable @typescript-eslint/no-explicit-any */
+ import { useState } from "react"
+-import { Tooltip as Tooltip2, Skeleton } from "antd"
++import { Tooltip as Tooltip2 } from "antd"
+ import { HiOutlineUsers } from "react-icons/hi"
+ import { MdOutlineInsertChartOutlined } from "react-icons/md"
+ import { ImSpinner9 } from "react-icons/im"
+@@ -16,14 +16,12 @@ interface OffersSectionProps {
+   isLoading?: boolean
+ }
+ 
+-
+-
+ const OffersSection = ({ asin, marketplaceId, router, isLoading }: OffersSectionProps) => {
+   const [activeTab, setActiveTab] = useState("offers")
+   const [itemsToShow, setItemsToShow] = useState(10)
+   const [loading, setLoading] = useState(false)
+ 
+-  const { data: buyboxDetailsData, isLoading: isLoadingBuyboxDetails } = useGetBuyboxDetailsQuery({
++  const { data: buyboxDetailsData } = useGetBuyboxDetailsQuery({
+     marketplaceId,
+     itemAsin: asin,
+   })
+@@ -66,6 +64,7 @@ const OffersSection = ({ asin, marketplaceId, router, isLoading }: OffersSection
+   const fbmCount = offersData.offers.filter((o) => o.seller_type === "FBM").length
+   const amzCount = offersData.offers.filter((o) => o.seller_type === "AMZ").length
+ 
++  
+   const handleLoadMore = () => {
+     setLoading(true)
+     setTimeout(() => {
+@@ -74,10 +73,14 @@ const OffersSection = ({ asin, marketplaceId, router, isLoading }: OffersSection
+     }, 2000)
+   }
+ 
+-  
+-
+-  if (isLoading || isLoadingBuyboxDetails) {
+-    return <OffersSectionSkeleton />
++  if (isLoading) {
++    return (
++      <div className="border border-border flex flex-col rounded-xl max-h-[375px] overflow-x-auto w-full p-6">
++        <div className="h-full flex items-center justify-center">
++          <ImSpinner9 className="animate-spin size-8 text-primary" />
++        </div>
++      </div>
++    )
+   }
+ 
+   return (
+@@ -177,7 +180,10 @@ const OffersSection = ({ asin, marketplaceId, router, isLoading }: OffersSection
+                         </Tooltip2>
+                       </td>
+                       <td className="px-3 py-4 flex gap-1 items-center h-full">
+-                        <Tooltip2 title={`This seller wins the Buy Box position ${offer.buyboxShare} of the time`} placement="top">
++                        <Tooltip2
++                          title={`This seller wins the Buy Box position ${offer.buyboxShare} of the time`}
++                          placement="top"
++                        >
+                           <span>{offer.buyboxShare}</span>
+                         </Tooltip2>
+                         <div className="w-20 h-2 bg-gray-200 rounded-full">
+@@ -204,18 +210,19 @@ const OffersSection = ({ asin, marketplaceId, router, isLoading }: OffersSection
+ 
+           {/* offers count */}
+           <div className="p-3 flex gap-2 justify-between items-center w-full">
+-            <Tooltip2 title={`Total number of sellers offering this product: ${offersData.offers.length || 0}`} placement="top">
++            <Tooltip2
++              title={`Total number of sellers offering this product: ${offersData.offers.length || 0}`}
++              placement="top"
++            >
+               <span>Total Offers: {offersData.offers.length || 0}</span>
+             </Tooltip2>
+             <span>
+               <Tooltip2 title="Number of Fulfillment by Amazon offers" placement="top">
+                 <span>FBA: {fbaCount}</span>
+-              </Tooltip2>
+-              {" "}
++              </Tooltip2>{" "}
+               <Tooltip2 title="Number of Fulfillment by Merchant offers" placement="top">
+                 <span>FBM: {fbmCount}</span>
+-              </Tooltip2>
+-              {" "}
++              </Tooltip2>{" "}
+               <Tooltip2 title="Number of direct Amazon offers" placement="top">
+                 <span>AMZ: {amzCount}</span>
+               </Tooltip2>
+@@ -309,16 +316,4 @@ const OffersSection = ({ asin, marketplaceId, router, isLoading }: OffersSection
+   )
+ }
+ 
+-const OffersSectionSkeleton = () => {
+-  return (
+-    <div className="border border-border flex flex-col rounded-xl max-h-[375px] overflow-x-auto w-full">
+-      <div className="flex items-center gap-x-8 gap-y-3 flex-wrap p-3">
+-        <Skeleton.Button active size="small" style={{ width: 120 }} />
+-        <Skeleton.Button active size="small" style={{ width: 120 }} />
+-      </div>
+-      <Skeleton active paragraph={{ rows: 6 }} />
+-    </div>
+-  )
+-}
+-
+ export default OffersSection
+diff --git a/app/(dashboard)/dashboard/_components/prodComponents/product-info.tsx b/app/(dashboard)/dashboard/_components/prodComponents/product-info.tsx
+index 3e4d401..34b158b 100644
+--- a/app/(dashboard)/dashboard/_components/prodComponents/product-info.tsx
++++ b/app/(dashboard)/dashboard/_components/prodComponents/product-info.tsx
+@@ -1,10 +1,13 @@
+ "use client"
++/* eslint-disable @typescript-eslint/no-explicit-any */
+ import Image from "next/image"
+-import { Skeleton, Tooltip as AntTooltip } from "antd"
++import { Tooltip as AntTooltip } from "antd"
+ import ProductThumbnail from "@/public/assets/images/women-shoes.png"
+ import Illustration from "@/public/assets/svg/illustration.svg"
+ import AlertsDrawer from "../AlertsDrawer"
+-/* eslint-disable @typescript-eslint/no-explicit-any */
++import { CustomSelect } from "@/lib/AntdComponents"
++import { useProductVariation } from "@/hooks/use-product-variation"
++
+ interface ProductInfoProps {
+   product: any
+   ipData: any
+@@ -13,6 +16,7 @@ interface ProductInfoProps {
+   asin: string
+   marketplaceId: number
+   isLoading?: boolean
++  isLoadingIpData?: boolean
+ }
+ 
+ const ProductInfo = ({
+@@ -21,13 +25,35 @@ const ProductInfo = ({
+   eligibility,
+   setIpIssue,
+   asin,
+-  
++  marketplaceId,
+   isLoading,
++  isLoadingIpData,
+ }: ProductInfoProps) => {
++  const { handleVariationChange } = useProductVariation(asin, marketplaceId)
++
+   if (isLoading || !product) {
+-    return <ProductInfoSkeleton />
++    return (
++      <div className="border border-border px-4 pt-4 rounded-xl flex flex-col gap-4 h-[300px] items-center justify-center">
++        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
++      </div>
++    )
+   }
+ 
++  // Generate options for the select dropdown
++  const variationOptions =
++    product?.variations?.map((variation: any) => {
++      const attributeLabels = variation.attributes.map((attr: any) => `${attr.dimension}: ${attr.value}`).join(", ")
++
++      return {
++        value: variation.asin,
++        label: attributeLabels || variation.asin,
++      }
++    }) || []
++
++  // Find current variation to show its attributes
++  //const currentVariation = product?.variations?.find((v: any) => v.asin === asin)
++  //const currentAttributes = currentVariation?.attributes || []
++
+   return (
+     <div className="border border-border px-4 pt-4 rounded-xl flex flex-col gap-4">
+       <div className="grid xl:grid-cols-[2fr_5fr] gap-3">
+@@ -48,49 +74,123 @@ const ProductInfo = ({
+           <AntTooltip title="Product name as displayed on Amazon marketplace." placement="top">
+             <h2 className="text-[#252525] font-semibold text-lg md:text-xl">{product?.product_name}</h2>
+           </AntTooltip>
+-          <p>{product?.category}</p>
+-          <p>
+-            <AntTooltip title="Amazon Standard Identification Number - A unique product identifier assigned by Amazon." placement="top">
+-              <span>ASIN: {product?.asin}</span>
+-            </AntTooltip>
+-            , 
+-            <AntTooltip title="Universal Product Code - A barcode symbology used for tracking trade items in stores." placement="top">
+-              <span> UPC: {product?.upc || "N/A"}</span>
++
++          {/* Enhanced variation dropdown */}
++          {product?.variations?.length > 0 && (
++            <div className="my-3">
++             
++              <CustomSelect
++                value={asin}
++                onChange={handleVariationChange}
++                options={variationOptions}
++                style={{ width: "100%", maxWidth: 300, borderRadius: 8 }}
++                placeholder="Select a variation"
++                loading={isLoading}
++                
++              />
++            </div>
++          )}
++
++          <p className=" text-base text-gray-600  mb-2">{product?.category}</p>
++          <p className="text-base">
++            <AntTooltip
++              title="Amazon Standard Identification Number - A unique product identifier assigned by Amazon."
++              placement="top"
++            >
++              <span className="cursor-help border-b border-dotted border-gray-400">ASIN: {product?.asin}</span>
+             </AntTooltip>
++            {product?.upc && (
++              <>
++                ,
++                <AntTooltip
++                  title="Universal Product Code - A barcode symbology used for tracking trade items in stores."
++                  placement="top"
++                >
++                  <span className="cursor-help border-b border-dotted border-gray-400"> UPC: {product?.upc}</span>
++                </AntTooltip>
++              </>
++            )}
+           </p>
+-          <AntTooltip title="Average customer rating out of 5 stars. Higher ratings typically indicate better customer satisfaction and product quality." placement="top">
+-          <p>⭐⭐⭐⭐⭐ {product?.rating?.stars}/5</p>
+-          </AntTooltip>
++
++          {product?.rating && (
++            <AntTooltip
++              title="Average customer rating out of 5 stars. Higher ratings typically indicate better customer satisfaction and product quality."
++              placement="top"
++            >
++              <p className="flex items-center gap-1">
++                <span className="text-yellow-400">⭐</span>
++                <span>{product.rating.stars}/5</span>
++                <span className="text-sm text-gray-500">({product.rating.count?.toLocaleString()} reviews)</span>
++              </p>
++            </AntTooltip>
++          )}
+         </div>
+       </div>
+ 
+       <div className="p-6 bg-[#F5F3FF] rounded-t-lg flex items-center gap-4 justify-between">
+-        <div className="flex flex-col gap-4">
+-          <span className="flex flex-col gap-2">
+-            {eligibility ? (
+-              <p className="text-green-500 font-semibold">You are authorised to sell this product</p>
+-            ) : (
+-              <p className="text-red-500 font-semibold">You are not authorized to sell this product</p>
+-            )}
+-            <p className={`text-sm ${setIpIssue ? "text-red-500" : "text-[#09090B]"}`}>
+-              {setIpIssue === 1
+-                ? "There is 1 issue"
+-                : setIpIssue > 1
+-                  ? `There are ${setIpIssue} issues`
+-                  : "No issues found"}
+-            </p>
+-          </span>
++        {isLoadingIpData ? (
++          <div className="flex flex-col gap-4 w-full">
++            <div className="flex items-center gap-3">
++              <div className="flex space-x-1">
++                <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce [animation-delay:-0.3s]"></div>
++                <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce [animation-delay:-0.15s]"></div>
++                <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce"></div>
++              </div>
++              <span className="text-gray-600 font-medium">Analyzing IP Alert data...</span>
++            </div>
++            <div className="space-y-2">
++              <div className="h-4 bg-gray-200 rounded-md animate-pulse w-3/4"></div>
++              <div className="h-3 bg-gray-200 rounded-md animate-pulse w-1/2"></div>
++            </div>
++            <div className="h-10 bg-gray-200 rounded-xl animate-pulse w-32"></div>
++          </div>
++        ) : (
++          <div className="flex flex-col gap-4">
++            <span className="flex flex-col gap-2">
++              {eligibility ? (
++                <AntTooltip
++                  title="✅ You can list and sell this product! You have the necessary approvals and this product is not restricted (GATED) for your seller account."
++                  placement="top"
++                >
++                  <p className="text-green-500 font-semibold cursor-help">You are authorised to sell this product</p>
++                </AntTooltip>
++              ) : (
++                <AntTooltip
++                  title="❌ You can't list or sell this product yet because it's restricted (GATED) by the brand or category. You'll need approval first."
++                  placement="top"
++                >
++                  <p className="text-red-500 font-semibold cursor-help">You are not authorized to sell this product</p>
++                </AntTooltip>
++              )}
++              <AntTooltip
++                title={
++                  setIpIssue > 0
++                    ? "⚠️ Issues detected that prevent you from selling this product. Click 'View Alerts' below to see detailed information about each issue and potential solutions."
++                    : "✅ No restrictions found!"
++                }
++                placement="top"
++              >
++                <p className={`text-sm cursor-help ${setIpIssue ? "text-red-500" : "text-[#09090B]"}`}>
++                  {setIpIssue === 1
++                    ? "There is 1 issue"
++                    : setIpIssue > 1
++                      ? `There are ${setIpIssue} issues`
++                      : "No issues found"}
++                </p>
++              </AntTooltip>
++            </span>
+ 
+-          <div>
+-            <AlertsDrawer
+-              itemAsin={asin}
+-              productName={product?.product_name}
+-              eligibility={eligibility}
+-              ipIssuesCount={setIpIssue}
+-              ipData={ipData}
+-            />
++            <div>
++              <AlertsDrawer
++                itemAsin={asin}
++                productName={product?.product_name}
++                eligibility={eligibility}
++                ipIssuesCount={setIpIssue}
++                ipData={ipData}
++              />
++            </div>
+           </div>
+-        </div>
++        )}
+ 
+         <div>
+           <Image
+@@ -106,18 +206,4 @@ const ProductInfo = ({
+   )
+ }
+ 
+-const ProductInfoSkeleton = () => {
+-  return (
+-    <div className="border border-border px-4 pt-4 rounded-xl flex flex-col gap-4">
+-      <div className="grid xl:grid-cols-[2fr_5fr] gap-3">
+-        <Skeleton.Image active style={{ width: 150, height: 150 }} />
+-        <div>
+-          <Skeleton active paragraph={{ rows: 3 }} />
+-        </div>
+-      </div>
+-      <Skeleton.Button active size="large" block style={{ height: 120 }} />
+-    </div>
+-  )
+-}
+-
+ export default ProductInfo
+diff --git a/app/(dashboard)/dashboard/_components/prodComponents/product-stats.tsx b/app/(dashboard)/dashboard/_components/prodComponents/product-stats.tsx
+index 880a285..6148a95 100644
+--- a/app/(dashboard)/dashboard/_components/prodComponents/product-stats.tsx
++++ b/app/(dashboard)/dashboard/_components/prodComponents/product-stats.tsx
+@@ -55,6 +55,45 @@ const ProductStats = forwardRef(({ product, isLoading, buyboxDetails }: ProductS
+     return "" // Default text color
+   }
+ 
++  // Get ROI tooltip message based on criteria
++  const getRoiTooltipMessage = () => {
++    const roi = profitabilityCalc?.roi ?? 0
++    const minRoi = profitabilityCalc?.minRoi ?? 0
++    
++    if (profitabilityCalc?.buying_criteria?.roiIsOk === true) {
++      return `✅ Excellent ROI! This product's ${roi}% return exceeds your minimum requirement of ${minRoi}%, making it a profitable investment that meets your buying criteria.`
++    } else if (profitabilityCalc?.buying_criteria?.roiIsOk === false) {
++      return `❌ ROI Below Target: This product's ${roi}% return is below your minimum requirement of ${minRoi}%. Consider finding a lower cost price or look for other products that meet your ROI criteria.`
++    }
++    return "Return on Investment - The percentage return you'll earn on your initial investment in this product."
++  }
++
++  // Get Profit tooltip message based on criteria
++  const getProfitTooltipMessage = () => {
++    const profitAmount = profitabilityCalc?.profitAmount ?? 0
++    const profitMargin = profitabilityCalc?.profitMargin ?? 0
++    const minProfit = profitabilityCalc?.minProfit ?? 0
++    
++    if (profitabilityCalc?.buying_criteria?.profitIsOk === true) {
++      return `✅ Great Profit! This product generates $${profitAmount.toFixed(2)} (${profitMargin.toFixed(0)}%) which exceeds your minimum profit requirement of $${minProfit.toFixed(2)}, making it a solid choice for your business.`
++    } else if (profitabilityCalc?.buying_criteria?.profitIsOk === false) {
++      return `❌ Profit Below Target: This product's profit of $${profitAmount.toFixed(2)} (${profitMargin.toFixed(0)}%) is below your minimum requirement of $${minProfit.toFixed(2)}. Consider negotiating a better cost price or look for higher-margin products.`
++    }
++    return "The total profit amount in dollars and profit margin percentage you can expect from selling this product."
++  }
++
++  // Get Maximum Cost tooltip message based on criteria
++  const getMaxCostTooltipMessage = () => {
++    const maxCost = profitabilityCalc?.maxCost ?? 0
++    const minRoi = profitabilityCalc?.minRoi ?? 0
++    const minProfit = profitabilityCalc?.minProfit ?? 0
++    
++    if (maxCost > 0) {
++      return `💡 Smart Buying Guide: Based on your criteria (${minRoi}% min ROI, $${minProfit.toFixed(2)} min profit), don't pay more than $${maxCost.toFixed(2)} for this product. This ensures you'll meet your profit targets while maintaining your desired return on investment.`
++    }
++    return "The highest price you should pay for this product to maintain your target profit margin and ROI."
++  }
++
+   return (
+     <div className="flex flex-col gap-4">
+       {/* tabs */}
+@@ -68,7 +107,7 @@ const ProductStats = forwardRef(({ product, isLoading, buyboxDetails }: ProductS
+         >
+           Product info
+         </button>
+-        {/** 
++   
+         <button
+           type="button"
+           onClick={() => setActiveTab("totan")}
+@@ -78,11 +117,10 @@ const ProductStats = forwardRef(({ product, isLoading, buyboxDetails }: ProductS
+         >
+           Totan (AI)
+         </button>
+-        */}
++     
+       </div>
+ 
+       {/* Totan */}
+-      {/** */}
+       {activeTab === "totan" && (
+         <div className="border border-border rounded-xl shadow-sm p-4 flex flex-col gap-3">
+           {/* Score and Info Row */}
+@@ -204,7 +242,7 @@ const ProductStats = forwardRef(({ product, isLoading, buyboxDetails }: ProductS
+               icon={<MaximumCostIcon />}
+               title={
+                 <AntTooltip
+-                  title="The highest price you should pay for this product to maintain your target profit margin and ROI."
++                  title={getMaxCostTooltipMessage()}
+                   placement="top"
+                 >
+                   <span className="cursor-help border-b border-dotted border-gray-400">Maximum Cost</span>
+@@ -220,7 +258,7 @@ const ProductStats = forwardRef(({ product, isLoading, buyboxDetails }: ProductS
+               icon={<ROIIcon />}
+               title={
+                 <AntTooltip
+-                  title="Return on Investment - The percentage return you'll earn on your initial investment in this product."
++                  title={getRoiTooltipMessage()}
+                   placement="top"
+                 >
+                   <span className="cursor-help border-b border-dotted border-gray-400">ROI</span>
+@@ -234,7 +272,7 @@ const ProductStats = forwardRef(({ product, isLoading, buyboxDetails }: ProductS
+               icon={<PriceTagIcon />}
+               title={
+                 <AntTooltip
+-                  title="The total profit amount in dollars and profit margin percentage you can expect from selling this product."
++                  title={getProfitTooltipMessage()}
+                   placement="top"
+                 >
+                   <span className="cursor-help border-b border-dotted border-gray-400">Profit</span>
+diff --git a/app/(dashboard)/dashboard/_components/prodComponents/profitability-calculator.tsx b/app/(dashboard)/dashboard/_components/prodComponents/profitability-calculator.tsx
+index e64e7c5..d20add5 100644
+--- a/app/(dashboard)/dashboard/_components/prodComponents/profitability-calculator.tsx
++++ b/app/(dashboard)/dashboard/_components/prodComponents/profitability-calculator.tsx
+@@ -19,6 +19,7 @@ interface ProfitabilityCalculatorProps {
+   product: Product | undefined
+   isLoading?: boolean
+   onCalculationComplete?: (data: ProfitabilityData) => void
++   offers: BuyboxItem[];
+ }
+ 
+ interface FeesState {
+@@ -48,6 +49,7 @@ interface CalculationBody {
+   salePrice: number | string
+   pointsNumber: number
+   pointsAmount: number
++   
+ }
+ 
+ const ProfitabilityCalculator = ({
+@@ -56,14 +58,16 @@ const ProfitabilityCalculator = ({
+   product,
+   isLoading,
+   onCalculationComplete,
++    offers
+ }: ProfitabilityCalculatorProps) => {
+   const [costPrice, setCostPrice] = useState<string>("")
++  const [costPriceInput, setCostPriceInput] = useState<string>("")
+   const [salePrice, setSalePrice] = useState<string>("")
+   const [storageMonths, setStorageMonths] = useState(0)
+   const [fulfillmentType, setFulfillmentType] = useState("FBA")
+   const [activeTab, setActiveTab] = useState("maximumCost")
+   const [isCalculating, setIsCalculating] = useState(false)
+-  const [isSwitching, setIsSwitching] = useState(false)
++  const [isValidExpression, setIsValidExpression] = useState(true)
+ 
+   const { currencyCode } = useAppSelector((state) => state.global) || { currencyCode: "USD" }
+   const [calculateProfitability] = useCalculateProfitablilityMutation()
+@@ -79,7 +83,6 @@ const ProfitabilityCalculator = ({
+   const lastProfitabilityCalc = product?.last_profitability_calculation
+   const lastCostPrice = lastProfitabilityCalc?.fba?.costPrice
+ 
+-  // Initialize state with last profitability calculation if available
+   const [fees, setFees] = useState<FeesState>({
+     referralFee: lastProfitabilityCalc?.fba?.referralFee || 0,
+     fulfillmentType: lastProfitabilityCalc?.fba?.fulfillmentType || "FBA",
+@@ -104,19 +107,29 @@ const ProfitabilityCalculator = ({
+   const [breakEvenPrice, setBreakEvenPrice] = useState(lastProfitabilityCalc?.fba?.breakevenSalePrice || 0)
+   const [estimatedPayout, setEstimatedPayout] = useState(lastProfitabilityCalc?.fba?.estimatedAmzPayout || 0)
+ 
+-  // Initialize responseData with last calculation
+   const [responseData, setResponseData] = useState<ResponseData>({
+     fba: lastProfitabilityCalc?.fba || null,
+     fbm: lastProfitabilityCalc?.fbm || null,
+   })
+ 
++    // Calculate cheapest price from offers
++  const cheapestPrice = offers.length > 0 
++    ? Math.min(...offers.map(offer => offer.listing_price)) 
++    : 0;
++
+   useEffect(() => {
+     if (lastCostPrice) {
+       setCostPrice(lastCostPrice)
++      setCostPriceInput(lastCostPrice)
+     }
+   }, [lastCostPrice])
+ 
+-  // Update UI when fulfillmentType changes
++ useEffect(() => {
++    // Use buybox winner price if available, otherwise use cheapest offer price
++    const initialSalePrice = buyboxWinnerPrice > 0 ? buyboxWinnerPrice : cheapestPrice;
++    setSalePrice(initialSalePrice.toString());
++  }, [buyboxWinnerPrice, cheapestPrice]);
++
+   useEffect(() => {
+     if (lastProfitabilityCalc) {
+       const data = fulfillmentType === "FBA" ? lastProfitabilityCalc.fba : lastProfitabilityCalc.fbm
+@@ -126,7 +139,6 @@ const ProfitabilityCalculator = ({
+     }
+   }, [fulfillmentType, lastProfitabilityCalc])
+ 
+-  // Helper function to update UI with selected data
+   const updateUIWithData = (data: ProfitabilityData) => {
+     if (!data) return
+ 
+@@ -154,9 +166,23 @@ const ProfitabilityCalculator = ({
+     setEstimatedPayout(data.estimatedAmzPayout)
+   }
+ 
+-  // Memoize the calculation handler
++  const evaluateExpression = (expression: string): { isValid: boolean; result: string } => {
++    try {
++      const result = evaluate(expression)
++      return { isValid: true, result: result.toString() }
++    } catch (error) {
++      console.error("Invalid mathematical expression", error)
++      return { isValid: false, result: expression }
++    }
++  }
++
+   const handleCalculateProfitability = useCallback(async () => {
+-    if (!costPrice || !buyboxDetails) return // Skip if no cost price
++    if (!costPrice || !buyboxDetails) return
++
++    if (isNaN(Number(costPrice))) {
++      message.error("Please enter a valid number for Cost Price")
++      return
++    }
+ 
+     setIsCalculating(true)
+     try {
+@@ -167,7 +193,7 @@ const ProfitabilityCalculator = ({
+         currencyCode: currencyCode,
+         storage: storageMonths,
+         costPrice: costPrice,
+-        salePrice: salePrice || buyboxWinnerPrice,
++        salePrice: salePrice ? Number(salePrice) : buyboxWinnerPrice,
+         pointsNumber: 0,
+         pointsAmount: 0,
+       }
+@@ -181,14 +207,13 @@ const ProfitabilityCalculator = ({
+         const data = fulfillmentType === "FBA" ? response.data.fba : response.data.fbm
+         updateUIWithData(data)
+ 
+-        // Call the callback with the calculation data
+         if (onCalculationComplete && data) {
+           onCalculationComplete(data)
+         }
+       }
+-    } catch (error) {
++    } catch (error:any) {
+       console.error("Calculation error:", error)
+-      message.error("Calculation failed. Please check your inputs.")
++      message.error(error?.data?.message as string)
+     } finally {
+       setIsCalculating(false)
+     }
+@@ -212,7 +237,9 @@ const ProfitabilityCalculator = ({
+   )
+ 
+   useEffect(() => {
+-    debouncedCalculation()
++    if (costPrice && !isNaN(Number(costPrice))) {
++      debouncedCalculation()
++    }
+     return () => debouncedCalculation.cancel()
+   }, [costPrice, salePrice, storageMonths, fulfillmentType, debouncedCalculation])
+ 
+@@ -243,27 +270,43 @@ const ProfitabilityCalculator = ({
+     return <ProfitabilityCalculatorSkeleton />
+   }
+ 
++  const handleCostPriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
++    const inputValue = e.target.value
++    setCostPriceInput(inputValue)
++
++    const { isValid, result } = evaluateExpression(inputValue)
++    setIsValidExpression(isValid)
++
++    if (isValid) {
++      setCostPrice(result)
++    }
++  }
++
++  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
++    if (e.key === "Enter") {
++      e.preventDefault()
++      const { isValid, result } = evaluateExpression(costPriceInput)
++      if (isValid) {
++        setCostPriceInput(result)
++        setCostPrice(result)
++        setIsValidExpression(true)
++      } else {
++        setIsValidExpression(false)
++        message.error("Invalid mathematical expression")
++      }
++    }
++  }
++
+   return (
+     <div className="flex flex-col gap-4">
+       <h2 className="font-semibold text-lg">Profitability Calculator</h2>
+ 
+-      {/* Fulfillment Type Buttons */}
+       <div className="flex flex-col sm:flex-row gap-4 md:items-center justify-between p-3 rounded-xl bg-[#FAFAFA]">
+         <h2 className="font-semibold text-black">Fulfilment Type</h2>
+         <div className="flex gap-2">
+           <button
+             type="button"
+-            onClick={() => {
+-              setIsSwitching(true)
+-              setFulfillmentType("FBA")
+-
+-              setTimeout(() => {
+-                if (responseData.fba) {
+-                  updateUIWithData(responseData.fba)
+-                }
+-                setIsSwitching(false)
+-              }, 1000)
+-            }}
++            onClick={() => setFulfillmentType("FBA")}
+             className={`px-3 py-1 rounded-full text-black border ${
+               fulfillmentType === "FBA" ? "bg-[#E7EBFE]" : "bg-transparent border-border"
+             }`}
+@@ -272,17 +315,7 @@ const ProfitabilityCalculator = ({
+           </button>
+           <button
+             type="button"
+-            onClick={() => {
+-              setIsSwitching(true)
+-              setFulfillmentType("FBM")
+-
+-              setTimeout(() => {
+-                if (responseData.fbm) {
+-                  updateUIWithData(responseData.fbm)
+-                }
+-                setIsSwitching(false)
+-              }, 1000)
+-            }}
++            onClick={() => setFulfillmentType("FBM")}
+             className={`px-3 py-1 rounded-full text-black border ${
+               fulfillmentType === "FBM" ? "bg-[#E7EBFE]" : "bg-transparent border-border"
+             }`}
+@@ -292,42 +325,47 @@ const ProfitabilityCalculator = ({
+         </div>
+       </div>
+ 
+-      {/* Price Inputs */}
+       <div className="grid grid-cols-2 gap-4">
+         <div className="flex flex-col gap-2">
+           <label className="text-sm text-gray-600">Cost Price</label>
+           <input
+             aria-label="Cost Price"
+-            type="number"
+-            placeholder={lastCostPrice}
+-            value={costPrice}
+-            onChange={(e) => setCostPrice(e.target.value)}
+-            onBlur={(e) => {
+-              try {
+-                const result = evaluate(e.target.value)
+-                setCostPrice(result.toString())
+-              } catch {
++            type="text"
++            placeholder={`${lastCostPrice || "0"} (e.g., 10+5*2)`}
++            value={costPriceInput}
++            onChange={handleCostPriceChange}
++            onBlur={() => {
++              const { isValid, result } = evaluateExpression(costPriceInput)
++              if (isValid) {
++                setCostPriceInput(result)
++                setCostPrice(result)
++                setIsValidExpression(true)
++              } else {
++                setIsValidExpression(false)
+                 message.error("Invalid mathematical expression")
+-                console.error("Invalid mathematical expression")
+               }
+             }}
+-            className="px-4 py-1.5 w-full border rounded outline-none focus:border-black"
++            onKeyDown={handleKeyDown}
++            className={`px-4 py-1.5 w-full border rounded outline-none ${
++              isValidExpression ? "focus:border-black" : "border-red-500 focus:border-red-500"
++            }`}
+           />
++          {!isValidExpression && (
++            <p className="text-xs text-red-500 mt-1">Please enter a valid mathematical expression</p>
++          )}
+         </div>
+         <div className="flex flex-col gap-2">
+           <label className="text-sm text-gray-600">Sale Price</label>
+           <input
+             aria-label="Sale Price"
+             type="number"
+-            placeholder={buyboxWinnerPrice.toString()}
+-            defaultValue={buyboxWinnerPrice.toString()}
++            value={salePrice}
+             onChange={handlePriceChange}
+             className="px-4 py-1.5 w-full border rounded outline-none focus:border-black"
+           />
+         </div>
+       </div>
+ 
+-      {/* Storage Months Slider */}
+       <div className="flex flex-col gap-2">
+         <label className="text-sm text-gray-600">Storage (Months)</label>
+         <Slider value={storageMonths} onChange={(value: number) => setStorageMonths(value)} max={12} step={1} />
+@@ -337,7 +375,6 @@ const ProfitabilityCalculator = ({
+         </div>
+       </div>
+ 
+-      {/* Fees Section with Tabs */}
+       <div className="flex flex-col gap-2">
+         <div className="bg-[#F7F7F7] rounded-[10px] p-1 flex items-center gap-2 w-max mx-auto">
+           <button
+@@ -361,193 +398,180 @@ const ProfitabilityCalculator = ({
+         </div>
+       </div>
+ 
+-      {isSwitching ? (
+-        <div className="flex justify-center py-4">
+-          <Loader />
++      {isCalculating ? (
++        <div className="gap-4 grid grid-cols-2">
++          <Skeleton.Input active size="large" block style={{ height: 25 }} />
++          <Skeleton.Input active size="large" block style={{ height: 25 }} />
++          <Skeleton.Input active size="large" block style={{ height: 25 }} />
++          <Skeleton.Input active size="large" block style={{ height: 25 }} />
++          <Skeleton.Input active size="large" block style={{ height: 25 }} />
++          <Skeleton.Input active size="large" block style={{ height: 25 }} />
++          <Skeleton.Input active size="large" block style={{ height: 25 }} />
++          <Skeleton.Input active size="large" block style={{ height: 25 }} />
+         </div>
+       ) : (
+-        <>
+-          {isCalculating ? (
+-            <div className="gap-4 grid grid-cols-2">
+-              <Skeleton.Input active size="large" block style={{ height: 25 }} />
+-              <Skeleton.Input active size="large" block style={{ height: 25 }} />
+-              <Skeleton.Input active size="large" block style={{ height: 25 }} />
+-              <Skeleton.Input active size="large" block style={{ height: 25 }} />
+-              <Skeleton.Input active size="large" block style={{ height: 25 }} />
+-              <Skeleton.Input active size="large" block style={{ height: 25 }} />
+-              <Skeleton.Input active size="large" block style={{ height: 25 }} />
+-              <Skeleton.Input active size="large" block style={{ height: 25 }} />
++        <div className="bg-[#F4F4F5] rounded-xl p-2">
++          {activeTab === "maximumCost" && (
++            <div className="space-y-2">
++              <div className="flex justify-between text-sm">
++                <StrikethroughIfNull value={minROI}>
++                  <AntTooltip
++                    title="Minimum Return on Investment - The lowest acceptable percentage return on your investment for this product to be considered profitable."
++                    placement="top"
++                  >
++                    <span className="text-[#595959]">Min. ROI</span>
++                  </AntTooltip>
++                </StrikethroughIfNull>
++                <StrikethroughIfNull value={minROI}>
++                  <span className="font-semibold text-black">{minROI || 0}%</span>
++                </StrikethroughIfNull>
++              </div>
++              <div className="flex justify-between text-sm">
++                <StrikethroughIfNull value={minProfit}>
++                  <AntTooltip
++                    title="Minimum Profit - The smallest dollar amount of profit you should accept when selling this product."
++                    placement="top"
++                  >
++                    <span className="text-[#595959]">Min. Profit</span>
++                  </AntTooltip>
++                </StrikethroughIfNull>
++                <StrikethroughIfNull value={minProfit}>
++                  <span className="font-semibold text-black">${minProfit.toFixed(2)}</span>
++                </StrikethroughIfNull>
++              </div>
++              <div className="border-t pt-2 font-semibold flex justify-between">
++                <AntTooltip
++                  title="The highest price you should pay for this product to maintain your target profit margin and ROI."
++                  placement="top"
++                >
++                  <span>Maximum Cost</span>
++                </AntTooltip>
++                <span>${maxCost.toFixed(2)}</span>
++              </div>
+             </div>
+-          ) : (
+-            <>
+-              <div className="bg-[#F4F4F5] rounded-xl p-2">
+-                {activeTab === "maximumCost" && (
+-                  <div className="space-y-2">
+-                    <div className="flex justify-between text-sm">
+-                      <StrikethroughIfNull value={minROI}>
+-                        <AntTooltip
+-                          title="Minimum Return on Investment - The lowest acceptable percentage return on your investment for this product to be considered profitable."
+-                          placement="top"
+-                        >
+-                          <span className="text-[#595959]">Min. ROI</span>
+-                        </AntTooltip>
+-                      </StrikethroughIfNull>
+-                      <StrikethroughIfNull value={minROI}>
+-                        <span className="font-semibold text-black">{minROI || 0}%</span>
+-                      </StrikethroughIfNull>
+-                    </div>
+-                    <div className="flex justify-between text-sm">
+-                      <StrikethroughIfNull value={minProfit}>
+-                        <AntTooltip
+-                          title="Minimum Profit - The smallest dollar amount of profit you should accept when selling this product."
+-                          placement="top"
+-                        >
+-                          <span className="text-[#595959]">Min. Profit</span>
++          )}
++
++          {activeTab === "totalFees" && (
++            <div className="space-y-2">
++              {Object.entries(fees).map(([key, value]) => {
++                const feeTooltips: Record<string, string> = {
++                  referralFee:
++                    "Amazon's commission for selling your product on their platform, usually a percentage of the sale price.",
++                  fulfillmentType:
++                    "The method used to fulfill orders (FBA: Fulfilled by Amazon, FBM: Fulfilled by Merchant).",
++                  fullfillmentFee:
++                    "Fee charged by Amazon for picking, packing, and shipping your product (FBA only).",
++                  closingFee: "Fixed fee applied to certain product categories.",
++                  storageFee: "Fee charged for storing your product in Amazon's warehouses.",
++                  prepFee: "Fee for any product preparation services provided by Amazon.",
++                  shippingFee: "Cost to ship the product to the customer (primarily for FBM).",
++                  digitalServicesFee: "Fee related to digital services or content.",
++                  miscFee: "Any additional or miscellaneous fees not covered by other categories.",
++                }
++
++                const formattedKey = key.replace(/([A-Z])/g, " $1").replace(/^./, (str) => str.toUpperCase())
++
++                return (
++                  <div key={key} className="flex justify-between text-sm">
++                    <StrikethroughIfNull value={value}>
++                      {feeTooltips[key] ? (
++                        <AntTooltip title={feeTooltips[key]} placement="top">
++                          <span className="text-[#595959] cursor-help border-b border-dotted border-gray-400">
++                            {formattedKey}
++                          </span>
+                         </AntTooltip>
+-                      </StrikethroughIfNull>
+-                      <StrikethroughIfNull value={minProfit}>
+-                        <span className="font-semibold text-black">${minProfit.toFixed(2)}</span>
+-                      </StrikethroughIfNull>
+-                    </div>
+-                    <div className="border-t pt-2 font-semibold flex justify-between">
+-                      <AntTooltip
+-                        title="The highest price you should pay for this product to maintain your target profit margin and ROI."
+-                        placement="top"
+-                      >
+-                        <span>Maximum Cost</span>
+-                      </AntTooltip>
+-                      <span>${maxCost.toFixed(2)}</span>
+-                    </div>
++                      ) : (
++                        <span className="text-[#595959]">{formattedKey}</span>
++                      )}
++                    </StrikethroughIfNull>
++                    <StrikethroughIfNull value={value}>
++                      <span className="font-semibold text-black">{formatValue(value)}</span>
++                    </StrikethroughIfNull>
+                   </div>
+-                )}
+-
+-                {activeTab === "totalFees" && (
+-                  <div className="space-y-2">
+-                    {Object.entries(fees).map(([key, value]) => {
+-                      // Define tooltips for fee types
+-                      const feeTooltips: Record<string, string> = {
+-                        referralFee:
+-                          "Amazon's commission for selling your product on their platform, usually a percentage of the sale price.",
+-                        fulfillmentType:
+-                          "The method used to fulfill orders (FBA: Fulfilled by Amazon, FBM: Fulfilled by Merchant).",
+-                        fullfillmentFee:
+-                          "Fee charged by Amazon for picking, packing, and shipping your product (FBA only).",
+-                        closingFee: "Fixed fee applied to certain product categories.",
+-                        storageFee: "Fee charged for storing your product in Amazon's warehouses.",
+-                        prepFee: "Fee for any product preparation services provided by Amazon.",
+-                        shippingFee: "Cost to ship the product to the customer (primarily for FBM).",
+-                        digitalServicesFee: "Fee related to digital services or content.",
+-                        miscFee: "Any additional or miscellaneous fees not covered by other categories.",
+-                      }
+-
+-                      // Format the key for display
+-                      const formattedKey = key.replace(/([A-Z])/g, " $1").replace(/^./, (str) => str.toUpperCase())
+-
+-                      return (
+-                        <div key={key} className="flex justify-between text-sm">
+-                          <StrikethroughIfNull value={value}>
+-                            {feeTooltips[key] ? (
+-                              <AntTooltip title={feeTooltips[key]} placement="top">
+-                                <span className="text-[#595959] cursor-help border-b border-dotted border-gray-400">
+-                                  {formattedKey}
+-                                </span>
+-                              </AntTooltip>
+-                            ) : (
+-                              <span className="text-[#595959]">{formattedKey}</span>
+-                            )}
+-                          </StrikethroughIfNull>
+-                          <StrikethroughIfNull value={value}>
+-                            <span className="font-semibold text-black">{formatValue(value)}</span>
+-                          </StrikethroughIfNull>
+-                        </div>
+-                      )
+-                    })}
+-
+-                    <div className="border-t pt-2 font-semibold flex justify-between">
+-                      <AntTooltip
+-                        title="The sum of all Amazon fees and expenses associated with selling this product."
+-                        placement="top"
+-                      >
+-                        <span>Total Fees</span>
+-                      </AntTooltip>
+-                      <span>${totalFees.toFixed(2)}</span>
+-                    </div>
+-                  </div>
+-                )}
+-              </div>
+-
+-              {/* Summary Items */}
+-              <div className="flex flex-col gap-2 text-[#595959]">
+-                <div className="flex justify-between text-sm">
+-                  <StrikethroughIfNull value={vatOnFees}>
+-                    <AntTooltip
+-                      title="Tax charged on the sale of your product that you need to collect and remit to tax authorities."
+-                      placement="top"
+-                    >
+-                      <span>Sales Tax</span>
+-                    </AntTooltip>
+-                  </StrikethroughIfNull>
+-                  <StrikethroughIfNull value={vatOnFees}>
+-                    <span className="font-semibold text-black">{formatValue(vatOnFees)}</span>
+-                  </StrikethroughIfNull>
+-                </div>
+-                <div className="flex justify-between text-sm">
+-                  <StrikethroughIfNull value={discount}>
+-                    <AntTooltip
+-                      title="Any price reduction applied to the product, which reduces your overall revenue."
+-                      placement="top"
+-                    >
+-                      <span>Discount</span>
+-                    </AntTooltip>
+-                  </StrikethroughIfNull>
+-                  <StrikethroughIfNull value={discount}>
+-                    <span className="font-semibold text-black">{formatValue(discount)}</span>
+-                  </StrikethroughIfNull>
+-                </div>
+-                <div className="flex justify-between text-sm">
+-                  <StrikethroughIfNull value={profitMargin}>
+-                    <AntTooltip
+-                      title="The percentage of profit relative to the sale price after all costs have been deducted."
+-                      placement="top"
+-                    >
+-                      <span>Profit Margin</span>
+-                    </AntTooltip>
+-                  </StrikethroughIfNull>
+-                  <StrikethroughIfNull value={profitMargin}>
+-                    <span className="font-semibold text-black">{profitMargin.toFixed(2)}%</span>
+-                  </StrikethroughIfNull>
+-                </div>
+-                <div className="flex justify-between text-sm">
+-                  <StrikethroughIfNull value={breakEvenPrice}>
+-                    <AntTooltip
+-                      title="The minimum price you need to sell the product for to cover all costs without making or losing money."
+-                      placement="top"
+-                    >
+-                      <span>Breakeven Sale Price</span>
+-                    </AntTooltip>
+-                  </StrikethroughIfNull>
+-                  <StrikethroughIfNull value={breakEvenPrice}>
+-                    <span className="font-semibold text-black">${breakEvenPrice.toFixed(2)}</span>
+-                  </StrikethroughIfNull>
+-                </div>
+-                <div className="flex justify-between text-sm">
+-                  <StrikethroughIfNull value={estimatedPayout}>
+-                    <AntTooltip
+-                      title="The approximate amount Amazon will pay you after deducting all fees and commissions."
+-                      placement="top"
+-                    >
+-                      <span>Estimated Amz. Payout</span>
+-                    </AntTooltip>
+-                  </StrikethroughIfNull>
+-                  <StrikethroughIfNull value={estimatedPayout}>
+-                    <span className="font-semibold text-black">${estimatedPayout.toFixed(2)}</span>
+-                  </StrikethroughIfNull>
+-                </div>
++                )
++              })}
++
++              <div className="border-t pt-2 font-semibold flex justify-between">
++                <AntTooltip
++                  title="The sum of all Amazon fees and expenses associated with selling this product."
++                  placement="top"
++                >
++                  <span>Total Fees</span>
++                </AntTooltip>
++                <span>${totalFees.toFixed(2)}</span>
+               </div>
+-            </>
++            </div>
+           )}
+-        </>
++        </div>
+       )}
++
++      <div className="flex flex-col gap-2 text-[#595959]">
++        <div className="flex justify-between text-sm">
++          <StrikethroughIfNull value={vatOnFees}>
++            <AntTooltip
++              title="Tax charged on the sale of your product that you need to collect and remit to tax authorities."
++              placement="top"
++            >
++              <span>Sales Tax</span>
++            </AntTooltip>
++          </StrikethroughIfNull>
++          <StrikethroughIfNull value={vatOnFees}>
++            <span className="font-semibold text-black">{formatValue(vatOnFees)}</span>
++          </StrikethroughIfNull>
++        </div>
++        <div className="flex justify-between text-sm">
++          <StrikethroughIfNull value={discount}>
++            <AntTooltip
++              title="Any price reduction applied to the product, which reduces your overall revenue."
++              placement="top"
++            >
++              <span>Discount</span>
++            </AntTooltip>
++          </StrikethroughIfNull>
++          <StrikethroughIfNull value={discount}>
++            <span className="font-semibold text-black">{formatValue(discount)}</span>
++          </StrikethroughIfNull>
++        </div>
++        <div className="flex justify-between text-sm">
++          <StrikethroughIfNull value={profitMargin}>
++            <AntTooltip
++              title="The percentage of profit relative to the sale price after all costs have been deducted."
++              placement="top"
++            >
++              <span>Profit Margin</span>
++            </AntTooltip>
++          </StrikethroughIfNull>
++          <StrikethroughIfNull value={profitMargin}>
++            <span className="font-semibold text-black">{profitMargin.toFixed(2)}%</span>
++          </StrikethroughIfNull>
++        </div>
++        <div className="flex justify-between text-sm">
++          <StrikethroughIfNull value={breakEvenPrice}>
++            <AntTooltip
++              title="The minimum price you need to sell the product for to cover all costs without making or losing money."
++              placement="top"
++            >
++              <span>Breakeven Sale Price</span>
++            </AntTooltip>
++          </StrikethroughIfNull>
++          <StrikethroughIfNull value={breakEvenPrice}>
++            <span className="font-semibold text-black">${breakEvenPrice.toFixed(2)}</span>
++          </StrikethroughIfNull>
++        </div>
++        <div className="flex justify-between text-sm">
++          <StrikethroughIfNull value={estimatedPayout}>
++            <AntTooltip
++              title="The approximate amount Amazon will pay you after deducting all fees and commissions."
++              placement="top"
++            >
++              <span>Estimated Amz. Payout</span>
++            </AntTooltip>
++          </StrikethroughIfNull>
++          <StrikethroughIfNull value={estimatedPayout}>
++            <span className="font-semibold text-black">${estimatedPayout.toFixed(2)}</span>
++          </StrikethroughIfNull>
++        </div>
++      </div>
+     </div>
+   )
+ }
+@@ -568,4 +592,4 @@ const ProfitabilityCalculatorSkeleton = () => {
+   )
+ }
+ 
+-export default ProfitabilityCalculator
++export default ProfitabilityCalculator
+\ No newline at end of file
