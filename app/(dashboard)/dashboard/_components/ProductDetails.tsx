@@ -24,9 +24,7 @@ import BuyBoxAnalysis from "./prodComponents/buy-box-analysis"
 import MarketAnalysis from "./prodComponents/market-analysis"
 import SearchResults from "./prodComponents/search-results"
 import type { IpAlertData } from "./prodComponents/types"
-import CircularLoader from "@/utils/circularLoader"
-
-
+import FinalLoader from "./loader"
 
 interface ProductDetailsProps {
   asin: string
@@ -62,6 +60,11 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
   const [isMarketplaceChanging, setIsMarketplaceChanging] = useState(false)
   const [isLoadingIpData, setIsLoadingIpData] = useState(false)
   const previousMarketplaceId = useRef(marketplaceId)
+
+  // Loading step state
+  const [loadingStep, setLoadingStep] = useState(0)
+  const [isFullyLoaded, setIsFullyLoaded] = useState(false)
+  const hasMounted = useRef(false)
 
   // RTK Query hooks with isFetching
   const {
@@ -131,6 +134,7 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
         }),
       )
       dispatch(setIpIssues([] as any))
+      setLoadingStep(0)
     }
   }, [marketplaceId, dispatch])
 
@@ -156,6 +160,7 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
     )
     dispatch(setIpIssues([] as any))
     setIsLoadingIpData(true)
+    setLoadingStep(0)
   }, [asin, dispatch])
 
   // Fetch IP data
@@ -171,12 +176,13 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
         }).unwrap()
         dispatch(
           setIpAlert({
-            setIpIssue: response?.data?.ip_analysis?.issues ?? 0,
+            setIpIssue: response?.data?.ip_analysis?.issues?.length ?? 0,
             eligibility: response?.data?.eligible_to_sell ?? false,
           }),
         )
         dispatch(setIpIssues(response?.data?.ip_analysis?.issues ?? []))
         setIpData(response.data as IpAlertData)
+        setLoadingStep((prev) => Math.min(prev + 1, 4))
       } catch (error) {
         console.error("Error fetching IP alert:", error)
       } finally {
@@ -188,6 +194,42 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
       fetchIpData()
     }
   }, [asin, marketplaceId, dispatch, getIpAlert, statStartDate, statEndDate])
+
+  // Update loading steps based on API responses
+  useEffect(() => {
+    if (!isLoadingItem && data) {
+      setLoadingStep((prev) => Math.min(prev + 1, 4))
+    }
+  }, [isLoadingItem, data])
+
+  useEffect(() => {
+    if (!isLoadingBuybox && buyboxDetailsData) {
+      setLoadingStep((prev) => Math.min(prev + 1, 4))
+    }
+  }, [isLoadingBuybox, buyboxDetailsData])
+
+  useEffect(() => {
+    if (!isLoadingMarketAnalysis && marketAnalysisData) {
+      setLoadingStep((prev) => Math.min(prev + 1, 4))
+    }
+  }, [isLoadingMarketAnalysis, marketAnalysisData])
+
+  // Set fully loaded when all steps are complete
+  useEffect(() => {
+    if (loadingStep >= 4 && 
+        !isLoadingItem && 
+        !isLoadingBuybox && 
+        !isLoadingIpData && 
+        !isLoadingMarketAnalysis &&
+        !hasMounted.current
+      ) {
+      hasMounted.current = true
+      const timer = setTimeout(() => {
+        setIsFullyLoaded(true)
+      }, 500)
+      return () => clearTimeout(timer)
+    }
+  }, [loadingStep, isLoadingItem, isLoadingBuybox, isLoadingIpData, isLoadingMarketAnalysis])
 
   if (error) {
     return (
@@ -210,8 +252,10 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
     <>
       {/* Full screen loader overlay */}
       {shouldShowLoader && (
-        <div className="fixed inset-0 pl-20 flex justify-center items-center bg-white z-50">
-          <CircularLoader duration={1000} color="#18CB96" size={64} strokeWidth={4} />
+        <div className="fixed inset-0 pl-20 flex items-center justify-center bg-white z-50">
+          <div className=" w-[80%]">
+          <FinalLoader currentStep={loadingStep} />
+          </div>
         </div>
       )}
 
