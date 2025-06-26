@@ -2,7 +2,7 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, useRef } from "react"
 import type React from "react"
 
 import { message, Skeleton, Tooltip as AntTooltip } from "antd"
@@ -231,17 +231,26 @@ const ProfitabilityCalculator = ({
     onCalculationComplete,
   ])
 
-  const debouncedCalculation = useCallback(
-    debounce(() => handleCalculateProfitability(), 500),
-    [handleCalculateProfitability],
-  )
+  const debouncedCalculationRef = useRef(
+  debounce(() => handleCalculateProfitability(), 500)
+);
 
   useEffect(() => {
-    if (costPrice && !isNaN(Number(costPrice))) {
-      debouncedCalculation()
-    }
-    return () => debouncedCalculation.cancel()
-  }, [costPrice, salePrice, storageMonths, fulfillmentType, debouncedCalculation])
+  debouncedCalculationRef.current = debounce(
+    () => handleCalculateProfitability(), 
+    500
+  );
+}, [handleCalculateProfitability]);
+
+useEffect(() => {
+  if (costPrice && !isNaN(Number(costPrice))) {
+    debouncedCalculationRef.current();
+  }
+  
+  return () => {
+    debouncedCalculationRef.current.cancel();
+  };
+}, [costPrice, salePrice, storageMonths, fulfillmentType]);
 
   const handlePriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSalePrice(e.target.value)
