@@ -176,7 +176,7 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
         }).unwrap()
         dispatch(
           setIpAlert({
-            setIpIssue: response?.data?.ip_analysis?.issues?.length ?? 0,
+            setIpIssue: response?.data?.ip_analysis?.issues ?? 0,
             eligibility: response?.data?.eligible_to_sell ?? false,
           }),
         )
