@@ -55,6 +55,45 @@ const ProductStats = forwardRef(({ product, isLoading, buyboxDetails }: ProductS
     return "" // Default text color
   }
 
+  // Get ROI tooltip message based on criteria
+  const getRoiTooltipMessage = () => {
+    const roi = profitabilityCalc?.roi ?? 0
+    const minRoi = profitabilityCalc?.minRoi ?? 0
+    
+    if (profitabilityCalc?.buying_criteria?.roiIsOk === true) {
+      return `✅ Excellent ROI! This product's ${roi}% return exceeds your minimum requirement of ${minRoi}%, making it a profitable investment that meets your buying criteria.`
+    } else if (profitabilityCalc?.buying_criteria?.roiIsOk === false) {
+      return `❌ ROI Below Target: This product's ${roi}% return is below your minimum requirement of ${minRoi}%. Consider finding a lower cost price or look for other products that meet your ROI criteria.`
+    }
+    return "Return on Investment - The percentage return you'll earn on your initial investment in this product."
+  }
+
+  // Get Profit tooltip message based on criteria
+  const getProfitTooltipMessage = () => {
+    const profitAmount = profitabilityCalc?.profitAmount ?? 0
+    const profitMargin = profitabilityCalc?.profitMargin ?? 0
+    const minProfit = profitabilityCalc?.minProfit ?? 0
+    
+    if (profitabilityCalc?.buying_criteria?.profitIsOk === true) {
+      return `✅ Great Profit! This product generates $${profitAmount.toFixed(2)} (${profitMargin.toFixed(0)}%) which exceeds your minimum profit requirement of $${minProfit.toFixed(2)}, making it a solid choice for your business.`
+    } else if (profitabilityCalc?.buying_criteria?.profitIsOk === false) {
+      return `❌ Profit Below Target: This product's profit of $${profitAmount.toFixed(2)} (${profitMargin.toFixed(0)}%) is below your minimum requirement of $${minProfit.toFixed(2)}. Consider negotiating a better cost price or look for higher-margin products.`
+    }
+    return "The total profit amount in dollars and profit margin percentage you can expect from selling this product."
+  }
+
+  // Get Maximum Cost tooltip message based on criteria
+  const getMaxCostTooltipMessage = () => {
+    const maxCost = profitabilityCalc?.maxCost ?? 0
+    const minRoi = profitabilityCalc?.minRoi ?? 0
+    const minProfit = profitabilityCalc?.minProfit ?? 0
+    
+    if (maxCost > 0) {
+      return `💡 Smart Buying Guide: Based on your criteria (${minRoi}% min ROI, $${minProfit.toFixed(2)} min profit), don't pay more than $${maxCost.toFixed(2)} for this product. This ensures you'll meet your profit targets while maintaining your desired return on investment.`
+    }
+    return "The highest price you should pay for this product to maintain your target profit margin and ROI."
+  }
+
   return (
     <div className="flex flex-col gap-4">
       {/* tabs */}
@@ -68,7 +107,7 @@ const ProductStats = forwardRef(({ product, isLoading, buyboxDetails }: ProductS
         >
           Product info
         </button>
-        {/** 
+   
         <button
           type="button"
           onClick={() => setActiveTab("totan")}
@@ -78,11 +117,10 @@ const ProductStats = forwardRef(({ product, isLoading, buyboxDetails }: ProductS
         >
           Totan (AI)
         </button>
-        */}
+     
       </div>
 
       {/* Totan */}
-      {/** */}
       {activeTab === "totan" && (
         <div className="border border-border rounded-xl shadow-sm p-4 flex flex-col gap-3">
           {/* Score and Info Row */}
@@ -204,7 +242,7 @@ const ProductStats = forwardRef(({ product, isLoading, buyboxDetails }: ProductS
               icon={<MaximumCostIcon />}
               title={
                 <AntTooltip
-                  title="The highest price you should pay for this product to maintain your target profit margin and ROI."
+                  title={getMaxCostTooltipMessage()}
                   placement="top"
                 >
                   <span className="cursor-help border-b border-dotted border-gray-400">Maximum Cost</span>
@@ -220,7 +258,7 @@ const ProductStats = forwardRef(({ product, isLoading, buyboxDetails }: ProductS
               icon={<ROIIcon />}
               title={
                 <AntTooltip
-                  title="Return on Investment - The percentage return you'll earn on your initial investment in this product."
+                  title={getRoiTooltipMessage()}
                   placement="top"
                 >
                   <span className="cursor-help border-b border-dotted border-gray-400">ROI</span>
@@ -234,7 +272,7 @@ const ProductStats = forwardRef(({ product, isLoading, buyboxDetails }: ProductS
               icon={<PriceTagIcon />}
               title={
                 <AntTooltip
-                  title="The total profit amount in dollars and profit margin percentage you can expect from selling this product."
+                  title={getProfitTooltipMessage()}
                   placement="top"
                 >
                   <span className="cursor-help border-b border-dotted border-gray-400">Profit</span>
