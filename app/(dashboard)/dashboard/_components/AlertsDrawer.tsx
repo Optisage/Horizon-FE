@@ -27,6 +27,7 @@ const AlertsDrawer = ({
     isMeltable: false,
     hasVariations: false,
     ipDescription: "No known IP issues",
+    ipHarzadous: "N/A"
   });
 
   useEffect(() => {
@@ -38,6 +39,7 @@ const AlertsDrawer = ({
         isMeltable: ipData?.is_meltable ?? false,
         hasVariations: ipData?.has_variations ?? false,
         ipDescription: getFirstDescription(ipData?.ip_analysis?.description),
+        ipHarzadous: ipData?.is_hazardous_or_dangerous,
       });
     }
   }, [ipData]); // Update when IP data changes
@@ -136,6 +138,10 @@ const AlertsDrawer = ({
                 {
                   label: "Variations",
                   value: additionalData.hasVariations ? "Yes" : "No",
+                },
+                {
+                  label: "Hazardous or Dangerous",
+                  value: additionalData.ipHarzadous ? "Yes" : "No",
                 },
               ].map((item, index) => (
                 <div
