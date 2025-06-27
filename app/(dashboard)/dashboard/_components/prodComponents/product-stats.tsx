@@ -108,6 +108,7 @@ const ProductStats = forwardRef(({ product, isLoading, buyboxDetails }: ProductS
           Product info
         </button>
    
+   {/** 
         <button
           type="button"
           onClick={() => setActiveTab("totan")}
@@ -117,6 +118,7 @@ const ProductStats = forwardRef(({ product, isLoading, buyboxDetails }: ProductS
         >
           Totan (AI)
         </button>
+        */}
      
       </div>
 

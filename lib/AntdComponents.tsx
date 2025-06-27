@@ -194,7 +194,7 @@ export const CustomSelect = ({
   children,
   ...props
 }: {
-  children: React.ReactNode;
+  children?: React.ReactNode;
   [key: string]: any;
 }) => (
   <ConfigProvider theme={{ token: { ...primaryConfig }, components: {} }}>
