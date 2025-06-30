@@ -106,35 +106,35 @@ const Subscriptions = () => {
       });
   };
 
-   // Determine expiration date and message
-   let expirationDate;
-   let statusMessage = "";
-   let statusText = "";
- 
-   if (subscription_canceled) {
-     statusText = "Canceled";
-     statusMessage = "Your subscription will fully expire at";
-     expirationDate = subscription_will_end_at;
-   } else {
-     switch (billing_status) {
-       case "trialing":
-         statusText = "";
-         statusMessage = "Your trial ends at";
-         expirationDate = trial_ends_at;
-         break;
-       case "active":
-         statusText = "Active";
-         statusMessage = "Your subscription will renew on";
-         expirationDate = next_billing_date;
-         break;
-       default:
-         statusText = "Inactive";
-         statusMessage = "No active subscription";
-     }
-   }
+  // Determine expiration date and message
+  let expirationDate;
+  let statusMessage = "";
+  let statusText = "";
+
+  if (subscription_canceled) {
+    statusText = "Canceled";
+    statusMessage = "Your subscription will fully expire at";
+    expirationDate = subscription_will_end_at;
+  } else {
+    switch (billing_status) {
+      case "trialing":
+        statusText = "";
+        statusMessage = "Your trial ends at";
+        expirationDate = trial_ends_at;
+        break;
+      case "active":
+        statusText = "Active";
+        statusMessage = "Your subscription will renew on";
+        expirationDate = next_billing_date;
+        break;
+      default:
+        statusText = "Inactive";
+        statusMessage = "No active subscription";
+    }
+  }
 
   return (
-    <section className="flex flex-col gap-8 min-h-[50dvh] md:min-h-[80dvh]">
+    <section className="flex flex-col gap-8 min-h-[50dvh] md:min-h-[80dvh] rounded-xl bg-white p-4 lg:p-5">
       {contextHolder}
       <div className=" flex items-center justify-between">
         <Heading
@@ -371,3 +371,4 @@ const Subscriptions = () => {
 };
 
 export default Subscriptions;
+

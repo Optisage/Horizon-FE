@@ -40,7 +40,7 @@ const UpcScanner = () => {
   };
 
   return (
-    <section className="flex flex-col gap-8 min-h-[50dvh] md:min-h-[80dvh]">
+    <section className="flex flex-col gap-8 min-h-[50dvh] md:min-h-[80dvh] rounded-xl bg-white p-4 lg:p-5">
       <Header />
 
       <div className="p-3 sm:p-4 rounded-xl border border-border flex flex-col gap-6">
