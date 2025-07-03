@@ -1,0 +1,25 @@
+diff --git a/hooks/use-product-variation.tsx b/hooks/use-product-variation.tsx
+new file mode 100644
+index 0000000..cb26a85
+--- /dev/null
++++ b/hooks/use-product-variation.tsx
+@@ -0,0 +1,19 @@
++"use client"
++import { useRouter } from "next/navigation"
++import { useCallback } from "react"
++
++export const useProductVariation = (currentAsin: string, marketplaceId: number) => {
++  const router = useRouter()
++
++  const handleVariationChange = useCallback(
++    (newAsin: string) => {
++      if (newAsin === currentAsin) return
++
++      // Navigate to the new URL with the selected variation ASIN in the path
++      router.push(`/dashboard/product/${newAsin}`)
++    },
++    [currentAsin, router],
++  )
++
++  return { handleVariationChange }
++}

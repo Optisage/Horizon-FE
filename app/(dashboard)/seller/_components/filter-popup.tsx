@@ -11,6 +11,7 @@ export interface FilterParams {
   minBsr?: number;
   maxBsr?: number;
   q?: string;
+  brandName?: string;
 }
 
 interface FilterPopupProps {
@@ -32,6 +33,7 @@ const FilterPopup = ({ onApply }: FilterPopupProps) => {
       setApplyDisabled(false);
     }
   }, [filters.minBsr, filters.maxBsr]);
+
 
   const handleApply = () => {
     if (applyDisabled) return;

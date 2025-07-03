@@ -105,7 +105,7 @@ export default function StripeCheckout() {
                   </h1>
                   <p>Please check your payment details and try again.</p>
                   <div>
-                    <a href="https://optisage.ai/pricing/">
+                    <a href="https://optisage.ai/#pricing/">
                       <button className=" w-full rounded-md border shadow-[0px_-3px_0px_0px_#00000014_inset] py-2">
                         Select another plan
                       </button>
