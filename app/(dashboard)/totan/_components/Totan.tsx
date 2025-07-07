@@ -41,7 +41,7 @@ const TotanChat = () => {
   }, [messages, loading]);
 
   return (
-    <section className="flex flex-col gap-6 min-h-[50dvh] md:min-h-[80dvh]">
+    <section className="flex flex-col gap-8 min-h-[50dvh] md:min-h-[80dvh] rounded-xl bg-white p-4 lg:p-5">
       {/* Header */}
       <div className="flex items-center gap-4 shadow-sm pb-4">
         <div className="size-10 rounded-full bg-primary text-white flex items-center justify-center">

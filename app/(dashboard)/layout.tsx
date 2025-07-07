@@ -46,15 +46,17 @@ export default function DashboardLayout({
     /* eslint-disable-next-line react-hooks/exhaustive-deps */
   }, [setIsModalVisible, getProfile]);
   return (
-    <div className="drawer lg:drawer-open text-black mx-auto max-w-screen-2xl 2xl:border">
+    <div className="drawer lg:drawer-open text-black mx-auto max-w-screen-2xl">
       {contextHolder}
       <label htmlFor="my-drawer-2" className="sr-only">
         Toggle Drawer
       </label>
       <input id="my-drawer-2" type="checkbox" className="drawer-toggle" />
-      <div className="drawer-content bg-white max-h-dvh overflow-y-scroll">
-        <DashNav />
-        <div className="p-5 lg:p-6">
+      <div className="drawer-content bg-[#E7EBEE] max-h-dvh overflow-y-scroll">
+        <div className="p-2">
+          <DashNav />
+        </div>
+        <div className="p-2 pb-4">
           {children}
 
           <Modal
@@ -100,3 +102,4 @@ export default function DashboardLayout({
     </div>
   );
 }
+

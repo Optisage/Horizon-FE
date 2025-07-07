@@ -92,10 +92,10 @@ const CountrySelect = () => {
   };
 
   return (
-    <div className="relative inline-block md:w-64">
+    <div className="relative inline-block md:w-52">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-2 w-full p-2 border rounded-full bg-[#F3F5F7]"
+        className="flex items-center gap-1 md:gap-2 w-full p-2"
       >
         {selectedCountry.flag ? (
           <Image
@@ -116,7 +116,7 @@ const CountrySelect = () => {
         <span className="flex-1 hidden md:flex justify-start text-xs font-medium text-[#171717]">
           {selectedCountry.name}
         </span>
-        <BiChevronDown className="size-4 text-[#616977]" />
+        <BiChevronDown className="size-5 text-[#616977]" />
       </button>
 
       {isOpen && (

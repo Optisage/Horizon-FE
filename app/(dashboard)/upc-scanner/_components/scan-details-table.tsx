@@ -50,7 +50,7 @@ const sampleData: ProductData[] = [
   },
 ];
 
-export const ScanDetailsTable = () => {
+const ScanDetailsTable = () => {
   return (
     <div className="w-full overflow-x-auto rounded-b-xl border border-gray-200">
       {/* Mobile View */}
@@ -230,3 +230,4 @@ export const ScanDetailsTable = () => {
   );
 };
 
+export default ScanDetailsTable;

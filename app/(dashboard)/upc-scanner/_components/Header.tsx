@@ -20,19 +20,19 @@ const Header = () => {
         />
       </div>
 
-      <div className="flex gap-2 flex-wrap sm:flex-nowrap">
+      <div className="flex gap-2 flex-wrap sm:flex-nowrap text-sm">
         <button
           type="button"
           className="flex items-center gap-1.5 bg-primary hover:bg-primary/90 transition-colors rounded-full text-white font-semibold py-2 px-4"
         >
-          <HiOutlinePrinter className="size-6" />
+          <HiOutlinePrinter className="size-5" />
           Start Scanner
         </button>
         <button
           type="button"
           className="flex items-center gap-1.5 hover:bg-gray-50 rounded-full text-[#8C94A2] border border-border font-semibold py-2 px-4"
         >
-          <HiOutlineDocumentArrowDown className="size-6" />
+          <HiOutlineDocumentArrowDown className="size-5" />
           Import
         </button>
         <button
@@ -42,7 +42,7 @@ const Header = () => {
           <Image
             src={ExcelIcon}
             alt="Excel icon"
-            className="size-6"
+            className="size-5"
             width={21}
             height={20}
             unoptimized

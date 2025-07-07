@@ -1,19 +1,30 @@
 "use client";
 
-import { Tooltip } from "antd";
+import { Tooltip, Dropdown } from "antd";
 import { CustomTable as Table } from "@/lib/AntdComponents";
 import type { ColumnsType } from "antd/es/table";
+import type { MenuProps } from "antd";
 import { FC } from "react";
-import { HiArrowPath, HiEllipsisVertical, HiPrinter } from "react-icons/hi2";
+import {
+  HiArrowPath,
+  HiPrinter,
+  HiEllipsisVertical,
+  HiTrash,
+  HiArrowDownTray,
+} from "react-icons/hi2";
 
-interface ProductData {
+interface ScanResultsTableProps {
+  onDetailsClick?: (productId: string) => void;
+}
+
+export interface ProductData {
   key: string;
   index: number;
   name: string;
   productId: string;
   items: number;
   found: number;
-  lastSeen: string;
+  lastScan: string;
   lastUploaded: string;
   status: "Pending" | "Completed";
 }
@@ -26,7 +37,7 @@ const data: ProductData[] = [
     productId: "6525535",
     items: 50,
     found: 4,
-    lastSeen: "12/07/25",
+    lastScan: "12/07/25",
     lastUploaded: "12/07/25",
     status: "Pending",
   },
@@ -37,7 +48,7 @@ const data: ProductData[] = [
     productId: "69028082",
     items: 30,
     found: 26,
-    lastSeen: "12/05/25",
+    lastScan: "12/05/25",
     lastUploaded: "12/05/25",
     status: "Pending",
   },
@@ -48,13 +59,13 @@ const data: ProductData[] = [
     productId: "69028082",
     items: 15,
     found: 33,
-    lastSeen: "12/05/25",
+    lastScan: "12/05/25",
     lastUploaded: "12/05/25",
     status: (i < 1 ? "Pending" : "Completed") as "Pending" | "Completed",
   })),
 ];
 
-const ScanResultsTable: FC = () => {
+const ScanResultsTable: FC<ScanResultsTableProps> = ({ onDetailsClick }) => {
   const columns: ColumnsType<ProductData> = [
     {
       title: "#",
@@ -64,7 +75,7 @@ const ScanResultsTable: FC = () => {
       render: (_, record, index) => <span>{index + 1}</span>,
     },
     {
-      title: "Product Name",
+      title: "Search Name",
       dataIndex: "name",
       key: "name",
       render: (name, _, index) => {
@@ -81,7 +92,7 @@ const ScanResultsTable: FC = () => {
       },
     },
     {
-      title: "Product ID",
+      title: "UPC / EAN",
       dataIndex: "productId",
       key: "productId",
       render: (text, _, index) => (
@@ -102,9 +113,9 @@ const ScanResultsTable: FC = () => {
       key: "found",
     },
     {
-      title: "Last Seen",
-      dataIndex: "lastSeen",
-      key: "lastSeen",
+      title: "Last Scan",
+      dataIndex: "lastScan",
+      key: "lastScan",
       render: (text, _, index) => (
         <span className={index === 0 ? "font-bold" : ""}>{text}</span>
       ),
@@ -136,34 +147,63 @@ const ScanResultsTable: FC = () => {
     {
       title: "Action",
       key: "action",
-      render: () => (
-        <div className="flex gap-2">
-          <Tooltip title="Refresh">
-            <button type="button" aria-label="Refresh">
-              <HiArrowPath
-                size={24}
-                className="text-[#8C94A3] hover:text-black"
-              />
-            </button>
-          </Tooltip>
-          <Tooltip title="Print">
-            <button type="button" aria-label="Print">
-              <HiPrinter
-                size={24}
-                className="text-[#8C94A3] hover:text-black"
-              />
-            </button>
-          </Tooltip>
-          <Tooltip title="More">
-            <button type="button" aria-label="More">
-              <HiEllipsisVertical
-                size={24}
-                className="text-[#8C94A3] hover:text-black"
-              />
-            </button>
-          </Tooltip>
-        </div>
-      ),
+      render: (_, record: ProductData) => {
+        const items: MenuProps["items"] = [
+          {
+            key: "download",
+            label: (
+              <div className="flex items-center gap-2">
+                <HiArrowDownTray size={16} />
+                <span>Download</span>
+              </div>
+            ),
+          },
+          {
+            key: "delete",
+            label: (
+              <div className="flex items-center gap-2 text-red-500">
+                <HiTrash size={16} />
+                <span>Delete</span>
+              </div>
+            ),
+          },
+        ];
+
+        return (
+          <div className="flex gap-2">
+            <Tooltip title="Refresh">
+              <button type="button" aria-label="Refresh">
+                <HiArrowPath
+                  size={24}
+                  className="text-[#8C94A3] hover:text-black"
+                />
+              </button>
+            </Tooltip>
+            <Tooltip title="View Details">
+              <button
+                type="button"
+                aria-label="View Details"
+                onClick={() => onDetailsClick?.(record.productId)}
+              >
+                <HiPrinter
+                  size={24}
+                  className="text-[#8C94A3] hover:text-black"
+                />
+              </button>
+            </Tooltip>
+            <Dropdown menu={{ items }} trigger={["click"]}>
+              <Tooltip title="More">
+                <button type="button" aria-label="More">
+                  <HiEllipsisVertical
+                    size={24}
+                    className="text-[#8C94A3] hover:text-black"
+                  />
+                </button>
+              </Tooltip>
+            </Dropdown>
+          </div>
+        );
+      },
     },
   ];
 

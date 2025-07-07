@@ -7,14 +7,15 @@ export const metadata: Metadata = {
 };
 
 export default function GoCompareLayout({
-    children,
+  children,
 }: Readonly<{
-    children: React.ReactNode;
+  children: React.ReactNode;
 }>) {
-    return (
-        <main className="flex flex-col gap-5">
-            <Navigation />
-            {children}
-        </main>
-    );
+  return (
+    <main className="flex flex-col gap-5 rounded-xl bg-white p-4 lg:p-5">
+      <Navigation />
+      {children}
+    </main>
+  );
 }
+

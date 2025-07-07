@@ -1,4 +1,4 @@
-"use client"
+"use client";
 import Image from "next/image";
 
 import Illustration1 from "@/public/assets/svg/illustration-1.svg";
@@ -15,7 +15,6 @@ import { useEffect } from "react";
 import useCurrencyConverter from "@/utils/currencyConverter";
 import { useAppSelector } from "@/redux/hooks";
 
-
 interface ReferralData {
   points: number;
   conversion: {
@@ -29,22 +28,20 @@ interface ReferralData {
   referrals: [];
 }
 
-
 const Referral = () => {
-  const [getRef, {data: refData, isLoading}] = useLazyGetReferralsQuery()
-  useEffect(()=>{
-    getRef({})
-  /* eslint-disable-next-line react-hooks/exhaustive-deps */
-  },[])
+  const [getRef, { data: refData, isLoading }] = useLazyGetReferralsQuery();
+  useEffect(() => {
+    getRef({});
+    /* eslint-disable-next-line react-hooks/exhaustive-deps */
+  }, []);
   const { currencyCode, currencySymbol } =
-      useAppSelector((state) => state.global) || {};
+    useAppSelector((state) => state.global) || {};
   const { convertPrice } = useCurrencyConverter(currencyCode);
- 
 
   const referralData = refData?.data as ReferralData;
 
   return (
-    <section className="flex flex-col gap-12 min-h-[50dvh] md:min-h-[80dvh]">
+    <section className="flex flex-col gap-12 min-h-[50dvh] md:min-h-[80dvh] rounded-xl bg-white p-4 lg:p-5">
       <div className="flex flex-col gap-8">
         <div className="grid xl:grid-cols-[4fr_2fr] gap-4 items-center">
           <div className="bg-[#F7F7F7] p-6 rounded-2xl grid sm:grid-cols-2 md:grid-cols-3 gap-8 sm:gap-5">
@@ -107,11 +104,10 @@ const Referral = () => {
             </div>
           </div>
 
-
           <div className="flex flex-col md:flex-row xl:flex-col gap-4">
             <SocialReferralModal />
 
-{/** 
+            {/** 
             <div className="border border-border rounded-lg p-5 flex gap-4 items-center relative cursor-pointer">
               <span className="absolute right-3 top-3 bg-primary text-white text-xs px-1.5 py-0.5 rounded-md">
                 Coming Soon
@@ -165,7 +161,8 @@ const Referral = () => {
                   Earnings this Week
                 </h5>
                 <p className="text-[#01011D] font-semibold text-xl md:text-2xl">
-                {currencySymbol}{convertPrice(referralData?.week_earnings) || 0}
+                  {currencySymbol}
+                  {convertPrice(referralData?.week_earnings) || 0}
                 </p>
               </span>
 
@@ -181,9 +178,13 @@ const Referral = () => {
         </div>
       </div>
 
-      <ReferralTable tableLoading={isLoading} tableData={referralData?.referrals || []}/>
+      <ReferralTable
+        tableLoading={isLoading}
+        tableData={referralData?.referrals || []}
+      />
     </section>
   );
 };
 
 export default Referral;
+
