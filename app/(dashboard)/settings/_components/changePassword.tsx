@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { CustomPasswordInput } from "@/lib/AntdComponents";
 import { Button, Modal } from "antd";
 import { useFormik } from "formik";
