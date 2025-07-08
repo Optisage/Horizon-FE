@@ -64,13 +64,17 @@ const DashNav = () => {
 
       <div className="flex gap-8 md:gap-6 items-center">
         <div className="flex gap-6 items-center">
-          <Link
-            href=""
-            className="hidden xl:block text-sm font-medium text-[#090F0D]"
+          <span
+         className="hidden xl:block text-sm font-medium text-[#090F0D] "
           >
-            For a better experience, please install the optisage Chrome
-            Extension.
-          </Link>
+            For a better experience, please install the{" "}
+            <Link
+            href="https://chromewebstore.google.com/detail/optisage/dmdfkdhmbanaldplibbnlgdonafbfaaj?authuser=3&hl=en"
+            className="underline"
+            >
+            optisage chrome extension
+            </Link>
+          </span>
           <CountrySelect />
         </div>
 
