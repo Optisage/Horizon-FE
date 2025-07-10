@@ -14,6 +14,7 @@ import {
   CreditIcon,
   HistoryIcon,
   GoCompareIcon,
+  UPCScannerIcon,
 } from "@/public/assets/svg/icons";
 import LogoutModal from "./LogoutModal";
 import { BiChevronRight } from "react-icons/bi";
@@ -21,23 +22,25 @@ import { RiVerifiedBadgeFill } from "react-icons/ri";
 import { useAppSelector } from "@/redux/hooks";
 import { useDispatch } from "react-redux";
 import { logout } from "@/redux/slice/authSlice";
-//import { BsStars } from "react-icons/bs";
+import { BsStars } from "react-icons/bs";
 
 // Sidebar data
-interface MenuItem {
-  id: string;
-  path: string;
-  label: string;
-  icon: React.ComponentType<{className?: string}>;
-  comingSoon?: boolean;
-}
 
-const menuData: MenuItem[] = [
+
+const menuData = [
   { id: "1", path: "/dashboard", label: "Dashboard", icon: DashboardIcon },
   { id: "2", path: "/history", label: "History", icon: HistoryIcon },
   { id: "3", path: "/go-compare", label: "Go Compare", icon: GoCompareIcon },
-  { id: "5", path: "/keepa", label: "Keepa", icon: KeepaIcon },
-  //{ id: "6", path: "", label: "Totan (AI)", icon: BsStars, comingSoon: true },
+   { id: "4", path: "/keepa", label: "Keepa", icon: KeepaIcon },
+  {
+    id: "5",
+    path: "/totan",
+    label: "Totan (AI)",
+    icon: BsStars,
+    comingSoon: false,
+    beta: true,
+  },
+  { id: "6", path: "/upc-scanner", label: "UPC Scanner", icon: UPCScannerIcon },
 ];
 
 const secondaryMenu = [
@@ -94,6 +97,11 @@ const DashSider = () => {
         {item.comingSoon && (
           <span className="ml-auto bg-primary text-white text-xs px-1.5 py-0.5 rounded-md">
             Coming Soon
+          </span>
+        )}
+        {item.beta && (
+          <span className="ml-5 bg-primary text-white text-xs px-1.5 py-0.5 rounded-md">
+            Beta
           </span>
         )}
       </Link>
@@ -208,3 +216,4 @@ const DashSider = () => {
 };
 
 export default DashSider;
+

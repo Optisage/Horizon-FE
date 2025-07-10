@@ -1,8 +1,7 @@
 "use client";
 import { DndContext, type DragEndEvent, DragOverlay, type DragStartEvent, PointerSensor, useSensor, useSensors } from "@dnd-kit/core"
 import { restrictToWindowEdges } from "@dnd-kit/modifiers"
-import { useQuickSearchQuery } from '@/redux/api/quickSearchApi';
-import Loader from '@/utils/loader';
+import { useGetSearchByIdQuery, useQuickSearchQuery } from '@/redux/api/quickSearchApi';
 import { usePathname, useSearchParams } from 'next/navigation';
 import React, { useEffect, useState } from 'react'
 import { TbListSearch } from "react-icons/tb";
@@ -14,8 +13,10 @@ import QuickSearchTable from "../_components/QuickSearchTable";
 import { ProductObj, QuickSearchData } from "@/types/goCompare";
 import { FetchBaseQueryError } from "@reduxjs/toolkit/query";
 import { SerializedError } from "@reduxjs/toolkit";
+import GoCompareLoader from "../_components/Loader";
+import Loader from "@/utils/loader";
 
-export default function QuickDatasult() {
+export default function QuickSearch() {
     const params = useSearchParams();
     const pathname = usePathname();
     const asin = params.get('asin') ?? '';
@@ -23,6 +24,7 @@ export default function QuickDatasult() {
     const store_names = params.get('stores')?.split(',') || [];
     const queueParam = params.get('queue');
     const queue = queueParam === 'true';
+    const searchId = params.get('searchId');
 
     const [lastQueryParams, setLastQueryParams] = useState({
         asin, country_ids, store_names: store_names.join(','), queue
@@ -30,9 +32,39 @@ export default function QuickDatasult() {
 
     const [isRouteChanging, setIsRouteChanging] = useState(false);
 
-    const { data, isLoading, isError, isFetching, error } = useQuickSearchQuery({
-        asin, store_names, country_ids, queue
-    }, { refetchOnMountOrArgChange: true }) as { data: QuickSearchData | undefined, isLoading: boolean, isError: boolean, isFetching: boolean, error?: FetchBaseQueryError | SerializedError }
+    const searchByIdResult = useGetSearchByIdQuery(
+        { id: searchId ?? '' },
+        { skip: !searchId, refetchOnMountOrArgChange: true }
+    );
+
+    const quickSearchResult = useQuickSearchQuery(
+        { asin, store_names, country_ids, queue },
+        { skip: !!searchId, refetchOnMountOrArgChange: true }
+    );
+
+    type QueryResult = {
+        data: QuickSearchData | undefined;
+        isLoading: boolean;
+        isError: boolean;
+        isFetching: boolean;
+        error?: FetchBaseQueryError | SerializedError;
+    };
+
+    const result: QueryResult = searchId ? {
+        data: searchByIdResult.data?.data,
+        isLoading: searchByIdResult.isLoading,
+        isError: searchByIdResult.isError,
+        isFetching: searchByIdResult.isFetching,
+        error: searchByIdResult.error,
+    } : {
+        data: quickSearchResult.data?.data,
+        isLoading: quickSearchResult.isLoading,
+        isError: quickSearchResult.isError,
+        isFetching: quickSearchResult.isFetching,
+        error: quickSearchResult.error,
+    };
+
+    const { data, isLoading, isError, isFetching, error } = result;
 
     const [selectedProducts, setSelectedProducts] = useState<ProductObj[]>([])
     const [activeProduct, setActiveProduct] = useState<ProductObj | null>(null)
@@ -40,7 +72,6 @@ export default function QuickDatasult() {
     const sensors = useSensors(
         useSensor(PointerSensor, {
             activationConstraint: {
-
                 distance: 1,
                 tolerance: 5,
                 delay: 0,
@@ -116,7 +147,16 @@ export default function QuickDatasult() {
         setSelectedProducts([]);
     }, [data?.amazon_product]);
 
-    if (isLoading || isRouteChanging) return <Loader />;
+    if ((isLoading || isRouteChanging) && searchId) return <Loader />;
+    if (isLoading || isRouteChanging) {
+        return (
+            <GoCompareLoader
+                asin={asin}
+                storeNames={store_names}
+                isLoading={isLoading || isRouteChanging}
+            />
+        );
+    }
     if (isError) {
         let errorMessage = "Unknown error";
         if (error && typeof error === 'object') {
