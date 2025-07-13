@@ -60,7 +60,7 @@ export default function KeepaPage() {
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-[#01011D]">Keepa Integration</h1>
+          <h1 className="text-2xl font-bold text-[#01011D]">Keepa</h1>
           <p className="text-[#787891]">Track product prices, sales ranks, and market data</p>
         </div>
       </div>
