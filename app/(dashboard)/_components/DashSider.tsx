@@ -45,7 +45,7 @@ const menuData = [
 
 const secondaryMenu = [
   { id: "7", path: "/settings", label: "Settings", icon: SettingsIcon },
-  { id: "8", path: "", label: "Credit", icon: CreditIcon, comingSoon: true },
+  { id: "8", path: "", label: "Credit", icon: CreditIcon, comingSoon: true,   beta: false },
 ];
 
 const billingMenu = [

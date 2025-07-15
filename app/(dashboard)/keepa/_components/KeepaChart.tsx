@@ -54,8 +54,8 @@ function formatDecimal(value: string | number, decimals: number = 1): string {
   // API queries
   const [getPriceHistory, { data: priceData, isLoading: priceLoading }] = useLazyPriceHistoryQuery()
   const [getProductSummary, { data: summaryData, isLoading: summaryLoading }] = useLazyProductSummaryQuery()
-  const [getRatingReview, { data: ratingData, isLoading: ratingLoading }] = useLazyRatingReviewQuery()
-  const [getSalesRank, { data: salesRankData, isLoading: salesRankLoading }] = useLazySalesRankQuery()
+  const [getRatingReview, { data: ratingData, /**isLoading: ratingLoading*/ }] = useLazyRatingReviewQuery()
+  const [getSalesRank, { data: salesRankData, /**isLoading: salesRankLoading*/ }] = useLazySalesRankQuery()
 
   // Loading states for time range changes
   const [isTimeRangeChanging, setIsTimeRangeChanging] = useState(false)
