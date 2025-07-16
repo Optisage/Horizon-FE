@@ -22,7 +22,7 @@ export default function KeepaPage() {
   const { marketplaceId } = useAppSelector((state) => state?.global)
   const [isLoading, setIsLoading] = useState(false)
 
-  const [getProductSummary, { data: summaryData, isLoading: summaryLoading }] = useLazyProductSummaryQuery()
+  const [getProductSummary, {  isLoading: summaryLoading }] = useLazyProductSummaryQuery()
 
   const handleProductSearch = async (asin: string) => {
     setIsLoading(true)
