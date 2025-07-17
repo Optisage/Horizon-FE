@@ -10,6 +10,7 @@ import { userApi } from "./api/user";
 import { sellerApi } from "./api/sellerApi";
 import { quickSearchApi } from "./api/quickSearchApi";
 import { keepaApi } from "./api/keepa";
+import { monitorApi } from "./api/monitorApi";
 
 
 const rootReducer = combineReducers({
@@ -22,6 +23,7 @@ const rootReducer = combineReducers({
   [sellerApi.reducerPath]: sellerApi.reducer,
   [quickSearchApi.reducerPath]: quickSearchApi.reducer,
   [keepaApi.reducerPath]: keepaApi.reducer,
+  [monitorApi.reducerPath]: monitorApi.reducer,
 
 });
 
@@ -46,6 +48,7 @@ export const store = configureStore({
       sellerApi.middleware,
       quickSearchApi.middleware,
       keepaApi.middleware,
+      monitorApi.middleware,
     ]),
 });
 
