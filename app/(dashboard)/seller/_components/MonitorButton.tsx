@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { message } from "antd";
 import { HiOutlineEye, HiOutlineEyeSlash } from "react-icons/hi2";
 import { 
@@ -16,18 +16,29 @@ interface MonitorButtonProps {
 
 const MonitorButton: React.FC<MonitorButtonProps> = ({ sellerId, marketplaceId }) => {
   const [messageApi, contextHolder] = message.useMessage();
-  
-  // Query to check if seller is already monitored
+  const [isMonitored, setIsMonitoring] = useState(false);
+// Query to check if seller is already monitored
   const { data: monitoredSellers, isLoading: isLoadingMonitored } = useGetMonitoredSellersQuery({});
+
+
+  useEffect(()=>{
+    if(monitoredSellers && monitoredSellers?.data?.length > 0) {
+      const isAlreadyMonitored = monitoredSellers.data.some(
+        (seller) => seller.seller_id.toString() === sellerId.toString() && seller.marketplace.id === marketplaceId
+      );
+      setIsMonitoring(isAlreadyMonitored);
+    }
+
+  },[ monitoredSellers, sellerId, marketplaceId ]);
+  
+  
   
   // Mutations for monitoring/unmonitoring
   const [monitorSeller, { isLoading: isMonitoring }] = useMonitorSellerMutation();
   const [unmonitorSeller, { isLoading: isUnmonitoring }] = useUnmonitorSellerMutation();
   
   // Check if current seller is being monitored
-  const isMonitored = monitoredSellers?.data?.some(
-    (seller) => seller.seller_id === sellerId && seller.marketplace_id === marketplaceId
-  ) || false;
+   
   
   const isLoading = isLoadingMonitored || isMonitoring || isUnmonitoring;
   
@@ -36,9 +47,11 @@ const MonitorButton: React.FC<MonitorButtonProps> = ({ sellerId, marketplaceId }
       if (isMonitored) {
         const result = await unmonitorSeller({ sellerId, marketplaceId }).unwrap();
         messageApi.success(result.message || "Seller unmonitored successfully");
+        setIsMonitoring(false);
       } else {
         const result = await monitorSeller({ sellerId, marketplaceId }).unwrap();
         messageApi.success(result.message || "Seller is now being monitored");
+        setIsMonitoring(true);
       }
     } catch (error: any) {
       const errorMessage = error?.data?.message || "An error occurred";

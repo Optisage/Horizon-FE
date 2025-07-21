@@ -37,6 +37,11 @@ export const monitorApi = createApi({
         data: Array<{
           seller_id: string;
           marketplace_id: number;
+          marketplace: {
+            id: number;
+            name: string;
+
+          };
           created_at: string;
           updated_at: string;
         }>;
