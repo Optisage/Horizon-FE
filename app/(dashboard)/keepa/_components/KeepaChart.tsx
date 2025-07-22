@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 import { useState, useMemo, useCallback, useEffect } from "react";
 import { LoadingOutlined } from "@ant-design/icons";
