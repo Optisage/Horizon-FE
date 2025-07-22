@@ -1,15 +1,16 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { CiSearch } from "react-icons/ci"
 import { message } from "antd"
 
 interface KeepaSearchProps {
   onSearch: (asin: string) => void
   isLoading: boolean
+    initialValue?: string | null
 }
 
-export default function KeepaSearch({ onSearch, isLoading }: KeepaSearchProps) {
+export default function KeepaSearch({ onSearch, isLoading, initialValue }: KeepaSearchProps) {
   const [searchValue, setSearchValue] = useState("")
 
   const extractASIN = (input: string): string | null => {
@@ -51,6 +52,11 @@ export default function KeepaSearch({ onSearch, isLoading }: KeepaSearchProps) {
     }
   }
 
+    useEffect(() => {
+    if (initialValue) {
+      setSearchValue(initialValue)
+    }
+  }, [initialValue])
   return (
     <div className="border border-border rounded-xl p-6 bg-white">
       <div className="flex flex-col gap-4">

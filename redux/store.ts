@@ -11,6 +11,7 @@ import { sellerApi } from "./api/sellerApi";
 import { quickSearchApi } from "./api/quickSearchApi";
 import { keepaApi } from "./api/keepa";
 import { monitorApi } from "./api/monitorApi";
+import { totanApi } from "./api/totanAi";
 
 
 const rootReducer = combineReducers({
@@ -24,6 +25,7 @@ const rootReducer = combineReducers({
   [quickSearchApi.reducerPath]: quickSearchApi.reducer,
   [keepaApi.reducerPath]: keepaApi.reducer,
   [monitorApi.reducerPath]: monitorApi.reducer,
+  [totanApi.reducerPath]: totanApi.reducer
 
 });
 
@@ -49,6 +51,7 @@ export const store = configureStore({
       quickSearchApi.middleware,
       keepaApi.middleware,
       monitorApi.middleware,
+      totanApi.middleware
     ]),
 });
 

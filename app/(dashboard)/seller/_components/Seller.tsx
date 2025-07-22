@@ -452,10 +452,19 @@ const handleCategoryClick = (categoryId: number) => {
                                 ASIN: {basicDetails.asin}, UPC: {basicDetails.upc || "N/A"}
                               </p>
                               <p className="text-sm">Category: {basicDetails.category}</p>
+
+                              <div className="flex justify-between items-center gap-2 mt-2 w-full">
                               <p className="text-lg font-bold mt-2">
                                 {product.buybox_details.currency}
                                 {product.buybox_details.buybox_price.toFixed(2)}
                               </p>
+
+                              <button
+                              className="bg-primary text-white rounded-lg px-4 py-2 text-xs font-semibold"
+                                onClick={() => router.push(`/keepa?asin=${basicDetails.asin}`)}>
+                                  View keepa
+                                </button>
+                            </div>
                             </div>
                           </div>
 
