@@ -599,9 +599,6 @@ export default function KeepaChart({
                 }}
               ></div>
               <span className="text-xs flex-1">{priceTypeData.label}</span>
-              <span className="text-xs text-gray-500">
-                ({priceTypeData.data_points})
-              </span>
             </div>
           );
         })}
@@ -638,9 +635,6 @@ export default function KeepaChart({
               }}
             ></div>
             <span className="text-xs flex-1">{rankData.label}</span>
-            <span className="text-xs text-gray-500">
-              ({rankData.data_points})
-            </span>
           </div>
         ))}
       </div>
@@ -685,9 +679,6 @@ export default function KeepaChart({
                   }}
                 ></div>
                 <span className="text-xs flex-1">{ratingDataItem.label}</span>
-                <span className="text-xs text-gray-500">
-                  ({ratingData?.data?.metadata?.data_points?.[key] || 0})
-                </span>
               </div>
             );
           }
