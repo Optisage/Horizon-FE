@@ -288,7 +288,7 @@ export default function KeepaChart({
       });
     }
 
-    if (ratingHistory.new_offer_count?.data) {
+    if (ratingHistory.new_offer_count?.data && Array.isArray(ratingHistory.new_offer_count.data)) {
       ratingHistory.new_offer_count.data.forEach((entry: any) => {
         allTimestamps.add(entry.date);
       });
@@ -369,11 +369,13 @@ export default function KeepaChart({
             DAY_IN_MS
         ) as any;
 
-        const newOfferCountEntry = ratingHistory.new_offer_count?.data?.find(
-          (entry: any) =>
-            Math.abs(new Date(entry.date).getTime() - date.getTime()) <
-            DAY_IN_MS
-        ) as any;
+        const newOfferCountEntry = Array.isArray(ratingHistory.new_offer_count?.data) 
+          ? ratingHistory.new_offer_count.data.find(
+              (entry: any) =>
+                Math.abs(new Date(entry.date).getTime() - date.getTime()) <
+                DAY_IN_MS
+            )
+          : null;
 
         // Rating is typically static, use from summary or default
         const rating = summaryData?.data?.current_data?.rating || 4.0;
