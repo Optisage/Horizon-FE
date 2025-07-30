@@ -40,7 +40,7 @@ interface AnalysisData {
 
 interface PurchaseQuantityData {
   conservative_quantity: number
-  moderate_quantity: number
+  
   aggressive_quantity: number
 }
 
@@ -60,9 +60,22 @@ const ProductStats = forwardRef(({ product, isLoading, buyboxDetails, asin, mark
   const extra = buyboxDetails?.extra || product?.extra
   const profitabilityCalc = latestProfitCalc || product?.last_profitability_calculation?.fba
 
+  // Reset states when ASIN changes
+  useEffect(() => {
+    console.log('ASIN changed, resetting states:', asin)
+    setAnalysisData(null)
+    setPurchaseQuantityData(null)
+  }, [asin])
+
+  // Reset states when product changes
+  useEffect(() => {
+    setLatestProfitCalc(product?.last_profitability_calculation?.fba)
+  }, [product])
+
   // Expose the update function to the parent component
   useImperativeHandle(ref, () => ({
     handleProfitabilityUpdate: (data: any) => {
+      console.log('Profitability updated:', data)
       setLatestProfitCalc(data)
       // Trigger analysis when profitability is updated with the new data
       if (data && activeTab === "totan") {
@@ -73,7 +86,12 @@ const ProductStats = forwardRef(({ product, isLoading, buyboxDetails, asin, mark
 
   // Perform analysis
   const performAnalysis = async (updatedProfitData?: any) => {
-    if (!asin || !marketplaceId) return
+    console.log('performAnalysis called:', { asin, marketplaceId, hasUpdatedData: !!updatedProfitData })
+    
+    if (!asin || !marketplaceId) {
+      console.log('Missing asin or marketplaceId, skipping analysis')
+      return
+    }
 
     // Use updated profit data if provided, otherwise use existing profitability calc
     const currentProfitData = updatedProfitData || profitabilityCalc
@@ -81,7 +99,10 @@ const ProductStats = forwardRef(({ product, isLoading, buyboxDetails, asin, mark
     const costPrice = currentProfitData?.costPrice
     const fulfillmentType = currentProfitData?.fulfillmentType || "FBA"
     
-    if (!costPrice) return
+    if (!costPrice) {
+      console.log('No cost price available, skipping analysis')
+      return
+    }
 
     setIsAnalyzing(true)
     try {
@@ -92,7 +113,10 @@ const ProductStats = forwardRef(({ product, isLoading, buyboxDetails, asin, mark
         isAmazonFulfilled: fulfillmentType === "FBA"
       }
 
+      console.log('Sending analysis payload:', payload)
       const response = await analyzeMutation(payload).unwrap()
+      console.log('Analysis response:', response)
+      
       if (response.success) {
         setAnalysisData(response.data)
       }
@@ -105,13 +129,28 @@ const ProductStats = forwardRef(({ product, isLoading, buyboxDetails, asin, mark
 
   // Fetch purchase quantity
   const fetchPurchaseQuantity = async () => {
-    if (!asin) return
+    console.log('fetchPurchaseQuantity called:', { asin, isLoadingQuantity })
+    
+    if (!asin) {
+      console.log('No ASIN provided, skipping purchase quantity fetch')
+      return
+    }
+
+    if (isLoadingQuantity) {
+      console.log('Already loading purchase quantity, skipping')
+      return
+    }
 
     setIsLoadingQuantity(true)
     try {
+      console.log('Making purchase quantity API call for ASIN:', asin)
       const response = await getPurchaseQuantity(asin).unwrap()
+      console.log('Purchase quantity response:', response)
+      
       if (response.success) {
         setPurchaseQuantityData(response.data)
+      } else {
+        console.warn('Purchase quantity API returned unsuccessful response:', response)
       }
     } catch (error) {
       console.error("Purchase quantity error:", error)
@@ -122,20 +161,38 @@ const ProductStats = forwardRef(({ product, isLoading, buyboxDetails, asin, mark
 
   // Trigger analysis and purchase quantity fetch when switching to totan tab
   useEffect(() => {
-    if (activeTab === "totan" && profitabilityCalc?.costPrice) {
-      // Only trigger analysis if profitability calculation exists
-      performAnalysis()
-      
-      // Fetch purchase quantity if not already loaded
-      if (!purchaseQuantityData) {
-        fetchPurchaseQuantity()
+    console.log('Tab/ASIN/MarketplaceId effect triggered:', {
+      activeTab,
+      asin,
+      marketplaceId,
+      hasProfitCalc: !!profitabilityCalc?.costPrice,
+      hasAnalysisData: !!analysisData,
+      hasPurchaseData: !!purchaseQuantityData
+    })
+
+    if (activeTab === "totan" && asin && marketplaceId) {
+      // Trigger analysis if profitability calculation exists
+      if (profitabilityCalc?.costPrice) {
+        console.log('Triggering analysis for tab switch')
+        performAnalysis()
       }
+      
+      // Always fetch purchase quantity when switching to totan tab (if not already loading)
+      console.log('Triggering purchase quantity fetch for tab switch')
+      fetchPurchaseQuantity()
     }
   }, [activeTab, asin, marketplaceId])
 
   // Re-run analysis when profitability calculation changes and totan tab is active
   useEffect(() => {
+    console.log('Profit calc effect triggered:', {
+      activeTab,
+      hasLatestProfitCalc: !!latestProfitCalc?.costPrice,
+      costPrice: latestProfitCalc?.costPrice
+    })
+
     if (activeTab === "totan" && latestProfitCalc?.costPrice) {
+      console.log('Re-running analysis due to profit calc change')
       performAnalysis(latestProfitCalc)
     }
   }, [latestProfitCalc, activeTab])
@@ -230,6 +287,19 @@ const ProductStats = forwardRef(({ product, isLoading, buyboxDetails, asin, mark
 
   return (
     <div className="flex flex-col gap-4">
+      {/* Debug info - remove in production */}
+      {/** Debug info - remove in production
+      {process.env.NODE_ENV === 'development' && (
+        <div className="bg-gray-100 p-2 rounded text-xs">
+          <div>ASIN: {asin || 'undefined'}</div>
+          <div>MarketplaceId: {marketplaceId || 'undefined'}</div>
+          <div>Has Profit Calc: {profitabilityCalc?.costPrice ? 'Yes' : 'No'}</div>
+          <div>Has Purchase Data: {purchaseQuantityData ? 'Yes' : 'No'}</div>
+          <div>Loading Quantity: {isLoadingQuantity ? 'Yes' : 'No'}</div>
+        </div>
+      )}
+         */}
+
       {/* tabs */}
       <div className="flex gap-4 items-center text-sm font-semibold">
         <button
@@ -366,11 +436,22 @@ const ProductStats = forwardRef(({ product, isLoading, buyboxDetails, asin, mark
                 </p>
                 {!isLoadingQuantity && purchaseQuantityData && (
                   <AntTooltip
-                    title={`Conservative: ${purchaseQuantityData.conservative_quantity} | Moderate: ${purchaseQuantityData.moderate_quantity} | Aggressive: ${purchaseQuantityData.aggressive_quantity}`}
+                    title={`Conservative: ${purchaseQuantityData.conservative_quantity} | Aggressive: ${purchaseQuantityData.aggressive_quantity}`}
                     placement="top"
                   >
                     <span className="text-xs text-gray-400 cursor-help">ℹ️</span>
                   </AntTooltip>
+                )}
+                
+                {/* Debug button - remove in production */}
+                {process.env.NODE_ENV === 'development' && (
+                  <button 
+                    onClick={fetchPurchaseQuantity}
+                    className="text-xs bg-blue-500 text-white px-2 py-1 rounded"
+                    disabled={isLoadingQuantity}
+                  >
+                    Retry
+                  </button>
                 )}
               </div>
 
