@@ -1,6 +1,7 @@
 import { combineReducers, configureStore } from "@reduxjs/toolkit";
 import authReducer from "./slice/authSlice";
 import globalReducer from "./slice/globalSlice";
+import chatReducer from "./slice/chatSlice"; // Add this import
 import { authApi } from "./api/auth";
 import { subscriptionApi } from "./api/subscriptionApi";
 import { productsApi } from "./api/productsApi";
@@ -15,6 +16,7 @@ import { totanApi } from "./api/totanAi";
 const rootReducer = combineReducers({
   api: authReducer,
   global: globalReducer,
+  chat: chatReducer, // Add the chat reducer
   [authApi.reducerPath]: authApi.reducer,
   [userApi.reducerPath]: userApi.reducer,
   [subscriptionApi.reducerPath]: subscriptionApi.reducer,
@@ -28,7 +30,7 @@ const rootReducer = combineReducers({
 const persistConfig = {
   key: "root",
   storage,
-  whitelist: ["api", "global"], // Whitelist the reducers you want to persist
+  whitelist: ["api", "global", "chat"], // Add "chat" to persist chat history
 };
 const persistedReducer = persistReducer(persistConfig, rootReducer);
 
