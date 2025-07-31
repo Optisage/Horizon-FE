@@ -10,6 +10,8 @@ import storage from "redux-persist/lib/storage";
 import { userApi } from "./api/user";
 import { sellerApi } from "./api/sellerApi";
 import { quickSearchApi } from "./api/quickSearchApi";
+import { keepaApi } from "./api/keepa";
+import { monitorApi } from "./api/monitorApi";
 import { totanApi } from "./api/totanAi";
 
 
@@ -23,6 +25,8 @@ const rootReducer = combineReducers({
   [productsApi.reducerPath]: productsApi.reducer,
   [sellerApi.reducerPath]: sellerApi.reducer,
   [quickSearchApi.reducerPath]: quickSearchApi.reducer,
+  [keepaApi.reducerPath]: keepaApi.reducer,
+  [monitorApi.reducerPath]: monitorApi.reducer,
   [totanApi.reducerPath]: totanApi.reducer
 
 });
@@ -47,6 +51,8 @@ export const store = configureStore({
       productsApi.middleware,
       sellerApi.middleware,
       quickSearchApi.middleware,
+      keepaApi.middleware,
+      monitorApi.middleware,
       totanApi.middleware
     ]),
 });

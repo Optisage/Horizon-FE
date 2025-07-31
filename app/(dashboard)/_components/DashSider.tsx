@@ -25,30 +25,32 @@ import { logout } from "@/redux/slice/authSlice";
 import { BsStars } from "react-icons/bs";
 
 // Sidebar data
+
+
 const menuData = [
   { id: "1", path: "/dashboard", label: "Dashboard", icon: DashboardIcon },
   { id: "2", path: "/history", label: "History", icon: HistoryIcon },
   { id: "3", path: "/go-compare", label: "Go Compare", icon: GoCompareIcon },
-  { id: "5", path: "", label: "Keepa", icon: KeepaIcon, comingSoon: true },
+   { id: "4", path: "/keepa", label: "Keepa", icon: KeepaIcon },
   {
-    id: "6",
+    id: "5",
     path: "/totan",
     label: "Totan (AI)",
     icon: BsStars,
     comingSoon: false,
     beta: true,
   },
-  { id: "7", path: "/upc-scanner", label: "UPC Scanner", icon: UPCScannerIcon },
+  { id: "6", path: "/upc-scanner", label: "UPC Scanner", icon: UPCScannerIcon },
 ];
 
 const secondaryMenu = [
-  { id: "8", path: "/settings", label: "Settings", icon: SettingsIcon },
-  { id: "9", path: "", label: "Credit", icon: CreditIcon, comingSoon: true },
+  { id: "7", path: "/settings", label: "Settings", icon: SettingsIcon },
+  { id: "8", path: "", label: "Credit", icon: CreditIcon, comingSoon: true,   beta: false },
 ];
 
 const billingMenu = [
   {
-    id: "10",
+    id: "9",
     path: "/subscriptions",
     label: "Subscriptions",
     icon: SubscriptionsIcon,
