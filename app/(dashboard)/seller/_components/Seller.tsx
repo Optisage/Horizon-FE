@@ -385,9 +385,9 @@ const handleCategoryClick = (categoryId: number) => {
 
                   return (
                     <div key={index}>
-                      <div className="grid sm:grid-cols-2 lg:grid-cols-[3fr_2fr_2fr] xl:grid-cols-[4fr_2fr_2fr] gap-2 gap-y-4">
+                      <div className="grid sm:grid-cols-2 lg:grid-cols-[3fr_2fr_2fr] xl:grid-cols-[4fr_2fr_2fr] gap-2 gap-y-4 items-stretch">
                         {/* Product Image and Basic Info */}
-                        <div className="flex flex-col divide-y divide-border rounded-xl border border-border">
+                        <div className="flex flex-col divide-y divide-border rounded-xl border border-border h-full">
                           <div className="flex flex-col sm:flex-row items-center gap-4 p-3">
                             <div
                               className="relative w-full max-w-[166px] h-[197px] bg-[#F3F4F6]"
@@ -522,7 +522,7 @@ const handleCategoryClick = (categoryId: number) => {
                         </div>
 
                         {/* Top 5 Offers */}
-                        <div className="rounded-xl border border-border overflow-hidden">
+                        <div className="rounded-xl border border-border overflow-hidden h-full">
                           <div className="p-4">
                             <p className="bg-primary flex items-center gap-1 rounded-2xl py-2 px-4 text-white font-semibold w-max text-xs">
                               <HiOutlineUsers className="size-4" />
@@ -582,7 +582,25 @@ const handleCategoryClick = (categoryId: number) => {
                         </div>
 
                         {/* Keepa Chart */}
-                        <KeepaChart chartData={product?.chart} currency={product?.buybox_details.currency} />
+                        <div className="relative h-full">
+                          <KeepaChart 
+                            chartData={product?.chart} 
+                            currency={product?.buybox_details.currency} 
+                            asin={basicDetails?.asin}
+                          />
+                          
+                          {/* Blur overlay for non-first rows */}
+                          {index > 0 && (
+                            <div className="absolute inset-0 bg-white/15 backdrop-blur-[2px] rounded-xl flex items-center justify-center">
+                              <button
+                                onClick={() => router.push(`/keepa?asin=${basicDetails.asin}`)}
+                                className="bg-primary hover:bg-primary/90 text-white rounded-lg px-6 py-3 text-sm font-semibold shadow-lg transition-colors"
+                              >
+                                View Keepa
+                              </button>
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </div>
                   )
