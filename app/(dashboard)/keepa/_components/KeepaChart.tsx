@@ -1167,46 +1167,46 @@ export default function KeepaChart({
             <p className="text-[#787891] mb-1">Listing Age</p>
             <div className="space-y-1 text-xs">
               <p>
-                 {(() => {
-                   // Get earliest timestamp from 'all' timeframe price history data
-                   const priceHistoryAll = priceDataAll?.data?.price_history?.price_types;
-                   if (!priceHistoryAll) return "N/A";
-                   
-                   const allTimestamps = new Set<string>();
-                   
-                   // Collect all timestamps from 'all' timeframe price history
-                   Object.values(priceHistoryAll).forEach((priceType: any) => {
-                     if (priceType.data) {
-                       Object.keys(priceType.data).forEach((timestamp) => {
-                         allTimestamps.add(timestamp);
-                       });
-                     }
-                   });
-                   
-                   if (allTimestamps.size === 0) return "N/A";
-                   
-                   // Get the earliest timestamp
-                   const sortedTimestamps = Array.from(allTimestamps).sort();
-                   const earliestTimestamp = sortedTimestamps[0];
-                   
-                   const startDate = new Date(earliestTimestamp);
-                   const currentDate = new Date();
-                   const diffTime = Math.abs(currentDate.getTime() - startDate.getTime());
-                   const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-                   
-                   const years = Math.floor(diffDays / 365);
-                   const months = Math.floor((diffDays % 365) / 30);
-                   const days = diffDays % 30;
-                   
-                   if (years > 0) {
-                     return months > 0 ? `${years}y ${months}m` : `${years}y ${days}d`;
-                   } else if (months > 0) {
-                     return days > 0 ? `${months}m ${days}d` : `${months}m`;
-                   } else {
-                     return `${days}d`;
-                   }
-                 })()}
-               </p>
+                {(() => {
+                  // Get earliest timestamp from 'all' timeframe price history data
+                  const priceHistoryAll = priceDataAll?.data?.price_history?.price_types;
+                  if (!priceHistoryAll) return "N/A";
+                  
+                  const allTimestamps = new Set<string>();
+                  
+                  // Collect all timestamps from 'all' timeframe price history
+                  Object.values(priceHistoryAll).forEach((priceType: any) => {
+                    if (priceType.data) {
+                      Object.keys(priceType.data).forEach((timestamp) => {
+                        allTimestamps.add(timestamp);
+                      });
+                    }
+                  });
+                  
+                  if (allTimestamps.size === 0) return "N/A";
+                  
+                  // Get the earliest timestamp
+                  const sortedTimestamps = Array.from(allTimestamps).sort();
+                  const earliestTimestamp = sortedTimestamps[0];
+                  
+                  const startDate = new Date(earliestTimestamp);
+                  const currentDate = new Date();
+                  const diffTime = Math.abs(currentDate.getTime() - startDate.getTime());
+                  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                  
+                  const years = Math.floor(diffDays / 365);
+                  const months = Math.floor((diffDays % 365) / 30);
+                  const days = diffDays % 30;
+                  
+                  if (years > 0) {
+                    return months > 0 ? `${years}y ${months}m` : `${years}y ${days}d`;
+                  } else if (months > 0) {
+                    return days > 0 ? `${months}m ${days}d` : `${months}m`;
+                  } else {
+                    return `${days}d`;
+                  }
+                })()}
+              </p>
             </div>
           </div>
 

@@ -33,6 +33,7 @@ interface KeepaChartProps {
   chartData?: ChartData | null;
   currency?: string;
   asin?: string; // Add ASIN prop for API calls
+  index?: number;
 }
 
 interface ProcessedChartDataPoint {
@@ -46,7 +47,7 @@ interface ProcessedChartDataPoint {
 
 
 
-const KeepaChart = ({ chartData, currency = "", asin }: KeepaChartProps) => {
+const KeepaChart = ({ chartData, currency = "", asin, index }: KeepaChartProps) => {
   const { marketplaceId } = useAppSelector((state) => state?.global);
   const timeRange = "30"; // Fixed at 30 days
   const [isTimeRangeChanging, setIsTimeRangeChanging] = useState(false);
@@ -210,10 +211,18 @@ const KeepaChart = ({ chartData, currency = "", asin }: KeepaChartProps) => {
   if (!finalChartData.length && !isLoading) {
     return (
       <div className="rounded-xl border border-border h-full flex flex-col bg-white">
-        <div className="p-4 flex-shrink-0">
+        <div className="p-4 flex-shrink-0 flex items-center justify-between">
           <p className="bg-[#F3F4F6] rounded-2xl py-2 px-4 text-[#676A75] font-semibold w-max text-xs">
             Keepa(beta)
           </p>
+          {index === 0 && asin && (
+            <button
+              onClick={() => window.open(`/keepa?asin=${asin}`, '_blank', 'noopener,noreferrer')}
+              className="bg-primary text-white rounded-lg px-4 py-2 text-xs font-semibold hover:bg-primary/90 transition-colors"
+            >
+              View keepa
+            </button>
+          )}
         </div>
         <div className="flex-1 flex items-center justify-center text-gray-500">
           No chart data available
@@ -225,10 +234,18 @@ const KeepaChart = ({ chartData, currency = "", asin }: KeepaChartProps) => {
   return (
     <div className="rounded-xl border border-border h-full flex flex-col">
       <div className="bg-white rounded-lg border border-gray-200 overflow-hidden h-full flex flex-col">
-        <div className="p-4 flex-shrink-0">
+        <div className="p-4 flex-shrink-0 flex items-center justify-between">
           <p className="bg-[#F3F4F6] rounded-2xl py-2 px-4 text-[#676A75] font-semibold w-max text-xs">
             Keepa(beta)
           </p>
+          {index === 0 && asin && (
+            <button
+              onClick={() => window.open(`/keepa?asin=${asin}`, '_blank', 'noopener,noreferrer')}
+              className="bg-primary text-white rounded-lg px-4 py-2 text-xs font-semibold hover:bg-primary/90 transition-colors"
+            >
+              View keepa
+            </button>
+          )}
         </div>
 
         <div className="relative flex-1 min-h-0">
