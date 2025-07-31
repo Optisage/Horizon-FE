@@ -300,18 +300,23 @@ export default function KeepaChart({
       }
     );
 
-    // Add rating timestamps
-    if (ratingHistory.rating_count?.data) {
-      Object.values(ratingHistory.rating_count.data).forEach((entry: any) => {
-        allTimestamps.add(entry.date);
-      });
-    }
-
-    if (ratingHistory.new_offer_count?.data && Array.isArray(ratingHistory.new_offer_count.data)) {
-      ratingHistory.new_offer_count.data.forEach((entry: any) => {
-        allTimestamps.add(entry.date);
-      });
-    }
+    // Add rating timestamps - handle both object and array formats
+    Object.keys(ratingHistory).forEach((key) => {
+      const ratingItem = ratingHistory[key];
+      if (ratingItem?.data) {
+        if (Array.isArray(ratingItem.data)) {
+          // Handle array format (like new_offer_count)
+          ratingItem.data.forEach((entry: any) => {
+            allTimestamps.add(entry.date);
+          });
+        } else {
+          // Handle object format (like rating_count)
+          Object.values(ratingItem.data).forEach((entry: any) => {
+            allTimestamps.add(entry.date);
+          });
+        }
+      }
+    });
 
     // Convert to sorted array
     const sortedTimestamps = Array.from(allTimestamps).sort();
@@ -379,22 +384,33 @@ export default function KeepaChart({
           }
         });
 
-        // Get rating data for this timestamp
-        const ratingCountEntry = Object.values(
-          ratingHistory.rating_count?.data || {}
-        ).find(
-          (entry: any) =>
-            Math.abs(new Date(entry.date).getTime() - date.getTime()) <
-            DAY_IN_MS
-        ) as any;
-
-        const newOfferCountEntry = Array.isArray(ratingHistory.new_offer_count?.data) 
-          ? ratingHistory.new_offer_count.data.find(
-              (entry: any) =>
-                Math.abs(new Date(entry.date).getTime() - date.getTime()) <
-                DAY_IN_MS
-            )
-          : null;
+        // Get rating data for this timestamp - handle both object and array formats
+        const ratingDataForTimestamp: Record<string, number | null> = {};
+        
+        Object.keys(ratingHistory).forEach((key) => {
+          const ratingItem = ratingHistory[key];
+          if (ratingItem?.data) {
+            let entry = null;
+            
+            if (Array.isArray(ratingItem.data)) {
+              // Handle array format (like new_offer_count)
+              entry = ratingItem.data.find(
+                (item: any) =>
+                  Math.abs(new Date(item.date).getTime() - date.getTime()) <
+                  DAY_IN_MS
+              );
+            } else {
+              // Handle object format (like rating_count)
+              entry = Object.values(ratingItem.data).find(
+                (item: any) =>
+                  Math.abs(new Date(item.date).getTime() - date.getTime()) <
+                  DAY_IN_MS
+              ) as any;
+            }
+            
+            ratingDataForTimestamp[key] = entry?.value ?? null;
+          }
+        });
 
         // Rating is typically static, use from summary or default
         const rating = summaryData?.data?.current_data?.rating || 4.0;
@@ -414,10 +430,9 @@ export default function KeepaChart({
           new: newPrice,
           // Sales rank data (now dynamic, including monthly_sold)
           ...salesRankDataForTimestamp,
-          // Rating data
+          // Rating data (now dynamic)
           rating: rating,
-          rating_count: ratingCountEntry?.value ?? null,
-          new_offer_count: newOfferCountEntry?.value ?? null,
+          ...ratingDataForTimestamp,
         };
       })
       .filter(
@@ -430,8 +445,10 @@ export default function KeepaChart({
             (key) =>
               (item as any)[key] !== null && (item as any)[key] !== undefined
           ) ||
-          item.rating_count !== null ||
-          item.new_offer_count !== null
+          Object.keys(ratingHistory).some(
+            (key) =>
+              (item as any)[key] !== null && (item as any)[key] !== undefined
+          )
       ) as ChartDataPoint[];
   }, [priceData, salesRankData, ratingData, summaryData, universalTimeRange]);
 
