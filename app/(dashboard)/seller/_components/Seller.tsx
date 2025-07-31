@@ -459,11 +459,7 @@ const handleCategoryClick = (categoryId: number) => {
                                 {product.buybox_details.buybox_price.toFixed(2)}
                               </p>
 
-                              <button
-                              className="bg-primary text-white rounded-lg px-4 py-2 text-xs font-semibold"
-                                onClick={() => router.push(`/keepa?asin=${basicDetails.asin}`)}>
-                                  View keepa
-                                </button>
+                              
                             </div>
                             </div>
                           </div>
