@@ -255,9 +255,11 @@ Now you can ask me any questions about this product! 💬`
       
       if (response.success) {
         setAnalysisData(response.data)
+        messageApi.success('Analysis completed successfully!')
       }
     } catch (error) {
       console.error("Analysis error:", error)
+      messageApi.error('Failed to analyze product. Please try again.')
     } finally {
       setIsAnalyzing(false)
     }
@@ -285,6 +287,7 @@ Now you can ask me any questions about this product! 💬`
       
       if (response.success) {
         setPurchaseQuantityData(response.data)
+        messageApi.success('Purchase quantity data loaded successfully!')
       } else {
         messageApi.error('Purchase quantity  unsuccessful response:', response)
       }
@@ -293,6 +296,26 @@ Now you can ask me any questions about this product! 💬`
     } finally {
       setIsLoadingQuantity(false)
     }
+  }
+
+  // Manual reload function for both analysis and purchase quantity
+  const handleReload = async () => {
+    if (!profitabilityCalc?.costPrice || !asin || !marketplaceId) {
+      messageApi.warning('Missing required data for reload. Please ensure profitability calculation is completed.')
+      return
+    }
+
+    messageApi.info('Refreshing analysis and purchase quantity data...')
+    
+    // Clear existing data first
+    setAnalysisData(null)
+    setPurchaseQuantityData(null)
+    
+    // Trigger both operations
+    await Promise.all([
+      performAnalysis(),
+      fetchPurchaseQuantity()
+    ])
   }
 
   // Trigger analysis and purchase quantity fetch when switching to totan tab
@@ -440,6 +463,9 @@ Now you can ask me any questions about this product! 💬`
       {/* Totan */}
       {activeTab === "totan" && (
         <div className="border border-border rounded-xl shadow-sm p-4 flex flex-col gap-3">
+          {/* Header with reload button */}
+         
+
           {!profitabilityCalc?.costPrice ? (
             // Show nudge message when no profitability calculation exists
             <div className="flex flex-col items-center justify-center py-8 text-center">
@@ -572,6 +598,39 @@ Now you can ask me any questions about this product! 💬`
                     </div>
                   </AntTooltip>
                 </div>
+                 <div className="flex items-center justify-between mb-2">
+          
+            {profitabilityCalc?.costPrice && (
+              <AntTooltip
+                title="Refresh analysis and purchase quantity data"
+                placement="top"
+              >
+                <button
+                  onClick={handleReload}
+                  disabled={isAnalyzing || isLoadingQuantity}
+                  className={`p-2 rounded-lg transition-colors duration-200 ${
+                    isAnalyzing || isLoadingQuantity
+                      ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                      : "bg-gray-100 hover:bg-primary hover:text-white text-gray-600"
+                  }`}
+                >
+                  <svg
+                    className={`w-4 h-4 ${isAnalyzing || isLoadingQuantity ? "animate-spin" : ""}`}
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                    />
+                  </svg>
+                </button>
+              </AntTooltip>
+            )}
+          </div>
               </div>
             </>
           )}

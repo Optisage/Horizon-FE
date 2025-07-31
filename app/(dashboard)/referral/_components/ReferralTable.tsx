@@ -1,5 +1,6 @@
 "use client";
 /* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable  @typescript-eslint/no-unused-vars */
 import { useState } from "react";
 import { message, Table } from "antd";
 import { useAppSelector } from "@/redux/hooks";

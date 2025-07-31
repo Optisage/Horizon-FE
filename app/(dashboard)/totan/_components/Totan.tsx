@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { BsStars } from "react-icons/bs";
 import { IoSend } from "react-icons/io5";
+import { MdOutlineKeyboardVoice } from "react-icons/md";
 import { HiOutlineArrowPath } from "react-icons/hi2";
 import {
   useChatMutation,
@@ -485,18 +486,6 @@ Now you can ask me any questions about this product! 💬`;
 
       {/* Input field */}
       <div className="relative">
-        <button
-          type="button"
-          aria-label="Send message"
-          onClick={handleSend}
-          disabled={
-            isAnalyzing || isChatting || currentSession.conversationState === "analyzing" || currentTypingIndex >= 0
-          }
-          className="absolute top-0 bottom-0 size-10 my-auto right-3 flex items-center justify-center gap-2 rounded-lg sm:w-[110px] sm:h-[42px] py-2 px-4 text-white font-semibold bg-primary hover:bg-primary/90 disabled:bg-gray-300 duration-150 transition-colors"
-        >
-          <span className="hidden sm:block">Send</span>
-          <IoSend className="size-10 sm:size-5" />
-        </button>
         <input
           className="flex-1 outline-none bg-transparent border border-[#D1D1D1] p-4 pr-32 rounded-2xl w-full focus:border-primary"
           placeholder={getPlaceholderText()}
@@ -507,6 +496,30 @@ Now you can ask me any questions about this product! 💬`;
             isAnalyzing || isChatting || currentSession.conversationState === "analyzing" || currentTypingIndex >= 0
           }
         />
+        
+        {/* Send button */}
+        <button
+          type="button"
+          aria-label="Send message"
+          onClick={handleSend}
+          disabled={
+            isAnalyzing || isChatting || currentSession.conversationState === "analyzing" || currentTypingIndex >= 0
+          }
+          className="absolute top-0 bottom-0 size-10 my-auto right-16 sm:right-28 flex items-center justify-center gap-2 rounded-lg sm:w-[110px] sm:h-[42px] py-2 px-4 text-white font-semibold bg-primary hover:bg-primary/90 disabled:bg-gray-300 duration-150 transition-colors"
+        >
+          <span className="hidden sm:block">Send</span>
+          <IoSend className="size-10 sm:size-5" />
+        </button>
+        
+        {/* Voice icon button - positioned on the right side */}
+        <button
+          type="button"
+          title="Use voice mode"
+          aria-label="Voice input"
+          className="absolute top-0 bottom-0 my-auto right-3 size-10 flex items-center justify-center text-gray-400 hover:text-gray-600 transition-colors"
+        >
+          <MdOutlineKeyboardVoice className="size-5" />
+        </button>
       </div>
     </section>
   );
