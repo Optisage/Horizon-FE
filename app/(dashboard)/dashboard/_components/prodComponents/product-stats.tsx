@@ -2,7 +2,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { InfoCard } from "../info-card"
 import { BSRIcon, PriceTagIcon, ProductSalesIcon, MaximumCostIcon, ROIIcon } from "../icons"
-import { Skeleton, Tooltip as AntTooltip } from "antd"
+import { Skeleton, Tooltip as AntTooltip, message } from "antd"
 import type { Product } from "./types"
 import { useState, forwardRef, useImperativeHandle, useEffect } from "react"
 import Image from "next/image"
@@ -69,6 +69,7 @@ const ProductStats = forwardRef(({
   const [purchaseQuantityData, setPurchaseQuantityData] = useState<PurchaseQuantityData | null>(null)
   const [isAnalyzing, setIsAnalyzing] = useState(false)
   const [isLoadingQuantity, setIsLoadingQuantity] = useState(false)
+  const [messageApi, contextHolder] = message.useMessage();
 
   // RTK Query hooks
   const [analyzeMutation] = useAnalyzeMutation()
@@ -80,7 +81,7 @@ const ProductStats = forwardRef(({
 
   // Reset states when ASIN changes
   useEffect(() => {
-    console.log('ASIN changed, resetting states:', asin)
+    
     setAnalysisData(null)
     setPurchaseQuantityData(null)
   }, [asin])
@@ -93,7 +94,7 @@ const ProductStats = forwardRef(({
   // Expose the update function to the parent component
   useImperativeHandle(ref, () => ({
     handleProfitabilityUpdate: (data: any) => {
-      console.log('Profitability updated:', data)
+     
       setLatestProfitCalc(data)
       // Trigger analysis when profitability is updated with the new data
       if (data && activeTab === "totan") {
@@ -105,7 +106,7 @@ const ProductStats = forwardRef(({
   // Handle navigation to Totan with prefilled data
   const handleNavigateToTotanWithData = async () => {
     if (!profitabilityCalc?.costPrice || !asin || !marketplaceId) {
-      console.log('Missing required data for navigation')
+     messageApi.warning('Missing required data for navigation')
       return
     }
 
@@ -222,10 +223,10 @@ Now you can ask me any questions about this product! 💬`
 
   // Perform analysis
   const performAnalysis = async (updatedProfitData?: any) => {
-    console.log('performAnalysis called:', { asin, marketplaceId, hasUpdatedData: !!updatedProfitData })
+   
     
     if (!asin || !marketplaceId) {
-      console.log('Missing asin or marketplaceId, skipping analysis')
+      messageApi.warning('Missing asin or marketplaceId, skipping analysis')
       return
     }
 
@@ -236,7 +237,7 @@ Now you can ask me any questions about this product! 💬`
     const fulfillmentType = currentProfitData?.fulfillmentType || "FBA"
     
     if (!costPrice) {
-      console.log('No cost price available, skipping analysis')
+      messageApi.warning('No cost price available, skipping analysis')
       return
     }
 
@@ -249,9 +250,8 @@ Now you can ask me any questions about this product! 💬`
         isAmazonFulfilled: fulfillmentType === "FBA"
       }
 
-      console.log('Sending analysis payload:', payload)
+      
       const response = await analyzeMutation(payload).unwrap()
-      console.log('Analysis response:', response)
       
       if (response.success) {
         setAnalysisData(response.data)
@@ -265,31 +265,31 @@ Now you can ask me any questions about this product! 💬`
 
   // Fetch purchase quantity
   const fetchPurchaseQuantity = async () => {
-    console.log('fetchPurchaseQuantity called:', { asin, isLoadingQuantity })
+   
     
     if (!asin) {
-      console.log('No ASIN provided, skipping purchase quantity fetch')
+      messageApi.warning('No ASIN provided, skipping purchase quantity fetch')
       return
     }
 
     if (isLoadingQuantity) {
-      console.log('Already loading purchase quantity, skipping')
+      messageApi.warning('Already loading purchase quantity, skipping')
       return
     }
 
     setIsLoadingQuantity(true)
     try {
-      console.log('Making purchase quantity API call for ASIN:', asin)
+      
       const response = await getPurchaseQuantity(asin).unwrap()
-      console.log('Purchase quantity response:', response)
+      
       
       if (response.success) {
         setPurchaseQuantityData(response.data)
       } else {
-        console.warn('Purchase quantity API returned unsuccessful response:', response)
+        messageApi.error('Purchase quantity  unsuccessful response:', response)
       }
     } catch (error) {
-      console.error("Purchase quantity error:", error)
+      messageApi.error(`Purchase quantity error: ${error instanceof Error ? error.message : String(error)}`)
     } finally {
       setIsLoadingQuantity(false)
     }
@@ -297,38 +297,27 @@ Now you can ask me any questions about this product! 💬`
 
   // Trigger analysis and purchase quantity fetch when switching to totan tab
   useEffect(() => {
-    console.log('Tab/ASIN/MarketplaceId effect triggered:', {
-      activeTab,
-      asin,
-      marketplaceId,
-      hasProfitCalc: !!profitabilityCalc?.costPrice,
-      hasAnalysisData: !!analysisData,
-      hasPurchaseData: !!purchaseQuantityData
-    })
+   
 
     if (activeTab === "totan" && asin && marketplaceId) {
       // Trigger analysis if profitability calculation exists
       if (profitabilityCalc?.costPrice) {
-        console.log('Triggering analysis for tab switch')
+       
         performAnalysis()
       }
       
       // Always fetch purchase quantity when switching to totan tab (if not already loading)
-      console.log('Triggering purchase quantity fetch for tab switch')
+     
       fetchPurchaseQuantity()
     }
   }, [activeTab, asin, marketplaceId])
 
   // Re-run analysis when profitability calculation changes and totan tab is active
   useEffect(() => {
-    console.log('Profit calc effect triggered:', {
-      activeTab,
-      hasLatestProfitCalc: !!latestProfitCalc?.costPrice,
-      costPrice: latestProfitCalc?.costPrice
-    })
+   
 
     if (activeTab === "totan" && latestProfitCalc?.costPrice) {
-      console.log('Re-running analysis due to profit calc change')
+     
       performAnalysis(latestProfitCalc)
     }
   }, [latestProfitCalc, activeTab])
@@ -422,9 +411,11 @@ Now you can ask me any questions about this product! 💬`
   const scoreProperties = analysisData ? getScoreProperties(analysisData.score, analysisData.category) : null
 
   return (
-    <div className="flex flex-col gap-4">
-      {/* tabs */}
-      <div className="flex gap-4 items-center text-sm font-semibold">
+    <>
+      {contextHolder}
+      <div className="flex flex-col gap-4">
+        {/* tabs */}
+        <div className="flex gap-4 items-center text-sm font-semibold">
         <button
           type="button"
           onClick={() => setActiveTab("info")}
@@ -684,6 +675,7 @@ Now you can ask me any questions about this product! 💬`
         </div>
       )}
     </div>
+    </>
   )
 })
 

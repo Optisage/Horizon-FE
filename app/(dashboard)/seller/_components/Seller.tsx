@@ -134,7 +134,7 @@ const Seller = () => {
       getSellerDetails({ seller_id: sellerId, id: marketplaceId })
     }
   }, [sellerId, marketplaceId, getSellerDetails])
-console.log(sellerId)
+
   useEffect(() => {
     if (sellerId && marketplaceId) {
       setLoading(true)

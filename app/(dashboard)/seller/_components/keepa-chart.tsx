@@ -171,15 +171,7 @@ const KeepaChart = ({ chartData, currency = "", asin }: KeepaChartProps) => {
   const hasNewData = finalChartData.some(item => item.new !== null);
 
   // Debug logging for new marketplace data
-  if (process.env.NODE_ENV === 'development' && asin) {
-    console.log(`ASIN ${asin} - Chart data availability:`, {
-      hasAmazonData,
-      hasBuyboxData, 
-      hasNewData,
-      totalDataPoints: finalChartData.length,
-      priceHistoryTypes: priceHistoryData?.data?.price_history?.price_types ? Object.keys(priceHistoryData.data.price_history.price_types) : []
-    });
-  }
+  
 
   // Custom tooltip component
   interface TooltipProps {

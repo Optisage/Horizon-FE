@@ -40,7 +40,7 @@ const Login: React.FC = () => {
       messageApi.success("Login Successful");
     } catch (error) {
       messageApi.error("Login Failed");
-      console.log(error);
+      
       const errorMessage =
         (error as { message?: string; data?: { message?: string } })?.data
           ?.message || "An error occurred";

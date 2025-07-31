@@ -1,5 +1,5 @@
 "use client";
-
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState } from "react";
 import { message, Table } from "antd";
 import { useAppSelector } from "@/redux/hooks";
@@ -93,10 +93,10 @@ const ReferralTable = ({
     try {
       await navigator.clipboard.writeText(text);
       messageApi.success("Link copied to clipboard");
-      console.log("Text copied to clipboard");
+     
     } catch (err) {
       messageApi.error("Failed to copy to clipboard");
-      console.error("Failed to copy text: ", err);
+      
     }
   };
 
