@@ -307,6 +307,8 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
                   buyboxDetails={buyboxDetailsData?.data}
                   isLoading={false}
                   ref={productStatsRef}
+                  asin={asin}          
+  marketplaceId={marketplaceId}
                 />
               </div>
 
