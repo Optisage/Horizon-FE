@@ -96,6 +96,12 @@ export default function KeepaChart({
     getSalesRank,
     { data: salesRankData, isLoading: salesRankLoading, error: salesRankError },
   ] = useLazySalesRankQuery();
+  
+  // Separate API call for 'all' timeframe data for listing age calculation
+  const [
+    getPriceHistoryAll,
+    { data: priceDataAll, isLoading: priceLoadingAll, error: priceErrorAll },
+  ] = useLazyPriceHistoryQuery();
 
   // Loading states - separate initial loading from chart updates
   const isInitialLoading = useMemo(
@@ -104,7 +110,8 @@ export default function KeepaChart({
       (priceLoading && !priceData) ||
       (summaryLoading && !summaryData) ||
       (ratingLoading && !ratingData) ||
-      (salesRankLoading && !salesRankData),
+      (salesRankLoading && !salesRankData) ||
+      (priceLoadingAll && !priceDataAll),
     [
       isLoading,
       priceLoading,
@@ -115,6 +122,8 @@ export default function KeepaChart({
       ratingData,
       salesRankLoading,
       salesRankData,
+      priceLoadingAll,
+      priceDataAll,
     ]
   );
 
@@ -125,6 +134,7 @@ export default function KeepaChart({
       summaryLoading ||
       ratingLoading ||
       salesRankLoading ||
+      priceLoadingAll ||
       isTimeRangeChanging,
     [
       isLoading,
@@ -132,6 +142,7 @@ export default function KeepaChart({
       summaryLoading,
       ratingLoading,
       salesRankLoading,
+      priceLoadingAll,
       isTimeRangeChanging,
     ]
   );
@@ -165,11 +176,12 @@ export default function KeepaChart({
       summaryError,
       ratingError,
       salesRankError,
+      priceErrorAll,
     ].filter(Boolean);
     if (errors.length > 0) {
       setFetchError("Failed to load chart data. Please try again later.");
     }
-  }, [priceError, summaryError, ratingError, salesRankError]);
+  }, [priceError, summaryError, ratingError, salesRankError, priceErrorAll]);
 
   // Fetch data when asin or time range changes
   useEffect(() => {
@@ -202,6 +214,12 @@ export default function KeepaChart({
         getProductSummary({ asin, id: marketplaceId }),
         getRatingReview({ asin, id: marketplaceId, period: ratingPeriod }),
         getSalesRank({ asin, id: marketplaceId, period: universalTimeRange }),
+        // Fetch 'all' timeframe data for listing age calculation
+        getPriceHistoryAll({
+          asin,
+          id: marketplaceId,
+          period: 'all',
+        }),
       ])
         .then(() => {
           setIsTimeRangeChanging(false);
@@ -220,6 +238,7 @@ export default function KeepaChart({
     getProductSummary,
     getRatingReview,
     getSalesRank,
+    getPriceHistoryAll,
   ]);
 
   // Initialize salesRankMetrics with default values
@@ -1095,7 +1114,7 @@ export default function KeepaChart({
 
       {/* Bottom Stats */}
       <div className="p-6 border-t border-border bg-[#FAFAFA]">
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
+        <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 text-sm">
           <div>
             <p className="text-[#787891] mb-1">Category Sales Ranks</p>
             <div className="space-y-1">
@@ -1141,6 +1160,53 @@ export default function KeepaChart({
                 Current: {summaryData?.data?.price_range?.currency || "$"}
                 {summaryData?.data?.price_range?.current || "N/A"}
               </p>
+            </div>
+          </div>
+
+          <div>
+            <p className="text-[#787891] mb-1">Listing Age</p>
+            <div className="space-y-1 text-xs">
+              <p>
+                 {(() => {
+                   // Get earliest timestamp from 'all' timeframe price history data
+                   const priceHistoryAll = priceDataAll?.data?.price_history?.price_types;
+                   if (!priceHistoryAll) return "N/A";
+                   
+                   const allTimestamps = new Set<string>();
+                   
+                   // Collect all timestamps from 'all' timeframe price history
+                   Object.values(priceHistoryAll).forEach((priceType: any) => {
+                     if (priceType.data) {
+                       Object.keys(priceType.data).forEach((timestamp) => {
+                         allTimestamps.add(timestamp);
+                       });
+                     }
+                   });
+                   
+                   if (allTimestamps.size === 0) return "N/A";
+                   
+                   // Get the earliest timestamp
+                   const sortedTimestamps = Array.from(allTimestamps).sort();
+                   const earliestTimestamp = sortedTimestamps[0];
+                   
+                   const startDate = new Date(earliestTimestamp);
+                   const currentDate = new Date();
+                   const diffTime = Math.abs(currentDate.getTime() - startDate.getTime());
+                   const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                   
+                   const years = Math.floor(diffDays / 365);
+                   const months = Math.floor((diffDays % 365) / 30);
+                   const days = diffDays % 30;
+                   
+                   if (years > 0) {
+                     return months > 0 ? `${years}y ${months}m` : `${years}y ${days}d`;
+                   } else if (months > 0) {
+                     return days > 0 ? `${months}m ${days}d` : `${months}m`;
+                   } else {
+                     return `${days}d`;
+                   }
+                 })()}
+               </p>
             </div>
           </div>
 
