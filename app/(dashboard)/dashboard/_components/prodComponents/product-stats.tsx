@@ -292,7 +292,7 @@ Now you can ask me any questions about this product! 💬`
         messageApi.error('Purchase quantity  unsuccessful response:', response)
       }
     } catch (error) {
-      messageApi.error(`Purchase quantity error: ${error instanceof Error ? error.message : String(error)}`)
+      messageApi.error(`Purchase quantity error`)
     } finally {
       setIsLoadingQuantity(false)
     }
