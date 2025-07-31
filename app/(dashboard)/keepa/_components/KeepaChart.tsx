@@ -96,6 +96,12 @@ export default function KeepaChart({
     getSalesRank,
     { data: salesRankData, isLoading: salesRankLoading, error: salesRankError },
   ] = useLazySalesRankQuery();
+  
+  // Separate API call for 'all' timeframe data for listing age calculation
+  const [
+    getPriceHistoryAll,
+    { data: priceDataAll, isLoading: priceLoadingAll, error: priceErrorAll },
+  ] = useLazyPriceHistoryQuery();
 
   // Loading states - separate initial loading from chart updates
   const isInitialLoading = useMemo(
@@ -104,7 +110,8 @@ export default function KeepaChart({
       (priceLoading && !priceData) ||
       (summaryLoading && !summaryData) ||
       (ratingLoading && !ratingData) ||
-      (salesRankLoading && !salesRankData),
+      (salesRankLoading && !salesRankData) ||
+      (priceLoadingAll && !priceDataAll),
     [
       isLoading,
       priceLoading,
@@ -115,6 +122,8 @@ export default function KeepaChart({
       ratingData,
       salesRankLoading,
       salesRankData,
+      priceLoadingAll,
+      priceDataAll,
     ]
   );
 
@@ -125,6 +134,7 @@ export default function KeepaChart({
       summaryLoading ||
       ratingLoading ||
       salesRankLoading ||
+      priceLoadingAll ||
       isTimeRangeChanging,
     [
       isLoading,
@@ -132,6 +142,7 @@ export default function KeepaChart({
       summaryLoading,
       ratingLoading,
       salesRankLoading,
+      priceLoadingAll,
       isTimeRangeChanging,
     ]
   );
@@ -165,11 +176,12 @@ export default function KeepaChart({
       summaryError,
       ratingError,
       salesRankError,
+      priceErrorAll,
     ].filter(Boolean);
     if (errors.length > 0) {
       setFetchError("Failed to load chart data. Please try again later.");
     }
-  }, [priceError, summaryError, ratingError, salesRankError]);
+  }, [priceError, summaryError, ratingError, salesRankError, priceErrorAll]);
 
   // Fetch data when asin or time range changes
   useEffect(() => {
@@ -202,6 +214,12 @@ export default function KeepaChart({
         getProductSummary({ asin, id: marketplaceId }),
         getRatingReview({ asin, id: marketplaceId, period: ratingPeriod }),
         getSalesRank({ asin, id: marketplaceId, period: universalTimeRange }),
+        // Fetch 'all' timeframe data for listing age calculation
+        getPriceHistoryAll({
+          asin,
+          id: marketplaceId,
+          period: 'all',
+        }),
       ])
         .then(() => {
           setIsTimeRangeChanging(false);
@@ -220,6 +238,7 @@ export default function KeepaChart({
     getProductSummary,
     getRatingReview,
     getSalesRank,
+    getPriceHistoryAll,
   ]);
 
   // Initialize salesRankMetrics with default values
@@ -281,18 +300,23 @@ export default function KeepaChart({
       }
     );
 
-    // Add rating timestamps
-    if (ratingHistory.rating_count?.data) {
-      Object.values(ratingHistory.rating_count.data).forEach((entry: any) => {
-        allTimestamps.add(entry.date);
-      });
-    }
-
-    if (ratingHistory.new_offer_count?.data && Array.isArray(ratingHistory.new_offer_count.data)) {
-      ratingHistory.new_offer_count.data.forEach((entry: any) => {
-        allTimestamps.add(entry.date);
-      });
-    }
+    // Add rating timestamps - handle both object and array formats
+    Object.keys(ratingHistory).forEach((key) => {
+      const ratingItem = ratingHistory[key];
+      if (ratingItem?.data) {
+        if (Array.isArray(ratingItem.data)) {
+          // Handle array format (like new_offer_count)
+          ratingItem.data.forEach((entry: any) => {
+            allTimestamps.add(entry.date);
+          });
+        } else {
+          // Handle object format (like rating_count)
+          Object.values(ratingItem.data).forEach((entry: any) => {
+            allTimestamps.add(entry.date);
+          });
+        }
+      }
+    });
 
     // Convert to sorted array
     const sortedTimestamps = Array.from(allTimestamps).sort();
@@ -360,22 +384,33 @@ export default function KeepaChart({
           }
         });
 
-        // Get rating data for this timestamp
-        const ratingCountEntry = Object.values(
-          ratingHistory.rating_count?.data || {}
-        ).find(
-          (entry: any) =>
-            Math.abs(new Date(entry.date).getTime() - date.getTime()) <
-            DAY_IN_MS
-        ) as any;
-
-        const newOfferCountEntry = Array.isArray(ratingHistory.new_offer_count?.data) 
-          ? ratingHistory.new_offer_count.data.find(
-              (entry: any) =>
-                Math.abs(new Date(entry.date).getTime() - date.getTime()) <
-                DAY_IN_MS
-            )
-          : null;
+        // Get rating data for this timestamp - handle both object and array formats
+        const ratingDataForTimestamp: Record<string, number | null> = {};
+        
+        Object.keys(ratingHistory).forEach((key) => {
+          const ratingItem = ratingHistory[key];
+          if (ratingItem?.data) {
+            let entry = null;
+            
+            if (Array.isArray(ratingItem.data)) {
+              // Handle array format (like new_offer_count)
+              entry = ratingItem.data.find(
+                (item: any) =>
+                  Math.abs(new Date(item.date).getTime() - date.getTime()) <
+                  DAY_IN_MS
+              );
+            } else {
+              // Handle object format (like rating_count)
+              entry = Object.values(ratingItem.data).find(
+                (item: any) =>
+                  Math.abs(new Date(item.date).getTime() - date.getTime()) <
+                  DAY_IN_MS
+              ) as any;
+            }
+            
+            ratingDataForTimestamp[key] = entry?.value ?? null;
+          }
+        });
 
         // Rating is typically static, use from summary or default
         const rating = summaryData?.data?.current_data?.rating || 4.0;
@@ -395,10 +430,9 @@ export default function KeepaChart({
           new: newPrice,
           // Sales rank data (now dynamic, including monthly_sold)
           ...salesRankDataForTimestamp,
-          // Rating data
+          // Rating data (now dynamic)
           rating: rating,
-          rating_count: ratingCountEntry?.value ?? null,
-          new_offer_count: newOfferCountEntry?.value ?? null,
+          ...ratingDataForTimestamp,
         };
       })
       .filter(
@@ -411,8 +445,10 @@ export default function KeepaChart({
             (key) =>
               (item as any)[key] !== null && (item as any)[key] !== undefined
           ) ||
-          item.rating_count !== null ||
-          item.new_offer_count !== null
+          Object.keys(ratingHistory).some(
+            (key) =>
+              (item as any)[key] !== null && (item as any)[key] !== undefined
+          )
       ) as ChartDataPoint[];
   }, [priceData, salesRankData, ratingData, summaryData, universalTimeRange]);
 
@@ -1095,7 +1131,7 @@ export default function KeepaChart({
 
       {/* Bottom Stats */}
       <div className="p-6 border-t border-border bg-[#FAFAFA]">
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
+        <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 text-sm">
           <div>
             <p className="text-[#787891] mb-1">Category Sales Ranks</p>
             <div className="space-y-1">
@@ -1140,6 +1176,53 @@ export default function KeepaChart({
               <p>
                 Current: {summaryData?.data?.price_range?.currency || "$"}
                 {summaryData?.data?.price_range?.current || "N/A"}
+              </p>
+            </div>
+          </div>
+
+          <div>
+            <p className="text-[#787891] mb-1">Listing Age</p>
+            <div className="space-y-1 text-xs">
+              <p>
+                {(() => {
+                  // Get earliest timestamp from 'all' timeframe price history data
+                  const priceHistoryAll = priceDataAll?.data?.price_history?.price_types;
+                  if (!priceHistoryAll) return "N/A";
+                  
+                  const allTimestamps = new Set<string>();
+                  
+                  // Collect all timestamps from 'all' timeframe price history
+                  Object.values(priceHistoryAll).forEach((priceType: any) => {
+                    if (priceType.data) {
+                      Object.keys(priceType.data).forEach((timestamp) => {
+                        allTimestamps.add(timestamp);
+                      });
+                    }
+                  });
+                  
+                  if (allTimestamps.size === 0) return "N/A";
+                  
+                  // Get the earliest timestamp
+                  const sortedTimestamps = Array.from(allTimestamps).sort();
+                  const earliestTimestamp = sortedTimestamps[0];
+                  
+                  const startDate = new Date(earliestTimestamp);
+                  const currentDate = new Date();
+                  const diffTime = Math.abs(currentDate.getTime() - startDate.getTime());
+                  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                  
+                  const years = Math.floor(diffDays / 365);
+                  const months = Math.floor((diffDays % 365) / 30);
+                  const days = diffDays % 30;
+                  
+                  if (years > 0) {
+                    return months > 0 ? `${years}y ${months}m` : `${years}y ${days}d`;
+                  } else if (months > 0) {
+                    return days > 0 ? `${months}m ${days}d` : `${months}m`;
+                  } else {
+                    return `${days}d`;
+                  }
+                })()}
               </p>
             </div>
           </div>

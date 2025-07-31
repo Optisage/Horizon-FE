@@ -453,14 +453,10 @@ const handleCategoryClick = (categoryId: number) => {
                               </p>
                               <p className="text-sm">Category: {basicDetails.category}</p>
 
-                              <div className="flex justify-between items-center gap-2 mt-2 w-full">
                               <p className="text-lg font-bold mt-2">
                                 {product.buybox_details.currency}
                                 {product.buybox_details.buybox_price.toFixed(2)}
                               </p>
-
-                              
-                            </div>
                             </div>
                           </div>
 
@@ -587,13 +583,14 @@ const handleCategoryClick = (categoryId: number) => {
                             chartData={product?.chart} 
                             currency={product?.buybox_details.currency} 
                             asin={basicDetails?.asin}
+                            index={index}
                           />
                           
                           {/* Blur overlay for non-first rows */}
                           {index > 0 && (
                             <div className="absolute inset-0 bg-white/15 backdrop-blur-[2px] rounded-xl flex items-center justify-center">
                               <button
-                                onClick={() => router.push(`/keepa?asin=${basicDetails.asin}`)}
+                                onClick={() => window.open(`/keepa?asin=${basicDetails.asin}`, '_blank', 'noopener,noreferrer')}
                                 className="bg-primary hover:bg-primary/90 text-white rounded-lg px-6 py-3 text-sm font-semibold shadow-lg transition-colors"
                               >
                                 View Keepa
