@@ -1,8 +1,9 @@
 "use client";
-
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useRef, useState } from "react";
 import { BsStars } from "react-icons/bs";
 import { IoSend } from "react-icons/io5";
+import { HiOutlineArrowPath } from "react-icons/hi2";
 import {
   useChatMutation,
   useAnalyzeMutation,
@@ -17,13 +18,15 @@ import {
   updateAnalysisData,
   updateCollectedData,
   selectCurrentSession,
+  startNewAnalysisInSession,
 } from "@/redux/slice/chatSlice"; // Ensure this path is correct
 
 // Type definition for a single message
 type Message = {
   sender: "ai" | "user";
   text: string;
-  type?: "analysis" | "chat" | "system";
+  type?: "analysis" | "chat" | "system" | "error" | "retry";
+  retryAction?: () => void;
 };
 
 /**
@@ -95,12 +98,25 @@ const TypingMessage = ({ message, onComplete }: { message: Message; onComplete?:
             ? "bg-blue-50 text-blue-900 border border-blue-200"
             : message.type === "system"
             ? "bg-yellow-50 text-yellow-900 border border-yellow-200"
+            : message.type === "error"
+            ? "bg-red-50 text-red-900 border border-red-200"
+            : message.type === "retry"
+            ? "bg-orange-50 text-orange-900 border border-orange-200"
             : "bg-[#ECF1F6] text-[#4B4B62]"
         }`}
       >
         <div className="whitespace-pre-line">
           {displayedText}
         </div>
+        {message.type === "retry" && message.retryAction && (
+          <button
+            onClick={message.retryAction}
+            className="mt-3 flex items-center gap-2 px-3 py-2 bg-orange-100 hover:bg-orange-200 text-orange-800 rounded-lg transition-colors text-sm font-medium"
+          >
+            <HiOutlineArrowPath className="size-4" />
+            Retry Analysis
+          </button>
+        )}
       </div>
     </div>
   );
@@ -132,9 +148,9 @@ const TotanChat = () => {
   // Initialize a chat session on component mount if one doesn't exist
   useEffect(() => {
     if (!currentSession) {
-      dispatch(createNewSession());
+      dispatch(createNewSession({ firstName: first_name }));
     }
-  }, [currentSession, dispatch]);
+  }, [currentSession, dispatch, first_name]);
   
   const validateASIN = (asin: string): boolean => {
     const asinRegex = /^[A-Z0-9]{10}$/i;
@@ -225,16 +241,35 @@ Now you can ask me any questions about this product! 💬`;
 
         addAIMessagesWithTyping(messagesToAdd);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Analysis failed:", error);
-      addAIMessagesWithTyping([
-        {
-          sender: "ai",
-          text: "❌ Sorry, I couldn't analyze this product. Please check the ASIN and try again. Let's start over - please provide a new ASIN.",
-        },
-      ]);
-      dispatch(updateConversationState("waiting_for_asin"));
-      dispatch(updateCollectedData({ asin: "", costPrice: 0, isAmazonFulfilled: false }));
+      
+      // Check if it's a timeout error
+      const isTimeoutError = error?.data?.error?.includes('cURL error 28') || 
+                            error?.data?.error?.includes('Operation timed out') ||
+                            error?.data?.message?.includes('timeout') ||
+                            error?.message?.includes('timeout');
+
+      if (isTimeoutError) {
+        addAIMessagesWithTyping([
+          {
+            sender: "ai",
+            text: "⏰ The analysis is taking longer than expected and timed out. This sometimes happens due to high server load or network issues.\n\nDon't worry, your product data is saved! You can try the analysis again.",
+            type: "retry",
+            retryAction: () => performAnalysis(),
+          },
+        ]);
+      } else {
+        addAIMessagesWithTyping([
+          {
+            sender: "ai",
+            text: "❌ Sorry, I couldn't analyze this product. Please check the ASIN and try again. Let's start over - please provide a new ASIN.",
+            type: "error",
+          },
+        ]);
+        dispatch(updateConversationState("waiting_for_asin"));
+        dispatch(updateCollectedData({ asin: "", costPrice: 0, isAmazonFulfilled: false }));
+      }
     }
   };
 
@@ -250,7 +285,7 @@ Now you can ask me any questions about this product! 💬`;
           dispatch(updateCollectedData({ asin }));
           addAIMessagesWithTyping([
             { sender: "ai", text: `Great! I've got the ASIN: ${asin}` },
-            { sender: "ai", text: "Now, what's the cost price of this product? (Enter the amount in USD, e.g., 125)" },
+            { sender: "ai", text: "Now, what will be the cost price of this product? (Enter the amount in USD, e.g., 125)" },
           ]);
           dispatch(updateConversationState("waiting_for_cost_price"));
         } else {
@@ -264,7 +299,7 @@ Now you can ask me any questions about this product! 💬`;
           dispatch(updateCollectedData({ costPrice: price }));
           addAIMessagesWithTyping([
             { sender: "ai", text: `Perfect! Cost price set to $${price}` },
-            { sender: "ai", text: "Last question: Is this product Amazon Fulfilled (FBA)? Please answer 'yes' or 'no'." },
+            { sender: "ai", text: "Last question: Will this product be Amazon Fulfilled (FBA)? Please answer 'yes' or 'no'." },
           ]);
           dispatch(updateConversationState("waiting_for_fulfillment"));
         } else {
@@ -282,7 +317,7 @@ Now you can ask me any questions about this product! 💬`;
           ]);
           await performAnalysis();
         } else {
-          addAIMessagesWithTyping([{ sender: "ai", text: "❌ Please answer with 'yes' or 'no' to indicate if the product is Amazon Fulfilled (FBA)." }]);
+          addAIMessagesWithTyping([{ sender: "ai", text: "❌ Please answer with 'yes' or 'no' to indicate if the product will be Amazon Fulfilled (FBA)." }]);
         }
         break;
 
@@ -312,7 +347,7 @@ Now you can ask me any questions about this product! 💬`;
   };
   
   const startNewAnalysis = () => {
-    dispatch(createNewSession());
+    dispatch(startNewAnalysisInSession({ firstName: first_name }));
   };
 
   const getPlaceholderText = () => {
@@ -399,11 +434,26 @@ Now you can ask me any questions about this product! 💬`;
                 msg.type === "analysis"
                   ? "bg-blue-50 text-blue-900 border border-blue-200"
                   : msg.type === "system"
-                  ? "bg-yellow-50 text-yellow-900 border border-yellow-200"
+                  ? "bg-gray-100 text-gray-600 text-center font-medium text-sm"
+                  : msg.type === "error"
+                  ? "bg-red-50 text-red-900 border border-red-200"
+                  : msg.type === "retry"
+                  ? "bg-orange-50 text-orange-900 border border-orange-200"
                   : "bg-[#ECF1F6] text-[#4B4B62]"
-              } ${msg.sender === "ai" ? "rounded-bl-none" : "rounded-br-none"}`}
+              } ${msg.sender === "ai" ? "rounded-bl-none" : "rounded-br-none"} ${
+                msg.type === "system" ? "w-full max-w-none mx-auto" : ""
+              }`}
             >
               <div className="whitespace-pre-line">{msg.text}</div>
+              {msg.type === "retry" && msg.retryAction && (
+                <button
+                  onClick={msg.retryAction}
+                  className="mt-3 flex items-center gap-2 px-3 py-2 bg-orange-100 hover:bg-orange-200 text-orange-800 rounded-lg transition-colors text-sm font-medium"
+                >
+                  <HiOutlineArrowPath className="size-4" />
+                  Retry Analysis
+                </button>
+              )}
             </div>
           </div>
         ))}

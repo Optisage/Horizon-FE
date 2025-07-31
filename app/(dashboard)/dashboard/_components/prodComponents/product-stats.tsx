@@ -8,6 +8,16 @@ import { useState, forwardRef, useImperativeHandle, useEffect } from "react"
 import Image from "next/image"
 import AmazonIcon from "@/public/assets/svg/amazon-icon.svg"
 import { useAnalyzeMutation, useLazyPurchaseQuantityQuery } from "@/redux/api/totanAi"
+import { useAppDispatch } from "@/redux/hooks"
+import { 
+  createNewSession, 
+  updateCollectedData, 
+  updateConversationState,
+  addMessage,
+  updateAnalysisData,
+  updateSessionId
+} from "@/redux/slice/chatSlice"
+import Link from "next/link"
 
 interface ProductStatsProps {
   product: Product | undefined
@@ -15,6 +25,7 @@ interface ProductStatsProps {
   buyboxDetails?: any
   asin: string
   marketplaceId: number
+  onNavigateToTotan?: () => void // Callback to handle navigation
 }
 
 type Tab = "info" | "totan"
@@ -40,11 +51,18 @@ interface AnalysisData {
 
 interface PurchaseQuantityData {
   conservative_quantity: number
-  
   aggressive_quantity: number
 }
 
-const ProductStats = forwardRef(({ product, isLoading, buyboxDetails, asin, marketplaceId }: ProductStatsProps, ref) => {
+const ProductStats = forwardRef(({ 
+  product, 
+  isLoading, 
+  buyboxDetails, 
+  asin, 
+  marketplaceId, 
+  onNavigateToTotan 
+}: ProductStatsProps, ref) => {
+  const dispatch = useAppDispatch()
   const [activeTab, setActiveTab] = useState<Tab>("info")
   const [latestProfitCalc, setLatestProfitCalc] = useState<any>(product?.last_profitability_calculation?.fba)
   const [analysisData, setAnalysisData] = useState<AnalysisData | null>(null)
@@ -83,6 +101,124 @@ const ProductStats = forwardRef(({ product, isLoading, buyboxDetails, asin, mark
       }
     },
   }))
+
+  // Handle navigation to Totan with prefilled data
+  const handleNavigateToTotanWithData = async () => {
+    if (!profitabilityCalc?.costPrice || !asin || !marketplaceId) {
+      console.log('Missing required data for navigation')
+      return
+    }
+
+    try {
+      // Create new session in Redux
+      dispatch(createNewSession({ firstName: undefined }))
+      
+      // Update collected data with current profitability calculation
+      dispatch(updateCollectedData({
+        asin: asin,
+        costPrice: Number(profitabilityCalc.costPrice),
+        isAmazonFulfilled: profitabilityCalc.fulfillmentType === "FBA"
+      }))
+
+      // Add user messages to simulate the conversation flow
+      dispatch(addMessage({ 
+        sender: "user", 
+        text: asin 
+      }))
+      dispatch(addMessage({ 
+        sender: "user", 
+        text: profitabilityCalc.costPrice.toString() 
+      }))
+      dispatch(addMessage({ 
+        sender: "user", 
+        text: profitabilityCalc.fulfillmentType === "FBA" ? "yes" : "no"
+      }))
+
+      // Set conversation state to analyzing
+      dispatch(updateConversationState("analyzing"))
+
+      // Add analyzing message
+      dispatch(addMessage({
+        sender: "ai",
+        text: "🔄 Now analyzing your product... This may take a moment."
+      }))
+
+      // Perform the analysis
+      const result = await analyzeMutation({
+        asin: asin,
+        costPrice: Number(profitabilityCalc.costPrice),
+        marketplaceId: marketplaceId,
+        isAmazonFulfilled: profitabilityCalc.fulfillmentType === "FBA"
+      }).unwrap()
+
+      if (result.success) {
+        const analysis = result.data
+        dispatch(updateAnalysisData(analysis))
+        dispatch(updateSessionId(analysis.session_id))
+        dispatch(updateConversationState("chat_ready"))
+
+        // Add analysis result message
+        const analysisMessage = `🎉 **Analysis Complete!**
+
+📊 **Overall Score**: ${analysis.score} (${analysis.category})
+💰 **ROI**: ${analysis.roi}%
+📈 **Profit Margin**: ${analysis.profit_margin}%
+📦 **Monthly Sales**: ${analysis.monthly_sales.toLocaleString()} units
+
+**Detailed Breakdown:**
+• Amazon on Listing: ${analysis.breakdown.amazon_on_listing}
+• FBA Sellers: ${analysis.breakdown.fba_sellers}
+• Buy Box Eligible: ${analysis.breakdown.buy_box_eligible}
+• Variation Listing: ${analysis.breakdown.variation_listing}
+• Sales Rank Impact: ${analysis.breakdown.sales_rank_impact}
+• Estimated Demand: ${analysis.breakdown.estimated_demand}
+• Offer Count: ${analysis.breakdown.offer_count}
+• Profitability: ${analysis.breakdown.profitability}
+
+Now you can ask me any questions about this product! 💬`
+
+        dispatch(addMessage({
+          sender: "ai",
+          text: analysisMessage,
+          type: "analysis"
+        }))
+
+        // Try to get purchase quantity as well
+        try {
+          const quantityResult = await getPurchaseQuantity(asin).unwrap()
+          const quantityData = quantityResult.data
+          const quantityMessage = `📦 **Purchase Quantity Recommendations:**
+• **Conservative Approach**: ${Math.round(quantityData.conservative_quantity)} units
+• **Aggressive Approach**: ${Math.round(quantityData.aggressive_quantity)} units`
+          
+          dispatch(addMessage({
+            sender: "ai",
+            text: quantityMessage,
+            type: "analysis"
+          }))
+        } catch (error) {
+          console.error("Failed to get purchase quantity:", error)
+        }
+
+        // Navigate to Totan component
+        if (onNavigateToTotan) {
+          onNavigateToTotan()
+        }
+      }
+    } catch (error) {
+      console.error("Failed to perform analysis for navigation:", error)
+      // Handle error - could add error message to chat
+      dispatch(addMessage({
+        sender: "ai",
+        text: "❌ Sorry, I couldn't analyze this product. Please try again.",
+        type: "error"
+      }))
+      
+      if (onNavigateToTotan) {
+        onNavigateToTotan()
+      }
+    }
+  }
 
   // Perform analysis
   const performAnalysis = async (updatedProfitData?: any) => {
@@ -287,19 +423,6 @@ const ProductStats = forwardRef(({ product, isLoading, buyboxDetails, asin, mark
 
   return (
     <div className="flex flex-col gap-4">
-      {/* Debug info - remove in production */}
-      {/** Debug info - remove in production
-      {process.env.NODE_ENV === 'development' && (
-        <div className="bg-gray-100 p-2 rounded text-xs">
-          <div>ASIN: {asin || 'undefined'}</div>
-          <div>MarketplaceId: {marketplaceId || 'undefined'}</div>
-          <div>Has Profit Calc: {profitabilityCalc?.costPrice ? 'Yes' : 'No'}</div>
-          <div>Has Purchase Data: {purchaseQuantityData ? 'Yes' : 'No'}</div>
-          <div>Loading Quantity: {isLoadingQuantity ? 'Yes' : 'No'}</div>
-        </div>
-      )}
-         */}
-
       {/* tabs */}
       <div className="flex gap-4 items-center text-sm font-semibold">
         <button
@@ -329,8 +452,8 @@ const ProductStats = forwardRef(({ product, isLoading, buyboxDetails, asin, mark
           {!profitabilityCalc?.costPrice ? (
             // Show nudge message when no profitability calculation exists
             <div className="flex flex-col items-center justify-center py-8 text-center">
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 max-w-md">
-                <div className="text-blue-600 mb-3">
+              <div className=" rounded-lg p-6 max-w-md">
+                <div className="text-primary mb-3">
                   <svg className="w-12 h-12 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 14h.01M12 11h.01M12 7V4a1 1 0 00-1-1H9a1 1 0 00-1 1v3M5 7h14l-1 14H6L5 7z" />
                   </svg>
@@ -342,8 +465,8 @@ const ProductStats = forwardRef(({ product, isLoading, buyboxDetails, asin, mark
                   To access Totan AI analysis, please complete the profitability calculation first. 
                   Enter your cost price and other details in the calculator above.
                 </p>
-                <div className="bg-blue-100 border border-blue-300 rounded-md p-3">
-                  <p className="text-xs text-blue-800">
+                <div className="bg-primary/20 border border-primary rounded-md p-3">
+                  <p className="text-xs text-black">
                     💡 The AI analysis uses your profitability data to provide personalized insights and recommendations.
                   </p>
                 </div>
@@ -393,15 +516,23 @@ const ProductStats = forwardRef(({ product, isLoading, buyboxDetails, asin, mark
 
                 {/* Analysis Box */}
                 <div className="flex flex-col gap-2">
-                  <div className="bg-[#F3F4F6] rounded-lg p-3 text-[#676A75] text-sm">
+                  <Link
+                    href={`/totan`}>
+                  <div 
+                    className="bg-[#F3F4F6] rounded-lg p-3 text-[#676A75] text-sm hover:bg-primary hover:text-white cursor-pointer transition-colors duration-200"
+                    onClick={handleNavigateToTotanWithData}
+                    title="Click to open detailed analysis in Totan chat"
+                  >
                     <p className="font-semibold">Analysis</p>
                     <p>
                       {analysisData ? 
-                        `ROI: ${analysisData.roi.toFixed(1)}% | Margin: ${analysisData.profit_margin.toFixed(1)}%` :
+                        `Average Return On...` :
                         "Calculating metrics..."
                       }
                     </p>
+                    
                   </div>
+                  </Link>
 
                   <div className="flex items-center gap-2 bg-muted rounded-md px-3 py-1 text-sm text-muted-foreground">
                     <span className="bg-[#F3F4F6] rounded-lg p-2">
@@ -419,86 +550,38 @@ const ProductStats = forwardRef(({ product, isLoading, buyboxDetails, asin, mark
 
               {/* Quantity Selector */}
               <div className="flex items-center gap-4">
-                <AntTooltip
-                  title="The conservative recommended quantity to purchase based on market demand, competition, and inventory turnover rate."
-                  placement="top"
-                >
-                  <span className="text-sm text-[#676A75] font-medium cursor-help border-b border-dotted border-gray-400">
-                    Suggested Purchase Quantity
-                  </span>
-                </AntTooltip>
-                <p className="border border-input rounded-md px-4 py-1 text-sm">
-                  {isLoadingQuantity ? (
-                    <span className="animate-pulse">Loading...</span>
-                  ) : (
-                    purchaseQuantityData?.conservative_quantity || "0"
-                  )}
-                </p>
-                {!isLoadingQuantity && purchaseQuantityData && (
+                <span className="text-sm text-[#676A75] font-medium">
+                  Suggested Purchase Quantity
+                </span>
+                
+                <div className="flex items-center gap-2">
                   <AntTooltip
-                    title={`Conservative: ${purchaseQuantityData.conservative_quantity} | Aggressive: ${purchaseQuantityData.aggressive_quantity}`}
+                    title="Conservative recommended quantity based on low-risk market analysis and steady demand patterns."
                     placement="top"
                   >
-                    <span className="text-xs text-gray-400 cursor-help">ℹ️</span>
+                    <div className="border border-input rounded-md px-3 py-1 text-sm cursor-help">
+                      {isLoadingQuantity ? (
+                        <span className="animate-pulse">Loading...</span>
+                      ) : (
+                        `C: ${purchaseQuantityData?.conservative_quantity || "0"}`
+                      )}
+                    </div>
                   </AntTooltip>
-                )}
-                
-                {/* Debug button - remove in production */}
-                {process.env.NODE_ENV === 'development' && (
-                  <button 
-                    onClick={fetchPurchaseQuantity}
-                    className="text-xs bg-blue-500 text-white px-2 py-1 rounded"
-                    disabled={isLoadingQuantity}
-                  >
-                    Retry
-                  </button>
-                )}
-              </div>
 
-              {/* Analysis Breakdown */}
-              {analysisData?.breakdown && (
-                <div className="mt-4 pt-4 border-t border-gray-200">
-                  <h4 className="text-sm font-semibold text-gray-700 mb-2">Score Breakdown</h4>
-                  <div className="grid grid-cols-2 gap-2 text-xs">
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Amazon on Listing:</span>
-                      <span className={analysisData.breakdown.amazon_on_listing > 0 ? "text-green-600" : "text-red-600"}>
-                        {analysisData.breakdown.amazon_on_listing}
-                      </span>
+                  <AntTooltip
+                    title="Aggressive recommended quantity based on optimistic market projections and higher risk tolerance."
+                    placement="top"
+                  >
+                    <div className="border border-input rounded-md px-3 py-1 text-sm cursor-help">
+                      {isLoadingQuantity ? (
+                        <span className="animate-pulse">Loading...</span>
+                      ) : (
+                        `A: ${purchaseQuantityData?.aggressive_quantity || "0"}`
+                      )}
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">FBA Sellers:</span>
-                      <span className={analysisData.breakdown.fba_sellers > 0 ? "text-green-600" : "text-red-600"}>
-                        {analysisData.breakdown.fba_sellers}
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Buy Box Eligible:</span>
-                      <span className={analysisData.breakdown.buy_box_eligible > 0 ? "text-green-600" : "text-red-600"}>
-                        {analysisData.breakdown.buy_box_eligible}
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Estimated Demand:</span>
-                      <span className={analysisData.breakdown.estimated_demand > 0 ? "text-green-600" : "text-red-600"}>
-                        {analysisData.breakdown.estimated_demand}
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Profitability:</span>
-                      <span className={analysisData.breakdown.profitability > 0 ? "text-green-600" : "text-red-600"}>
-                        {analysisData.breakdown.profitability}
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Offer Count:</span>
-                      <span className={analysisData.breakdown.offer_count > 0 ? "text-green-600" : "text-red-600"}>
-                        {analysisData.breakdown.offer_count}
-                      </span>
-                    </div>
-                  </div>
+                  </AntTooltip>
                 </div>
-              )}
+              </div>
             </>
           )}
         </div>

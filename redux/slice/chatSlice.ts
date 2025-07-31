@@ -3,8 +3,9 @@ import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 type Message = {
   sender: "ai" | "user";
   text: string;
-  type?: "analysis" | "chat" | "system";
+  type?: "analysis" | "chat" | "system" | "error" | "retry";
   timestamp: number;
+  retryAction?: () => void;
 };
 
 type ConversationState =
@@ -64,9 +65,10 @@ const chatSlice = createSlice({
   name: "chat",
   initialState,
   reducers: {
-    // Create a new chat session
-    createNewSession: (state) => {
+    // Create a new chat session with optional user name
+    createNewSession: (state, action: PayloadAction<{ firstName?: string } | undefined>) => {
       const sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      const firstName = action.payload?.firstName;
       
       // Remove oldest session if we exceed max sessions
       const sessionIds = Object.keys(state.sessions);
@@ -77,12 +79,16 @@ const chatSlice = createSlice({
         delete state.sessions[oldestSession];
       }
 
+      const welcomeMessage = firstName 
+        ? `Hi ${firstName}, Welcome to Totan AI! 🚀`
+        : "Welcome to Totan AI! 🚀";
+
       const newSession: ChatSession = {
         id: sessionId,
         messages: [
           { 
             sender: "ai", 
-            text: "Welcome to Totan AI! 🚀",
+            text: welcomeMessage,
             timestamp: Date.now()
           },
           {
@@ -201,14 +207,64 @@ const chatSlice = createSlice({
       state.currentSessionId = null;
     },
 
-    // Reset current session (for new analysis)
-    resetCurrentSession: (state) => {
+    // Start new analysis in current session (keeps previous messages)
+    startNewAnalysisInSession: (state, action: PayloadAction<{ firstName?: string } | undefined>) => {
       if (state.currentSessionId && state.sessions[state.currentSessionId]) {
         const session = state.sessions[state.currentSessionId];
+        const firstName = action.payload?.firstName;
+        
+        // Add separator and new analysis messages to existing conversation
+        const separatorMessage = "─────────────────────────────";
+        const welcomeMessage = firstName 
+          ? `Hi ${firstName}, let's analyze another product! 🚀`
+          : "Let's analyze another product! 🚀";
+
+        const newMessages: Message[] = [
+          {
+            sender: "ai",
+            text: separatorMessage,
+            type: "system",
+            timestamp: Date.now()
+          },
+          { 
+            sender: "ai", 
+            text: welcomeMessage,
+            timestamp: Date.now() + 1
+          },
+          {
+            sender: "ai",
+            text: "Please provide the ASIN number of the product you'd like to analyze.",
+            timestamp: Date.now() + 2
+          },
+        ];
+
+        session.messages.push(...newMessages);
+        session.conversationState = "waiting_for_asin";
+        session.sessionId = null;
+        session.analysisData = null;
+        session.collectedData = {
+          asin: "",
+          costPrice: 0,
+          isAmazonFulfilled: false,
+        };
+        session.lastActiveAt = Date.now();
+      }
+    },
+
+    // Reset current session (for new analysis) with optional user name
+    resetCurrentSession: (state, action: PayloadAction<{ firstName?: string } | undefined>) => {
+      if (state.currentSessionId && state.sessions[state.currentSessionId]) {
+        const session = state.sessions[state.currentSessionId];
+        const firstName = action.payload?.firstName;
+        
+        const welcomeMessage = firstName 
+          ? `Hi ${firstName}, Welcome to Totan AI! 🚀`
+          : "Welcome to Totan AI! 🚀";
+
         session.messages = [
           { 
             sender: "ai", 
-            text: "Welcome to Totan AI! 🚀",
+            text: welcomeMessage,
             timestamp: Date.now()
           },
           {
@@ -247,6 +303,7 @@ export const {
   updateCollectedData,
   deleteSession,
   clearAllSessions,
+  startNewAnalysisInSession,
   resetCurrentSession,
 } = chatSlice.actions;
 
