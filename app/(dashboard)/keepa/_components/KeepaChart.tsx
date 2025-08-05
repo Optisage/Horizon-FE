@@ -1,49 +1,41 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-"use client";
-import { useState, useMemo, useCallback, useEffect } from "react";
-import { LoadingOutlined } from "@ant-design/icons";
-import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-} from "recharts";
+"use client"
+import { useState, useMemo, useCallback, useEffect } from "react"
+import { LoadingOutlined } from "@ant-design/icons"
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from "recharts"
 import {
   useLazyPriceHistoryQuery,
   useLazyProductSummaryQuery,
   useLazyRatingReviewQuery,
   useLazySalesRankQuery,
-} from "@/redux/api/keepa";
-import { useAppSelector } from "@/redux/hooks";
+} from "@/redux/api/keepa"
+import { useAppSelector } from "@/redux/hooks"
 
 interface Product {
-  title: string;
-  asin: string;
-  category: string;
-  currentPrice: number;
-  salesRank: number;
+  title: string
+  asin: string
+  category: string
+  currentPrice: number
+  salesRank: number
 }
 
 interface KeepaChartProps {
-  product: Product;
-  isLoading: boolean;
-  asin: string;
+  product: Product
+  isLoading: boolean
+  asin: string
 }
 
 interface ChartDataPoint {
-  date: string;
-  dateFormatted: string;
-  fullDate: string;
-  amazon: number | null;
-  buybox: number | null;
-  new: number | null;
-  rating: number | null;
-  rating_count: number | null;
-  new_offer_count: number | null;
-  [key: string]: number | null | string;
+  date: string
+  dateFormatted: string
+  fullDate: string
+  amazon: number | null
+  buybox: number | null
+  new: number | null
+  rating: number | null
+  rating_count: number | null
+  new_offer_count: number | null
+  [key: string]: number | null | string
 }
 
 // Constants for better maintainability
@@ -53,55 +45,46 @@ const TIME_RANGES = [
   { key: "90d", label: "3 Months" },
   { key: "1y", label: "Year" },
   { key: "all", label: "All" },
-];
-const CLOSE_UP_THRESHOLD = 0.75; // 75% of data for close-up view
-const DAY_IN_MS = 86400000;
+]
+const CLOSE_UP_THRESHOLD = 0.75 // 75% of data for close-up view
+const DAY_IN_MS = 86400000
 
-export default function KeepaChart({
-  product,
-  isLoading,
-  asin,
-}: KeepaChartProps) {
-  const { marketplaceId } = useAppSelector((state) => state?.global);
-  const [fetchError, setFetchError] = useState<string | null>(null);
-  // Add this new state after the existing useState declarations
-  const [isTimeRangeChanging, setIsTimeRangeChanging] = useState(false);
+export default function KeepaChart({ product, isLoading, asin }: KeepaChartProps) {
+  const { marketplaceId } = useAppSelector((state) => state?.global)
+  const [fetchError, setFetchError] = useState<string | null>(null)
+  const [isTimeRangeChanging, setIsTimeRangeChanging] = useState(false)
+
+  // Synchronized hover state
+  const [syncedHoverData, setSyncedHoverData] = useState<{
+    activeTimestamp: string | null
+    activeIndex: number | null
+  }>({
+    activeTimestamp: null,
+    activeIndex: null,
+  })
 
   function formatUnits(value: string | number): string {
-    const num = typeof value === "number" ? value : Number.parseFloat(value);
-    return isNaN(num)
-      ? String(value)
-      : `${Math.round(num).toLocaleString()} units`;
+    const num = typeof value === "number" ? value : Number.parseFloat(value)
+    return isNaN(num) ? String(value) : `${Math.round(num).toLocaleString()} units`
   }
 
   function formatDecimal(value: string | number, decimals = 1): string {
-    const num = typeof value === "number" ? value : Number.parseFloat(value);
-    return isNaN(num) ? String(value) : num.toFixed(decimals);
+    const num = typeof value === "number" ? value : Number.parseFloat(value)
+    return isNaN(num) ? String(value) : num.toFixed(decimals)
   }
 
   // API queries with error handling
-  const [
-    getPriceHistory,
-    { data: priceData, isLoading: priceLoading, error: priceError },
-  ] = useLazyPriceHistoryQuery();
-  const [
-    getProductSummary,
-    { data: summaryData, isLoading: summaryLoading, error: summaryError },
-  ] = useLazyProductSummaryQuery();
-  const [
-    getRatingReview,
-    { data: ratingData, isLoading: ratingLoading, error: ratingError },
-  ] = useLazyRatingReviewQuery();
-  const [
-    getSalesRank,
-    { data: salesRankData, isLoading: salesRankLoading, error: salesRankError },
-  ] = useLazySalesRankQuery();
-  
+  const [getPriceHistory, { data: priceData, isLoading: priceLoading, error: priceError }] = useLazyPriceHistoryQuery()
+  const [getProductSummary, { data: summaryData, isLoading: summaryLoading, error: summaryError }] =
+    useLazyProductSummaryQuery()
+  const [getRatingReview, { data: ratingData, isLoading: ratingLoading, error: ratingError }] =
+    useLazyRatingReviewQuery()
+  const [getSalesRank, { data: salesRankData, isLoading: salesRankLoading, error: salesRankError }] =
+    useLazySalesRankQuery()
+
   // Separate API call for 'all' timeframe data for listing age calculation
-  const [
-    getPriceHistoryAll,
-    { data: priceDataAll, isLoading: priceLoadingAll, error: priceErrorAll },
-  ] = useLazyPriceHistoryQuery();
+  const [getPriceHistoryAll, { data: priceDataAll, isLoading: priceLoadingAll, error: priceErrorAll }] =
+    useLazyPriceHistoryQuery()
 
   // Loading states - separate initial loading from chart updates
   const isInitialLoading = useMemo(
@@ -124,8 +107,8 @@ export default function KeepaChart({
       salesRankData,
       priceLoadingAll,
       priceDataAll,
-    ]
-  );
+    ],
+  )
 
   const isLoadingOverall = useMemo(
     () =>
@@ -136,74 +119,58 @@ export default function KeepaChart({
       salesRankLoading ||
       priceLoadingAll ||
       isTimeRangeChanging,
-    [
-      isLoading,
-      priceLoading,
-      summaryLoading,
-      ratingLoading,
-      salesRankLoading,
-      priceLoadingAll,
-      isTimeRangeChanging,
-    ]
-  );
+    [isLoading, priceLoading, summaryLoading, ratingLoading, salesRankLoading, priceLoadingAll, isTimeRangeChanging],
+  )
 
   // Individual chart metric states
   const [priceMetrics, setPriceMetrics] = useState({
     amazon: true,
     buybox: true,
     new: true,
-  });
+  })
 
-  const [salesRankMetrics, setSalesRankMetrics] = useState<
-    Record<string, boolean>
-  >({});
+  const [salesRankMetrics, setSalesRankMetrics] = useState<Record<string, boolean>>({})
   const [ratingMetrics, setRatingMetrics] = useState({
     rating: true,
     rating_count: true,
     new_offer_count: true,
-  });
+  })
 
   // Universal time range and individual close-up states
-  const [universalTimeRange, setUniversalTimeRange] = useState("90d");
-  const [priceCloseUpView, setPriceCloseUpView] = useState(false);
-  const [salesRankCloseUpView, setSalesRankCloseUpView] = useState(false);
-  const [ratingCloseUpView, setRatingCloseUpView] = useState(false);
+  const [universalTimeRange, setUniversalTimeRange] = useState("90d")
+  const [priceCloseUpView, setPriceCloseUpView] = useState(false)
+  const [salesRankCloseUpView, setSalesRankCloseUpView] = useState(false)
+  const [ratingCloseUpView, setRatingCloseUpView] = useState(false)
 
   // Check for API errors
   useEffect(() => {
-    const errors = [
-      priceError,
-      summaryError,
-      ratingError,
-      salesRankError,
-      priceErrorAll,
-    ].filter(Boolean);
+    const errors = [priceError, summaryError, ratingError, salesRankError, priceErrorAll].filter(Boolean)
     if (errors.length > 0) {
-      setFetchError("Failed to load chart data. Please try again later.");
+      setFetchError("Failed to load chart data. Please try again later.")
     }
-  }, [priceError, summaryError, ratingError, salesRankError, priceErrorAll]);
+  }, [priceError, summaryError, ratingError, salesRankError, priceErrorAll])
 
   // Fetch data when asin or time range changes
   useEffect(() => {
     if (asin && marketplaceId) {
-      setFetchError(null);
+      setFetchError(null)
 
       const getRatingPeriod = (range: string): string => {
         switch (range) {
           case "7d":
-            return "week";
+            return "week"
           case "30d":
-            return "month";
+            return "month"
           case "90d":
-            return "3months";
+            return "3months"
           case "1y":
           case "all":
-            return "all";
+            return "all"
           default:
-            return "3months";
+            return "3months"
         }
-      };
-      const ratingPeriod = getRatingPeriod(universalTimeRange);
+      }
+      const ratingPeriod = getRatingPeriod(universalTimeRange)
 
       Promise.all([
         getPriceHistory({
@@ -218,17 +185,17 @@ export default function KeepaChart({
         getPriceHistoryAll({
           asin,
           id: marketplaceId,
-          period: 'all',
+          period: "all",
         }),
       ])
         .then(() => {
-          setIsTimeRangeChanging(false);
+          setIsTimeRangeChanging(false)
         })
         .catch((error) => {
-          console.error("API Error:", error);
-          setFetchError("Failed to load data. Please try again.");
-          setIsTimeRangeChanging(false);
-        });
+          console.error("API Error:", error)
+          setFetchError("Failed to load data. Please try again.")
+          setIsTimeRangeChanging(false)
+        })
     }
   }, [
     asin,
@@ -239,91 +206,84 @@ export default function KeepaChart({
     getRatingReview,
     getSalesRank,
     getPriceHistoryAll,
-  ]);
+  ])
 
   // Initialize salesRankMetrics with default values
   useEffect(() => {
     if (salesRankData?.data?.sales_rank?.sales_rank_data) {
       setSalesRankMetrics((prev) => {
-        const updatedMetrics = { ...prev };
-        Object.keys(salesRankData.data.sales_rank.sales_rank_data).forEach(
-          (key) => {
-            if (updatedMetrics[key] === undefined) {
-              updatedMetrics[key] = true;
-            }
+        const updatedMetrics = { ...prev }
+        Object.keys(salesRankData.data.sales_rank.sales_rank_data).forEach((key) => {
+          if (updatedMetrics[key] === undefined) {
+            updatedMetrics[key] = true
           }
-        );
-        return updatedMetrics;
-      });
+        })
+        return updatedMetrics
+      })
     }
-  }, [salesRankData]);
+  }, [salesRankData])
 
   // Process chart data from API responses
   const chartData: ChartDataPoint[] = useMemo(() => {
-    if (!priceData?.data?.price_history) return [];
+    if (!priceData?.data?.price_history) return []
 
-    const priceHistory = priceData.data.price_history.price_types;
-    const salesRankHistory =
-      salesRankData?.data?.sales_rank?.sales_rank_data || {};
-    const ratingHistory = ratingData?.data?.chart_data || {};
+    const priceHistory = priceData.data.price_history.price_types
+    const salesRankHistory = salesRankData?.data?.sales_rank?.sales_rank_data || {}
+    const ratingHistory = ratingData?.data?.chart_data || {}
 
     // Get all unique timestamps from all data sources
-    const allTimestamps = new Set<string>();
+    const allTimestamps = new Set<string>()
 
     // Add price timestamps
     Object.values(priceHistory).forEach((priceType: any) => {
       if (priceType.data) {
         Object.keys(priceType.data).forEach((timestamp) => {
-          allTimestamps.add(timestamp);
-        });
+          allTimestamps.add(timestamp)
+        })
       }
-    });
+    })
 
     // Add sales rank and monthly sold timestamps
-    Object.entries(salesRankHistory).forEach(
-      ([key, rankType]: [string, any]) => {
-        if (rankType.data) {
-          if (key === "monthly_sold") {
-            Object.keys(rankType.data).forEach((timestamp) => {
-              allTimestamps.add(timestamp);
-            });
-          } else if (Array.isArray(rankType.data)) {
-            rankType.data.forEach((entry: any) =>
-              allTimestamps.add(entry.date)
-            );
-          } else {
-            Object.keys(rankType.data).forEach((timestamp) => {
-              allTimestamps.add(timestamp);
-            });
-          }
+    Object.entries(salesRankHistory).forEach(([key, rankType]: [string, any]) => {
+      if (rankType.data) {
+        if (key === "monthly_sold") {
+          Object.keys(rankType.data).forEach((timestamp) => {
+            allTimestamps.add(timestamp)
+          })
+        } else if (Array.isArray(rankType.data)) {
+          rankType.data.forEach((entry: any) => allTimestamps.add(entry.date))
+        } else {
+          Object.keys(rankType.data).forEach((timestamp) => {
+            allTimestamps.add(timestamp)
+          })
         }
       }
-    );
+    })
 
     // Add rating timestamps - handle both object and array formats
     Object.keys(ratingHistory).forEach((key) => {
-      const ratingItem = ratingHistory[key];
+      const ratingItem = ratingHistory[key]
       if (ratingItem?.data) {
         if (Array.isArray(ratingItem.data)) {
           // Handle array format (like new_offer_count)
           ratingItem.data.forEach((entry: any) => {
-            allTimestamps.add(entry.date);
-          });
+            allTimestamps.add(entry.date)
+          })
         } else {
           // Handle object format (like rating_count)
-          Object.values(ratingItem.data).forEach((entry: any) => {
-            allTimestamps.add(entry.date);
-          });
+          Object.keys(ratingItem.data).forEach((timestamp) => {
+            allTimestamps.add(timestamp)
+          })
         }
       }
-    });
+    })
 
     // Convert to sorted array
-    const sortedTimestamps = Array.from(allTimestamps).sort();
+    const sortedTimestamps = Array.from(allTimestamps).sort()
 
     return sortedTimestamps
       .map((timestamp) => {
-        const date = new Date(timestamp);
+        const date = new Date(timestamp)
 
         // Format date based on time range
         const formatDate = () => {
@@ -332,88 +292,78 @@ export default function KeepaChart({
               return date.toLocaleDateString("en-GB", {
                 weekday: "short",
                 day: "numeric",
-              });
+              })
             case "30d":
               return date.toLocaleDateString("en-GB", {
                 month: "short",
                 day: "numeric",
-              });
+              })
             case "90d":
               return date.toLocaleDateString("en-GB", {
                 month: "short",
                 day: "numeric",
-              });
+              })
             case "1y":
             case "all":
               return date.toLocaleDateString("en-GB", {
                 month: "short",
                 day: "numeric",
                 year: "2-digit",
-              });
+              })
             default:
               return date.toLocaleDateString("en-GB", {
                 month: "short",
                 day: "numeric",
-              });
+              })
           }
-        };
+        }
 
         // Get price data for this timestamp
-        const amazonPrice =
-          priceHistory.amazon?.data?.[timestamp]?.price ?? null;
-        const buyboxPrice =
-          priceHistory.buybox?.data?.[timestamp]?.price ?? null;
-        const newPrice = priceHistory.new?.data?.[timestamp]?.price ?? null;
+        const amazonPrice = priceHistory.amazon?.data?.[timestamp]?.price ?? null
+        const buyboxPrice = priceHistory.buybox?.data?.[timestamp]?.price ?? null
+        const newPrice = priceHistory.new?.data?.[timestamp]?.price ?? null
 
         // Get sales rank data for this timestamp dynamically
-        const salesRankDataForTimestamp: Record<string, number | null> = {};
+        const salesRankDataForTimestamp: Record<string, number | null> = {}
         Object.keys(salesRankHistory).forEach((key) => {
           if (key === "main_bsr") {
-            salesRankDataForTimestamp[key] =
-              salesRankHistory[key]?.data?.[timestamp]?.rank ?? null;
+            salesRankDataForTimestamp[key] = salesRankHistory[key]?.data?.[timestamp]?.rank ?? null
           } else if (key.startsWith("category_")) {
             const categoryEntry = salesRankHistory[key]?.data?.find(
-              (entry: any) =>
-                Math.abs(new Date(entry.date).getTime() - date.getTime()) <
-                DAY_IN_MS
-            );
-            salesRankDataForTimestamp[key] = categoryEntry?.rank ?? null;
+              (entry: any) => Math.abs(new Date(entry.date).getTime() - date.getTime()) < DAY_IN_MS,
+            )
+            salesRankDataForTimestamp[key] = categoryEntry?.rank ?? null
           } else if (key === "monthly_sold") {
-            salesRankDataForTimestamp[key] =
-              salesRankHistory[key]?.data?.[timestamp]?.value ?? null;
+            salesRankDataForTimestamp[key] = salesRankHistory[key]?.data?.[timestamp]?.value ?? null
           }
-        });
+        })
 
         // Get rating data for this timestamp - handle both object and array formats
-        const ratingDataForTimestamp: Record<string, number | null> = {};
-        
+        const ratingDataForTimestamp: Record<string, number | null> = {}
+
         Object.keys(ratingHistory).forEach((key) => {
-          const ratingItem = ratingHistory[key];
+          const ratingItem = ratingHistory[key]
           if (ratingItem?.data) {
-            let entry = null;
-            
+            let entry = null
+
             if (Array.isArray(ratingItem.data)) {
               // Handle array format (like new_offer_count)
               entry = ratingItem.data.find(
-                (item: any) =>
-                  Math.abs(new Date(item.date).getTime() - date.getTime()) <
-                  DAY_IN_MS
-              );
+                (item: any) => Math.abs(new Date(item.date).getTime() - date.getTime()) < DAY_IN_MS,
+              )
             } else {
               // Handle object format (like rating_count)
               entry = Object.values(ratingItem.data).find(
-                (item: any) =>
-                  Math.abs(new Date(item.date).getTime() - date.getTime()) <
-                  DAY_IN_MS
-              ) as any;
+                (item: any) => Math.abs(new Date(item.date).getTime() - date.getTime()) < DAY_IN_MS,
+              ) as any
             }
-            
-            ratingDataForTimestamp[key] = entry?.value ?? null;
+
+            ratingDataForTimestamp[key] = entry?.value ?? null
           }
-        });
+        })
 
         // Rating is typically static, use from summary or default
-        const rating = summaryData?.data?.current_data?.rating || 4.0;
+        const rating = summaryData?.data?.current_data?.rating || 4.0
 
         return {
           date: timestamp,
@@ -433,7 +383,7 @@ export default function KeepaChart({
           // Rating data (now dynamic)
           rating: rating,
           ...ratingDataForTimestamp,
-        };
+        }
       })
       .filter(
         (item) =>
@@ -442,58 +392,87 @@ export default function KeepaChart({
           item.buybox !== null ||
           item.new !== null ||
           Object.keys(salesRankHistory).some(
-            (key) =>
-              (item as any)[key] !== null && (item as any)[key] !== undefined
+            (key) => (item as any)[key] !== null && (item as any)[key] !== undefined,
           ) ||
-          Object.keys(ratingHistory).some(
-            (key) =>
-              (item as any)[key] !== null && (item as any)[key] !== undefined
-          )
-      ) as ChartDataPoint[];
-  }, [priceData, salesRankData, ratingData, summaryData, universalTimeRange]);
+          Object.keys(ratingHistory).some((key) => (item as any)[key] !== null && (item as any)[key] !== undefined),
+      ) as ChartDataPoint[]
+  }, [priceData, salesRankData, ratingData, summaryData, universalTimeRange])
 
   // Get available price types from API data
   const availablePriceTypes = useMemo(() => {
-    if (!priceData?.data?.price_history?.summary) return [];
-    return priceData.data.price_history.summary.available_types || [];
-  }, [priceData]);
+    if (!priceData?.data?.price_history?.summary) return []
+    return priceData.data.price_history.summary.available_types || []
+  }, [priceData])
 
   // Handle time range change with loading state
   const handleTimeRangeChange = useCallback((newRange: string) => {
-    setIsTimeRangeChanging(true);
-    setUniversalTimeRange(newRange);
-  }, []);
+    setIsTimeRangeChanging(true)
+    setUniversalTimeRange(newRange)
+    // Reset hover state when time range changes
+    setSyncedHoverData({ activeTimestamp: null, activeIndex: null })
+  }, [])
+
+  // Synchronized mouse event handlers
+  const handleMouseMove = useCallback((e: any) => {
+    if (e && e.activeLabel) {
+      // Use requestAnimationFrame to batch updates and sync with the browser's paint cycle.
+      // This prevents the high-frequency re-renders from causing a "refreshing" or janky feel.
+      window.requestAnimationFrame(() => {
+        setSyncedHoverData({
+          activeTimestamp: e.activeLabel,
+          activeIndex: e.activeTooltipIndex,
+        })
+      })
+    }
+  }, []) // setSyncedHoverData is stable, so no dependency needed
+
+  const handleMouseLeave = useCallback(() => {
+    setSyncedHoverData({ activeTimestamp: null, activeIndex: null })
+  }, [])
 
   // Tooltip props interface
   interface TooltipProps {
-    active?: boolean;
+    active?: boolean
     payload?: Array<{
-      dataKey: string;
-      value: any;
-      color: string;
-      name: string;
-    }>;
-    label?: string;
+      dataKey: string
+      value: any
+      color: string
+      name: string
+    }>
+    label?: string
   }
 
   function abbreviateNumber(value: number): string {
-  if (value >= 1e9) return (value / 1e9).toFixed(1) + 'B';
-  if (value >= 1e6) return (value / 1e6).toFixed(1) + 'M';
-  if (value >= 1e3) return (value / 1e3).toFixed(1) + 'K';
-  return value.toString();
-}
+    if (value >= 1e9) return (value / 1e9).toFixed(1) + "B"
+    if (value >= 1e6) return (value / 1e6).toFixed(1) + "M"
+    if (value >= 1e3) return (value / 1e3).toFixed(1) + "K"
+    return value.toString()
+  }
 
-  // Custom tooltip components
+  // Custom tooltip components with synchronized hover
   const CustomTooltip = ({ active, payload, label }: TooltipProps) => {
-    if (active && payload && payload.length) {
-      const dataPoint = chartData.find((d) => d.dateFormatted === label);
+    // Show tooltip if either the chart is actively hovered or if it matches the synced hover state
+    const shouldShow = active || syncedHoverData.activeTimestamp === label
+
+    if (shouldShow && payload && payload.length) {
+      // Since label is now a timestamp, we need to find the dataPoint using the timestamp
+      const dataPoint = chartData.find((d) => d.date === label)
+
       return (
         <div className="bg-white p-3 border border-gray-200 rounded shadow-lg">
           <p className="font-medium text-gray-800 mb-2">
-            {dataPoint?.fullDate || label}
+            {dataPoint?.fullDate ||
+              (label
+                ? new Date(label).toLocaleDateString("en-GB", {
+                    weekday: "long",
+                    year: "numeric",
+                    month: "long",
+                    day: "numeric",
+                  })
+                : "")}
           </p>
           {payload.map((entry, index) => {
-            if (entry.value === null || entry.value === undefined) return null;
+            if (entry.value === null || entry.value === undefined) return null
             return (
               <p key={index} style={{ color: entry.color }} className="text-sm">
                 {entry.name}:{" "}
@@ -501,23 +480,22 @@ export default function KeepaChart({
                 entry.dataKey === "amazon" ||
                 entry.dataKey === "buybox" ||
                 entry.dataKey === "new"
-                  ? `$${Number(entry.value).toFixed(2)}`
+                  ? `${Number(entry.value).toFixed(2)}`
                   : entry.dataKey === "monthly_sold"
-                  ? formatUnits(entry.value)
-                  : entry.dataKey === "rating"
-                  ? formatDecimal(entry.value)
-                  : entry.dataKey.includes("rank") ||
-                    entry.dataKey.includes("bsr")
-                  ? `#${Math.round(Number(entry.value)).toLocaleString()}`
-                  : formatDecimal(entry.value)}
+                    ? formatUnits(entry.value)
+                    : entry.dataKey === "rating"
+                      ? formatDecimal(entry.value)
+                      : entry.dataKey.includes("rank") || entry.dataKey.includes("bsr")
+                        ? `#${Math.round(Number(entry.value)).toLocaleString()}`
+                        : formatDecimal(entry.value)}
               </p>
-            );
+            )
           })}
         </div>
-      );
+      )
     }
-    return null;
-  };
+    return null
+  }
 
   if (isInitialLoading) {
     return (
@@ -527,7 +505,7 @@ export default function KeepaChart({
           <div className="h-64 bg-gray-200 rounded"></div>
         </div>
       </div>
-    );
+    )
   }
 
   // Universal Time Range Controller
@@ -542,9 +520,7 @@ export default function KeepaChart({
               onClick={() => handleTimeRangeChange(range.key)}
               disabled={isLoadingOverall}
               className={`px-3 py-1 text-xs rounded transition-colors flex items-center gap-1 ${
-                universalTimeRange === range.key
-                  ? "bg-primary text-white"
-                  : "bg-white text-[#787891] hover:bg-gray-100"
+                universalTimeRange === range.key ? "bg-primary text-white" : "bg-white text-[#787891] hover:bg-gray-100"
               } ${isLoadingOverall ? "opacity-50 cursor-not-allowed" : ""}`}
               aria-label={`Set time range to ${range.label}`}
             >
@@ -564,22 +540,21 @@ export default function KeepaChart({
           </div>
         )}
         <span>
-          Total Price Types:{" "}
-          {priceData?.data?.price_history?.summary?.total_price_types || 0} |
-          Data Points: {chartData.length}
+          Total Price Types: {priceData?.data?.price_history?.summary?.total_price_types || 0} | Data Points:{" "}
+          {chartData.length}
         </span>
       </div>
     </div>
-  );
+  )
 
   const ChartCloseUpToggle = ({
     closeUpView,
     onToggle,
     title,
   }: {
-    closeUpView: boolean;
-    onToggle: (enabled: boolean) => void;
-    title: string;
+    closeUpView: boolean
+    onToggle: (enabled: boolean) => void
+    title: string
   }) => (
     <div className="px-4 py-2 bg-[#FAFAFA] border-b border-border flex items-center justify-between">
       <span className="text-sm font-medium text-[#01011D]">{title}</span>
@@ -597,7 +572,7 @@ export default function KeepaChart({
         </label>
       </div>
     </div>
-  );
+  )
 
   // Interactive Chart Controllers with actual API data
   const PriceChartController = () => (
@@ -605,17 +580,14 @@ export default function KeepaChart({
       <h4 className="font-semibold text-xs text-[#01011D] mb-1">Price Types</h4>
       <div className="space-y-1">
         {availablePriceTypes.map((priceType: any) => {
-          const priceTypeData =
-            priceData?.data?.price_history?.price_types?.[priceType];
-          if (!priceTypeData) return null;
+          const priceTypeData = priceData?.data?.price_history?.price_types?.[priceType]
+          if (!priceTypeData) return null
 
           return (
             <div
               key={priceType}
               className={`flex items-center gap-1 p-1 rounded cursor-pointer transition-colors ${
-                priceMetrics[priceType as keyof typeof priceMetrics]
-                  ? "bg-white shadow-sm"
-                  : "hover:bg-white"
+                priceMetrics[priceType as keyof typeof priceMetrics] ? "bg-white shadow-sm" : "hover:bg-white"
               }`}
               onClick={() =>
                 setPriceMetrics((prev) => ({
@@ -628,9 +600,7 @@ export default function KeepaChart({
               <div
                 className={`w-3 h-3 rounded border`}
                 style={{
-                  backgroundColor: priceMetrics[
-                    priceType as keyof typeof priceMetrics
-                  ]
+                  backgroundColor: priceMetrics[priceType as keyof typeof priceMetrics]
                     ? priceTypeData.color
                     : "transparent",
                   borderColor: priceTypeData.color,
@@ -638,114 +608,85 @@ export default function KeepaChart({
               ></div>
               <span className="text-xs flex-1">{priceTypeData.label}</span>
             </div>
-          );
+          )
         })}
       </div>
     </div>
-  );
+  )
 
   const SalesRankController = () => (
     <div className="w-40 border-l border-border bg-[#FAFAFA] p-2">
-      <h4 className="font-semibold text-xs text-[#01011D] mb-1">
-        Sales Rank & Volume
-      </h4>
+      <h4 className="font-semibold text-xs text-[#01011D] mb-1">Sales Rank & Volume</h4>
       <div className="space-y-1">
-        {Object.entries(
-          salesRankData?.data?.sales_rank?.sales_rank_data || {}
-        ).map(([key, rankData]: [string, any]) => (
-          <div
-            key={key}
-            className={`flex items-center gap-1 p-1 rounded cursor-pointer transition-colors ${
-              salesRankMetrics[key] ? "bg-white shadow-sm" : "hover:bg-white"
-            }`}
-            onClick={() =>
-              setSalesRankMetrics((prev) => ({ ...prev, [key]: !prev[key] }))
-            }
-            aria-label={`Toggle ${rankData.label} visibility`}
-          >
+        {Object.entries(salesRankData?.data?.sales_rank?.sales_rank_data || {}).map(
+          ([key, rankData]: [string, any]) => (
             <div
-              className={`w-3 h-3 rounded border`}
-              style={{
-                backgroundColor: salesRankMetrics[key]
-                  ? rankData.color
-                  : "transparent",
-                borderColor: rankData.color,
-              }}
-            ></div>
-            <span className="text-xs flex-1">{rankData.label}</span>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-
-  const RatingController = () => (
-    <div className="w-40 border-l border-border bg-[#FAFAFA] p-2">
-      <h4 className="font-semibold text-xs text-[#01011D] mb-1">
-        Rating & Reviews
-      </h4>
-      <div className="space-y-1">
-        {Object.entries(ratingData?.data?.chart_data || {}).map(
-          ([key, ratingDataItem]: [string, any]) => {
-            if (!ratingDataItem.label) return null;
-
-            return (
+              key={key}
+              className={`flex items-center gap-1 p-1 rounded cursor-pointer transition-colors ${
+                salesRankMetrics[key] ? "bg-white shadow-sm" : "hover:bg-white"
+              }`}
+              onClick={() => setSalesRankMetrics((prev) => ({ ...prev, [key]: !prev[key] }))}
+              aria-label={`Toggle ${rankData.label} visibility`}
+            >
               <div
-                key={key}
-                className={`flex items-center gap-1 p-1 rounded cursor-pointer transition-colors ${
-                  ratingMetrics[key as keyof typeof ratingMetrics]
-                    ? "bg-white shadow-sm"
-                    : "hover:bg-white"
-                }`}
-                onClick={() =>
-                  setRatingMetrics((prev) => ({
-                    ...prev,
-                    [key]: !prev[key as keyof typeof prev],
-                  }))
-                }
-                aria-label={`Toggle ${ratingDataItem.label} visibility`}
-              >
-                <div
-                  className={`w-3 h-3 rounded border`}
-                  style={{
-                    backgroundColor: ratingMetrics[
-                      key as keyof typeof ratingMetrics
-                    ]
-                      ? ratingDataItem.color
-                      : "transparent",
-                    borderColor: ratingDataItem.color,
-                  }}
-                ></div>
-                <span className="text-xs flex-1">{ratingDataItem.label}</span>
-              </div>
-            );
-          }
+                className={`w-3 h-3 rounded border`}
+                style={{
+                  backgroundColor: salesRankMetrics[key] ? rankData.color : "transparent",
+                  borderColor: rankData.color,
+                }}
+              ></div>
+              <span className="text-xs flex-1">{rankData.label}</span>
+            </div>
+          ),
         )}
       </div>
     </div>
-  );
+  )
+
+  const RatingController = () => (
+    <div className="w-40 border-l border-border bg-[#FAFAFA] p-2">
+      <h4 className="font-semibold text-xs text-[#01011D] mb-1">Rating & Reviews</h4>
+      <div className="space-y-1">
+        {Object.entries(ratingData?.data?.chart_data || {}).map(([key, ratingDataItem]: [string, any]) => {
+          if (!ratingDataItem.label) return null
+
+          return (
+            <div
+              key={key}
+              className={`flex items-center gap-1 p-1 rounded cursor-pointer transition-colors ${
+                ratingMetrics[key as keyof typeof ratingMetrics] ? "bg-white shadow-sm" : "hover:bg-white"
+              }`}
+              onClick={() =>
+                setRatingMetrics((prev) => ({
+                  ...prev,
+                  [key]: !prev[key as keyof typeof prev],
+                }))
+              }
+              aria-label={`Toggle ${ratingDataItem.label} visibility`}
+            >
+              <div
+                className={`w-3 h-3 rounded border`}
+                style={{
+                  backgroundColor: ratingMetrics[key as keyof typeof ratingMetrics]
+                    ? ratingDataItem.color
+                    : "transparent",
+                  borderColor: ratingDataItem.color,
+                }}
+              ></div>
+              <span className="text-xs flex-1">{ratingDataItem.label}</span>
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
 
   // Filter data for close-up view
   const getFilteredData = (closeUpView: boolean) => {
-    if (!closeUpView || chartData.length === 0) return chartData;
-    const focusStartIndex = Math.max(
-      0,
-      Math.floor(chartData.length * (1 - CLOSE_UP_THRESHOLD))
-    );
-    return chartData.slice(focusStartIndex);
-  };
-
-  // Filter out points with all null values for active metrics
-  const filterChartData = (
-    data: ChartDataPoint[],
-    metrics: Record<string, boolean>
-  ) => {
-    return data.filter((point) =>
-      Object.keys(metrics).some(
-        (key) => metrics[key] && point[key] !== null && point[key] !== undefined
-      )
-    );
-  };
+    if (!closeUpView || chartData.length === 0) return chartData
+    const focusStartIndex = Math.max(0, Math.floor(chartData.length * (1 - CLOSE_UP_THRESHOLD)))
+    return chartData.slice(focusStartIndex)
+  }
 
   return (
     <div className="border border-border rounded-xl bg-white overflow-hidden">
@@ -757,8 +698,8 @@ export default function KeepaChart({
               {priceData?.data?.product?.name || product.title}
             </h3>
             <p className="text-sm text-[#787891]">
-              ASIN: {priceData?.data?.product?.asin || product.asin} |
-              Marketplace: {priceData?.data?.product?.marketplace_id || "N/A"}
+              ASIN: {priceData?.data?.product?.asin || product.asin} | Marketplace:{" "}
+              {priceData?.data?.product?.marketplace_id || "N/A"}
             </p>
           </div>
 
@@ -766,8 +707,7 @@ export default function KeepaChart({
             <div className="text-sm">
               <span className="text-[#787891]">Current Price: </span>
               <span className="font-semibold text-[#01011D]">
-                {priceData?.data?.price_history?.price_types?.buybox
-                  ?.current_price
+                {priceData?.data?.price_history?.price_types?.buybox?.current_price
                   ? `$${priceData.data.price_history.price_types.buybox.current_price}`
                   : `$${product.currentPrice}`}
               </span>
@@ -775,9 +715,7 @@ export default function KeepaChart({
             <div className="text-sm">
               <span className="text-[#787891]">Sales Rank: </span>
               <span className="font-semibold text-[#01011D]">
-                #
-                {salesRankData?.data?.sales_rank?.sales_rank_data?.main_bsr
-                  ?.current_rank || product.salesRank}
+                #{salesRankData?.data?.sales_rank?.sales_rank_data?.main_bsr?.current_rank || product.salesRank}
               </span>
             </div>
           </div>
@@ -788,10 +726,7 @@ export default function KeepaChart({
 
       {/* Error message display */}
       {fetchError && (
-        <div
-          className="bg-red-100 border border-red-400 text-red-700 px-6 py-3"
-          role="alert"
-        >
+        <div className="bg-red-100 border border-red-400 text-red-700 px-6 py-3" role="alert">
           <strong className="font-bold">Error! </strong>
           <span>{fetchError}</span>
         </div>
@@ -802,11 +737,7 @@ export default function KeepaChart({
         <div className="flex gap-4">
           <div className="flex-1">
             <div className="relative border border-gray-200 rounded bg-white overflow-hidden">
-              <ChartCloseUpToggle
-                closeUpView={priceCloseUpView}
-                onToggle={setPriceCloseUpView}
-                title="Price History"
-              />
+              <ChartCloseUpToggle closeUpView={priceCloseUpView} onToggle={setPriceCloseUpView} title="Price History" />
 
               <div className="h-72 relative overflow-hidden">
                 {isLoadingOverall && (
@@ -820,70 +751,82 @@ export default function KeepaChart({
 
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart
-                    data={filterChartData(
-                      getFilteredData(priceCloseUpView),
-                      priceMetrics
-                    )}
+                    data={getFilteredData(priceCloseUpView)}
                     margin={{ top: 20, right: 10, left: 10, bottom: 10 }}
+                    onMouseMove={handleMouseMove}
+                    onMouseLeave={handleMouseLeave}
+                    //cursor={false}
                     aria-label="Price history chart"
                   >
                     <CartesianGrid strokeDasharray="1 1" stroke="#f0f0f0" />
                     <XAxis
-                      dataKey="dateFormatted"
+                      dataKey="date"
                       tick={{ fontSize: 10 }}
-                      interval={Math.max(
-                        1,
-                        Math.floor(getFilteredData(priceCloseUpView).length / 8)
-                      )}
+                      interval={Math.max(1, Math.floor(getFilteredData(priceCloseUpView).length / 8))}
+                      tickFormatter={(timestamp) => {
+                        const date = new Date(timestamp)
+                        return date.toLocaleDateString("en-GB", {
+                          month: "short",
+                          day: "numeric",
+                        })
+                      }}
                       minTickGap={30}
                     />
                     <YAxis
+                      yAxisId="price"
                       tick={{ fontSize: 10 }}
                       domain={["dataMin", "dataMax"]}
                       tickFormatter={(value) => `$${value}`}
                     />
                     <Tooltip content={<CustomTooltip />} />
 
-                    {priceMetrics.amazon && (
-                      <Line
-                        type="linear"
-                        dataKey="amazon"
-                        name="Amazon"
-                        stroke={
-                          priceData?.data?.price_history?.price_types?.amazon
-                            ?.color || "#FF6B6B"
-                        }
+                    {/* Synchronized reference line */}
+                    {syncedHoverData.activeTimestamp && (
+                      <ReferenceLine
+                        x={syncedHoverData.activeTimestamp}
+                        stroke="#666"
+                        strokeDasharray="2 2"
                         strokeWidth={1}
-                        dot={false}
-                        connectNulls={true}
+                        yAxisId="price"
                       />
                     )}
-                    {priceMetrics.buybox && (
-                      <Line
-                        type="linear"
-                        dataKey="buybox"
-                        name="Buy Box"
-                        stroke={
-                          priceData?.data?.price_history?.price_types?.buybox
-                            ?.color || "#4ECDC4"
-                        }
-                        strokeWidth={1}
-                        dot={false}
-                        connectNulls={true}
-                      />
-                    )}
+
                     {priceMetrics.new && (
                       <Line
                         type="linear"
                         dataKey="new"
                         name="New"
-                        stroke={
-                          priceData?.data?.price_history?.price_types?.new
-                            ?.color || "#45B7D1"
-                        }
+                        stroke={priceData?.data?.price_history?.price_types?.new?.color || "#45B7D1"}
                         strokeWidth={1}
                         dot={false}
                         connectNulls={true}
+                        yAxisId="price"
+                      />
+                    )}
+
+                    {priceMetrics.buybox && (
+                      <Line
+                        type="linear"
+                        dataKey="buybox"
+                        name="Buy Box"
+                        stroke={priceData?.data?.price_history?.price_types?.buybox?.color || "#4ECDC4"}
+                        strokeWidth={1}
+                        dot={false}
+                        connectNulls={true}
+                        yAxisId="price"
+                      />
+                    )}
+
+                    {priceMetrics.amazon && (
+                      <Line
+                        type="linear"
+                        dataKey="amazon"
+                        name="Amazon"
+                        stroke={priceData?.data?.price_history?.price_types?.amazon?.color || "#FF6B6B"}
+                        strokeWidth={1}
+                        dot={false}
+                        connectNulls={true}
+                        yAxisId="price"
                       />
                     )}
                   </LineChart>
@@ -916,23 +859,25 @@ export default function KeepaChart({
 
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart
-                    data={filterChartData(
-                      getFilteredData(salesRankCloseUpView),
-                      salesRankMetrics
-                    )}
+                    data={getFilteredData(salesRankCloseUpView)}
                     margin={{ top: 20, right: 10, left: 10, bottom: 10 }}
+                    onMouseMove={handleMouseMove}
+                    onMouseLeave={handleMouseLeave}
+                    //cursor={false}
                     aria-label="Sales rank chart"
                   >
                     <CartesianGrid strokeDasharray="1 1" stroke="#f0f0f0" />
                     <XAxis
-                      dataKey="dateFormatted"
+                      dataKey="date"
                       tick={{ fontSize: 10 }}
-                      interval={Math.max(
-                        1,
-                        Math.floor(
-                          getFilteredData(salesRankCloseUpView).length / 8
-                        )
-                      )}
+                      interval={Math.max(1, Math.floor(getFilteredData(salesRankCloseUpView).length / 8))}
+                      tickFormatter={(timestamp) => {
+                        const date = new Date(timestamp)
+                        return date.toLocaleDateString("en-GB", {
+                          month: "short",
+                          day: "numeric",
+                        })
+                      }}
                       minTickGap={30}
                     />
 
@@ -941,7 +886,7 @@ export default function KeepaChart({
                       yAxisId="left"
                       orientation="left"
                       tick={{ fontSize: 10 }}
-                     tickFormatter={(value) => abbreviateNumber(value)}
+                      tickFormatter={(value) => abbreviateNumber(value)}
                     />
 
                     {/* Right axis for all sales ranks */}
@@ -955,16 +900,25 @@ export default function KeepaChart({
 
                     <Tooltip content={<CustomTooltip />} />
 
+                    {/* Synchronized reference line */}
+                    {syncedHoverData.activeTimestamp && (
+                      <ReferenceLine
+                        x={syncedHoverData.activeTimestamp}
+                        stroke="#666"
+                        strokeDasharray="2 2"
+                        strokeWidth={1}
+                        yAxisId="left"
+                      />
+                    )}
+
                     {/* Map lines to correct axes */}
                     {Object.entries(salesRankMetrics).map(([key, isActive]) => {
-                      if (!isActive) return null;
-                      const rankData =
-                        salesRankData?.data?.sales_rank?.sales_rank_data?.[key];
-                      if (!rankData) return null;
+                      if (!isActive) return null
+                      const rankData = salesRankData?.data?.sales_rank?.sales_rank_data?.[key]
+                      if (!rankData) return null
 
                       // Assign monthly_sold to left axis, others to right
-                      const yAxisIdToUse =
-                        key === "monthly_sold" ? "left" : "right";
+                      const yAxisIdToUse = key === "monthly_sold" ? "left" : "right"
 
                       return (
                         <Line
@@ -978,7 +932,7 @@ export default function KeepaChart({
                           connectNulls={true}
                           yAxisId={yAxisIdToUse}
                         />
-                      );
+                      )
                     })}
                   </LineChart>
                 </ResponsiveContainer>
@@ -1010,32 +964,32 @@ export default function KeepaChart({
 
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart
-                    data={filterChartData(
-                      getFilteredData(ratingCloseUpView),
-                      ratingMetrics
-                    )}
+                    data={getFilteredData(ratingCloseUpView)}
                     margin={{ top: 20, right: 10, left: 10, bottom: 10 }}
+                    onMouseMove={handleMouseMove}
+                    onMouseLeave={handleMouseLeave}
+                    //cursor={false}
                     aria-label="Rating and reviews chart"
                   >
                     <CartesianGrid strokeDasharray="1 1" stroke="#f0f0f0" />
                     <XAxis
-                      dataKey="dateFormatted"
+                      dataKey="date"
                       tick={{ fontSize: 10 }}
-                      interval={Math.max(
-                        1,
-                        Math.floor(
-                          getFilteredData(ratingCloseUpView).length / 8
-                        )
-                      )}
+                      interval={Math.max(1, Math.floor(getFilteredData(ratingCloseUpView).length / 8))}
+                      tickFormatter={(timestamp) => {
+                        const date = new Date(timestamp)
+                        return date.toLocaleDateString("en-GB", {
+                          month: "short",
+                          day: "numeric",
+                        })
+                      }}
                       minTickGap={30}
                     />
                     <YAxis
                       yAxisId="count"
                       orientation="left"
                       tick={{ fontSize: 10 }}
-                      tickFormatter={(value) =>
-                        Math.round(value).toLocaleString()
-                      }
+                      tickFormatter={(value) => Math.round(value).toLocaleString()}
                     />
                     <YAxis
                       yAxisId="rating"
@@ -1054,15 +1008,23 @@ export default function KeepaChart({
                     />
                     <Tooltip content={<CustomTooltip />} />
 
+                    {/* Synchronized reference line */}
+                    {syncedHoverData.activeTimestamp && (
+                      <ReferenceLine
+                        x={syncedHoverData.activeTimestamp}
+                        stroke="#666"
+                        strokeDasharray="2 2"
+                        strokeWidth={1}
+                        yAxisId="count"
+                      />
+                    )}
+
                     {ratingMetrics.rating_count && (
                       <Line
                         type="linear"
                         dataKey="rating_count"
                         name="Rating Count"
-                        stroke={
-                          ratingData?.data?.chart_data?.rating_count?.color ||
-                          "#8884d8"
-                        }
+                        stroke={ratingData?.data?.chart_data?.rating_count?.color || "#8884d8"}
                         strokeWidth={1}
                         dot={false}
                         connectNulls={true}
@@ -1074,10 +1036,7 @@ export default function KeepaChart({
                         type="linear"
                         dataKey="rating"
                         name="Rating"
-                        stroke={
-                          ratingData?.data?.chart_data?.rating?.color ||
-                          "#82ca9d"
-                        }
+                        stroke={ratingData?.data?.chart_data?.rating?.color || "#82ca9d"}
                         strokeWidth={1}
                         dot={false}
                         connectNulls={true}
@@ -1089,10 +1048,7 @@ export default function KeepaChart({
                         type="linear"
                         dataKey="new_offer_count"
                         name="New Offer Count"
-                        stroke={
-                          ratingData?.data?.chart_data?.new_offer_count
-                            ?.color || "#ffc658"
-                        }
+                        stroke={ratingData?.data?.chart_data?.new_offer_count?.color || "#ffc658"}
                         strokeWidth={1}
                         dot={false}
                         connectNulls={true}
@@ -1111,20 +1067,10 @@ export default function KeepaChart({
         <div className="mt-4 text-xs text-[#787891] space-y-1">
           <div className="flex items-center gap-4 mt-2">
             <span>
-              Current BSR: #
-              {salesRankData?.data?.sales_rank?.sales_rank_data?.main_bsr
-                ?.current_value || "N/A"}
+              Current BSR: #{salesRankData?.data?.sales_rank?.sales_rank_data?.main_bsr?.current_value || "N/A"}
             </span>
-            <span>
-              Best: #
-              {salesRankData?.data?.sales_rank?.sales_rank_data?.main_bsr
-                ?.best_value || "N/A"}
-            </span>
-            <span>
-              Worst: #
-              {salesRankData?.data?.sales_rank?.sales_rank_data?.main_bsr
-                ?.worst_value || "N/A"}
-            </span>
+            <span>Best: #{salesRankData?.data?.sales_rank?.sales_rank_data?.main_bsr?.best_value || "N/A"}</span>
+            <span>Worst: #{salesRankData?.data?.sales_rank?.sales_rank_data?.main_bsr?.worst_value || "N/A"}</span>
           </div>
         </div>
       </div>
@@ -1135,30 +1081,19 @@ export default function KeepaChart({
           <div>
             <p className="text-[#787891] mb-1">Category Sales Ranks</p>
             <div className="space-y-1">
-              {summaryData?.data?.category_sales_ranks
-                ?.slice(0, 2)
-                .map((category: any, index: number) => (
-                  <div key={category.name} className="flex items-center gap-2">
-                    <span
-                      className={`w-3 h-3 rounded bg-green-${
-                        500 + index * 100
-                      }`}
-                    ></span>
-                    <span className="text-[#01011D] text-xs">
-                      {category.name}
-                    </span>
-                  </div>
-                ))}
+              {summaryData?.data?.category_sales_ranks?.slice(0, 2).map((category: any, index: number) => (
+                <div key={category.name} className="flex items-center gap-2">
+                  <span className={`w-3 h-3 rounded bg-green-${500 + index * 100}`}></span>
+                  <span className="text-[#01011D] text-xs">{category.name}</span>
+                </div>
+              ))}
             </div>
           </div>
 
           <div>
             <p className="text-[#787891] mb-1">Current Data</p>
             <div className="space-y-1 text-xs">
-              <p>
-                Rating:{" "}
-                {summaryData?.data?.current_data?.rating?.toFixed(1) || "N/A"}
-              </p>
+              <p>Rating: {summaryData?.data?.current_data?.rating?.toFixed(1) || "N/A"}</p>
             </div>
           </div>
 
@@ -1186,41 +1121,41 @@ export default function KeepaChart({
               <p>
                 {(() => {
                   // Get earliest timestamp from 'all' timeframe price history data
-                  const priceHistoryAll = priceDataAll?.data?.price_history?.price_types;
-                  if (!priceHistoryAll) return "N/A";
-                  
-                  const allTimestamps = new Set<string>();
-                  
+                  const priceHistoryAll = priceDataAll?.data?.price_history?.price_types
+                  if (!priceHistoryAll) return "N/A"
+
+                  const allTimestamps = new Set<string>()
+
                   // Collect all timestamps from 'all' timeframe price history
                   Object.values(priceHistoryAll).forEach((priceType: any) => {
                     if (priceType.data) {
                       Object.keys(priceType.data).forEach((timestamp) => {
-                        allTimestamps.add(timestamp);
-                      });
+                        allTimestamps.add(timestamp)
+                      })
                     }
-                  });
-                  
-                  if (allTimestamps.size === 0) return "N/A";
-                  
+                  })
+
+                  if (allTimestamps.size === 0) return "N/A"
+
                   // Get the earliest timestamp
-                  const sortedTimestamps = Array.from(allTimestamps).sort();
-                  const earliestTimestamp = sortedTimestamps[0];
-                  
-                  const startDate = new Date(earliestTimestamp);
-                  const currentDate = new Date();
-                  const diffTime = Math.abs(currentDate.getTime() - startDate.getTime());
-                  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-                  
-                  const years = Math.floor(diffDays / 365);
-                  const months = Math.floor((diffDays % 365) / 30);
-                  const days = diffDays % 30;
-                  
+                  const sortedTimestamps = Array.from(allTimestamps).sort()
+                  const earliestTimestamp = sortedTimestamps[0]
+
+                  const startDate = new Date(earliestTimestamp)
+                  const currentDate = new Date()
+                  const diffTime = Math.abs(currentDate.getTime() - startDate.getTime())
+                  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+
+                  const years = Math.floor(diffDays / 365)
+                  const months = Math.floor((diffDays % 365) / 30)
+                  const days = diffDays % 30
+
                   if (years > 0) {
-                    return months > 0 ? `${years}y ${months}m` : `${years}y ${days}d`;
+                    return months > 0 ? `${years}y ${months}m` : `${years}y ${days}d`
                   } else if (months > 0) {
-                    return days > 0 ? `${months}m ${days}d` : `${months}m`;
+                    return days > 0 ? `${months}m ${days}d` : `${months}m`
                   } else {
-                    return `${days}d`;
+                    return `${days}d`
                   }
                 })()}
               </p>
@@ -1228,9 +1163,7 @@ export default function KeepaChart({
           </div>
 
           <div className="text-right">
-            <p className="text-sm font-medium">
-              {summaryData?.data?.metadata?.timestamp || "N/A"}
-            </p>
+            <p className="text-sm font-medium">{summaryData?.data?.metadata?.timestamp || "N/A"}</p>
             {isLoadingOverall && (
               <div className="flex items-center gap-1 justify-end mt-1">
                 <LoadingOutlined spin style={{ fontSize: "12px" }} />
@@ -1241,5 +1174,5 @@ export default function KeepaChart({
         </div>
       </div>
     </div>
-  );
+  )
 }
