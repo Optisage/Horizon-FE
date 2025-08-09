@@ -109,7 +109,7 @@ const CustomDatePicker: React.FC<CustomDatePickerProps> = ({
             allowClear={false}
             suffixIcon={null}
             className="!border-none !rounded-none !shadow-none !p-1 !text-center !w-[200px]"
-            popupClassName="custom-datepicker-popup"
+            classNames={{ popup: { root: "custom-datepicker-popup" } }}
             renderExtraFooter={() => null}
             disabledDate={disabledDate}
           />
@@ -122,7 +122,7 @@ const CustomDatePicker: React.FC<CustomDatePickerProps> = ({
             allowClear={false}
             suffixIcon={null}
             className="!border-none !rounded-none !shadow-none !p-1 !text-center !w-[93px]"
-            popupClassName="custom-datepicker-popup"
+            classNames={{ popup: { root: "custom-datepicker-popup" } }}
             renderExtraFooter={() => null}
             disabledDate={disabledDate}
           />

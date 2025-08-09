@@ -128,7 +128,7 @@ const ProductInfo = ({
           )}
 
           <p className=" text-base text-gray-600  mb-2">{product?.category}</p>
-          <p className="text-base flex items-center gap-2 flex-wrap">
+          <div className="text-base flex items-center gap-2 flex-wrap">
             <div className="flex items-center gap-2">
               <AntTooltip
                 title="Amazon Standard Identification Number - A unique product identifier assigned by Amazon."
@@ -179,7 +179,7 @@ const ProductInfo = ({
                 </div>
               </>
             )}
-          </p>
+          </div>
 
           {product?.rating && (
             <AntTooltip
