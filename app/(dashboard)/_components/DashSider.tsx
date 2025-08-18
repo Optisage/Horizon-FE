@@ -29,7 +29,7 @@ const menuData = [
   { id: "1", path: "/dashboard", label: "Dashboard", icon: DashboardIcon },
   { id: "2", path: "/history", label: "History", icon: HistoryIcon },
   { id: "3", path: "/go-compare", label: "Go Compare", icon: GoCompareIcon },
-  { id: "5", path: "", label: "Keepa", icon: KeepaIcon, comingSoon: true },
+  { id: "5", path: "/keepa", label: "Keepa", icon: KeepaIcon, comingSoon: false },
   {
     id: "6",
     path: "/totan",
