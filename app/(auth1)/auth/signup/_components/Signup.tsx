@@ -1,10 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import { message } from "antd";
 import { IoEyeOffOutline, IoEyeOutline } from "react-icons/io5";
-import { countries, Country } from "@/lib/countries";
+import { MdCancel } from "react-icons/md";
 import {
   HiMiniArrowLongRight,
   HiMiniCheckCircle,
@@ -12,13 +12,52 @@ import {
 } from "react-icons/hi2";
 import Link from "next/link";
 import { CustomSelect as Select } from "@/lib/AntdComponents";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useAuthStep } from "@/context/authContext";
+import { useLazyCreateStripeSubscriptionV2Query } from "@/redux/api/subscriptionApi";
+import {
+  useSetPasswordMutation,
+  useLazyGetProductCategoriesQuery,
+  useLazyGetExperinceLevelQuery,
+  useLazyGetCountriesQuery,
+  useUpdateUserMutation,
+} from "@/redux/api/auth";
 
 const Signup = () => {
   const router = useRouter();
-  const [step, setStep] = useState(0);
+  const searchParams = useSearchParams();
+  const { currentStep, nextStep, setCurrentStep } = useAuthStep();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [dataFetched, setDataFetched] = useState(false);
+  const [isDashboardNavigating, setIsDashboardNavigating] = useState(false);
+
+  // Subscription related states
+  const [refCode, setRefCode] = useState<string>("");
+  const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
+  const [verificationToken, setVerificationToken] = useState<string>("");
+  const [isAmazonConnected, setIsAmazonConnected] = useState<boolean>(false);
+  const [amazonError, setAmazonError] = useState<boolean>(false);
+  const [subscribe, { isLoading }] = useLazyCreateStripeSubscriptionV2Query();
+  const [setPassword, { isLoading: isSettingPassword }] =
+    useSetPasswordMutation();
+  const [messageApi, contextHolder] = message.useMessage();
+
+  // User data from API response
+  const [userData, setUserData] = useState<{
+    first_name: string;
+    last_name: string;
+    email: string;
+    subscription_type?: string;
+  } | null>(null);
+
+  // API queries for dynamic data
+  const [getProductCategories, { data: categoriesData }] =
+    useLazyGetProductCategoriesQuery();
+  const [getExperienceLevel, { data: experienceLevelsData }] =
+    useLazyGetExperinceLevelQuery();
+  const [getCountries, { data: countriesData }] = useLazyGetCountriesQuery();
+  const [updateUser, { isLoading: isUpdatingUser }] = useUpdateUserMutation();
 
   const [form, setForm] = useState({
     fullname: "",
@@ -30,19 +69,338 @@ const Signup = () => {
     country: "",
   });
 
-  const handleNext = () => {
-    if (step === 3 && form.password !== form.confirmPassword) {
-      return message.error("Passwords do not match");
+  // Extract referral code and pricing from URL params
+  useEffect(() => {
+    const ref = searchParams.get("ref");
+    const pricing = searchParams.get("pricing");
+    const urlEmail = searchParams.get("email");
+    const urlFullname = searchParams.get("fullname");
+    const urlStep = searchParams.get("step");
+    const token = searchParams.get("token");
+    const amazonConnected = searchParams.get("amazon_connected");
+    const amazonErrorParam = searchParams.get("amazon_error");
+
+    if (ref || pricing) {
+      setRefCode(ref || "");
+      setSelectedPlan(pricing);
     }
-    setStep((prev) => prev + 1);
+
+    // Pre-fill form data from URL params (from checkout success)
+    if (urlEmail || urlFullname) {
+      setForm((prev) => ({
+        ...prev,
+        email: urlEmail || prev.email,
+        fullname: urlFullname || prev.fullname,
+      }));
+    }
+
+    // Set verification token
+    if (token) {
+      setVerificationToken(token);
+    }
+
+    // Handle Amazon connection status
+    if (amazonConnected === 'true') {
+      setIsAmazonConnected(true);
+      success("Amazon store connected successfully!");
+      
+      // Clean up URL parameters
+      const newUrl = new URL(window.location.href);
+      newUrl.searchParams.delete('amazon_connected');
+      window.history.replaceState({}, '', newUrl.toString());
+    }
+
+    if (amazonErrorParam === 'true') {
+      setAmazonError(true);
+      error("Failed to connect Amazon store. You can continue without connecting or try again later.");
+      
+      // Clean up URL parameters
+      const newUrl = new URL(window.location.href);
+      newUrl.searchParams.delete('amazon_error');
+      window.history.replaceState({}, '', newUrl.toString());
+    }
+
+    // Set the step if specified in URL - this will now sync with AuthSteps
+    if (urlStep) {
+      const stepNumber = parseInt(urlStep, 10);
+      if (stepNumber >= 0 && stepNumber <= 7) {
+        setCurrentStep(stepNumber);
+      }
+    }
+
+    // Fetch data if we're starting at step 3 or later
+    const startingStep = urlStep ? parseInt(urlStep, 10) : currentStep;
+    if (startingStep >= 3 && !dataFetched) {
+      fetchRequiredData();
+    }
+  }, [searchParams, setCurrentStep]);
+
+  // Function to fetch required data with bearer token
+  const fetchRequiredData = () => {
+    getProductCategories({});
+    getExperienceLevel({});
+    getCountries({});
+    setDataFetched(true);
   };
 
-  // const handlePrev = () => setStep((prev) => Math.max(0, prev - 1));
+  // Effect to fetch data when reaching step 3 (Account Created)
+  useEffect(() => {
+    if (currentStep >= 3 && !dataFetched) {
+      fetchRequiredData();
+    }
+  }, [currentStep, dataFetched]);
 
-  // const isPreviewStep = step === 4 || step === 7;
+  const error = (err: string) => {
+    messageApi.open({
+      type: "error",
+      content: err,
+      icon: <MdCancel color="red" size={20} className=" mr-2" />,
+      className: "",
+      style: {
+        marginTop: "5vh",
+        fontSize: 16,
+      },
+    });
+  };
+
+  const success = (msg: string) => {
+    messageApi.open({
+      type: "success",
+      content: msg,
+      style: {
+        marginTop: "5vh",
+        fontSize: 16,
+      },
+    });
+  };
+
+  const confirmSubscription = () => {
+    if (!selectedPlan) {
+      console.error("No plan selected");
+      error("No pricing plan found. Please try again.");
+      return;
+    }
+
+    if (!form.email || !form.fullname) {
+      error("Please provide both name and email");
+      return;
+    }
+
+    const payload: {
+      pricing_id: string;
+      email: string;
+      fullname: string;
+      referral_code?: string;
+    } = {
+      pricing_id: selectedPlan,
+      email: form.email,
+      fullname: form.fullname,
+    };
+
+    if (refCode) {
+      payload.referral_code = refCode;
+    }
+
+    subscribe(payload)
+      .unwrap()
+      .then((res) => {
+        if (res?.data?.url) {
+          if (window.top) {
+            window.top.location.href = res?.data?.url;
+          } else {
+            window.open(res?.data?.url, "_blank");
+          }
+        } else {
+          console.error("No checkout URL returned");
+          error("Failed to create checkout session. Please try again.");
+        }
+      })
+      .catch((err) => {
+        console.error(err);
+        error(err?.data?.message || "An error occurred during checkout");
+      });
+  };
+
+  const handleUpdateUser = async () => {
+    // Only require category, amazonStatus, and country - Amazon connection is optional
+    if (!form.category || !form.amazonStatus || !form.country) {
+      error("Please complete all required fields");
+      return;
+    }
+
+    try {
+      const payload = {
+        category_ids: [parseInt(form.category)],
+        experience_level_id: parseInt(form.amazonStatus),
+        country_id: parseInt(form.country),
+      };
+
+      await updateUser(payload).unwrap();
+
+      success("Profile updated successfully!");
+      
+      // Update both context and URL
+      setCurrentStep(7);
+      
+      // Update the URL to reflect the new step
+      const newUrl = new URL(window.location.href);
+      newUrl.searchParams.set('step', '7');
+      window.history.replaceState({}, '', newUrl.toString());
+      
+    } catch (err: any) {
+      console.error("Update user error:", err);
+      error(
+        err?.data?.message || "Failed to update profile. Please try again."
+      );
+    }
+  };
+
+  const handleSetPassword = async () => {
+    if (form.password !== form.confirmPassword) {
+      error("Passwords do not match");
+      return;
+    }
+
+    if (form.password.length < 6) {
+      error("Password must be at least 6 characters long");
+      return;
+    }
+
+    if (!form.email || !form.password || !verificationToken) {
+      error("Missing required information. Please try again.");
+      return;
+    }
+
+    try {
+      const payload = {
+        email: form.email,
+        password: form.password,
+        password_confirmation: form.confirmPassword,
+      };
+
+      const response = await setPassword({ data: payload, token: verificationToken }).unwrap();
+
+      // Extract user data from the response
+      if (response?.data?.user) {
+        setUserData({
+          first_name: response.data.user.first_name,
+          last_name: response.data.user.last_name,
+          email: response.data.user.email,
+          subscription_type: response.data.user.subscription_type,
+        });
+      }
+
+      success("Password set successfully!");
+      
+      // Update both the context step and the URL to prevent flickering
+      setCurrentStep(3);
+      
+      // Update the URL to reflect the new step
+      const newUrl = new URL(window.location.href);
+      newUrl.searchParams.set('step', '3');
+      // Remove the token from URL since it's no longer needed
+      newUrl.searchParams.delete('token');
+      window.history.replaceState({}, '', newUrl.toString());
+      
+      // Fetch required data now that we have the bearer token
+      if (!dataFetched) {
+        fetchRequiredData();
+      }
+
+    } catch (err: any) {
+      console.error("Set password error:", err);
+      error(err?.data?.message || "Failed to set password. Please try again.");
+    }
+  };
+
+  const handleDashboardNavigation = async () => {
+    setIsDashboardNavigating(true);
+    try {
+      // Add any final API calls or cleanup here if needed
+      await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate loading
+      router.push("/dashboard");
+    } catch (err) {
+      console.error("Dashboard navigation error:", err);
+      error("Failed to navigate to dashboard. Please try again.");
+      setIsDashboardNavigating(false);
+    }
+  };
+
+  const handleNext = () => {
+    // If we're on the password step and have a verification token, call setPassword
+    if (currentStep === 2 && verificationToken) {
+      handleSetPassword();
+      return;
+    }
+
+    // If we're on the country step (step 6), call updateUser
+    if (currentStep === 6) {
+      handleUpdateUser();
+      return;
+    }
+
+    // Basic validation for password step
+    if (currentStep === 2 && form.password !== form.confirmPassword) {
+      error("Passwords do not match");
+      return;
+    }
+
+    // Basic validation for required fields per step
+    if (currentStep === 0 && !form.fullname.trim()) {
+      error("Please enter your full name");
+      return;
+    }
+
+    if (currentStep === 1 && !form.email.trim()) {
+      error("Please enter your email");
+      return;
+    }
+
+    // If we're on the email step (step 1) and have pricing plan, trigger subscription
+    if (currentStep === 1 && selectedPlan && form.email && form.fullname) {
+      confirmSubscription();
+      return;
+    }
+
+    // If this is the final step, go to dashboard with loading state
+    if (currentStep === steps.length - 1) {
+      handleDashboardNavigation();
+      return;
+    }
+
+    // Normal flow progression using context
+    nextStep();
+    
+    // Update URL to match the new step
+    const newStepValue = currentStep + 1;
+    const newUrl = new URL(window.location.href);
+    newUrl.searchParams.set('step', newStepValue.toString());
+    window.history.replaceState({}, '', newUrl.toString());
+
+    // Fetch data when reaching step 3 if not already fetched
+    if (newStepValue >= 3 && !dataFetched) {
+      fetchRequiredData();
+    }
+  };
 
   const handleChange = (key: keyof typeof form, value: string) => {
     setForm((prev) => ({ ...prev, [key]: value }));
+  };
+
+  // Helper function to get the full name
+  const getFullName = () => {
+    if (userData) {
+      return `${userData.first_name} ${userData.last_name}`.trim();
+    }
+    return form.fullname || "Dereck Jackson";
+  };
+
+  // Helper function to get first name only
+  const getFirstName = () => {
+    if (userData) {
+      return userData.first_name;
+    }
+    return form.fullname.split(' ')[0] || "Dereck";
   };
 
   const StepHeader1 = () => (
@@ -50,6 +408,16 @@ const Signup = () => {
       <h1 className="text-[#2E2E2E] text-xl md:text-2xl">Sign up</h1>
       <p className="text-[#4D4D4D] text-base mt-2">
         Welcome, signup with us at Optisage
+      </p>
+    </div>
+  );
+
+  const StepHeader2 = () => (
+    <div className="mb-6">
+      <h1 className="text-[#2E2E2E] text-xl md:text-2xl">Set Your Password</h1>
+      <p className="text-[#4D4D4D] text-base mt-2">
+        {getFullName() !== "Dereck Jackson" ? `Welcome ${getFullName()}! ` : ""}Create a secure
+        password for your account
       </p>
     </div>
   );
@@ -77,7 +445,7 @@ const Signup = () => {
     </div>,
 
     <div key="password" className="flex flex-col mb-16">
-      <StepHeader1 />
+      {verificationToken ? <StepHeader2 /> : <StepHeader1 />}
       <div className="relative mb-4">
         <input
           type={showPassword ? "text" : "password"}
@@ -143,20 +511,20 @@ const Signup = () => {
 
         <span>
           <p className="text-[#121212] font-medium">
-            {form.fullname || "Dereck Jackson"}
+            {getFullName()}
           </p>
           <span className="bg-[#FFC56E] rounded-full py-1 px-3 text-xs text-[#7E5806] mt-1.5">
-            Seller
+            {userData?.subscription_type || "Seller"}
           </span>
         </span>
       </div>
     </div>,
 
-    // Step 4 → Amazaon status
+    // Step 4 → Amazon status
     <div key="amazon-status" className="flex flex-col mb-8">
       <span className="mb-4 block">
         <h2 className="text-[#2E2E2E] text-xl md:text-2xl">
-          Hi, welcome {form.fullname || "Dereck"}
+          Hi, welcome {getFirstName()}
         </h2>
         <p className="text-[#4D4D4D] text-base mt-2">Are you new to Amazon?</p>
       </span>
@@ -164,52 +532,50 @@ const Signup = () => {
       <fieldset className="space-y-2">
         <legend className="sr-only">Amazon Seller Status</legend>
 
-        {[
-          {
-            id: "completely-new",
-            label: "New (0-3 Months)",
-            value: "completely-new",
-          },
-          {
-            id: "relatively-new",
-            label: "Relatively new (4-6 Months)",
-            value: "relatively-new",
-          },
-          {
-            id: "fairly-experienced",
-            label: "Fairly Experienced (6-12 Months)",
-            value: "fairly-experienced",
-          },
-          {
-            id: "experienced",
-            label: "Experience(12 Months)",
-            value: "experienced",
-          },
-        ].map((option) => (
+        {experienceLevelsData?.data?.map((level: any) => (
           <label
-            key={option.id}
-            htmlFor={option.id}
+            key={level.id}
+            htmlFor={`level-${level.id}`}
             className={`flex items-center justify-between text-[#4D4D4D] rounded-[10px] border border-[#E2E2E2] bg-white p-4 text-sm font-medium transition-colors cursor-pointer
-          ${
-            form.amazonStatus === option.value
-              ? "bg-[#EDEDED] ring-1 ring-[#E2E2E2]"
-              : "hover:bg-gray-50"
-          }
-        `}
+        ${
+          form.amazonStatus === level.id.toString()
+            ? "bg-[#EDEDED] ring-1 ring-[#E2E2E2]"
+            : "hover:bg-gray-50"
+        }
+      `}
           >
-            <span>{option.label}</span>
+            <span>
+              {level.name} ({level.description})
+            </span>
 
             <input
               type="radio"
               name="amazonStatus"
-              id={option.id}
-              value={option.value}
-              checked={form.amazonStatus === option.value}
+              id={`level-${level.id}`}
+              value={level.id.toString()}
+              checked={form.amazonStatus === level.id.toString()}
               onChange={(e) => handleChange("amazonStatus", e.target.value)}
-              className="sr-only"
+              className="opacity-0 absolute h-0 w-0"
             />
+
+            <div
+              className={`flex items-center justify-center w-5 h-5 border-2 rounded-full 
+        ${
+          form.amazonStatus === level.id.toString()
+            ? "border-[#18CB96] bg-[#18CB96]"
+            : "border-gray-300"
+        }`}
+            >
+              {form.amazonStatus === level.id.toString() && (
+                <div className="w-2 h-2 bg-white rounded-full"></div>
+              )}
+            </div>
           </label>
-        ))}
+        )) || (
+          <div className="text-center py-4 text-gray-500">
+            Loading experience levels...
+          </div>
+        )}
       </fieldset>
     </div>,
 
@@ -217,7 +583,7 @@ const Signup = () => {
     <div key="category" className="flex flex-col mb-16">
       <span className="mb-8 block">
         <h2 className="text-[#2E2E2E] text-xl md:text-2xl">
-          Hi, welcome {form.fullname || "Dereck"}
+          Hi, welcome {getFirstName()}
         </h2>
         <p className="text-[#4D4D4D] text-base mt-2">
           Select a category of products you are most interested in selling.
@@ -228,21 +594,15 @@ const Signup = () => {
         className="sm:min-w-[280px] !h-[65px]"
         style={{ width: "100%" }}
         placeholder="Select categories"
+        value={form.category || undefined}
         onChange={(value: string) => handleChange("category", value)}
-        options={[
-          {
-            value: "beauty_and_personal_care",
-            label: "Beauty & Personal care",
-          },
-          {
-            value: "clothing_and_accessories",
-            label: "Clothing & Accessories",
-          },
-          {
-            value: "toys_and_pet_care",
-            label: "Toys & Pet Care",
-          },
-        ]}
+        options={
+          categoriesData?.data?.map((category: any) => ({
+            value: category.id.toString(),
+            label: category.category_name,
+          })) || []
+        }
+        loading={!categoriesData}
       />
 
       <div className="mt-5 flex justify-end">
@@ -251,7 +611,7 @@ const Signup = () => {
           className="text-xs text-[#596375] underline flex items-center gap-1.5"
         >
           <HiOutlinePlayCircle size={20} />
-          Don’t know what to pick? Watch a Tutorial.
+          Don't know what to pick? Watch a Tutorial.
         </Link>
       </div>
     </div>,
@@ -294,26 +654,29 @@ const Signup = () => {
         className="w-full !h-[65px]"
         value={form.country || undefined}
         onChange={(value: string) => handleChange("country", value)}
-        options={countries.map((country: Country) => ({
-          value: country.code,
-          label: (
-            <div className="flex items-center gap-2">
-              <Image
-                src={country.flag}
-                alt={country.name}
-                width={20}
-                height={15}
-                className="rounded-sm"
-              />
-              {country.name}
-            </div>
-          ),
-        }))}
+        loading={!countriesData}
+        options={
+          countriesData?.data?.map((country: any) => ({
+            value: country.id.toString(),
+            label: (
+              <div className="flex items-center gap-2">
+                <Image
+                  src={country.flag_url}
+                  alt={country.name}
+                  width={20}
+                  height={15}
+                  className="rounded-sm"
+                />
+                {country.name}
+              </div>
+            ),
+          })) || []
+        }
       />
 
       <span className="text-sm text-center mt-4">
-        <Link href="" className="text-[#4D4D4D]">
-          Don’t have an Amazon Account?{" "}
+        <Link href="https://sellercentral.amazon.com/ap/register" className="text-[#4D4D4D]">
+          Don't have an Amazon Account?{" "}
           <span className="text-[#3895F9] underline">Signup here</span>
         </Link>
       </span>
@@ -340,10 +703,10 @@ const Signup = () => {
 
         <span className="flex-1">
           <p className="text-[#121212] font-medium">
-            {form.fullname || "Dereck Jackson"}
+            {getFullName()}
           </p>
           <span className="bg-[#FFC56E] rounded-full py-1 px-3 text-xs text-[#7E5806] mt-1.5">
-            Seller
+            {userData?.subscription_type || "Seller"}
           </span>
         </span>
 
@@ -352,33 +715,56 @@ const Signup = () => {
     </div>,
   ];
 
+  const getButtonText = () => {
+    if (currentStep === 1 && selectedPlan) {
+      return "Proceed to Checkout";
+    }
+    if (currentStep === 2 && verificationToken) {
+      return "Set Password";
+    }
+    if (currentStep === 6) {
+      return "Complete Profile";
+    }
+    if (currentStep < 3) {
+      return "Submit";
+    }
+    if (currentStep === steps.length - 1) {
+      return "Go to Dashboard";
+    }
+    return "Continue";
+  };
+
+  const isButtonLoading = () => {
+    if (currentStep === 1 && selectedPlan) {
+      return isLoading;
+    }
+    if (currentStep === 2 && verificationToken) {
+      return isSettingPassword;
+    }
+    if (currentStep === 6) {
+      return isUpdatingUser;
+    }
+    if (currentStep === steps.length - 1) {
+      return isDashboardNavigating;
+    }
+    return false;
+  };
+
   return (
     <div>
-      <div>{steps[step]}</div>
+      {contextHolder}
+      <div>{steps[currentStep]}</div>
 
       <div className="flex flex-col gap-4">
-        {/* {step > 0 && (
-          <button onClick={handlePrev} className="">
-            Back
-          </button>
-        )} */}
-
         <button
           type="submit"
-          onClick={() => {
-            if (step === steps.length - 1) {
-              router.push(""); // go to dashboard
-            } else {
-              handleNext();
-            }
-          }}
-          className="w-full border-4 border-[#18CB9659] bg-[#18CB96] hover:bg-[#18CB96]/90 transition-colors duration-200 rounded-lg h-[60px] p-4 text-white"
+          onClick={handleNext}
+          disabled={isButtonLoading()}
+          className={`w-full border-4 border-[#18CB9659] bg-[#18CB96] hover:bg-[#18CB96]/90 transition-colors duration-200 rounded-lg h-[60px] p-4 text-white ${
+            isButtonLoading() ? "opacity-70 cursor-not-allowed" : ""
+          }`}
         >
-          {step < 3
-            ? "Submit"
-            : step === steps.length - 1
-            ? "Go to Dashboard"
-            : "Continue"}
+          {isButtonLoading() ? "Processing..." : getButtonText()}
         </button>
       </div>
     </div>
@@ -386,4 +772,3 @@ const Signup = () => {
 };
 
 export default Signup;
-
