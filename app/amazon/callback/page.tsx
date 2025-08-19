@@ -14,6 +14,14 @@ export default function CallbackPage() {
   const spapiOauthCode = searchParams.get("spapi_oauth_code");
   const sellingPartnerId = searchParams.get("selling_partner_id");
 
+  const handleUseAnotherAccount = () => {
+    const signupUrl = new URL('/signUp', window.location.origin);
+    signupUrl.searchParams.set('step', '6');
+    signupUrl.searchParams.set('amazon_connected', 'false'); // Set status to false
+    
+    router.push(signupUrl.toString());
+  };
+
   useEffect(() => {
     const verifyAmazonAuth = async () => {
       try {
@@ -23,7 +31,7 @@ export default function CallbackPage() {
         }).unwrap();
 
         // If successful, redirect back to signup page at step 6 with amazon_connected=true
-        const signupUrl = new URL('/auth/signup', window.location.origin);
+        const signupUrl = new URL('/auth/signUp', window.location.origin);
         signupUrl.searchParams.set('step', '6');
         signupUrl.searchParams.set('amazon_connected', 'true');
         
@@ -46,7 +54,7 @@ export default function CallbackPage() {
           setConnected(true); // This should trigger a rerender immediately
         } else {
           // For other errors, redirect back to signup with error
-          const signupUrl = new URL('/auth/signup', window.location.origin);
+          const signupUrl = new URL('/auth/signUp', window.location.origin);
           signupUrl.searchParams.set('step', '6');
           signupUrl.searchParams.set('amazon_error', 'true');
           
@@ -59,7 +67,7 @@ export default function CallbackPage() {
       verifyAmazonAuth();
     } else {
       // If no required parameters, redirect back to signup
-      const signupUrl = new URL('/auth/signup', window.location.origin);
+      const signupUrl = new URL('/auth/signUp', window.location.origin);
       signupUrl.searchParams.set('step', '6');
       signupUrl.searchParams.set('amazon_error', 'true');
       
@@ -79,7 +87,10 @@ export default function CallbackPage() {
           Failed to authenticate. Please try again.
         </p>
       )}
-      <ConnectedModal isConnectedVisible={connected} />
+      <ConnectedModal 
+        isConnectedVisible={connected} 
+        onUseAnotherAccount={handleUseAnotherAccount}
+      />
     </div>
   );
 }

@@ -1,4 +1,5 @@
 "use client";
+/* eslint-disable react/no-unescaped-entities */
 import { useVerifyStripeSubscriptionMutation } from "@/redux/api/subscriptionApi";
 import Image from "next/image";
 import Link from "next/link";
@@ -63,7 +64,7 @@ export default function StripeCheckout() {
     if (verificationToken) params.set("token", verificationToken);
 
     // Navigate to signup page with user data and token
-    router.push(`/auth/signup?${params.toString()}`);
+    router.push(`/signUp?${params.toString()}`);
   };
 
   const handleRetryPayment = () => {

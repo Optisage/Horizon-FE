@@ -34,7 +34,7 @@ const AuthSteps = () => {
     setDisplayStep(currentStep);
   }, [currentStep]);
 
-  if (pathname !== "/auth/signup") return null;
+  if (pathname !== "/signUp") return null;
 
   // Map the signup component steps to the 3 main steps
   const getMainStep = (step: number) => {
@@ -55,6 +55,21 @@ const AuthSteps = () => {
     if (stepNumber < mainStep) return "completed";
     if (stepNumber === mainStep) return "active";
     return "inactive";
+  };
+
+  // NEW: Function to handle clicking on a step
+  const handleStepClick = (stepNumber: number) => {
+    const status = getStepStatus(stepNumber);
+    // Only allow navigating back to "Select Category" (step 2) if it's already completed
+    if (stepNumber === 2 && status === "completed") {
+      const targetStep = 4; // The first sub-step for "Select Category"
+      setCurrentStep(targetStep);
+
+      // Also, update the URL to keep the state consistent
+      const newUrl = new URL(window.location.href);
+      newUrl.searchParams.set("step", targetStep.toString());
+      window.history.replaceState({}, "", newUrl.toString());
+    }
   };
 
   const getStepStyles = (status: string) => {
@@ -86,9 +101,18 @@ const AuthSteps = () => {
         const status = getStepStatus(step.number);
         const styles = getStepStyles(status);
         const isLastStep = index === steps.length - 1;
+        // NEW: Determine if the step should be clickable
+        const isClickable = step.number === 2 && status === "completed";
 
         return (
-          <div key={step.number} className="flex items-start gap-4">
+          // MODIFIED: Added onClick handler and conditional cursor style
+          <div
+            key={step.number}
+            className={`flex items-start gap-4 ${
+              isClickable ? "cursor-pointer" : ""
+            }`}
+            onClick={() => handleStepClick(step.number)}
+          >
             <div className="flex flex-col items-center">
               <span
                 className={`rounded-full size-9 flex items-center justify-center transition-all duration-300 ${styles.circle}`}
