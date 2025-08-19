@@ -6,4 +6,5 @@ export { default as SubscriptionsIcon } from "./subscriptions-icon";
 export { default as HistoryIcon } from "./history-icon";
 export { default as GoCompareIcon } from "./goCompare-icon";
 export { default as UPCScannerIcon } from "./upc-scanner-icon";
+export { default as TotanAIIcon } from "./totan-ai-icon";
 
