@@ -1,5 +1,5 @@
 "use client";
-/* eslint-disable  @typescript-eslint/no-unused-vars */
+
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { IoEyeOffOutline, IoEyeOutline } from "react-icons/io5";
@@ -21,7 +21,7 @@ const SignUp = () => {
   const [signUp, { data, isLoading }] = useSetPasswordMutation();
   const [login] = useLoginMutation();
   const [messageApi, contextHolder] = message.useMessage();
-  
+  console.log(data);
 
   useEffect(() => {
     // Extract the expires value from the URL
@@ -31,7 +31,7 @@ const SignUp = () => {
     const tokenValue = params.get("signature");
     if (expiresValue) {
       setExpires(expiresValue);
-      //console.log("Expires value set to:", expiresValue); // Log the value
+      console.log("Expires value set to:", expiresValue); // Log the value
     }
     if (tokenValue) setToken(tokenValue);
     if (emailValue) setEmail(emailValue);
@@ -79,7 +79,7 @@ const SignUp = () => {
         messageApi.success("Registration & Login Successful");
       } catch (error) {
         messageApi.error("Registration Failed");
-        //console.log(error);
+        console.log(error);
       }
     },
   });
