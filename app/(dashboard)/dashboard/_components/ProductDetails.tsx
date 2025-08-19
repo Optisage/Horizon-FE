@@ -398,5 +398,5 @@ const ProductDetails = React.memo(({ asin, marketplaceId }: ProductDetailsProps)
     </>
   )
 });
-
+ProductDetails.displayName = "ProductDetails";
 export default ProductDetails;
