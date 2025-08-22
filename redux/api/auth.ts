@@ -87,6 +87,25 @@ export const authApi = createApi({
         method: "POST",
         body: data,
       }),
+      onQueryStarted: async (id, { dispatch, queryFulfilled }) => {
+        try {
+          const { data } = await queryFulfilled;
+          const token = data?.data?.token;
+
+          // Set cookie (web app)
+          Cookies.set("optisage-token", token, {
+            expires: new Date(new Date().getTime() + 6 * 60 * 60 * 1000),
+            path: "/",
+            sameSite: "None",
+            secure: true,
+          });
+
+          dispatch(setUser(data?.data.user));
+
+        } catch (error) {
+          console.error("Set password failed:", error);
+        }
+      },
     }),
     forgetPassword: builder.mutation({
       query: (data) => ({
@@ -139,9 +158,34 @@ export const authApi = createApi({
         body: data,
       }),
     }),
+    updateUser: builder.mutation({
+      query: (data) => ({
+        url: "auth/update-user",
+        method: "POST",
+        body: data,
+      }),
+    }),
     getPricing: builder.query<any, {}>({
       query: () => ({
         url: "pricing",
+        method: "GET",
+      }),
+    }),
+    getProductCategories: builder.query({
+      query: () => ({
+        url: "auth/product-categories",
+        method: "GET",
+      }),
+    }),
+    getExperinceLevel: builder.query({
+      query: () => ({
+        url: "auth/experience-levels",
+        method: "GET",
+      }),
+    }),
+    getCountries: builder.query({
+      query: () => ({
+        url: "auth/countries",
         method: "GET",
       }),
     }),
@@ -164,5 +208,8 @@ export const {
   useLazyAmazonAuthQuery,
   useResendVerificationMutation,
   useChangePasswordMutation,
+  useLazyGetCountriesQuery,
+  useLazyGetExperinceLevelQuery,
+  useLazyGetProductCategoriesQuery,
+  useUpdateUserMutation
 } = authApi;
-
