@@ -1,0 +1,138 @@
+diff --git a/app/amazon/callback/modal.tsx b/app/amazon/callback/modal.tsx
+index 9f99d37..736f6bd 100644
+--- a/app/amazon/callback/modal.tsx
++++ b/app/amazon/callback/modal.tsx
+@@ -2,12 +2,20 @@ import { Modal } from "antd";
+ import Image from "next/image";
+ import Link from "next/link";
+ import phone from "../../../public/assets/svg/phone.svg";
++
+ interface modal {
+   isConnectedVisible: boolean;
+-  //setIsConnectedVisible: ()=> void,
++  onUseAnotherAccount: () => void; // Add callback function
+ }
+ 
+-export default function ConnectedModal({ isConnectedVisible }: modal) {
++export default function ConnectedModal({ 
++  isConnectedVisible, 
++  onUseAnotherAccount 
++}: modal) {
++  const handleUseAnotherAccount = () => {
++    onUseAnotherAccount();
++  };
++
+   return (
+     <>
+       <Modal
+@@ -38,11 +46,12 @@ export default function ConnectedModal({ isConnectedVisible }: modal) {
+             </h1>
+           </div>
+           <div className=" grid grid-cols-1 gap-4">
+-            <Link href={"/connect-amazon"} className=" w-full">
+-              <button className=" w-full text-white px-4 py-2 bg-[#18CB96] border rounded-lg font-medium !h-[40px] shadow-[0px_-3px_0px_0px_#0000001A_inset]">
+-                Use another account
+-              </button>
+-            </Link>
++            <button 
++              onClick={handleUseAnotherAccount}
++              className=" w-full text-white px-4 py-2 bg-[#18CB96] border rounded-lg font-medium !h-[40px] shadow-[0px_-3px_0px_0px_#0000001A_inset]"
++            >
++              Use another account
++            </button>
+ 
+             <p className=" text-center text-xs text-[#5F6362]">
+               <span>Have any issues? </span>
+@@ -65,5 +74,4 @@ export default function ConnectedModal({ isConnectedVisible }: modal) {
+       `}</style>
+     </>
+   );
+-}
+-
++}
+\ No newline at end of file
+diff --git a/app/amazon/callback/page.tsx b/app/amazon/callback/page.tsx
+index f5f7558..51a9bd5 100644
+--- a/app/amazon/callback/page.tsx
++++ b/app/amazon/callback/page.tsx
+@@ -14,6 +14,14 @@ export default function CallbackPage() {
+   const spapiOauthCode = searchParams.get("spapi_oauth_code");
+   const sellingPartnerId = searchParams.get("selling_partner_id");
+ 
++  const handleUseAnotherAccount = () => {
++    const signupUrl = new URL('/signUp', window.location.origin);
++    signupUrl.searchParams.set('step', '6');
++    signupUrl.searchParams.set('amazon_connected', 'false'); // Set status to false
++    
++    router.push(signupUrl.toString());
++  };
++
+   useEffect(() => {
+     const verifyAmazonAuth = async () => {
+       try {
+@@ -22,7 +30,13 @@ export default function CallbackPage() {
+           selling_partner_id: sellingPartnerId,
+         }).unwrap();
+ 
+-        router.push("/dashboard");
++        // If successful, redirect back to signup page at step 6 with amazon_connected=true
++        const signupUrl = new URL('/auth/signUp', window.location.origin);
++        signupUrl.searchParams.set('step', '6');
++        signupUrl.searchParams.set('amazon_connected', 'true');
++        
++        router.push(signupUrl.toString());
++        
+       } catch (err) {
+         console.error(err);
+         setLoading(false);
+@@ -38,25 +52,45 @@ export default function CallbackPage() {
+           (err as ApiError)?.originalStatus === 401
+         ) {
+           setConnected(true); // This should trigger a rerender immediately
++        } else {
++          // For other errors, redirect back to signup with error
++          const signupUrl = new URL('/auth/signUp', window.location.origin);
++          signupUrl.searchParams.set('step', '6');
++          signupUrl.searchParams.set('amazon_error', 'true');
++          
++          router.push(signupUrl.toString());
+         }
+       }
+     };
+ 
+     if (spapiOauthCode && sellingPartnerId) {
+       verifyAmazonAuth();
++    } else {
++      // If no required parameters, redirect back to signup
++      const signupUrl = new URL('/auth/signUp', window.location.origin);
++      signupUrl.searchParams.set('step', '6');
++      signupUrl.searchParams.set('amazon_error', 'true');
++      
++      router.push(signupUrl.toString());
+     }
+-  }, [searchParams, spapiOauthCode, sellingPartnerId, router]); // Removed amazonVerify from deps
++  }, [searchParams, spapiOauthCode, sellingPartnerId, router, amazonVerify]);
+ 
+   return (
+     <div className="flex items-center justify-center min-h-screen">
+       {loading ? (
+-        <div className="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-primary"></div>
++        <div className="flex flex-col items-center gap-4">
++          <div className="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-primary"></div>
++          <p className="text-gray-600">Connecting your Amazon store...</p>
++        </div>
+       ) : (
+         <p className="text-red-500">
+           Failed to authenticate. Please try again.
+         </p>
+       )}
+-      <ConnectedModal isConnectedVisible={connected} />
++      <ConnectedModal 
++        isConnectedVisible={connected} 
++        onUseAnotherAccount={handleUseAnotherAccount}
++      />
+     </div>
+   );
+-}
++}
+\ No newline at end of file
