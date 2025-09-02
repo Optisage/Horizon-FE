@@ -25,8 +25,34 @@ import { useDispatch } from "react-redux";
 import { logout } from "@/redux/slice/authSlice";
 import { BsStars } from "react-icons/bs";
 
+// Types for menu items
+type BaseMenuItem = {
+  id: string;
+  label: string;
+  icon: any;
+};
+
+type LinkMenuItem = BaseMenuItem & {
+  path: string;
+  comingSoon?: boolean;
+  beta?: boolean;
+};
+
+type ExternalMenuItem = BaseMenuItem & {
+  path: string;
+  external: true;
+};
+
+type ButtonMenuItem = BaseMenuItem & {
+  isButton: true;
+  onClick: () => void;
+  comingSoon?: boolean;
+};
+
+type MenuItem = LinkMenuItem | ExternalMenuItem | ButtonMenuItem;
+
 // Sidebar data
-const menuData = [
+const menuData: LinkMenuItem[] = [
   { id: "1", path: "/dashboard", label: "Dashboard", icon: DashboardIcon },
   { id: "2", path: "/history", label: "History", icon: HistoryIcon },
   { id: "3", path: "/go-compare", label: "Go Compare", icon: GoCompareIcon },
@@ -42,13 +68,12 @@ const menuData = [
   { id: "7", path: "/upc-scanner", label: "UPC Scanner", icon: UPCScannerIcon },
 ];
 
-const secondaryMenu = [
+const secondaryMenu: MenuItem[] = [
   { id: "8", path: "/settings", label: "Settings", icon: SettingsIcon },
   { id: "9", path: "", label: "Credit", icon: CreditIcon, comingSoon: true },
-  { id: "11", path: "https://crm.optisage.ai/authentication/login", label: "Support", icon: MdSupport, external: true },
 ];
 
-const billingMenu = [
+const billingMenu: LinkMenuItem[] = [
   {
     id: "10",
     path: "/subscriptions",
@@ -76,13 +101,8 @@ const DashSider = () => {
     setActivePath(pathName);
   }, [pathName]);
 
-  const renderMenu = (menu: typeof menuData) =>
+  const renderMenu = (menu: MenuItem[]) =>
     menu.map((item) => {
-      const isExternal = (item as any).external;
-      const linkProps = isExternal 
-        ? { target: "_blank", rel: "noopener noreferrer" }
-        : {};
-      
       const commonContent = (
         <>
           <item.icon
@@ -91,12 +111,12 @@ const DashSider = () => {
             }`}
           />
           <span>{item.label}</span>
-          {(item as any).comingSoon && (
+          {"comingSoon" in item && item.comingSoon && (
             <span className="ml-auto bg-primary text-white text-xs px-1.5 py-0.5 rounded-md">
               Coming Soon
             </span>
           )}
-          {(item as any).beta && (
+          {"beta" in item && item.beta && (
             <span className="ml-5 bg-primary text-white text-xs px-1.5 py-0.5 rounded-md">
               Beta
             </span>
@@ -105,24 +125,41 @@ const DashSider = () => {
       );
 
       const commonClassName = `flex items-center px-4 py-3 rounded-md text-sm cursor-pointer ${
-        activePath === item.path
+        "path" in item && activePath === item.path
           ? "bg-[#EDEDEE] text-[#01011D] font-semibold"
           : "text-[#787891] hover:bg-white"
       }`;
 
-      if (isExternal) {
+      // Type guard for button items
+      if ("isButton" in item && item.isButton) {
+        return (
+          <button
+            key={item.id}
+            className={commonClassName}
+            onClick={item.onClick}
+            type="button"
+          >
+            {commonContent}
+          </button>
+        );
+      }
+
+      // Type guard for external items
+      if ("external" in item && item.external) {
         return (
           <a
             href={item.path}
             key={item.id}
             className={commonClassName}
-            {...linkProps}
+            target="_blank"
+            rel="noopener noreferrer"
           >
             {commonContent}
           </a>
         );
       }
 
+      // Regular link items (LinkMenuItem)
       return (
         <Link
           href={item.path}
@@ -178,6 +215,22 @@ const DashSider = () => {
         </div>
 
         <div>
+          {/* Support */}
+          <div className="p-4 border-t border-gray-200 mt-6">
+            <p className="text-sm font-medium">
+              Need Help? Contact Support
+            </p>
+            <p className="text-xs text-gray-500 mt-1">
+              Get assistance with your account, technical issues, or any questions about optisage.
+            </p>
+            <button
+              onClick={() => window.open("https://crm.optisage.ai/forms/ticket?styled=1", "_blank")}
+              className="bg-primary hover:bg-primary-hover duration-200 text-white text-sm font-medium px-4 py-2 rounded-md w-full mt-3 active:scale-95"
+            >
+              Contact Support
+            </button>
+          </div>
+
           {/* Invite & Earn */}
           <div className="p-4 border-t border-gray-200 mt-6">
             <p className="text-sm font-medium">
