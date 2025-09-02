@@ -19,6 +19,7 @@ import {
 import LogoutModal from "./LogoutModal";
 import { BiChevronRight } from "react-icons/bi";
 import { RiVerifiedBadgeFill } from "react-icons/ri";
+import { MdSupport } from "react-icons/md";
 import { useAppSelector } from "@/redux/hooks";
 import { useDispatch } from "react-redux";
 import { logout } from "@/redux/slice/authSlice";
@@ -44,6 +45,7 @@ const menuData = [
 const secondaryMenu = [
   { id: "8", path: "/settings", label: "Settings", icon: SettingsIcon },
   { id: "9", path: "", label: "Credit", icon: CreditIcon, comingSoon: true },
+  { id: "11", path: "https://crm.optisage.ai/authentication/login", label: "Support", icon: MdSupport, external: true },
 ];
 
 const billingMenu = [
@@ -75,35 +77,62 @@ const DashSider = () => {
   }, [pathName]);
 
   const renderMenu = (menu: typeof menuData) =>
-    menu.map((item) => (
-      <Link
-        href={item.path}
-        key={item.id}
-        className={`flex items-center px-4 py-3 rounded-md text-sm cursor-pointer ${
-          activePath === item.path
-            ? "bg-[#EDEDEE] text-[#01011D] font-semibold"
-            : "text-[#787891] hover:bg-white"
-        }`}
-      >
-        <item.icon
-          className={`size-5 mr-3 text-inherit ${
-            item.id === "4" ? "rotate-90" : ""
-          }`}
-        />
+    menu.map((item) => {
+      const isExternal = (item as any).external;
+      const linkProps = isExternal 
+        ? { target: "_blank", rel: "noopener noreferrer" }
+        : {};
+      
+      const commonContent = (
+        <>
+          <item.icon
+            className={`size-5 mr-3 text-inherit ${
+              item.id === "4" ? "rotate-90" : ""
+            }`}
+          />
+          <span>{item.label}</span>
+          {(item as any).comingSoon && (
+            <span className="ml-auto bg-primary text-white text-xs px-1.5 py-0.5 rounded-md">
+              Coming Soon
+            </span>
+          )}
+          {(item as any).beta && (
+            <span className="ml-5 bg-primary text-white text-xs px-1.5 py-0.5 rounded-md">
+              Beta
+            </span>
+          )}
+        </>
+      );
 
-        <span>{item.label}</span>
-        {item.comingSoon && (
-          <span className="ml-auto bg-primary text-white text-xs px-1.5 py-0.5 rounded-md">
-            Coming Soon
-          </span>
-        )}
-        {item.beta && (
-          <span className="ml-5 bg-primary text-white text-xs px-1.5 py-0.5 rounded-md">
-            Beta
-          </span>
-        )}
-      </Link>
-    ));
+      const commonClassName = `flex items-center px-4 py-3 rounded-md text-sm cursor-pointer ${
+        activePath === item.path
+          ? "bg-[#EDEDEE] text-[#01011D] font-semibold"
+          : "text-[#787891] hover:bg-white"
+      }`;
+
+      if (isExternal) {
+        return (
+          <a
+            href={item.path}
+            key={item.id}
+            className={commonClassName}
+            {...linkProps}
+          >
+            {commonContent}
+          </a>
+        );
+      }
+
+      return (
+        <Link
+          href={item.path}
+          key={item.id}
+          className={commonClassName}
+        >
+          {commonContent}
+        </Link>
+      );
+    });
 
   return (
     <div className="drawer-side z-50">
