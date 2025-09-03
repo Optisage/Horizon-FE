@@ -20,10 +20,6 @@ import {
 } from "@/redux/slice/chatSlice"
 import Link from "next/link"
 
-import { useAppDispatch } from "@/redux/hooks"
-
-import Link from "next/link"
-
 interface ProductStatsProps {
   product: Product | undefined
   isLoading?: boolean
@@ -79,11 +75,6 @@ const ProductStats = forwardRef(({
   // RTK Query hooks
   const [analyzeMutation] = useAnalyzeMutation()
   const [getPurchaseQuantity] = useLazyPurchaseQuantityQuery()
-
-
-  const [messageApi, contextHolder] = message.useMessage();
-
-
 
   // Get the data from the correct sources
   const extra = buyboxDetails?.extra || product?.extra
@@ -461,7 +452,6 @@ Now you can ask me any questions about this product! 💬`
    
         <button
           type="button"
-          disabled
           onClick={() => setActiveTab("totan")}
           className={`px-4 py-2 rounded-full ${
             activeTab === "totan" ? "bg-primary text-white" : "bg-[#F3F4F6] text-[#676A75]"

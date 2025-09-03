@@ -5,6 +5,7 @@ import { Tooltip as AntTooltip, message } from "antd"
 //import { Copy, Check } from "lucide-react"
 import { BsCopy } from "react-icons/bs";
 import { LuCheck } from "react-icons/lu";
+//import { Copy, Check } from "lucide-react"
 import { useState } from "react"
 import ProductThumbnail from "@/public/assets/images/women-shoes.png"
 import Illustration from "@/public/assets/svg/illustration.svg"
@@ -34,40 +35,6 @@ const ProductInfo = ({
   isLoadingIpData,
 }: ProductInfoProps) => {
   const { handleVariationChange } = useProductVariation(asin, marketplaceId)
-  const [copiedAsin, setCopiedAsin] = useState(false)
-  const [copiedUpc, setCopiedUpc] = useState(false)
-
-  const copyAsinToClipboard = async () => {
-    try {
-      await navigator.clipboard.writeText(asin)
-      setCopiedAsin(true)
-      message.success("ASIN copied to clipboard!")
-      
-      // Reset the copied state after 2 seconds
-      setTimeout(() => {
-        setCopiedAsin(false)
-      }, 2000)
-    } catch (err) {
-      console.error("Failed to copy ASIN: ", err)
-      message.error("Failed to copy ASIN")
-    }
-  }
-
-  const copyUpcToClipboard = async () => {
-    try {
-      await navigator.clipboard.writeText(product?.upc)
-      setCopiedUpc(true)
-      message.success("UPC copied to clipboard!")
-      
-      // Reset the copied state after 2 seconds
-      setTimeout(() => {
-        setCopiedUpc(false)
-      }, 2000)
-    } catch (err) {
-      console.error("Failed to copy UPC: ", err)
-      message.error("Failed to copy UPC")
-    }
-  }
   const [copiedAsin, setCopiedAsin] = useState(false)
   const [copiedUpc, setCopiedUpc] = useState(false)
 
@@ -215,7 +182,6 @@ const ProductInfo = ({
                 </div>
               </>
             )}
-          </div>
           </div>
 
           {product?.rating && (
