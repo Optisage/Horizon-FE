@@ -1,4 +1,7 @@
 "use client"
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-unused-vars*/
+
 import { useLazyGetPricingQuery } from "@/redux/api/auth";
 import { useEffect, useState } from "react";
 import { IoIosCheckmarkCircle } from "react-icons/io";
