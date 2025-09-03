@@ -2,7 +2,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import Image from "next/image"
 import { Tooltip as AntTooltip, message } from "antd"
-import { Copy, Check } from "lucide-react"
+//import { Copy, Check } from "lucide-react"
+import { BsCopy } from "react-icons/bs";
+import { LuCheck } from "react-icons/lu";
+//import { Copy, Check } from "lucide-react"
 import { useState } from "react"
 import ProductThumbnail from "@/public/assets/images/women-shoes.png"
 import Illustration from "@/public/assets/svg/illustration.svg"
@@ -144,9 +147,9 @@ const ProductInfo = ({
                   aria-label="Copy ASIN"
                 >
                   {copiedAsin ? (
-                    <Check className="w-4 h-4 text-green-500" />
+                    <LuCheck className="w-4 h-4 text-green-500" />
                   ) : (
-                    <Copy className="w-4 h-4 text-gray-500 group-hover:text-gray-700" />
+                    <BsCopy className="w-4 h-4 text-gray-500 group-hover:text-gray-700" />
                   )}
                 </button>
               </AntTooltip>
@@ -170,9 +173,9 @@ const ProductInfo = ({
                       aria-label="Copy UPC"
                     >
                       {copiedUpc ? (
-                        <Check className="w-4 h-4 text-green-500" />
+                        <LuCheck className="w-4 h-4 text-green-500" />
                       ) : (
-                        <Copy className="w-4 h-4 text-gray-500 group-hover:text-gray-700" />
+                        <BsCopy className="w-4 h-4 text-gray-500 group-hover:text-gray-700" />
                       )}
                     </button>
                   </AntTooltip>
