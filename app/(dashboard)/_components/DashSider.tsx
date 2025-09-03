@@ -58,14 +58,14 @@ const menuData: LinkMenuItem[] = [
   { id: "3", path: "/go-compare", label: "Go Compare", icon: GoCompareIcon },
   { id: "5", path: "/keepa", label: "Keepa", icon: KeepaIcon, comingSoon: false },
   {
-    id: "6",
+    id: "5",
     path: "/totan",
     label: "Totan (AI)",
     icon: BsStars,
     comingSoon: false,
     beta: true,
   },
-  { id: "7", path: "/upc-scanner", label: "UPC Scanner", icon: UPCScannerIcon },
+  { id: "6", path: "/upc-scanner", label: "UPC Scanner", icon: UPCScannerIcon },
 ];
 
 const secondaryMenu: MenuItem[] = [
@@ -75,7 +75,7 @@ const secondaryMenu: MenuItem[] = [
 
 const billingMenu: LinkMenuItem[] = [
   {
-    id: "10",
+    id: "9",
     path: "/subscriptions",
     label: "Subscriptions",
     icon: SubscriptionsIcon,

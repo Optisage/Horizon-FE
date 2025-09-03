@@ -80,7 +80,7 @@ export default function QuickSearch() {
     )
 
     const handleDragStart = (event: DragStartEvent) => {
-        console.log("Drag started:", event)
+       
         const { active } = event
         const draggedProduct = data?.opportunities.find(
             (product) => product.scraped_product.id === active.id
@@ -92,7 +92,7 @@ export default function QuickSearch() {
 
     const handleDragEnd = (event: DragEndEvent) => {
         const { active, over } = event
-        console.log("Drag ended:", { active, over })
+       
         setActiveProduct(null)
         if (over && over.id === "droppable-area") {
             const draggedProduct = data?.opportunities.find(

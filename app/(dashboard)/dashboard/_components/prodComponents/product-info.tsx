@@ -68,6 +68,40 @@ const ProductInfo = ({
       message.error("Failed to copy UPC")
     }
   }
+  const [copiedAsin, setCopiedAsin] = useState(false)
+  const [copiedUpc, setCopiedUpc] = useState(false)
+
+  const copyAsinToClipboard = async () => {
+    try {
+      await navigator.clipboard.writeText(asin)
+      setCopiedAsin(true)
+      message.success("ASIN copied to clipboard!")
+      
+      // Reset the copied state after 2 seconds
+      setTimeout(() => {
+        setCopiedAsin(false)
+      }, 2000)
+    } catch (err) {
+      console.error("Failed to copy ASIN: ", err)
+      message.error("Failed to copy ASIN")
+    }
+  }
+
+  const copyUpcToClipboard = async () => {
+    try {
+      await navigator.clipboard.writeText(product?.upc)
+      setCopiedUpc(true)
+      message.success("UPC copied to clipboard!")
+      
+      // Reset the copied state after 2 seconds
+      setTimeout(() => {
+        setCopiedUpc(false)
+      }, 2000)
+    } catch (err) {
+      console.error("Failed to copy UPC: ", err)
+      message.error("Failed to copy UPC")
+    }
+  }
 
   if (isLoading || !product) {
     return (
@@ -181,6 +215,7 @@ const ProductInfo = ({
                 </div>
               </>
             )}
+          </div>
           </div>
 
           {product?.rating && (
