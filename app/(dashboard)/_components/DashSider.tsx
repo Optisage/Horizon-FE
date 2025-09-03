@@ -1,5 +1,5 @@
 "use client";
-
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState, useLayoutEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
@@ -19,7 +19,7 @@ import {
 import LogoutModal from "./LogoutModal";
 import { BiChevronRight } from "react-icons/bi";
 import { RiVerifiedBadgeFill } from "react-icons/ri";
-import { MdSupport } from "react-icons/md";
+//import { MdSupport } from "react-icons/md";
 import { useAppSelector } from "@/redux/hooks";
 import { useDispatch } from "react-redux";
 import { logout } from "@/redux/slice/authSlice";
@@ -159,16 +159,19 @@ const DashSider = () => {
         );
       }
 
-      // Regular link items (LinkMenuItem)
-      return (
-        <Link
-          href={item.path}
-          key={item.id}
-          className={commonClassName}
-        >
-          {commonContent}
-        </Link>
-      );
+      // Regular link items (LinkMenuItem or ExternalMenuItem)
+      if ("path" in item) {
+        return (
+          <Link
+            href={item.path}
+            key={item.id}
+            className={commonClassName}
+          >
+            {commonContent}
+          </Link>
+        );
+      }
+      return null;
     });
 
   return (
