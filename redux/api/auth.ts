@@ -141,7 +141,7 @@ export const authApi = createApi({
     }),
     getPricing: builder.query<any, {}>({
       query: () => ({
-        url: "pricing",
+        url: "pricing/new",
         method: "GET",
       }),
     }),
