@@ -131,9 +131,9 @@ const Login = () => {
                 <span className="text-center">
                   Don't have an Account?{" "}
                   <Link
-                    href="https://optisage.ai/#pricing"
+                    href="/signUp"
                     className="text-[#3895F9] hover:underline"
-                    target="_blank"
+                    //target="_blank"
                     rel="noopener noreferrer"
                   >
                     Signup

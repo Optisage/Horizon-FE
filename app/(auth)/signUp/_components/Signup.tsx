@@ -44,6 +44,7 @@ const Signup = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [dataFetched, setDataFetched] = useState(false);
   const [isDashboardNavigating, setIsDashboardNavigating] = useState(false);
+  const [needsPackageSelection, setNeedsPackageSelection] = useState(false);
 
   // Subscription related states
   const [refCode, setRefCode] = useState<string>("");
@@ -243,6 +244,14 @@ const Signup = () => {
     const token = searchParams.get("token");
     const amazonConnected = searchParams.get("amazon_connected");
     const amazonErrorParam = searchParams.get("amazon_error");
+
+    // Check if pricing ID is empty or not provided
+  if (!pricing || pricing.trim() === "") {
+    setNeedsPackageSelection(true);
+  } else {
+    setNeedsPackageSelection(false);
+    setSelectedPlan(pricing);
+  }
 
     // Only override form data with URL params if they are explicitly provided
     // This prevents clearing saved data when redirected from callback
@@ -514,6 +523,23 @@ const Signup = () => {
         emailFormik.setTouched({ email: true });
         return;
       }
+
+       // Check if user needs to select a package
+    if (needsPackageSelection) {
+      // Redirect to packages page with current form data
+      const packageUrl = new URL('/packages', window.location.origin);
+      packageUrl.searchParams.set('email', form.email);
+      packageUrl.searchParams.set('fullname', form.fullname);
+      if (refCode) {
+        packageUrl.searchParams.set('ref', refCode);
+      }
+      
+      // Save current form state before redirecting
+      saveToSessionStorage(SESSION_KEYS.FORM_DATA, form);
+      
+      router.push(packageUrl.toString());
+      return;
+    }
       
       if (selectedPlan && form.email && form.fullname) {
         confirmSubscription();
@@ -595,13 +621,16 @@ const Signup = () => {
   };
 
   const StepHeader1 = () => (
-    <div className="mb-6">
-      <h1 className="text-[#2E2E2E] text-xl md:text-2xl">Sign up</h1>
-      <p className="text-[#4D4D4D] text-base mt-2">
-        Welcome, signup with us at Optisage
-      </p>
-    </div>
-  );
+  <div className="mb-6">
+    <h1 className="text-[#2E2E2E] text-xl md:text-2xl">Sign up</h1>
+    <p className="text-[#4D4D4D] text-base mt-2">
+      {needsPackageSelection && currentStep === 1 
+        ? "Next, you'll choose a package that fits your needs"
+        : "Welcome, signup with us at Optisage"
+      }
+    </p>
+  </div>
+);
 
   const StepHeader2 = () => (
     <div className="mb-6">
@@ -960,23 +989,28 @@ const Signup = () => {
   ];
 
   const getButtonText = () => {
-    if (currentStep === 1 && selectedPlan) {
+  if (currentStep === 1) {
+    if (needsPackageSelection) {
+      return "Choose Package";
+    }
+    if (selectedPlan) {
       return "Proceed to Checkout";
     }
-    if (currentStep === 2 && verificationToken) {
-      return "Set Password";
-    }
-    if (currentStep === 6) {
-      return "Complete Profile";
-    }
-    if (currentStep < 3) {
-      return "Submit";
-    }
-    if (currentStep === steps.length - 1) {
-      return "Go to Dashboard";
-    }
-    return "Continue";
-  };
+  }
+  if (currentStep === 2 && verificationToken) {
+    return "Set Password";
+  }
+  if (currentStep === 6) {
+    return "Complete Profile";
+  }
+  if (currentStep < 3) {
+    return "Submit";
+  }
+  if (currentStep === steps.length - 1) {
+    return "Go to Dashboard";
+  }
+  return "Continue";
+};
 
   const isButtonLoading = () => {
     // FIX: Use local state for checkout loading
