@@ -23,6 +23,7 @@ import {
   useLazyGetExperinceLevelQuery,
   useLazyGetCountriesQuery,
   useUpdateUserMutation,
+  useSignupMutation,
 } from "@/redux/api/auth";
 import { useFormik } from "formik";
 import { email, passwordSchema } from "@/lib/validationSchema"; // Adjust path as needed
@@ -55,8 +56,8 @@ const Signup = () => {
   
   // FIX: Added local state for checkout loading to ensure it resets correctly
   const [isCheckoutLoading, setIsCheckoutLoading] = useState(false);
-
-  const [subscribe, { isLoading }] = useLazyCreateStripeSubscriptionV2Query();
+const [subscribe, { isLoading }] = useSignupMutation();
+  //const [subscribe, { isLoading }] = useLazyCreateStripeSubscriptionV2Query();
   const [setPassword, { isLoading: isSettingPassword }] =
     useSetPasswordMutation();
   const [messageApi, contextHolder] = message.useMessage();
@@ -380,12 +381,12 @@ const Signup = () => {
     const payload: {
       pricing_id: string;
       email: string;
-      fullname: string;
+      name: string;
       referral_code?: string;
     } = {
       pricing_id: selectedPlan,
       email: form.email,
-      fullname: form.fullname,
+      name: form.fullname,
     };
 
     if (refCode) {

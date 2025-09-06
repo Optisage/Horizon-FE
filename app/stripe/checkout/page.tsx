@@ -69,18 +69,19 @@ export default function StripeCheckout() {
 
   const handleRetryPayment = () => {
     // Redirect back to pricing page
-    window.location.href = "https://optisage.ai/#pricing/";
+    window.location.href = "https://optisage.ai/#pricing";
   };
 
   return (
-    <main className=" bg-[#F8F8F8]">
+    <main className="bg-[#F8F8F8] min-h-screen">
       {loading ? (
         <div className="flex justify-center h-screen items-center">
           <div className="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-primary"></div>
         </div>
       ) : (
-        <section className="h-screen flex justify-center items-center relative">
-          <div className="flex justify-center py-10 absolute top-10 w-full">
+        <>
+          {/* Logo at the top */}
+          <div className="flex justify-center py-10">
             <Link href="/">
               <Image
                 src={Logo}
@@ -92,62 +93,66 @@ export default function StripeCheckout() {
             </Link>
           </div>
 
-          <div className="border rounded-3xl shadow  p-7 max-w-[500px] border-[#E1E1E1] bg-white">
-            <div className="flex justify-center mb-5">
-              {failed ? (
-                <Image src={failedimg} alt="failed" />
-              ) : (
-                <Image src={success} alt="successful" className="mb-6" />
-              )}
-            </div>
+          {/* Main content centered vertically in remaining space */}
+          <div className="flex justify-center items-center" style={{ minHeight: 'calc(100vh - 180px)' }}>
+            <div className="border rounded-3xl shadow p-7 max-w-[500px] border-[#E1E1E1] bg-white">
+              <div className="flex justify-center mb-5">
+                {failed ? (
+                  <Image src={failedimg} alt="failed" />
+                ) : (
+                  <Image src={success} alt="successful" className="mb-6" />
+                )}
+              </div>
 
-            <div className="flex justify-center md:max-w-[400px]">
-              {failed ? (
-                <div className="text-center space-y-4">
-                  <h1 className=" font-bold text-3xl text-[#232323]">
-                    Payment unsuccessful!
-                  </h1>
-                  <p className="text-[#42444A] text-sm">
-                    Please check your payment details and try again.
-                  </p>
-                  <div>
-                    <Button
-                      className="w-full !border-none !rounded-2xl !font-semibold !text-base  py-2 !h-[55px] !bg-[#18CB96] hover:!bg-primary/90 !text-white"
-                      onClick={handleRetryPayment}
-                    >
-                      Select another plan
-                    </Button>
-                  </div>
-                </div>
-              ) : (
-                <div className="text-center space-y-4">
-                  <h1 className="font-bold text-3xl mb-6">
-                    Payment Successful!
-                  </h1>
-                  <div className="space-y-5">
-                    <p className="text-[#42444A] text-sm font-normal">
-                      Thank you for subscribing to optisage! Your payment has
-                      been processed successfully.
+              <div className="flex justify-center md:max-w-[400px]">
+                {failed ? (
+                  <div className="text-center space-y-4">
+                    <h1 className="font-bold text-3xl text-[#232323]">
+                      Payment unsuccessful!
+                    </h1>
+                    <p className="text-[#42444A] text-sm">
+                      Please check your payment details and try again.
                     </p>
-                   
-                    <p className="text-sm text-[#42444A] font-semibold">
-                      Let's complete your account setup to get started.
-                    </p>
+                    <div>
+                      <Button
+                        className="w-full !border-none !rounded-2xl !font-semibold !text-base py-2 !h-[55px] !bg-[#18CB96] hover:!bg-primary/90 !text-white"
+                        onClick={handleRetryPayment}
+                      >
+                        Select another plan
+                      </Button>
+                    </div>
                   </div>
-                  <div className="mt-10">
-                    <Button
-                    className="w-full !border-none !rounded-2xl !font-semibold !text-base  py-2 !h-[55px] !bg-[#18CB96] hover:!bg-primary/90 !text-white"
-                      onClick={handleContinueRegistration}
-                    >
-                      Continue Registration
-                    </Button>
+                ) : (
+                  <div className="text-center space-y-4">
+                    <h1 className="font-bold text-3xl mb-6">
+                      Payment Successful!
+                    </h1>
+                    <div className="space-y-5">
+                      <p className="text-[#42444A] text-sm font-normal">
+                        Thank you for subscribing to optisage! Your payment has
+                        been processed successfully.
+                      </p>
+                     
+                      <p className="text-sm text-[#42444A] font-semibold">
+                        Let's complete your account setup to get started.
+                      </p>
+                    </div>
+                    <div className="mt-10">
+                      <Button
+                        className="w-full !border-none !rounded-2xl !font-semibold !text-base py-2 !h-[55px] !bg-[#18CB96] hover:!bg-primary/90 !text-white"
+                        onClick={handleContinueRegistration}
+                      >
+                        Continue Registration
+                      </Button>
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
+              </div>
             </div>
           </div>
 
-          <div className="absolute bottom-5 w-full flex justify-center">
+          {/* Support link at the bottom */}
+          <div className="flex justify-center pb-5">
             <a
               href="https://optisage.ai/contact/#"
               className="underline text-gray-600 hover:text-gray-800"
@@ -155,7 +160,7 @@ export default function StripeCheckout() {
               Contact Support
             </a>
           </div>
-        </section>
+        </>
       )}
     </main>
   );
