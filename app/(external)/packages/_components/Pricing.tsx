@@ -1,11 +1,14 @@
 "use client";
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { useLazyGetPricingQuery } from "@/redux/api/auth";
-import { useEffect, useState } from "react";
+import { useLazyGetPricingQuery, useSignupMutation } from "@/redux/api/auth";
+//import { useLazyCreateStripeSubscriptionV2Query } from "@/redux/api/subscriptionApi";
 import { useSearchParams } from "next/navigation";
+import { useEffect, useState } from "react";
 import { IoIosCheckmark } from "react-icons/io";
-import { FaCircle } from "react-icons/fa";
+import { message } from "antd";
+import { MdCancel } from "react-icons/md";
+import { FaCircle } from "react-icons/fa6";
 
 interface Feature {
   name: string;
@@ -32,19 +35,45 @@ interface PricingPlan {
   stripe_product_id: string;
 }
 
-export default function Pricing() {
+export default function Packages() {
+  //const router = useRouter();
   const searchParams = useSearchParams();
+  const [messageApi, contextHolder] = message.useMessage();
+
   const [isAnnual, setIsAnnual] = useState(false);
   const [pricingData, setPricingData] = useState<PricingPlan[]>([]);
   const [expandedFeatures, setExpandedFeatures] = useState<{
     [key: number]: boolean;
   }>({});
   const [selectedPlanId, setSelectedPlanId] = useState<number | null>(null);
-  const [refCode, setRefCode] = useState<string | null>(null);
   const [showModal, setShowModal] = useState(false);
-  const [pricings, { data: apiResponse, isLoading }] = useLazyGetPricingQuery();
 
- 
+  // User data from signup flow
+  const [userEmail, setUserEmail] = useState<string>("");
+  const [userFullname, setUserFullname] = useState<string>("");
+  const [userRefCode, setUserRefCode] = useState<string>("");
+  const [isFromSignup, setIsFromSignup] = useState(false);
+
+  // API hooks
+  const [pricings, { data: apiResponse, isLoading }] = useLazyGetPricingQuery();
+  const [subscribe, { isLoading: isCheckoutLoading }] = useSignupMutation();
+  //const [subscribe, { isLoading: isCheckoutLoading }] = useLazyCreateStripeSubscriptionV2Query();
+
+  
+
+  // Handle URL params from signup redirect
+  useEffect(() => {
+    const email = searchParams.get("email");
+    const name = searchParams.get("fullname");
+    const ref = searchParams.get("ref");
+
+    if (email && name) {
+      setUserEmail(email);
+      setUserFullname(name);
+      setIsFromSignup(true);
+      if (ref) setUserRefCode(ref);
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     pricings({});
@@ -56,13 +85,60 @@ export default function Pricing() {
     }
   }, [apiResponse]);
 
-  // Extract URL parameters
-  useEffect(() => {
-    const ref = searchParams.get("ref");
-    if (ref) {
-      setRefCode(ref);
+  // Error handling function
+  const error = (err: string) => {
+    messageApi.open({
+      type: "error",
+      content: err,
+      icon: <MdCancel color="red" size={20} className="mr-2" />,
+      style: {
+        marginTop: "5vh",
+        fontSize: 16,
+      },
+    });
+  };
+
+  // Direct checkout function for signup flow
+  const proceedToCheckout = async (plan: any) => {
+    if (!userEmail || !userFullname) {
+      error("Missing user information. Please try again.");
+      return;
     }
-  }, [searchParams]);
+
+    const payload: {
+      pricing_id: string;
+      email: string;
+      name: string;
+      referral_code?: string;
+    } = {
+      pricing_id: plan.stripePriceId,
+      email: userEmail,
+      name: userFullname,
+    };
+
+    if (userRefCode) {
+      payload.referral_code = userRefCode;
+    }
+
+    try {
+      const response = await subscribe(payload).unwrap();
+
+      if (response?.data?.url) {
+        // Redirect to Stripe checkout
+        if (window.top) {
+          window.top.location.href = response.data.url;
+        } else {
+          window.open(response.data.url, "_blank");
+        }
+      } else {
+        console.error("No checkout URL returned");
+        error("Failed to create checkout session. Please try again.");
+      }
+    } catch (err: any) {
+      console.error("Checkout error:", err);
+      error(err?.data?.message || "An error occurred during checkout");
+    }
+  };
 
   // Process pricing data to get plans for current billing interval
   const getProcessedPlans = () => {
@@ -142,10 +218,6 @@ export default function Pricing() {
           "Annual subscription";
       }
 
-      // Check if plan should be disabled (only STARTER (PRO) is available)
-      //const isDisabled = plan.name.toUpperCase() !== 'STARTER (PRO)';
-      const isDisabled = plan.name.toUpperCase() == "";
-
       return {
         id: plan.id,
         name: plan.name, // Keep original name without modification
@@ -155,16 +227,11 @@ export default function Pricing() {
         description,
         features,
         note: upgradeNote,
-        buttonText: isDisabled
-          ? "Unavailable"
-          : plan.trial > 0
-          ? "Start Free Trial"
-          : billingNote,
+        buttonText: billingNote,
         isDefaultHighlighted,
-        stripePriceId: plan.stripe_price_id,
+        stripePriceId: plan.id,
         interval: plan.interval,
         trial: plan.trial,
-        isDisabled,
       };
     });
   };
@@ -199,36 +266,30 @@ export default function Pricing() {
 
   const handleGetStarted = (planId: number) => {
     const plan = processedPlans.find((p) => p.id === planId);
-    if (plan && !plan.isDisabled) {
+    if (plan) {
       if (plan.trial > 0) {
         // Show modal for free trial plans
         setSelectedPlanId(planId);
         setShowModal(true);
       } else {
-        // Direct redirect for non-trial plans
+        // Direct checkout for non-trial plans
         handlePlanSelection(plan);
       }
     }
   };
 
   const handlePlanSelection = (plan: any) => {
-    // Handle the plan selection logic here with window redirect for iframe usage
-    console.log("Selected plan:", plan);
-
-    // Construct URL with parameters
-    const url = `/signUp?ref=${refCode || ""}&pricing=${plan.id}`;
-
-    // Use window.open for iframe compatibility
-    if (window.top && window.top !== window) {
-      // If in iframe, open in parent window
-      window.top.open(url, "_blank");
+    if (isFromSignup) {
+      // Coming from signup - go directly to checkout
+      proceedToCheckout(plan);
     } else {
-      // If not in iframe, open normally
-      window.open(url, "_blank");
+      // Normal pricing page behavior
+      console.log("Selected plan:", plan);
+      // Add your normal plan selection logic here if needed
     }
   };
 
-  const confirmSubscription = () => {
+  const confirmCheckout = () => {
     const selectedPlan = processedPlans.find((p) => p.id === selectedPlanId);
     if (selectedPlan) {
       handlePlanSelection(selectedPlan);
@@ -236,18 +297,50 @@ export default function Pricing() {
     }
   };
 
+  // Update button text and loading state
+  const getButtonText = (plan: any, isSelected: boolean) => {
+    if (isFromSignup) {
+      // Coming from signup flow
+      if (isCheckoutLoading && isSelected) {
+        return "Processing...";
+      }
+      return isSelected ? (plan.trial > 0 ? "Start Free Trial" : "Proceed to Checkout") : "Select plan";
+    } else {
+      // Normal pricing page
+      return isSelected ? (plan.trial > 0 ? "Start Free Trial" : plan.buttonText) : "Select plan";
+    }
+  };
+
+  const isButtonLoading = (plan: any, isSelected: boolean) => {
+    return isFromSignup && isSelected && isCheckoutLoading;
+  };
+
   if (isLoading) {
     return (
-    <div className="flex justify-center h-screen items-center">
+     <div className="flex justify-center h-screen items-center">
           <div className="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-primary"></div>
         </div>
     );
   }
 
   return (
-    <section className="bg-[#E7EBEE] py-12">
+    <section className="bg-[#E7EBEE] py-12 min-h-svh">
+      {contextHolder}
       <div className="max-w-6xl mx-auto lg:px-8">
         <div className="bg-white p-6 pb-20 rounded-3xl">
+          {/* Context message if coming from signup 
+          {isFromSignup && (
+            <div className="text-center mb-6">
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                Choose Your Plan
+              </h2>
+              <p className="text-gray-600">
+                Select the package that best fits your needs, {userFullname}
+              </p>
+            </div>
+          )}
+            */}
+
           {/* Toggle */}
           <div className="flex justify-center mb-20">
             <div className="flex items-center space-x-4 bg-[#F3F8FB] rounded-full px-2 py-2">
@@ -286,19 +379,11 @@ export default function Pricing() {
                       : "bg-white border border-[#D6D6D6] hover:border-[#08B27C] hover:shadow-md"
                   }`}
                 >
-                  {/* Coming Soon Badge for disabled plans */}
-                  {plan.isDisabled && (
-                    <div className="absolute top-2 right-2 bg-gray-600 text-white px-3 py-1 text-sm rounded-lg">
-                      Coming Soon
-                    </div>
-                  )}
-
-                    {isHighlighted && (
+                  {isHighlighted && (
                     <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 border border-[#08B27D] bg-white text-[#596375] text-xs px-3 py-1 rounded-full">
                       {plan.name.toUpperCase() === "PREMIUM" && isSelected ? "Most Popular" : "Selected"}
                     </div>
                   )}
-
                   <div className="flex flex-col items-center space-y-4">
                     <h3
                       className={`text-2xl font-semibold text-center ${
@@ -326,7 +411,7 @@ export default function Pricing() {
                       <span className="text-sm">{plan.priceLabel}</span>
                     </div>
                     <p
-                      className={`mt-1 text-base text-center font-semibold ${
+                      className={`mt-1  text-base text-center font-semibold ${
                         isHighlighted ? "text-white" : "text-[#222222]"
                       }`}
                     >
@@ -357,7 +442,13 @@ export default function Pricing() {
                               }`}
                             />
                           </div>
-                          <span>{feature}</span>
+                          <span
+                            className={` font-medium ${
+                              isHighlighted ? "white" : "text-[#676A75]"
+                            }`}
+                          >
+                            {feature}
+                          </span>
                         </li>
                       ))}
 
@@ -396,12 +487,12 @@ export default function Pricing() {
                         e.stopPropagation(); // Prevent card selection when clicking button
                         handleGetStarted(plan.id);
                       }}
-                      disabled={!isSelected || plan.isDisabled}
+                      disabled={
+                        !isSelected || isButtonLoading(plan, isSelected)
+                      }
                       className={`mt-3 w-full rounded-lg text-sm py-2 font-medium transition-all duration-200
                     ${
-                      plan.isDisabled
-                        ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-                        : isSelected
+                      isSelected && !isButtonLoading(plan, isSelected)
                         ? isHighlighted
                           ? "bg-[#FFB951] text-white hover:bg-[#FF8E51] cursor-pointer"
                           : "bg-[#FFB951] text-white hover:bg-[#FF8E51] cursor-pointer"
@@ -409,11 +500,7 @@ export default function Pricing() {
                     }
                   `}
                     >
-                      {plan.isDisabled
-                        ? "Unavailable"
-                        : isSelected
-                        ? plan.buttonText
-                        : "Select plan first"}
+                      {getButtonText(plan, isSelected)}
                     </button>
                   </div>
                 </div>
@@ -422,7 +509,7 @@ export default function Pricing() {
           </div>
         </div>
 
-        {/* Stats Section */}
+        {/* Stats Section - Commented out as per original */}
         {/**
         <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mt-6 text-center">
           {stats.map((stat, idx) => (
@@ -435,7 +522,7 @@ export default function Pricing() {
             </div>
           ))}
         </div>
- */}
+         */}
       </div>
 
       {/* Free Trial Modal */}
@@ -457,9 +544,10 @@ export default function Pricing() {
               </button>
               <button
                 className="px-4 py-2 bg-green-500 border-none h-[40px] text-white rounded-lg hover:bg-green-600 transition-colors"
-                onClick={confirmSubscription}
+                onClick={confirmCheckout}
+                disabled={isCheckoutLoading}
               >
-                Continue to SignUp
+                {isCheckoutLoading ? "Processing..." : "Checkout"}
               </button>
             </div>
           </div>
