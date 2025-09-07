@@ -190,17 +190,43 @@ export const CustomSteps = ({ ...props }) => (
     <Steps {...props} />
   </ConfigProvider>
 );
+
 export const CustomSelect = ({
   children,
   ...props
 }: {
-  children: React.ReactNode;
+  children?: React.ReactNode;
   [key: string]: any;
 }) => (
-  <ConfigProvider theme={{ token: { ...primaryConfig }, components: {} }}>
-    <Select {...props}>{children}</Select>
+  <ConfigProvider
+    theme={{
+      token: {
+        ...primaryConfig,
+      },
+      components: {
+        Select: {
+          borderRadius: 10,
+        },
+      },
+    }}
+  >
+    <Select
+      {...props}
+      popupMatchSelectWidth={true}
+      popupClassName="custom-select-dropdown"
+      virtual={false}
+      dropdownStyle={{
+        maxHeight: 300,
+        overflowY: "auto",
+        willChange: "transform",
+      }}
+      getPopupContainer={(trigger) => trigger.parentElement as HTMLElement}
+    >
+      {children}
+    </Select>
   </ConfigProvider>
 );
+
 export const Customtextarea = ({ ...props }) => (
   <ConfigProvider
     theme={{
@@ -233,3 +259,4 @@ export const CustomSlider = ({ ...props }) => (
     <Slider {...props} />
   </ConfigProvider>
 );
+

@@ -43,7 +43,7 @@ export function SearchModal({ isOpen, onClose, title, inputLabel, isMultiStore =
         if (countries?.data?.data?.length > 0) {
             const defaultCountry = countries?.data?.data[0];
             setSelectedCountry(defaultCountry);
-            let id = defaultCountry.id === 3 ? 6 : defaultCountry.id;
+            const id = defaultCountry.id === 3 ? 6 : defaultCountry.id;
             dispatch(setMarketPlaceId(id));
         }
     }, [countries, dispatch]);
@@ -137,7 +137,7 @@ export function SearchModal({ isOpen, onClose, title, inputLabel, isMultiStore =
                                                 setSelectedCountry(country);
                                                 setSelectedStores([]);
                                                 setIsCountryDropdownOpen(false);
-                                                let id = country.id === 3 ? 6 : country.id;
+                                                const id = country.id === 3 ? 6 : country.id;
                                                 dispatch(setMarketPlaceId(id));
                                             }}
                                             className="w-full text-left px-4 py-2 hover:bg-gray-100 flex items-center border-b"

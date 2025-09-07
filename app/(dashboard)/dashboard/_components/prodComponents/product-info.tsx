@@ -1,10 +1,17 @@
 "use client"
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import Image from "next/image"
-import { Tooltip as AntTooltip } from "antd"
+import { Tooltip as AntTooltip, message } from "antd"
+//import { Copy, Check } from "lucide-react"
+import { BsCopy } from "react-icons/bs";
+import { LuCheck } from "react-icons/lu";
+import { useState } from "react"
 import ProductThumbnail from "@/public/assets/images/women-shoes.png"
 import Illustration from "@/public/assets/svg/illustration.svg"
 import AlertsDrawer from "../AlertsDrawer"
-/* eslint-disable @typescript-eslint/no-explicit-any */
+import { CustomSelect } from "@/lib/AntdComponents"
+import { useProductVariation } from "@/hooks/use-product-variation"
+
 interface ProductInfoProps {
   product: any
   ipData: any
@@ -16,7 +23,52 @@ interface ProductInfoProps {
   isLoadingIpData?: boolean
 }
 
-const ProductInfo = ({ product, ipData, eligibility, setIpIssue, asin, isLoading, isLoadingIpData }: ProductInfoProps) => {
+const ProductInfo = ({
+  product,
+  ipData,
+  eligibility,
+  setIpIssue,
+  asin,
+  marketplaceId,
+  isLoading,
+  isLoadingIpData,
+}: ProductInfoProps) => {
+  const { handleVariationChange } = useProductVariation(asin, marketplaceId)
+  const [copiedAsin, setCopiedAsin] = useState(false)
+  const [copiedUpc, setCopiedUpc] = useState(false)
+
+  const copyAsinToClipboard = async () => {
+    try {
+      await navigator.clipboard.writeText(asin)
+      setCopiedAsin(true)
+      message.success("ASIN copied to clipboard!")
+      
+      // Reset the copied state after 2 seconds
+      setTimeout(() => {
+        setCopiedAsin(false)
+      }, 2000)
+    } catch (err) {
+      console.error("Failed to copy ASIN: ", err)
+      message.error("Failed to copy ASIN")
+    }
+  }
+
+  const copyUpcToClipboard = async () => {
+    try {
+      await navigator.clipboard.writeText(product?.upc)
+      setCopiedUpc(true)
+      message.success("UPC copied to clipboard!")
+      
+      // Reset the copied state after 2 seconds
+      setTimeout(() => {
+        setCopiedUpc(false)
+      }, 2000)
+    } catch (err) {
+      console.error("Failed to copy UPC: ", err)
+      message.error("Failed to copy UPC")
+    }
+  }
+
   if (isLoading || !product) {
     return (
       <div className="border border-border px-4 pt-4 rounded-xl flex flex-col gap-4 h-[300px] items-center justify-center">
@@ -24,6 +76,21 @@ const ProductInfo = ({ product, ipData, eligibility, setIpIssue, asin, isLoading
       </div>
     )
   }
+
+  // Generate options for the select dropdown
+  const variationOptions =
+    product?.variations?.map((variation: any) => {
+      const attributeLabels = variation.attributes.map((attr: any) => `${attr.dimension}: ${attr.value}`).join(", ")
+
+      return {
+        value: variation.asin,
+        label: attributeLabels || variation.asin,
+      }
+    }) || []
+
+  // Find current variation to show its attributes
+  //const currentVariation = product?.variations?.find((v: any) => v.asin === asin)
+  //const currentAttributes = currentVariation?.attributes || []
 
   return (
     <div className="border border-border px-4 pt-4 rounded-xl flex flex-col gap-4">
@@ -45,28 +112,89 @@ const ProductInfo = ({ product, ipData, eligibility, setIpIssue, asin, isLoading
           <AntTooltip title="Product name as displayed on Amazon marketplace." placement="top">
             <h2 className="text-[#252525] font-semibold text-lg md:text-xl">{product?.product_name}</h2>
           </AntTooltip>
-          <p>{product?.category}</p>
-          <p>
+
+          {/* Enhanced variation dropdown */}
+          {product?.variations?.length > 0 && (
+            <div className="my-3">
+             
+              <CustomSelect
+                value={asin}
+                onChange={handleVariationChange}
+                options={variationOptions}
+                style={{ width: "100%", maxWidth: 300, borderRadius: 8 }}
+                placeholder="Select a variation"
+                loading={isLoading}
+                
+              />
+            </div>
+          )}
+
+          <p className=" text-base text-gray-600  mb-2">{product?.category}</p>
+          <div className="text-base flex items-center gap-2 flex-wrap">
+            <div className="flex items-center gap-2">
+              <AntTooltip
+                title="Amazon Standard Identification Number - A unique product identifier assigned by Amazon."
+                placement="top"
+              >
+                <span className="cursor-help border-b border-dotted border-gray-400">ASIN: {product?.asin}</span>
+              </AntTooltip>
+              
+              <AntTooltip title="Copy ASIN to clipboard" placement="top">
+                <button
+                  onClick={copyAsinToClipboard}
+                  className="inline-flex items-center justify-center w-6 h-6 rounded hover:bg-gray-100 transition-colors duration-200 group"
+                  aria-label="Copy ASIN"
+                >
+                  {copiedAsin ? (
+                    <LuCheck className="w-4 h-4 text-green-500" />
+                  ) : (
+                    <BsCopy className="w-4 h-4 text-gray-500 group-hover:text-gray-700" />
+                  )}
+                </button>
+              </AntTooltip>
+            </div>
+            
+            {product?.upc && (
+              <>
+                <span>,</span>
+                <div className="flex items-center gap-2">
+                  <AntTooltip
+                    title="Universal Product Code - A barcode symbology used for tracking trade items in stores."
+                    placement="top"
+                  >
+                    <span className="cursor-help border-b border-dotted border-gray-400">UPC: {product?.upc}</span>
+                  </AntTooltip>
+                  
+                  <AntTooltip title="Copy UPC to clipboard" placement="top">
+                    <button
+                      onClick={copyUpcToClipboard}
+                      className="inline-flex items-center justify-center w-6 h-6 rounded hover:bg-gray-100 transition-colors duration-200 group"
+                      aria-label="Copy UPC"
+                    >
+                      {copiedUpc ? (
+                        <LuCheck className="w-4 h-4 text-green-500" />
+                      ) : (
+                        <BsCopy className="w-4 h-4 text-gray-500 group-hover:text-gray-700" />
+                      )}
+                    </button>
+                  </AntTooltip>
+                </div>
+              </>
+            )}
+          </div>
+
+          {product?.rating && (
             <AntTooltip
-              title="Amazon Standard Identification Number - A unique product identifier assigned by Amazon."
+              title="Average customer rating out of 5 stars. Higher ratings typically indicate better customer satisfaction and product quality."
               placement="top"
             >
-              <span>ASIN: {product?.asin}</span>
+              <p className="flex items-center gap-1">
+                <span className="text-yellow-400">⭐</span>
+                <span>{product.rating.stars}/5</span>
+                <span className="text-sm text-gray-500">({product.rating.count?.toLocaleString()} reviews)</span>
+              </p>
             </AntTooltip>
-            ,
-            <AntTooltip
-              title="Universal Product Code - A barcode symbology used for tracking trade items in stores."
-              placement="top"
-            >
-              <span> UPC: {product?.upc}</span>
-            </AntTooltip>
-          </p>
-          <AntTooltip
-            title="Average customer rating out of 5 stars. Higher ratings typically indicate better customer satisfaction and product quality."
-            placement="top"
-          >
-            <p>⭐⭐⭐⭐⭐ {product?.rating?.stars}/5</p>
-          </AntTooltip>
+          )}
         </div>
       </div>
 
@@ -95,23 +223,19 @@ const ProductInfo = ({ product, ipData, eligibility, setIpIssue, asin, isLoading
                   title="✅ You can list and sell this product! You have the necessary approvals and this product is not restricted (GATED) for your seller account."
                   placement="top"
                 >
-                  <p className="text-green-500 font-semibold cursor-help">
-                    You are authorised to sell this product
-                  </p>
+                  <p className="text-green-500 font-semibold cursor-help">You are authorised to sell this product</p>
                 </AntTooltip>
               ) : (
                 <AntTooltip
                   title="❌ You can't list or sell this product yet because it's restricted (GATED) by the brand or category. You'll need approval first."
                   placement="top"
                 >
-                  <p className="text-red-500 font-semibold cursor-help">
-                    You are not authorized to sell this product
-                  </p>
+                  <p className="text-red-500 font-semibold cursor-help">You are not authorized to sell this product</p>
                 </AntTooltip>
               )}
               <AntTooltip
                 title={
-                  setIpIssue > 0 
+                  setIpIssue > 0
                     ? "⚠️ Issues detected that prevent you from selling this product. Click 'View Alerts' below to see detailed information about each issue and potential solutions."
                     : "✅ No restrictions found!"
                 }

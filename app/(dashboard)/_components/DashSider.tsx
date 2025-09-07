@@ -14,6 +14,7 @@ import {
   CreditIcon,
   HistoryIcon,
   GoCompareIcon,
+  UPCScannerIcon,
 } from "@/public/assets/svg/icons";
 import LogoutModal from "./LogoutModal";
 import { BiChevronRight } from "react-icons/bi";
@@ -21,25 +22,33 @@ import { RiVerifiedBadgeFill } from "react-icons/ri";
 import { useAppSelector } from "@/redux/hooks";
 import { useDispatch } from "react-redux";
 import { logout } from "@/redux/slice/authSlice";
-//import { BsStars } from "react-icons/bs";
+import { BsStars } from "react-icons/bs";
 
 // Sidebar data
 const menuData = [
   { id: "1", path: "/dashboard", label: "Dashboard", icon: DashboardIcon },
   { id: "2", path: "/history", label: "History", icon: HistoryIcon },
   { id: "3", path: "/go-compare", label: "Go Compare", icon: GoCompareIcon },
-  { id: "5", path: "", label: "Keepa", icon: KeepaIcon, comingSoon: true },
-  //{ id: "6", path: "", label: "Totan (AI)", icon: BsStars, comingSoon: true },
+  { id: "5", path: "/keepa", label: "Keepa", icon: KeepaIcon, comingSoon: false },
+  {
+    id: "6",
+    path: "/totan",
+    label: "Totan (AI)",
+    icon: BsStars,
+    comingSoon: false,
+    beta: true,
+  },
+  { id: "7", path: "/upc-scanner", label: "UPC Scanner", icon: UPCScannerIcon },
 ];
 
 const secondaryMenu = [
-  { id: "7", path: "/settings", label: "Settings", icon: SettingsIcon },
-  { id: "8", path: "", label: "Credit", icon: CreditIcon, comingSoon: true },
+  { id: "8", path: "/settings", label: "Settings", icon: SettingsIcon },
+  { id: "9", path: "", label: "Credit", icon: CreditIcon, comingSoon: true },
 ];
 
 const billingMenu = [
   {
-    id: "9",
+    id: "10",
     path: "/subscriptions",
     label: "Subscriptions",
     icon: SubscriptionsIcon,
@@ -86,6 +95,11 @@ const DashSider = () => {
         {item.comingSoon && (
           <span className="ml-auto bg-primary text-white text-xs px-1.5 py-0.5 rounded-md">
             Coming Soon
+          </span>
+        )}
+        {item.beta && (
+          <span className="ml-5 bg-primary text-white text-xs px-1.5 py-0.5 rounded-md">
+            Beta
           </span>
         )}
       </Link>
@@ -200,3 +214,4 @@ const DashSider = () => {
 };
 
 export default DashSider;
+

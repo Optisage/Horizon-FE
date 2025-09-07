@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
+
 "use client";
 import { useGetSearchByIdQuery, useReverseSearchQuery } from '@/redux/api/quickSearchApi';
 import { ReverseSearchData } from '@/types/goCompare';

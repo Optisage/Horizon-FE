@@ -2,12 +2,20 @@ import { Modal } from "antd";
 import Image from "next/image";
 import Link from "next/link";
 import phone from "../../../public/assets/svg/phone.svg";
+
 interface modal {
   isConnectedVisible: boolean;
-  //setIsConnectedVisible: ()=> void,
+  onUseAnotherAccount: () => void; // Add callback function
 }
 
-export default function ConnectedModal({ isConnectedVisible }: modal) {
+export default function ConnectedModal({ 
+  isConnectedVisible, 
+  onUseAnotherAccount 
+}: modal) {
+  const handleUseAnotherAccount = () => {
+    onUseAnotherAccount();
+  };
+
   return (
     <>
       <Modal
@@ -38,11 +46,12 @@ export default function ConnectedModal({ isConnectedVisible }: modal) {
             </h1>
           </div>
           <div className=" grid grid-cols-1 gap-4">
-            <Link href={"/connect-amazon"} className=" w-full">
-              <button className=" w-full text-white px-4 py-2 bg-[#18CB96] border rounded-lg font-medium !h-[40px] shadow-[0px_-3px_0px_0px_#0000001A_inset]">
-                Use another account
-              </button>
-            </Link>
+            <button 
+              onClick={handleUseAnotherAccount}
+              className=" w-full text-white px-4 py-2 bg-[#18CB96] border rounded-lg font-medium !h-[40px] shadow-[0px_-3px_0px_0px_#0000001A_inset]"
+            >
+              Use another account
+            </button>
 
             <p className=" text-center text-xs text-[#5F6362]">
               <span>Have any issues? </span>
@@ -66,4 +75,3 @@ export default function ConnectedModal({ isConnectedVisible }: modal) {
     </>
   );
 }
-
