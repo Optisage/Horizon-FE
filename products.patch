@@ -1,0 +1,688 @@
+diff --git a/app/(dashboard)/dashboard/_components/CustomDatePicker.tsx b/app/(dashboard)/dashboard/_components/CustomDatePicker.tsx
+index 7563c68..dfaefa3 100644
+--- a/app/(dashboard)/dashboard/_components/CustomDatePicker.tsx
++++ b/app/(dashboard)/dashboard/_components/CustomDatePicker.tsx
+@@ -109,7 +109,7 @@ const CustomDatePicker: React.FC<CustomDatePickerProps> = ({
+             allowClear={false}
+             suffixIcon={null}
+             className="!border-none !rounded-none !shadow-none !p-1 !text-center !w-[200px]"
+-            popupClassName="custom-datepicker-popup"
++            classNames={{ popup: { root: "custom-datepicker-popup" } }}
+             renderExtraFooter={() => null}
+             disabledDate={disabledDate}
+           />
+@@ -122,7 +122,7 @@ const CustomDatePicker: React.FC<CustomDatePickerProps> = ({
+             allowClear={false}
+             suffixIcon={null}
+             className="!border-none !rounded-none !shadow-none !p-1 !text-center !w-[93px]"
+-            popupClassName="custom-datepicker-popup"
++            classNames={{ popup: { root: "custom-datepicker-popup" } }}
+             renderExtraFooter={() => null}
+             disabledDate={disabledDate}
+           />
+diff --git a/app/(dashboard)/dashboard/_components/ProductDetails.tsx b/app/(dashboard)/dashboard/_components/ProductDetails.tsx
+index c7d67ec..bbda6e2 100644
+--- a/app/(dashboard)/dashboard/_components/ProductDetails.tsx
++++ b/app/(dashboard)/dashboard/_components/ProductDetails.tsx
+@@ -1,7 +1,7 @@
+ "use client"
+ /* eslint-disable @typescript-eslint/no-explicit-any */
+ /* eslint-disable @typescript-eslint/no-unused-vars */
+-import { useState, useEffect, useRef } from "react"
++import React, { useState, useEffect, useRef, useMemo, useCallback } from "react"
+ import { useRouter } from "next/navigation"
+ import { useAppSelector } from "@/redux/hooks"
+ import { useDispatch } from "react-redux"
+@@ -36,7 +36,7 @@ interface IpAlertState {
+   eligibility: boolean
+ }
+ 
+-const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
++const ProductDetails = React.memo(({ asin, marketplaceId }: ProductDetailsProps) => {
+   const productStatsRef = useRef<{ handleProfitabilityUpdate: (data: any) => void } | null>(null)
+   const dispatch = useDispatch()
+   const router = useRouter()
+@@ -66,36 +66,59 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
+   const [isFullyLoaded, setIsFullyLoaded] = useState(false)
+   const hasMounted = useRef(false)
+ 
++  // Memoize query parameters to prevent unnecessary re-renders
++  const queryParams = useMemo(() => ({
++    marketplaceId,
++    itemAsin: asin,
++  }), [asin, marketplaceId]);
++
++  const marketAnalysisParams = useMemo(() => ({
++    marketplaceId,
++    itemAsin: asin,
++    statStartDate: dayjs().format("YYYY-MM-DD"),
++    statEndDate: dayjs().add(1, "month").format("YYYY-MM-DD"),
++  }), [asin, marketplaceId]);
++
++  // Add loading guard to prevent queries when essential data is missing
++  const shouldSkipQueries = !asin || !marketplaceId || marketplaceId === 0;
++
+   // RTK Query hooks with isFetching
+   const {
+     data: buyboxDetailsData,
+     isLoading: isLoadingBuybox,
+     isFetching: isFetchingBuybox,
+-  } = useGetBuyboxDetailsQuery({
+-    marketplaceId,
+-    itemAsin: asin,
+-  })
++  } = useGetBuyboxDetailsQuery(
++    queryParams,
++    {
++      skip: shouldSkipQueries,
++      refetchOnMountOrArgChange: false,
++    }
++  )
+ 
+   const {
+     data,
+     error,
+     isLoading: isLoadingItem,
+     isFetching: isFetchingItem,
+-  } = useGetItemQuery({
+-    marketplaceId,
+-    itemAsin: asin,
+-  })
++  } = useGetItemQuery(
++    queryParams,
++    {
++      skip: shouldSkipQueries,
++      refetchOnMountOrArgChange: false,
++    }
++  )
+ 
+   const {
+     data: marketAnalysisData,
+     isLoading: isLoadingMarketAnalysis,
+     isFetching: isFetchingMarketAnalysis,
+-  } = useGetMarketAnalysisQuery({
+-    marketplaceId,
+-    itemAsin: asin,
+-    statStartDate: dayjs().format("YYYY-MM-DD"),
+-    statEndDate: dayjs().add(1, "month").format("YYYY-MM-DD"),
+-  })
++  } = useGetMarketAnalysisQuery(
++    marketAnalysisParams,
++    {
++      skip: shouldSkipQueries,
++      refetchOnMountOrArgChange: false,
++    }
++  )
+ 
+   // Combined fetching state
+   const isAnyQueryFetching = isFetchingItem || isFetchingBuybox || isFetchingMarketAnalysis || isLoadingIpData
+@@ -138,16 +161,20 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
+     }
+   }, [marketplaceId, dispatch])
+ 
+-  // Reset marketplace changing state when all queries finish
++  // Reset marketplace changing state when all queries finish with memoized condition
++  const shouldResetMarketplaceChanging = useMemo(() => {
++    return isMarketplaceChanging && !isAnyQueryFetching
++  }, [isMarketplaceChanging, isAnyQueryFetching])
++
+   useEffect(() => {
+-    if (isMarketplaceChanging && !isAnyQueryFetching) {
++    if (shouldResetMarketplaceChanging) {
+       // Add a small delay to ensure smooth transition
+       const timer = setTimeout(() => {
+         setIsMarketplaceChanging(false)
+       }, 300)
+       return () => clearTimeout(timer)
+     }
+-  }, [isMarketplaceChanging, isAnyQueryFetching])
++  }, [shouldResetMarketplaceChanging])
+ 
+   // Reset IP data immediately when ASIN changes
+   useEffect(() => {
+@@ -163,37 +190,37 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
+     setLoadingStep(0)
+   }, [asin, dispatch])
+ 
+-  // Fetch IP data
+-  useEffect(() => {
+-    const fetchIpData = async () => {
+-      setIsLoadingIpData(true)
+-      try {
+-        const response = await getIpAlert({
+-          itemAsin: asin,
+-          marketplaceId,
+-          statStartDate,
+-          statEndDate,
+-        }).unwrap()
+-        dispatch(
+-          setIpAlert({
+-            setIpIssue: response?.data?.ip_analysis?.issues ?? 0,
+-            eligibility: response?.data?.eligible_to_sell ?? false,
+-          }),
+-        )
+-        dispatch(setIpIssues(response?.data?.ip_analysis?.issues ?? []))
+-        setIpData(response.data as IpAlertData)
+-        setLoadingStep((prev) => Math.min(prev + 1, 4))
+-      } catch (error) {
+-        console.error("Error fetching IP alert:", error)
+-      } finally {
+-        setIsLoadingIpData(false)
+-      }
++  // Fetch IP data with optimized dependencies
++  const fetchIpData = useCallback(async () => {
++    if (!asin || !marketplaceId || marketplaceId === 0) return;
++    
++    setIsLoadingIpData(true)
++    try {
++      const response = await getIpAlert({
++        itemAsin: asin,
++        marketplaceId,
++        statStartDate,
++        statEndDate,
++      }).unwrap()
++      dispatch(
++        setIpAlert({
++          setIpIssue: response?.data?.ip_analysis?.issues ?? 0,
++          eligibility: response?.data?.eligible_to_sell ?? false,
++        }),
++      )
++      dispatch(setIpIssues(response?.data?.ip_analysis?.issues ?? []))
++      setIpData(response.data as IpAlertData)
++      setLoadingStep((prev) => Math.min(prev + 1, 4))
++    } catch (error) {
++      console.error("Error fetching IP alert:", error)
++    } finally {
++      setIsLoadingIpData(false)
+     }
++  }, [asin, marketplaceId, statStartDate, statEndDate, getIpAlert, dispatch])
+ 
+-    if (asin && marketplaceId) {
+-      fetchIpData()
+-    }
+-  }, [asin, marketplaceId, dispatch, getIpAlert, statStartDate, statEndDate])
++  useEffect(() => {
++    fetchIpData()
++  }, [fetchIpData])
+ 
+   // Update loading steps based on API responses
+   useEffect(() => {
+@@ -214,22 +241,24 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
+     }
+   }, [isLoadingMarketAnalysis, marketAnalysisData])
+ 
+-  // Set fully loaded when all steps are complete
++  // Set fully loaded when all steps are complete with memoized condition
++  const isAllDataLoaded = useMemo(() => {
++    return loadingStep >= 4 && 
++           !isLoadingItem && 
++           !isLoadingBuybox && 
++           !isLoadingIpData && 
++           !isLoadingMarketAnalysis
++  }, [loadingStep, isLoadingItem, isLoadingBuybox, isLoadingIpData, isLoadingMarketAnalysis])
++
+   useEffect(() => {
+-    if (loadingStep >= 4 && 
+-        !isLoadingItem && 
+-        !isLoadingBuybox && 
+-        !isLoadingIpData && 
+-        !isLoadingMarketAnalysis &&
+-        !hasMounted.current
+-      ) {
++    if (isAllDataLoaded && !hasMounted.current) {
+       hasMounted.current = true
+       const timer = setTimeout(() => {
+         setIsFullyLoaded(true)
+       }, 500)
+       return () => clearTimeout(timer)
+     }
+-  }, [loadingStep, isLoadingItem, isLoadingBuybox, isLoadingIpData, isLoadingMarketAnalysis])
++  }, [isAllDataLoaded])
+ 
+   if (error) {
+     return (
+@@ -307,6 +336,8 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
+                   buyboxDetails={buyboxDetailsData?.data}
+                   isLoading={false}
+                   ref={productStatsRef}
++                  asin={asin}          
++  marketplaceId={marketplaceId}
+                 />
+               </div>
+ 
+@@ -366,6 +397,6 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
+       </section>
+     </>
+   )
+-}
+-
+-export default ProductDetails
+\ No newline at end of file
++});
++ProductDetails.displayName = "ProductDetails";
++export default ProductDetails;
+\ No newline at end of file
+diff --git a/app/(dashboard)/dashboard/_components/prodComponents/product-info.tsx b/app/(dashboard)/dashboard/_components/prodComponents/product-info.tsx
+index 34b158b..2d491a8 100644
+--- a/app/(dashboard)/dashboard/_components/prodComponents/product-info.tsx
++++ b/app/(dashboard)/dashboard/_components/prodComponents/product-info.tsx
+@@ -1,7 +1,11 @@
+ "use client"
+ /* eslint-disable @typescript-eslint/no-explicit-any */
+ import Image from "next/image"
+-import { Tooltip as AntTooltip } from "antd"
++import { Tooltip as AntTooltip, message } from "antd"
++//import { Copy, Check } from "lucide-react"
++import { BsCopy } from "react-icons/bs";
++import { LuCheck } from "react-icons/lu";
++import { useState } from "react"
+ import ProductThumbnail from "@/public/assets/images/women-shoes.png"
+ import Illustration from "@/public/assets/svg/illustration.svg"
+ import AlertsDrawer from "../AlertsDrawer"
+@@ -30,6 +34,40 @@ const ProductInfo = ({
+   isLoadingIpData,
+ }: ProductInfoProps) => {
+   const { handleVariationChange } = useProductVariation(asin, marketplaceId)
++  const [copiedAsin, setCopiedAsin] = useState(false)
++  const [copiedUpc, setCopiedUpc] = useState(false)
++
++  const copyAsinToClipboard = async () => {
++    try {
++      await navigator.clipboard.writeText(asin)
++      setCopiedAsin(true)
++      message.success("ASIN copied to clipboard!")
++      
++      // Reset the copied state after 2 seconds
++      setTimeout(() => {
++        setCopiedAsin(false)
++      }, 2000)
++    } catch (err) {
++      console.error("Failed to copy ASIN: ", err)
++      message.error("Failed to copy ASIN")
++    }
++  }
++
++  const copyUpcToClipboard = async () => {
++    try {
++      await navigator.clipboard.writeText(product?.upc)
++      setCopiedUpc(true)
++      message.success("UPC copied to clipboard!")
++      
++      // Reset the copied state after 2 seconds
++      setTimeout(() => {
++        setCopiedUpc(false)
++      }, 2000)
++    } catch (err) {
++      console.error("Failed to copy UPC: ", err)
++      message.error("Failed to copy UPC")
++    }
++  }
+ 
+   if (isLoading || !product) {
+     return (
+@@ -92,25 +130,58 @@ const ProductInfo = ({
+           )}
+ 
+           <p className=" text-base text-gray-600  mb-2">{product?.category}</p>
+-          <p className="text-base">
+-            <AntTooltip
+-              title="Amazon Standard Identification Number - A unique product identifier assigned by Amazon."
+-              placement="top"
+-            >
+-              <span className="cursor-help border-b border-dotted border-gray-400">ASIN: {product?.asin}</span>
+-            </AntTooltip>
++          <div className="text-base flex items-center gap-2 flex-wrap">
++            <div className="flex items-center gap-2">
++              <AntTooltip
++                title="Amazon Standard Identification Number - A unique product identifier assigned by Amazon."
++                placement="top"
++              >
++                <span className="cursor-help border-b border-dotted border-gray-400">ASIN: {product?.asin}</span>
++              </AntTooltip>
++              
++              <AntTooltip title="Copy ASIN to clipboard" placement="top">
++                <button
++                  onClick={copyAsinToClipboard}
++                  className="inline-flex items-center justify-center w-6 h-6 rounded hover:bg-gray-100 transition-colors duration-200 group"
++                  aria-label="Copy ASIN"
++                >
++                  {copiedAsin ? (
++                    <LuCheck className="w-4 h-4 text-green-500" />
++                  ) : (
++                    <BsCopy className="w-4 h-4 text-gray-500 group-hover:text-gray-700" />
++                  )}
++                </button>
++              </AntTooltip>
++            </div>
++            
+             {product?.upc && (
+               <>
+-                ,
+-                <AntTooltip
+-                  title="Universal Product Code - A barcode symbology used for tracking trade items in stores."
+-                  placement="top"
+-                >
+-                  <span className="cursor-help border-b border-dotted border-gray-400"> UPC: {product?.upc}</span>
+-                </AntTooltip>
++                <span>,</span>
++                <div className="flex items-center gap-2">
++                  <AntTooltip
++                    title="Universal Product Code - A barcode symbology used for tracking trade items in stores."
++                    placement="top"
++                  >
++                    <span className="cursor-help border-b border-dotted border-gray-400">UPC: {product?.upc}</span>
++                  </AntTooltip>
++                  
++                  <AntTooltip title="Copy UPC to clipboard" placement="top">
++                    <button
++                      onClick={copyUpcToClipboard}
++                      className="inline-flex items-center justify-center w-6 h-6 rounded hover:bg-gray-100 transition-colors duration-200 group"
++                      aria-label="Copy UPC"
++                    >
++                      {copiedUpc ? (
++                        <LuCheck className="w-4 h-4 text-green-500" />
++                      ) : (
++                        <BsCopy className="w-4 h-4 text-gray-500 group-hover:text-gray-700" />
++                      )}
++                    </button>
++                  </AntTooltip>
++                </div>
+               </>
+             )}
+-          </p>
++          </div>
+ 
+           {product?.rating && (
+             <AntTooltip
+@@ -206,4 +277,4 @@ const ProductInfo = ({
+   )
+ }
+ 
+-export default ProductInfo
++export default ProductInfo
+\ No newline at end of file
+diff --git a/app/(dashboard)/dashboard/_components/prodComponents/product-stats.tsx b/app/(dashboard)/dashboard/_components/prodComponents/product-stats.tsx
+index 00811df..cb4fb4a 100644
+--- a/app/(dashboard)/dashboard/_components/prodComponents/product-stats.tsx
++++ b/app/(dashboard)/dashboard/_components/prodComponents/product-stats.tsx
+@@ -1,35 +1,70 @@
+ "use client"
+ /* eslint-disable @typescript-eslint/no-explicit-any */
++/* eslint-disable @typescript-eslint/no-unused-vars */
+ import { InfoCard } from "../info-card"
+ import { BSRIcon, PriceTagIcon, ProductSalesIcon, MaximumCostIcon, ROIIcon } from "../icons"
+-import { Skeleton, Tooltip as AntTooltip } from "antd"
++import { Skeleton, Tooltip as AntTooltip, message } from "antd"
+ import type { Product } from "./types"
+-import { useState, forwardRef, useImperativeHandle } from "react"
++import { useState, forwardRef, useImperativeHandle, useEffect } from "react"
+ import Image from "next/image"
+ import AmazonIcon from "@/public/assets/svg/amazon-icon.svg"
+ 
++import { useAppDispatch } from "@/redux/hooks"
++
++import Link from "next/link"
++
+ interface ProductStatsProps {
+   product: Product | undefined
+   isLoading?: boolean
+   buyboxDetails?: any
++  asin: string
++  marketplaceId: number
++  onNavigateToTotan?: () => void // Callback to handle navigation
+ }
+ 
+ type Tab = "info" | "totan"
+ 
+-const ProductStats = forwardRef(({ product, isLoading, buyboxDetails }: ProductStatsProps, ref) => {
++
++
++const ProductStats = forwardRef(({ 
++  product, 
++  isLoading, 
++  buyboxDetails, 
++ 
++}: ProductStatsProps, ref) => {
++  const dispatch = useAppDispatch()
+   const [activeTab, setActiveTab] = useState<Tab>("info")
+   const [latestProfitCalc, setLatestProfitCalc] = useState<any>(product?.last_profitability_calculation?.fba)
+ 
++
++  const [messageApi, contextHolder] = message.useMessage();
++
++
++
+   // Get the data from the correct sources
+   const extra = buyboxDetails?.extra || product?.extra
+   const profitabilityCalc = latestProfitCalc || product?.last_profitability_calculation?.fba
+ 
+-  // Expose the update function to the parent component
+-  useImperativeHandle(ref, () => ({
+-    handleProfitabilityUpdate: (data: any) => {
+-      setLatestProfitCalc(data)
+-    },
+-  }))
++
++
++  // Reset states when product changes
++  useEffect(() => {
++    setLatestProfitCalc(product?.last_profitability_calculation?.fba)
++  }, [product])
++
++ 
++
++  
++
++ 
++
++ 
++
++
++
++  
++
++  
+ 
+   if (isLoading || !product) {
+     return <ProductStatsSkeleton />
+@@ -38,21 +73,21 @@ const ProductStats = forwardRef(({ product, isLoading, buyboxDetails }: ProductS
+   // Get ROI text color based on roiIsOk
+   const getRoiTextColor = () => {
+     if (profitabilityCalc?.buying_criteria?.roiIsOk === true) {
+-      return "text-green-600" // Green text for good ROI
++      return "text-green-600"
+     } else if (profitabilityCalc?.buying_criteria?.roiIsOk === false) {
+-      return "text-red-600" // Red text for bad ROI
++      return "text-red-600"
+     }
+-    return "" // Default text color
++    return ""
+   }
+ 
+   // Get Profit text color based on profitIsOk
+   const getProfitTextColor = () => {
+     if (profitabilityCalc?.buying_criteria?.profitIsOk === true) {
+-      return "text-green-600" // Green text for good profit
++      return "text-green-600"
+     } else if (profitabilityCalc?.buying_criteria?.profitIsOk === false) {
+-      return "text-red-600" // Red text for bad profit
++      return "text-red-600"
+     }
+-    return "" // Default text color
++    return ""
+   }
+ 
+   // Get ROI tooltip message based on criteria
+@@ -94,10 +129,14 @@ const ProductStats = forwardRef(({ product, isLoading, buyboxDetails }: ProductS
+     return "The highest price you should pay for this product to maintain your target profit margin and ROI."
+   }
+ 
++  
++
+   return (
+-    <div className="flex flex-col gap-4">
+-      {/* tabs */}
+-      <div className="flex gap-4 items-center text-sm font-semibold">
++    <>
++      {contextHolder}
++      <div className="flex flex-col gap-4">
++        {/* tabs */}
++        <div className="flex gap-4 items-center text-sm font-semibold">
+         <button
+           type="button"
+           onClick={() => setActiveTab("info")}
+@@ -108,9 +147,9 @@ const ProductStats = forwardRef(({ product, isLoading, buyboxDetails }: ProductS
+           Product info
+         </button>
+    
+-   {/** 
+         <button
+           type="button"
++          disabled
+           onClick={() => setActiveTab("totan")}
+           className={`px-4 py-2 rounded-full ${
+             activeTab === "totan" ? "bg-primary text-white" : "bg-[#F3F4F6] text-[#676A75]"
+@@ -118,81 +157,9 @@ const ProductStats = forwardRef(({ product, isLoading, buyboxDetails }: ProductS
+         >
+           Totan (AI)
+         </button>
+-        */}
+-     
+       </div>
+ 
+-      {/* Totan */}
+-      {activeTab === "totan" && (
+-        <div className="border border-border rounded-xl shadow-sm p-4 flex flex-col gap-3">
+-          {/* Score and Info Row */}
+-          <div className="flex items-center justify-between">
+-            {/* Circular Score */}
+-            <div className="relative size-32">
+-              <svg className="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
+-                <path
+-                  className="text-[#F3F4F6]"
+-                  stroke="currentColor"
+-                  strokeWidth="3"
+-                  fill="none"
+-                  d="M18 2.0845
+-                a 15.9155 15.9155 0 0 1 0 31.831
+-                a 15.9155 15.9155 0 0 1 0 -31.831"
+-                />
+-                <path
+-                  className="text-primary"
+-                  stroke="currentColor"
+-                  strokeWidth="3"
+-                  strokeDasharray="80, 100"
+-                  fill="none"
+-                  d="M18 2.0845
+-                a 15.9155 15.9155 0 0 1 0 31.831
+-                a 15.9155 15.9155 0 0 1 0 -31.831"
+-                />
+-              </svg>
+-              <div className="absolute inset-0 flex flex-col items-center justify-center text-xs">
+-                <span className="text-[10px] text-[#676A75] font-medium uppercase text-center">
+-                  <p>ABOVE</p>
+-                  <p>AVERAGE</p>
+-                </span>
+-
+-                <span className="text-lg font-semibold text-[#060606]">5.19</span>
+-              </div>
+-            </div>
+-
+-            {/* Analysis Box */}
+-            <div className="flex flex-col gap-2">
+-              <div className="bg-muted rounded-md px-3 py-1 text-sm font-medium text-muted-foreground">
+-                <div className="bg-[#F3F4F6] rounded-lg p-3 text-[#676A75] text-sm">
+-                  <p className="font-semibold">Analysis</p>
+-                  <p>Average Return on…</p>
+-                </div>
+-              </div>
+-
+-              <div className="flex items-center gap-2 bg-muted rounded-md px-3 py-1 text-sm text-muted-foreground">
+-                <span className="bg-[#F3F4F6] rounded-lg p-2">
+-                  <Image src={AmazonIcon || "/placeholder.svg"} alt="Amazon icon" width={32} height={32} />
+-                </span>
+-
+-                <span className="bg-[#F3F4F6] rounded-lg p-3 text-[#676A75] text-xs">Amazon Owns the buybox</span>
+-              </div>
+-            </div>
+-          </div>
+-
+-          {/* Quantity Selector */}
+-          <div className="flex items-center gap-4">
+-            <AntTooltip
+-              title="The recommended quantity to purchase based on market demand, competition, and inventory turnover rate."
+-              placement="top"
+-            >
+-              <span className="text-sm text-[#676A75] font-medium cursor-help border-b border-dotted border-gray-400">
+-                Suggested Purchase Quantity
+-              </span>
+-            </AntTooltip>
+-            <p className="border border-input rounded-md px-4 py-1 text-sm">5</p>
+-          </div>
+-        </div>
+-      )}
++    
+ 
+       {/* extra stats grid */}
+       {activeTab === "info" && (
+@@ -291,6 +258,7 @@ const ProductStats = forwardRef(({ product, isLoading, buyboxDetails }: ProductS
+         </div>
+       )}
+     </div>
++    </>
+   )
+ })
+ 
+@@ -322,4 +290,4 @@ const ProductStatsSkeleton = () => {
+   )
+ }
+ 
+-export default ProductStats
++export default ProductStats
+\ No newline at end of file
+diff --git a/app/(dashboard)/dashboard/product/[asin]/page.tsx b/app/(dashboard)/dashboard/product/[asin]/page.tsx
+index 83b31d0..5630283 100644
+--- a/app/(dashboard)/dashboard/product/[asin]/page.tsx
++++ b/app/(dashboard)/dashboard/product/[asin]/page.tsx
+@@ -1,5 +1,6 @@
+ "use client";
+ 
++import React, { useMemo } from "react";
+ import { useParams } from "next/navigation";
+ import ProductDetails from "../../_components/ProductDetails";
+ import { useAppSelector } from "@/redux/hooks";
+@@ -9,13 +10,30 @@ export interface ProductDetailsProps {
+   marketplaceId: number;
+ }
+ 
+-const ProductPage = () => {
++const ProductPage = React.memo(() => {
+   const params = useParams();
+   const asin = params?.asin as string;
+   const { marketplaceId } = useAppSelector((state) => state?.global);
+-  //const marketplaceId = "1";
++  
++  // Memoize props to prevent unnecessary re-renders
++  const productDetailsProps = useMemo(() => ({
++    asin,
++    marketplaceId,
++  }), [asin, marketplaceId]);
++  
++  // Don't render if essential data is missing
++  if (!asin || !marketplaceId || marketplaceId === 0) {
++    return (
++      <div className="h-[400px] flex flex-col items-center justify-center">
++        <h2 className="font-semibold">Loading product details...</h2>
++        <p className="text-sm">Please wait while we load the product information</p>
++      </div>
++    );
++  }
+ 
+-  return <ProductDetails asin={asin} marketplaceId={marketplaceId} />;
+-};
++  return <ProductDetails {...productDetailsProps} />;
++});
++
++ProductPage.displayName = 'ProductPage';
+ 
+ export default ProductPage;

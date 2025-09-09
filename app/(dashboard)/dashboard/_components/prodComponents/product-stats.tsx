@@ -1,35 +1,70 @@
 "use client"
 /* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { InfoCard } from "../info-card"
 import { BSRIcon, PriceTagIcon, ProductSalesIcon, MaximumCostIcon, ROIIcon } from "../icons"
-import { Skeleton, Tooltip as AntTooltip } from "antd"
+import { Skeleton, Tooltip as AntTooltip, message } from "antd"
 import type { Product } from "./types"
-import { useState, forwardRef, useImperativeHandle } from "react"
+import { useState, forwardRef, useImperativeHandle, useEffect } from "react"
 import Image from "next/image"
 import AmazonIcon from "@/public/assets/svg/amazon-icon.svg"
+
+import { useAppDispatch } from "@/redux/hooks"
+
+import Link from "next/link"
 
 interface ProductStatsProps {
   product: Product | undefined
   isLoading?: boolean
   buyboxDetails?: any
+  asin: string
+  marketplaceId: number
+  onNavigateToTotan?: () => void // Callback to handle navigation
 }
 
 type Tab = "info" | "totan"
 
-const ProductStats = forwardRef(({ product, isLoading, buyboxDetails }: ProductStatsProps, ref) => {
+
+
+const ProductStats = forwardRef(({ 
+  product, 
+  isLoading, 
+  buyboxDetails, 
+ 
+}: ProductStatsProps, ref) => {
+  const dispatch = useAppDispatch()
   const [activeTab, setActiveTab] = useState<Tab>("info")
   const [latestProfitCalc, setLatestProfitCalc] = useState<any>(product?.last_profitability_calculation?.fba)
+
+
+  const [messageApi, contextHolder] = message.useMessage();
+
+
 
   // Get the data from the correct sources
   const extra = buyboxDetails?.extra || product?.extra
   const profitabilityCalc = latestProfitCalc || product?.last_profitability_calculation?.fba
 
-  // Expose the update function to the parent component
-  useImperativeHandle(ref, () => ({
-    handleProfitabilityUpdate: (data: any) => {
-      setLatestProfitCalc(data)
-    },
-  }))
+
+
+  // Reset states when product changes
+  useEffect(() => {
+    setLatestProfitCalc(product?.last_profitability_calculation?.fba)
+  }, [product])
+
+ 
+
+  
+
+ 
+
+ 
+
+
+
+  
+
+  
 
   if (isLoading || !product) {
     return <ProductStatsSkeleton />
@@ -38,21 +73,21 @@ const ProductStats = forwardRef(({ product, isLoading, buyboxDetails }: ProductS
   // Get ROI text color based on roiIsOk
   const getRoiTextColor = () => {
     if (profitabilityCalc?.buying_criteria?.roiIsOk === true) {
-      return "text-green-600" // Green text for good ROI
+      return "text-green-600"
     } else if (profitabilityCalc?.buying_criteria?.roiIsOk === false) {
-      return "text-red-600" // Red text for bad ROI
+      return "text-red-600"
     }
-    return "" // Default text color
+    return ""
   }
 
   // Get Profit text color based on profitIsOk
   const getProfitTextColor = () => {
     if (profitabilityCalc?.buying_criteria?.profitIsOk === true) {
-      return "text-green-600" // Green text for good profit
+      return "text-green-600"
     } else if (profitabilityCalc?.buying_criteria?.profitIsOk === false) {
-      return "text-red-600" // Red text for bad profit
+      return "text-red-600"
     }
-    return "" // Default text color
+    return ""
   }
 
   // Get ROI tooltip message based on criteria
@@ -94,10 +129,14 @@ const ProductStats = forwardRef(({ product, isLoading, buyboxDetails }: ProductS
     return "The highest price you should pay for this product to maintain your target profit margin and ROI."
   }
 
+  
+
   return (
-    <div className="flex flex-col gap-4">
-      {/* tabs */}
-      <div className="flex gap-4 items-center text-sm font-semibold">
+    <>
+      {contextHolder}
+      <div className="flex flex-col gap-4">
+        {/* tabs */}
+        <div className="flex gap-4 items-center text-sm font-semibold">
         <button
           type="button"
           onClick={() => setActiveTab("info")}
@@ -108,9 +147,9 @@ const ProductStats = forwardRef(({ product, isLoading, buyboxDetails }: ProductS
           Product info
         </button>
    
-   {/** 
         <button
           type="button"
+          disabled
           onClick={() => setActiveTab("totan")}
           className={`px-4 py-2 rounded-full ${
             activeTab === "totan" ? "bg-primary text-white" : "bg-[#F3F4F6] text-[#676A75]"
@@ -118,81 +157,9 @@ const ProductStats = forwardRef(({ product, isLoading, buyboxDetails }: ProductS
         >
           Totan (AI)
         </button>
-        */}
-     
       </div>
 
-      {/* Totan */}
-      {activeTab === "totan" && (
-        <div className="border border-border rounded-xl shadow-sm p-4 flex flex-col gap-3">
-          {/* Score and Info Row */}
-          <div className="flex items-center justify-between">
-            {/* Circular Score */}
-            <div className="relative size-32">
-              <svg className="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
-                <path
-                  className="text-[#F3F4F6]"
-                  stroke="currentColor"
-                  strokeWidth="3"
-                  fill="none"
-                  d="M18 2.0845
-                a 15.9155 15.9155 0 0 1 0 31.831
-                a 15.9155 15.9155 0 0 1 0 -31.831"
-                />
-                <path
-                  className="text-primary"
-                  stroke="currentColor"
-                  strokeWidth="3"
-                  strokeDasharray="80, 100"
-                  fill="none"
-                  d="M18 2.0845
-                a 15.9155 15.9155 0 0 1 0 31.831
-                a 15.9155 15.9155 0 0 1 0 -31.831"
-                />
-              </svg>
-              <div className="absolute inset-0 flex flex-col items-center justify-center text-xs">
-                <span className="text-[10px] text-[#676A75] font-medium uppercase text-center">
-                  <p>ABOVE</p>
-                  <p>AVERAGE</p>
-                </span>
-
-                <span className="text-lg font-semibold text-[#060606]">5.19</span>
-              </div>
-            </div>
-
-            {/* Analysis Box */}
-            <div className="flex flex-col gap-2">
-              <div className="bg-muted rounded-md px-3 py-1 text-sm font-medium text-muted-foreground">
-                <div className="bg-[#F3F4F6] rounded-lg p-3 text-[#676A75] text-sm">
-                  <p className="font-semibold">Analysis</p>
-                  <p>Average Return on…</p>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-2 bg-muted rounded-md px-3 py-1 text-sm text-muted-foreground">
-                <span className="bg-[#F3F4F6] rounded-lg p-2">
-                  <Image src={AmazonIcon || "/placeholder.svg"} alt="Amazon icon" width={32} height={32} />
-                </span>
-
-                <span className="bg-[#F3F4F6] rounded-lg p-3 text-[#676A75] text-xs">Amazon Owns the buybox</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Quantity Selector */}
-          <div className="flex items-center gap-4">
-            <AntTooltip
-              title="The recommended quantity to purchase based on market demand, competition, and inventory turnover rate."
-              placement="top"
-            >
-              <span className="text-sm text-[#676A75] font-medium cursor-help border-b border-dotted border-gray-400">
-                Suggested Purchase Quantity
-              </span>
-            </AntTooltip>
-            <p className="border border-input rounded-md px-4 py-1 text-sm">5</p>
-          </div>
-        </div>
-      )}
+    
 
       {/* extra stats grid */}
       {activeTab === "info" && (
@@ -291,6 +258,7 @@ const ProductStats = forwardRef(({ product, isLoading, buyboxDetails }: ProductS
         </div>
       )}
     </div>
+    </>
   )
 })
 

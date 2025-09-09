@@ -1,7 +1,11 @@
 "use client"
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import Image from "next/image"
-import { Tooltip as AntTooltip } from "antd"
+import { Tooltip as AntTooltip, message } from "antd"
+//import { Copy, Check } from "lucide-react"
+import { BsCopy } from "react-icons/bs";
+import { LuCheck } from "react-icons/lu";
+import { useState } from "react"
 import ProductThumbnail from "@/public/assets/images/women-shoes.png"
 import Illustration from "@/public/assets/svg/illustration.svg"
 import AlertsDrawer from "../AlertsDrawer"
@@ -30,6 +34,40 @@ const ProductInfo = ({
   isLoadingIpData,
 }: ProductInfoProps) => {
   const { handleVariationChange } = useProductVariation(asin, marketplaceId)
+  const [copiedAsin, setCopiedAsin] = useState(false)
+  const [copiedUpc, setCopiedUpc] = useState(false)
+
+  const copyAsinToClipboard = async () => {
+    try {
+      await navigator.clipboard.writeText(asin)
+      setCopiedAsin(true)
+      message.success("ASIN copied to clipboard!")
+      
+      // Reset the copied state after 2 seconds
+      setTimeout(() => {
+        setCopiedAsin(false)
+      }, 2000)
+    } catch (err) {
+      console.error("Failed to copy ASIN: ", err)
+      message.error("Failed to copy ASIN")
+    }
+  }
+
+  const copyUpcToClipboard = async () => {
+    try {
+      await navigator.clipboard.writeText(product?.upc)
+      setCopiedUpc(true)
+      message.success("UPC copied to clipboard!")
+      
+      // Reset the copied state after 2 seconds
+      setTimeout(() => {
+        setCopiedUpc(false)
+      }, 2000)
+    } catch (err) {
+      console.error("Failed to copy UPC: ", err)
+      message.error("Failed to copy UPC")
+    }
+  }
 
   if (isLoading || !product) {
     return (
@@ -92,25 +130,58 @@ const ProductInfo = ({
           )}
 
           <p className=" text-base text-gray-600  mb-2">{product?.category}</p>
-          <p className="text-base">
-            <AntTooltip
-              title="Amazon Standard Identification Number - A unique product identifier assigned by Amazon."
-              placement="top"
-            >
-              <span className="cursor-help border-b border-dotted border-gray-400">ASIN: {product?.asin}</span>
-            </AntTooltip>
+          <div className="text-base flex items-center gap-2 flex-wrap">
+            <div className="flex items-center gap-2">
+              <AntTooltip
+                title="Amazon Standard Identification Number - A unique product identifier assigned by Amazon."
+                placement="top"
+              >
+                <span className="cursor-help border-b border-dotted border-gray-400">ASIN: {product?.asin}</span>
+              </AntTooltip>
+              
+              <AntTooltip title="Copy ASIN to clipboard" placement="top">
+                <button
+                  onClick={copyAsinToClipboard}
+                  className="inline-flex items-center justify-center w-6 h-6 rounded hover:bg-gray-100 transition-colors duration-200 group"
+                  aria-label="Copy ASIN"
+                >
+                  {copiedAsin ? (
+                    <LuCheck className="w-4 h-4 text-green-500" />
+                  ) : (
+                    <BsCopy className="w-4 h-4 text-gray-500 group-hover:text-gray-700" />
+                  )}
+                </button>
+              </AntTooltip>
+            </div>
+            
             {product?.upc && (
               <>
-                ,
-                <AntTooltip
-                  title="Universal Product Code - A barcode symbology used for tracking trade items in stores."
-                  placement="top"
-                >
-                  <span className="cursor-help border-b border-dotted border-gray-400"> UPC: {product?.upc}</span>
-                </AntTooltip>
+                <span>,</span>
+                <div className="flex items-center gap-2">
+                  <AntTooltip
+                    title="Universal Product Code - A barcode symbology used for tracking trade items in stores."
+                    placement="top"
+                  >
+                    <span className="cursor-help border-b border-dotted border-gray-400">UPC: {product?.upc}</span>
+                  </AntTooltip>
+                  
+                  <AntTooltip title="Copy UPC to clipboard" placement="top">
+                    <button
+                      onClick={copyUpcToClipboard}
+                      className="inline-flex items-center justify-center w-6 h-6 rounded hover:bg-gray-100 transition-colors duration-200 group"
+                      aria-label="Copy UPC"
+                    >
+                      {copiedUpc ? (
+                        <LuCheck className="w-4 h-4 text-green-500" />
+                      ) : (
+                        <BsCopy className="w-4 h-4 text-gray-500 group-hover:text-gray-700" />
+                      )}
+                    </button>
+                  </AntTooltip>
+                </div>
               </>
             )}
-          </p>
+          </div>
 
           {product?.rating && (
             <AntTooltip
