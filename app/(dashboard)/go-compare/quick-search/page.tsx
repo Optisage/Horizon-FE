@@ -1,7 +1,7 @@
 "use client";
 import { DndContext, type DragEndEvent, DragOverlay, type DragStartEvent, PointerSensor, useSensor, useSensors } from "@dnd-kit/core"
 import { restrictToWindowEdges } from "@dnd-kit/modifiers"
-import { useGetSearchByIdQuery, useQuickSearchQuery } from '@/redux/api/quickSearchApi';
+import { useGetSearchByIdQuery, useQuickSearchQuery, useGetProductDetailsQuery } from '@/redux/api/quickSearchApi';
 import { usePathname, useSearchParams } from 'next/navigation';
 import React, { useEffect, useState } from 'react'
 import { TbListSearch } from "react-icons/tb";
@@ -10,7 +10,7 @@ import { ProductCard } from "../_components/ProductCard";
 import Overlay from "../_components/dnd/Overlay";
 import ProductInformation from "../_components/ProductInformation";
 import QuickSearchTable from "../_components/QuickSearchTable";
-import { ProductObj, QuickSearchData } from "@/types/goCompare";
+import { ProductObj, QuickSearchData, QuickSearchResult } from "@/types/goCompare";
 import { FetchBaseQueryError } from "@reduxjs/toolkit/query";
 import { SerializedError } from "@reduxjs/toolkit";
 import GoCompareLoader from "../_components/Loader";
@@ -20,14 +20,13 @@ export default function QuickSearch() {
     const params = useSearchParams();
     const pathname = usePathname();
     const asin = params.get('asin') ?? '';
-    const country_ids = params.get('country') ?? '';
-    const store_names = params.get('stores')?.split(',') || [];
+    const marketplace_id = params.get('marketplace_id') ? parseInt(params.get('marketplace_id')!) : undefined;
     const queueParam = params.get('queue');
     const queue = queueParam === 'true';
     const searchId = params.get('searchId');
 
     const [lastQueryParams, setLastQueryParams] = useState({
-        asin, country_ids, store_names: store_names.join(','), queue
+        asin, marketplace_id, queue
     });
 
     const [isRouteChanging, setIsRouteChanging] = useState(false);
@@ -38,12 +37,12 @@ export default function QuickSearch() {
     );
 
     const quickSearchResult = useQuickSearchQuery(
-        { asin, store_names, country_ids, queue },
-        { skip: !!searchId, refetchOnMountOrArgChange: true }
+        { asin, marketplace_id: marketplace_id!, queue },
+        { skip: !!searchId || !marketplace_id, refetchOnMountOrArgChange: true }
     );
 
     type QueryResult = {
-        data: QuickSearchData | undefined;
+        data: QuickSearchResult[] | QuickSearchData | undefined;
         isLoading: boolean;
         isError: boolean;
         isFetching: boolean;
@@ -68,6 +67,26 @@ export default function QuickSearch() {
 
     const [selectedProducts, setSelectedProducts] = useState<ProductObj[]>([])
     const [activeProduct, setActiveProduct] = useState<ProductObj | null>(null)
+    const [selectedProductDetails, setSelectedProductDetails] = useState<any>(null)
+
+    // Get ASIN for product details API call
+    const getSelectedProductAsin = () => {
+        if (selectedProducts.length > 0) {
+            const product = selectedProducts[0];
+            if ('scraped_product' in product) {
+                return product.scraped_product.id || product.scraped_product.product_name;
+            } else if ('asin' in product) {
+                return (product as QuickSearchResult).asin;
+            }
+        }
+        return null;
+    };
+
+    const selectedAsin = getSelectedProductAsin();
+    const productDetailsResult = useGetProductDetailsQuery(
+        { asin: selectedAsin || '', marketplace_id: marketplace_id || 1 },
+        { skip: !selectedAsin || !marketplace_id }
+    );
 
     const sensors = useSensors(
         useSensor(PointerSensor, {
@@ -82,11 +101,24 @@ export default function QuickSearch() {
     const handleDragStart = (event: DragStartEvent) => {
         console.log("Drag started:", event)
         const { active } = event
-        const draggedProduct = data?.opportunities.find(
-            (product) => product.scraped_product.id === active.id
-        )
-        if (draggedProduct) {
-            setActiveProduct(draggedProduct)
+
+        // Handle QuickSearchResult[] data structure
+        if (Array.isArray(data) && data.length > 0 && 'store_name' in data[0]) {
+            const draggedProduct = (data as QuickSearchResult[]).find(
+                (product) => `${product.store_name}-${product.asin}` === active.id
+            )
+            if (draggedProduct) {
+                setActiveProduct(draggedProduct as any)
+            }
+        }
+        // Handle old QuickSearchData structure
+        else if (data && 'opportunities' in data) {
+            const draggedProduct = data.opportunities.find(
+                (product) => product.scraped_product.id === active.id
+            )
+            if (draggedProduct) {
+                setActiveProduct(draggedProduct)
+            }
         }
     }
 
@@ -95,47 +127,68 @@ export default function QuickSearch() {
         console.log("Drag ended:", { active, over })
         setActiveProduct(null)
         if (over && over.id === "droppable-area") {
-            const draggedProduct = data?.opportunities.find(
-                (product) => product.scraped_product.id === active.id
-            )
-            if (draggedProduct) {
-                setSelectedProducts([draggedProduct])
+            // Handle QuickSearchResult[] data structure
+            if (Array.isArray(data) && data.length > 0 && 'store_name' in data[0]) {
+                const draggedProduct = (data as QuickSearchResult[]).find(
+                    (product) => `${product.store_name}-${product.asin}` === active.id
+                )
+                if (draggedProduct) {
+                    setSelectedProducts([draggedProduct as any])
+                }
+            }
+            // Handle old QuickSearchData structure
+            else if (data && 'opportunities' in data) {
+                const draggedProduct = data.opportunities.find(
+                    (product) => product.scraped_product.id === active.id
+                )
+                if (draggedProduct) {
+                    setSelectedProducts([draggedProduct])
+                }
             }
         }
     }
 
-    const handleRowClick = (product: ProductObj) => {
-        setSelectedProducts([product])
+    const handleRowClick = (product: ProductObj | QuickSearchResult) => {
+        setSelectedProducts([product as any])
     }
 
     const handleRemoveProduct = (productId: string) => {
-        setSelectedProducts(selectedProducts.filter((product) => product.scraped_product.id !== productId))
+        setSelectedProducts(selectedProducts.filter((product) => {
+            if ('scraped_product' in product) {
+                return product.scraped_product.id !== productId;
+            } else if ('store_name' in product) {
+                return `${(product as QuickSearchResult).store_name}-${(product as QuickSearchResult).asin}` !== productId;
+            }
+            return true;
+        }))
     }
 
     const productData = {
-        "Avg. Amazon 90 day price": String(data?.amazon_product?.pricing?.avg_amazon_90_day_price ?? '-'),
-        "Gross ROI": selectedProducts.length > 0 ? `${selectedProducts[0]?.roi_percentage.toFixed(1)}%` : '0%',
-        "Match quality%": selectedProducts.length > 0 ? `${(selectedProducts[0]?.confidence * 100).toFixed(0)}` : '0',
-        "Sales rank": String(data?.amazon_product?.metrics?.sales_rank ?? '-'),
-        "Avg. 3 month sales rank": String(data?.amazon_product?.metrics?.avg_3_month_sales_rank ?? '-'),
-        ASIN: String(asin ?? '-'),
-        "Number of sellers": String(data?.amazon_product?.metrics?.number_of_sellers ?? 'Not available'),
-        "Amazon on listing": data?.amazon_product?.metrics?.amazon_on_listing ? 'YES' : 'NO',
+        "Avg. Amazon 90 day price": selectedProductDetails?.avg_amazon_90_day_price ? `$${selectedProductDetails.avg_amazon_90_day_price.toFixed(2)}` : 'N/A',
+        "Gross ROI": selectedProductDetails?.gross_roi ? `${selectedProductDetails.gross_roi.toFixed(1)}%` : '0%',
+        "Match quality%": 'N/A',
+        "Sales rank": selectedProductDetails?.sales_rank ? String(selectedProductDetails.sales_rank) : 'N/A',
+        "Avg. 3 month sales rank": selectedProductDetails?.avg_3_month_sales_rank ? String(selectedProductDetails.avg_3_month_sales_rank) : 'N/A',
+        ASIN: selectedProductDetails?.asin || String(asin ?? '-'),
+        "Number of sellers": selectedProductDetails?.number_of_sellers ? String(selectedProductDetails.number_of_sellers) : 'N/A',
+        "Amazon on listing": selectedProductDetails?.amazon_on_listing !== undefined ? (selectedProductDetails.amazon_on_listing ? 'YES' : 'NO') : 'N/A',
+        "Est. Monthly Sales": selectedProductDetails?.estMonthlySales ? String(selectedProductDetails.estMonthlySales) : 'N/A',
+        "Amazon Fees": selectedProductDetails?.amazon_fees ? `$${selectedProductDetails.amazon_fees.toFixed(2)}` : 'N/A',
+        "Current Price": selectedProductDetails?.current_price ? `$${selectedProductDetails.current_price.toFixed(2)}` : 'N/A'
     }
 
     useEffect(() => {
-        const currentParams = { asin, country_ids, store_names: store_names.join(','), queue };
+        const currentParams = { asin, marketplace_id, queue };
         const hasParamsChanged =
             lastQueryParams.asin !== currentParams.asin ||
-            lastQueryParams.country_ids !== currentParams.country_ids ||
-            lastQueryParams.store_names !== currentParams.store_names ||
+            lastQueryParams.marketplace_id !== currentParams.marketplace_id ||
             lastQueryParams.queue !== currentParams.queue;
 
         if (hasParamsChanged) {
             setIsRouteChanging(true);
             setLastQueryParams(currentParams);
         }
-    }, [asin, country_ids, store_names, queue, pathname]);
+    }, [asin, marketplace_id, queue, pathname]);
 
     useEffect(() => {
         if (!isFetching) {
@@ -145,14 +198,22 @@ export default function QuickSearch() {
 
     useEffect(() => {
         setSelectedProducts([]);
-    }, [data?.amazon_product]);
+        setSelectedProductDetails(null);
+    }, [data]);
+
+    // Update product details when API call completes
+    useEffect(() => {
+        if (productDetailsResult.data && productDetailsResult.data.data) {
+            setSelectedProductDetails(productDetailsResult.data.data);
+        }
+    }, [productDetailsResult.data]);
 
     if ((isLoading || isRouteChanging) && searchId) return <Loader />;
     if (isLoading || isRouteChanging) {
         return (
             <GoCompareLoader
                 asin={asin}
-                storeNames={store_names}
+                storeNames={Array.isArray(data) && data.length > 0 && 'store_name' in data[0] ? data.map(item => item.store_name) : []}
                 isLoading={isLoading || isRouteChanging}
             />
         );
@@ -187,8 +248,17 @@ export default function QuickSearch() {
                     <div className="flex-1">
                         <p className="font-semibold">Comparison Workspace</p>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2.5">
-                            {data?.amazon_product && (
-                                <ProductCard product={data?.amazon_product} />
+                            {Array.isArray(data) && data.length > 0 && 'store_name' in data[0] ? (
+                                <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+                                    <h3 className="font-medium text-gray-900 mb-2">Search Results for {asin}</h3>
+                                    <p className="text-sm text-gray-600">Found {data.length} product(s) across {new Set(data.map(item => item.store_name)).size} store(s)</p>
+                                </div>
+                            ) : data && 'amazon_product' in data && data.amazon_product ? (
+                                <ProductCard product={data.amazon_product} />
+                            ) : (
+                                <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+                                    <p className="text-gray-500">No Amazon product data available</p>
+                                </div>
                             )}
                             <Droppable
                                 id="droppable-area"
@@ -196,9 +266,22 @@ export default function QuickSearch() {
                             >
                                 {selectedProducts.length > 0 ? (
                                     <div className="relative h-full">
-                                        <ProductCard product={selectedProducts[0]} />
+                                        {selectedProducts[0] && 'scraped_product' in selectedProducts[0] ? (
+                                            <ProductCard product={selectedProducts[0]} />
+                                        ) : (
+                                            <div className="p-4">
+                                                <h4 className="font-medium">{(selectedProducts[0] as QuickSearchResult).product_name}</h4>
+                                                <p className="text-sm text-gray-600">{(selectedProducts[0] as QuickSearchResult).store_name}</p>
+                                                <p className="text-lg font-semibold text-green-600">{(selectedProducts[0] as QuickSearchResult).price}</p>
+                                            </div>
+                                        )}
                                         <button
-                                            onClick={() => handleRemoveProduct(selectedProducts[0].scraped_product.id)}
+                                            onClick={() => {
+                                                const productId = selectedProducts[0] && 'scraped_product' in selectedProducts[0]
+                                                    ? selectedProducts[0].scraped_product.id
+                                                    : `${(selectedProducts[0] as QuickSearchResult).store_name}-${(selectedProducts[0] as QuickSearchResult).asin}`;
+                                                handleRemoveProduct(productId);
+                                            }}
                                             className="absolute top-2 right-2 bg-white rounded-full p-1 shadow-md hover:bg-gray-100 z-10"
                                         >
                                             <svg
@@ -236,15 +319,23 @@ export default function QuickSearch() {
                 <div>
                     <h2 className="font-semibold mb-4">Quick Search Results</h2>
                     <QuickSearchTable
-                        products={data?.opportunities || []}
+                        products={Array.isArray(data) && data.length > 0 && 'store_name' in data[0]
+                            ? data
+                            : (data && 'opportunities' in data ? data.opportunities : [])}
                         onRowClick={handleRowClick}
                     />
                 </div>
             </section>
 
             <DragOverlay>
-                {activeProduct ? (
+                {activeProduct && 'scraped_product' in activeProduct ? (
                     <Overlay activeProduct={activeProduct} />
+                ) : activeProduct && 'store_name' in activeProduct ? (
+                    <div className="p-4 bg-white border rounded-lg shadow-lg">
+                        <h4 className="font-medium">{(activeProduct as QuickSearchResult).product_name}</h4>
+                        <p className="text-sm text-gray-600">{(activeProduct as QuickSearchResult).store_name}</p>
+                        <p className="text-lg font-semibold text-green-600">{(activeProduct as QuickSearchResult).price}</p>
+                    </div>
                 ) : null}
             </DragOverlay>
         </DndContext>

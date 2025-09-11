@@ -88,12 +88,12 @@ export function CreateDropdown() {
             {/* {showModal === "reverseSearch" && <ReverseSearchModal isOpen={true} onClose={() => toggleModal(null)} />} */}
             {showModal === "quickSearch" && <SearchModal
                 isOpen={true} onClose={() => toggleModal(null)}
-                title="Quick Search" inputLabel="Enter ASIN, UPC or Product Name" isMultiStore={true}
+                title="Quick Search" inputLabel="Enter ASIN, UPC or Product Name"
             />}
 
             {showModal === "reverseSearch" && <SearchModal
                 isOpen={true} onClose={() => toggleModal(null)}
-                title="Reverse Search" inputLabel="Query Name" isMultiStore={false}
+                title="Reverse Search" inputLabel="Query Name"
             />}
         </>
     )

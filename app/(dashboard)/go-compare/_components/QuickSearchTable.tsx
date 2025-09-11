@@ -4,17 +4,92 @@ import { useDraggable } from "@dnd-kit/core"
 import { useState } from "react"
 import TablePagination from "./TablePagination"
 import placeholder from '../../../../public/assets/images/gocompare/placeholder.png'
-import { ProductObj } from "@/types/goCompare";
+import { ProductObj, QuickSearchResult } from "@/types/goCompare";
 
 interface ProductTableProps {
-  products: ProductObj[]
-  onRowClick: (product: ProductObj) => void
+  products: ProductObj[] | QuickSearchResult[]
+  onRowClick: (product: ProductObj | QuickSearchResult) => void
 }
 
-function DraggableRow({ product, onRowClick }: { product: ProductObj; onRowClick: (product: ProductObj) => void }) {
+function DraggableRow({
+  product,
+  onRowClick,
+  isQuickSearchResult = false
+}: {
+  product: ProductObj | QuickSearchResult;
+  onRowClick: (product: ProductObj | QuickSearchResult) => void;
+  isQuickSearchResult?: boolean;
+}) {
+  // Handle QuickSearchResult type
+  if (isQuickSearchResult) {
+    const quickSearchProduct = product as QuickSearchResult;
+    const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
+      id: `${quickSearchProduct.store_name}-${quickSearchProduct.asin}`,
+      data: { product: quickSearchProduct },
+    });
+
+    const [mouseDownTime, setMouseDownTime] = useState<number | null>(null);
+
+    const handleMouseDown = () => {
+      setMouseDownTime(Date.now());
+    };
+
+    const handleMouseUp = () => {
+      if (mouseDownTime && Date.now() - mouseDownTime < 200) {
+        onRowClick(quickSearchProduct);
+      }
+      setMouseDownTime(null);
+    };
+
+    return (
+      <tr
+        ref={setNodeRef}
+        style={
+          transform
+            ? {
+              transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`,
+              zIndex: isDragging ? 1000 : 1,
+              opacity: isDragging ? 0.5 : 1,
+              position: isDragging ? "relative" : "static" as "static" | "relative",
+            }
+            : undefined
+        }
+        onMouseDown={handleMouseDown}
+        onMouseUp={handleMouseUp}
+        className={`hover:bg-gray-50 cursor-pointer ${isDragging ? "opacity-50 bg-gray-100" : ""}`}
+        {...listeners}
+        {...attributes}
+      >
+        <td className="px-4 py-1.5 flex items-center gap-2">
+          <div className="w-8 h-8 relative rounded overflow-hidden">
+            <img src={quickSearchProduct.image_url} alt={quickSearchProduct.store_name} className="object-cover" />
+          </div>
+          <span className="text-sm line-clamp-1">
+            {quickSearchProduct.product_name.length > 25
+              ? `${quickSearchProduct.product_name.slice(0, 25)}...`
+              : quickSearchProduct.product_name}
+          </span>
+        </td>
+        <td className="px-4 py-1.5">
+          <div className="w-12 h-12 relative">
+            <img src={placeholder.src} alt={quickSearchProduct.store_name} className="object-contain w-10 h-10" />
+          </div>
+        </td>
+        <td className="px-4 py-1.5 text-sm">{quickSearchProduct.price}</td>
+        <td className="px-4 py-1.5 text-sm">N/A</td>
+        <td className="px-4 py-1.5 text-sm">N/A</td>
+        <td className="px-4 py-1.5 text-sm">N/A</td>
+        <td className="px-4 py-1.5 text-sm">N/A</td>
+        <td className="px-4 py-1.5 text-sm">N/A</td>
+      </tr>
+    );
+  }
+
+  // Handle ProductObj type (existing logic)
+  const productObj = product as ProductObj;
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
-    id: product.scraped_product.id,
-    data: { product },
+    id: productObj.scraped_product.id,
+    data: { product: productObj },
   });
 
   const [mouseDownTime, setMouseDownTime] = useState<number | null>(null);
@@ -25,15 +100,15 @@ function DraggableRow({ product, onRowClick }: { product: ProductObj; onRowClick
 
   const handleMouseUp = () => {
     if (mouseDownTime && Date.now() - mouseDownTime < 200) {
-      onRowClick(product);
+      onRowClick(productObj);
     }
     setMouseDownTime(null);
   };
 
-  const amazonPrice = (product.scraped_product.price.amount + product.price_difference).toFixed(2);
-  const formattedAmazonPrice = `${product.scraped_product.price.currency} ${amazonPrice}`;
-  const formattedProfitMargin = `${product.profit_margin.toFixed(1)}%`;
-  const formattedROI = `${product.roi_percentage.toFixed(1)}%`;
+  const amazonPrice = (productObj.scraped_product.price.amount + productObj.price_difference).toFixed(2);
+  const formattedAmazonPrice = `${productObj.scraped_product.price.currency} ${amazonPrice}`;
+  const formattedProfitMargin = `${productObj.profit_margin.toFixed(1)}%`;
+  const formattedROI = `${productObj.roi_percentage.toFixed(1)}%`;
 
   return (
     <tr
@@ -56,29 +131,28 @@ function DraggableRow({ product, onRowClick }: { product: ProductObj; onRowClick
     >
       <td className="px-4 py-1.5 flex items-center gap-2">
         <div className="w-8 h-8 relative rounded overflow-hidden">
-          {/* <Image src={product.scraped_product?.image_url} alt={product.store.name} width={32} height={32} className="object-cover" /> */}
-          <img src={product.scraped_product?.image_url} alt={product.store.name} className="object-cover" />
+          <img src={productObj.scraped_product?.image_url} alt={productObj.store.name} className="object-cover" />
         </div>
         <span className="text-sm line-clamp-1">
-          {product.scraped_product.product_name.length > 25
-            ? `${product.scraped_product.product_name.slice(0, 25)}...`
-            : product.scraped_product.product_name}
+          {productObj.scraped_product.product_name.length > 25
+            ? `${productObj.scraped_product.product_name.slice(0, 25)}...`
+            : productObj.scraped_product.product_name}
         </span>
       </td>
       <td className="px-4 py-1.5">
         <div className="w-12 h-12 relative">
-          {product.scraped_product?.store_logo_url ?
-            <img src={product.scraped_product?.store_logo_url} alt={product.store.name} className="object-contain w-10 h-10" /> : (
-              <img src={placeholder.src} alt={product.store.name} className="object-contain w-10 h-10" />
+          {productObj.scraped_product?.store_logo_url ?
+            <img src={productObj.scraped_product?.store_logo_url} alt={productObj.store.name} className="object-contain w-10 h-10" /> : (
+              <img src={placeholder.src} alt={productObj.store.name} className="object-contain w-10 h-10" />
             )
           }
         </div>
       </td>
-      <td className="px-4 py-1.5 text-sm">{product.scraped_product.price.formatted}</td>
+      <td className="px-4 py-1.5 text-sm">{productObj.scraped_product.price.formatted}</td>
       <td className="px-4 py-1.5 text-sm">{formattedAmazonPrice}</td>
       <td className="px-4 py-1.5 text-sm">{formattedProfitMargin}</td>
       <td className="px-4 py-1.5 text-sm">{formattedROI}</td>
-      <td className="px-4 py-1.5 text-sm">{product.potential_monthly_sales}</td>
+      <td className="px-4 py-1.5 text-sm">{productObj.potential_monthly_sales}</td>
       <td className="px-4 py-1.5 text-sm">N/A</td>
     </tr>
   )
@@ -88,12 +162,18 @@ export default function QuickSearchTable({ products, onRowClick }: ProductTableP
   const [page, setPage] = useState(1)
   const [perPage, setPerPage] = useState(10)
 
-  const sortedProducts = [...products].sort((a, b) => b.roi_percentage - a.roi_percentage)
+  // Check if products are QuickSearchResult type
+  const isQuickSearchResult = products.length > 0 && 'store_name' in products[0];
+
+  // Sort products (for ProductObj type only)
+  const sortedProducts = isQuickSearchResult
+    ? products
+    : [...(products as ProductObj[])].sort((a, b) => b.roi_percentage - a.roi_percentage)
+
   const totalPages = Math.ceil(sortedProducts.length / perPage)
-  // const totalPages = Math.ceil(products.length / perPage)
   const startIndex = (page - 1) * perPage
   const endIndex = startIndex + perPage
-  const currentData = products.slice(startIndex, endIndex)
+  const currentData = sortedProducts.slice(startIndex, endIndex)
 
 
   const handlePageChange = (page: number) => {
@@ -124,7 +204,12 @@ export default function QuickSearchTable({ products, onRowClick }: ProductTableP
             </thead>
             <tbody>
               {currentData.map((product) => (
-                <DraggableRow key={product.scraped_product.id} product={product} onRowClick={onRowClick} />
+                <DraggableRow
+                  key={isQuickSearchResult ? `${(product as any).store_name}-${(product as any).asin}` : (product as any).scraped_product.id}
+                  product={product}
+                  onRowClick={onRowClick}
+                  isQuickSearchResult={isQuickSearchResult}
+                />
               ))}
             </tbody>
           </table>

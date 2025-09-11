@@ -30,12 +30,17 @@ interface Store {
 }
 
 export interface Country {
-    id: number;
+    id: string;
     name: string;
     flag: string;
     short_code: string;
-    created_at: CreatedAt;
-    stores?: Store[]
+}
+
+export interface CountryResponse {
+    status: number;
+    message: string;
+    data: Country[];
+    meta: any[];
 }
 
 export interface ApiSearchResponseItem {
@@ -89,6 +94,53 @@ export interface AmazonProduct {
     store: Store;
 }
 
+// New QuickSearchResult interface for the updated API
+export interface QuickSearchResult {
+    store_name: string;
+    product_name: string;
+    asin: string;
+    price: string;
+    currency: string;
+    country: string;
+    product_url: string;
+    image_url: string;
+    created_at: string;
+}
+
+export interface QuickSearchResponse {
+    status: number;
+    message: string;
+    data: QuickSearchResult[];
+    meta: any[];
+}
+
+// Product Details API interfaces
+export interface ProductDetails {
+    product_name: string;
+    current_price: number;
+    avg_amazon_90_day_price: number | null;
+    gross_roi: number;
+    sales_rank: number;
+    avg_3_month_sales_rank: number;
+    asin: string;
+    number_of_sellers: number;
+    monthly_sellers: number;
+    amazon_on_listing: boolean;
+    product_url: string;
+    image_url: string;
+    amazon_fees: number;
+    estMonthlySales: number;
+}
+
+export interface ProductDetailsResponse {
+    status: number;
+    message: string;
+    data: ProductDetails;
+    responseCode: string;
+    meta: any[];
+}
+
+// Keep the old interface for backward compatibility
 export interface QuickSearchData {
     amazon_product: AmazonProduct | null;
     opportunities: ProductObj[];
