@@ -875,7 +875,7 @@ const [subscribe, { isLoading }] = useSignupMutation();
       (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
     }
       />
-
+{/** 
       <div className="mt-5 flex justify-end">
         <Link
           href=""
@@ -885,6 +885,7 @@ const [subscribe, { isLoading }] = useSignupMutation();
           Don't know what to pick? Watch a Tutorial.
         </Link>
       </div>
+      */}
     </div>,
 
     // Step 6 → Connect + Country

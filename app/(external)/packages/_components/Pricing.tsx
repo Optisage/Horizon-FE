@@ -15,7 +15,6 @@ interface Feature {
   description: string;
 }
 
-
 interface PricingPlan {
   id: number;
   name: string;
@@ -59,8 +58,6 @@ export default function Packages() {
   const [pricings, { data: apiResponse, isLoading }] = useLazyGetPricingQuery();
   const [subscribe, { isLoading: isCheckoutLoading }] = useSignupMutation();
   //const [subscribe, { isLoading: isCheckoutLoading }] = useLazyCreateStripeSubscriptionV2Query();
-
-  
 
   // Handle URL params from signup redirect
   useEffect(() => {
@@ -219,6 +216,9 @@ export default function Packages() {
           "Annual subscription";
       }
 
+      // Check if plan should be disabled (SAGE plan is not available)
+      const isDisabled = plan.name.toUpperCase() === "SAGE";
+
       return {
         id: plan.id,
         name: plan.name, // Keep original name without modification
@@ -228,11 +228,16 @@ export default function Packages() {
         description,
         features,
         note: upgradeNote,
-        buttonText: billingNote,
+        buttonText: isDisabled
+          ? "Unavailable"
+          : plan.trial > 0
+          ? "Start Free Trial"
+          : billingNote,
         isDefaultHighlighted,
         stripePriceId: plan.id,
         interval: plan.interval,
         trial: plan.trial,
+        isDisabled,
       };
     });
   };
@@ -262,12 +267,17 @@ export default function Packages() {
   };
 
   const handleCardClick = (planId: number) => {
+    // Don't allow selection of disabled plans
+    const plan = processedPlans.find((p) => p.id === planId);
+    if (plan?.isDisabled) {
+      return;
+    }
     setSelectedPlanId(planId);
   };
 
   const handleGetStarted = (planId: number) => {
     const plan = processedPlans.find((p) => p.id === planId);
-    if (plan) {
+    if (plan && !plan.isDisabled) {
       if (plan.trial > 0) {
         // Show modal for free trial plans
         setSelectedPlanId(planId);
@@ -300,6 +310,10 @@ export default function Packages() {
 
   // Update button text and loading state
   const getButtonText = (plan: any, isSelected: boolean) => {
+    if (plan.isDisabled) {
+      return "Unavailable";
+    }
+
     if (isFromSignup) {
       // Coming from signup flow
       if (isCheckoutLoading && isSelected) {
@@ -374,13 +388,21 @@ export default function Packages() {
                 <div
                   key={plan.id}
                   onClick={() => handleCardClick(plan.id)}
-                  className={`rounded-2xl py-6 px-3 flex flex-col justify-between relative cursor-pointer transition-all duration-200 ${
-                    isHighlighted
-                      ? "bg-gradient-to-b from-[#08B27C] to-[#11946C] text-white scale-105 shadow-lg"
-                      : "bg-white border border-[#D6D6D6] hover:border-[#08B27C] hover:shadow-md"
+                  className={`rounded-2xl py-6 px-3 flex flex-col justify-between relative transition-all duration-200 ${
+                  
+                       isHighlighted
+                      ? "bg-gradient-to-b from-[#08B27C] to-[#11946C] text-white scale-105 shadow-lg cursor-pointer"
+                      : "bg-white border border-[#D6D6D6] hover:border-[#08B27C] hover:shadow-md cursor-pointer"
                   }`}
                 >
-                  {isHighlighted && (
+                  {/* Coming Soon Badge for disabled plans */}
+                  {plan.isDisabled && (
+                    <div className="absolute top-2 right-2 bg-gray-600 text-white px-3 py-1 text-sm rounded-lg">
+                      Coming Soon
+                    </div>
+                  )}
+
+                  {isHighlighted && !plan.isDisabled && (
                     <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 border border-[#08B27D] bg-white text-[#596375] text-xs px-3 py-1 rounded-full">
                       {plan.name.toUpperCase() === "PREMIUM" && isSelected ? "Most Popular" : "Selected"}
                     </div>
@@ -388,7 +410,9 @@ export default function Packages() {
                   <div className="flex flex-col items-center space-y-4">
                     <h3
                       className={`text-2xl font-semibold text-center ${
-                        isHighlighted ? "text-white" : "text-gray-900"
+                         isHighlighted
+                          ? "text-white"
+                          : "text-gray-900"
                       }`}
                     >
                       {plan.name}
@@ -396,7 +420,7 @@ export default function Packages() {
                     <p className="mt-2 text-6xl text-center font-bold">
                       <span
                         className={`${
-                          isHighlighted
+                           isHighlighted
                             ? "text-white"
                             : "bg-gradient-to-r from-[#11946C] to-[#08B27C] bg-clip-text text-transparent"
                         }`}
@@ -406,14 +430,20 @@ export default function Packages() {
                     </p>
                     <div
                       className={`px-3 py-[2px] rounded-2xl text-white w-fit
-                  ${isHighlighted ? "bg-[#232323]" : "bg-[#09AD7A]"}
+                  ${
+                     isHighlighted
+                      ? "bg-[#232323]"
+                      : "bg-[#09AD7A]"
+                  }
                       `}
                     >
                       <span className="text-sm">{plan.priceLabel}</span>
                     </div>
                     <p
                       className={`mt-1  text-base text-center font-semibold ${
-                        isHighlighted ? "text-white" : "text-[#222222]"
+                        isHighlighted
+                          ? "text-white"
+                          : "text-[#222222]"
                       }`}
                     >
                       {plan.description}
@@ -445,7 +475,9 @@ export default function Packages() {
                           </div>
                           <span
                             className={` font-medium ${
-                              isHighlighted ? "white" : "text-[#676A75]"
+                               isHighlighted
+                                ? "text-white"
+                                : "text-[#676A75]"
                             }`}
                           >
                             {feature}
@@ -454,7 +486,7 @@ export default function Packages() {
                       ))}
 
                       {/* Show expand/collapse button if more than 5 features */}
-                      {plan.features.length > 5 && (
+                      {plan.features.length > 5 &&  (
                         <li className="ml-6">
                           <button
                             onClick={(e) => {
@@ -477,8 +509,10 @@ export default function Packages() {
                   </div>
                   <div className="mt-6">
                     <p
-                      className={`text-sm text-[#006D4B] w-full py-3 px-5 font-medium rounded-md bg-[#E0F4EE] text-center ${
-                        isHighlighted ? "" : ""
+                      className={`text-sm w-full py-3 px-5 font-medium rounded-md text-center ${
+                        plan.isDisabled
+                          ? "text-gray-500 bg-gray-200"
+                          : "text-[#006D4B] bg-[#E0F4EE]"
                       }`}
                     >
                       {plan.note}
@@ -489,11 +523,15 @@ export default function Packages() {
                         handleGetStarted(plan.id);
                       }}
                       disabled={
-                        !isSelected || isButtonLoading(plan, isSelected)
+                        plan.isDisabled ||
+                        !isSelected ||
+                        isButtonLoading(plan, isSelected)
                       }
                       className={`mt-3 w-full rounded-lg text-sm py-2 font-medium transition-all duration-200
                     ${
-                      isSelected && !isButtonLoading(plan, isSelected)
+                      plan.isDisabled
+                        ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                        : isSelected && !isButtonLoading(plan, isSelected)
                         ? isHighlighted
                           ? "bg-[#FFB951] text-white hover:bg-[#FF8E51] cursor-pointer"
                           : "bg-[#FFB951] text-white hover:bg-[#FF8E51] cursor-pointer"
