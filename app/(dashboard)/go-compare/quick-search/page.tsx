@@ -3,7 +3,7 @@ import { DndContext, type DragEndEvent, DragOverlay, type DragStartEvent, Pointe
 import { restrictToWindowEdges } from "@dnd-kit/modifiers"
 import { useGetSearchByIdQuery, useQuickSearchQuery, useGetProductDetailsQuery } from '@/redux/api/quickSearchApi';
 import { usePathname, useSearchParams } from 'next/navigation';
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useCallback } from 'react'
 import { TbListSearch } from "react-icons/tb";
 import { Droppable } from "../_components/dnd/Droppable";
 import { ProductCard } from "../_components/ProductCard";
@@ -11,6 +11,7 @@ import Overlay from "../_components/dnd/Overlay";
 import ProductInformation from "../_components/ProductInformation";
 import QuickSearchTable from "../_components/QuickSearchTable";
 import { ProductObj, QuickSearchData, QuickSearchResult } from "@/types/goCompare";
+// Ensure we're using the latest type definitions
 import { FetchBaseQueryError } from "@reduxjs/toolkit/query";
 import { SerializedError } from "@reduxjs/toolkit";
 import GoCompareLoader from "../_components/Loader";
@@ -67,23 +68,14 @@ export default function QuickSearch() {
 
     const [selectedProducts, setSelectedProducts] = useState<ProductObj[]>([])
     const [activeProduct, setActiveProduct] = useState<ProductObj | null>(null)
-    const [selectedProductDetails, setSelectedProductDetails] = useState<any>(null)
+    const [selectedAsin, setSelectedAsin] = useState<string | null>(asin)
+
 
     // Get ASIN for product details API call
-    const getSelectedProductAsin = () => {
-        if (selectedProducts.length > 0) {
-            const product = selectedProducts[0];
-            if ('scraped_product' in product) {
-                return product.scraped_product.id || product.scraped_product.product_name;
-            } else if ('asin' in product) {
-                return (product as QuickSearchResult).asin;
-            }
-        }
-        // If no product is selected, use the ASIN from the URL for initial load
-        return asin || null;
-    };
+    // Log the values being sent to the query
+    console.log("Selected ASIN:", selectedAsin);
+    console.log("Marketplace ID:", marketplace_id);
 
-    const selectedAsin = getSelectedProductAsin();
     const productDetailsResult = useGetProductDetailsQuery(
         { asin: selectedAsin || '', marketplace_id: marketplace_id || 1 },
         { skip: !selectedAsin || !marketplace_id }
@@ -94,19 +86,20 @@ export default function QuickSearch() {
         if (productDetailsResult.data) {
             console.log("Product details response:", productDetailsResult.data);
         }
-    }, [productDetailsResult.data]);
+        if(productDetailsResult.error){
+            console.error("Product details error:", productDetailsResult.error);
+        }
+    }, [productDetailsResult]);
 
     const sensors = useSensors(
         useSensor(PointerSensor, {
             activationConstraint: {
-                distance: 8,  // Increased from 1 to make drag easier to initiate
-                tolerance: 8, // Increased from 5 for better responsiveness
-                delay: 0,     // Keep at 0 for immediate response
+                distance: 5, // Using a smaller distance for quicker drag initiation
             },
         }),
     )
 
-    const handleDragStart = (event: DragStartEvent) => {
+    const handleDragStart = useCallback((event: DragStartEvent) => {
         console.log("Drag started:", event)
         const { active } = event
 
@@ -128,9 +121,9 @@ export default function QuickSearch() {
                 setActiveProduct(draggedProduct)
             }
         }
-    }
+    }, [data])
 
-    const handleDragEnd = (event: DragEndEvent) => {
+    const handleDragEnd = useCallback((event: DragEndEvent) => {
         const { active, over } = event
         console.log("Drag ended:", { active, over })
         setActiveProduct(null)
@@ -154,10 +147,15 @@ export default function QuickSearch() {
                 }
             }
         }
-    }
+    }, [data])
 
     const handleRowClick = (product: ProductObj | QuickSearchResult) => {
         setSelectedProducts([product as any])
+        if ('asin' in product) {
+            setSelectedAsin(product.asin);
+        } else if ('scraped_product' in product) {
+            setSelectedAsin(product.scraped_product.id);
+        }
     }
 
     const handleRemoveProduct = (productId: string) => {
@@ -171,32 +169,38 @@ export default function QuickSearch() {
         }))
     }
 
+    const productDetails = productDetailsResult.data?.data || productDetailsResult.data;
+    
     // Create product data object from API response
     const productData = {
-        "Avg. Amazon 90 day price": selectedProductDetails?.avg_amazon_90_day_price !== null && selectedProductDetails?.avg_amazon_90_day_price !== undefined
-            ? `$${Number(selectedProductDetails.avg_amazon_90_day_price).toFixed(2)}`
+        "Avg. Amazon 90 day price": productDetails?.avg_amazon_90_day_price != null
+            ? `$${Number(productDetails.avg_amazon_90_day_price).toFixed(2)}`
             : 'N/A',
         
-        "Gross ROI": selectedProductDetails?.gross_roi !== null && selectedProductDetails?.gross_roi !== undefined
-            ? `${Number(selectedProductDetails.gross_roi).toFixed(1)}%`
+        "Gross ROI": productDetails?.gross_roi != null
+            ? `${Number(productDetails.gross_roi).toFixed(1)}%`
             : 'N/A',
         
-        "Sales rank": selectedProductDetails?.sales_rank !== null && selectedProductDetails?.sales_rank !== undefined
-            ? String(selectedProductDetails.sales_rank)
+        "Sales rank": productDetails?.sales_rank != null
+            ? String(productDetails.sales_rank)
             : 'N/A',
         
-        "Avg. 3 month sales rank": selectedProductDetails?.avg_3_month_sales_rank !== null && selectedProductDetails?.avg_3_month_sales_rank !== undefined
-            ? String(selectedProductDetails.avg_3_month_sales_rank)
+        "Avg. 3 month sales rank": productDetails?.avg_3_month_sales_rank != null
+            ? String(productDetails.avg_3_month_sales_rank)
             : 'N/A',
         
-        "ASIN": selectedProductDetails?.asin || asin || 'N/A',
+        "ASIN": productDetails?.asin || asin || 'N/A',
         
-        "Number of Sellers": selectedProductDetails?.number_of_sellers !== null && selectedProductDetails?.number_of_sellers !== undefined
-            ? String(selectedProductDetails.number_of_sellers)
+        "Number of Sellers": productDetails?.number_of_sellers != null
+            ? String(productDetails.number_of_sellers)
             : 'N/A',
         
-        "Amazon on listing": selectedProductDetails?.amazon_on_listing !== undefined
-            ? (selectedProductDetails.amazon_on_listing ? 'YES' : 'NO')
+        "Monthly Sellers": productDetails?.monthly_sellers != null
+            ? String(productDetails.monthly_sellers)
+            : 'N/A',
+        
+        "Amazon on listing": productDetails?.amazon_on_listing != null
+            ? (productDetails.amazon_on_listing ? 'YES' : 'NO')
             : 'N/A'
     }
 
@@ -221,15 +225,7 @@ export default function QuickSearch() {
 
     useEffect(() => {
         setSelectedProducts([]);
-        setSelectedProductDetails(null);
     }, [data]);
-
-    // Update product details when API call completes
-    useEffect(() => {
-        if (productDetailsResult.data && productDetailsResult.data.data) {
-            setSelectedProductDetails(productDetailsResult.data.data);
-        }
-    }, [productDetailsResult.data]);
 
     // Always show a loader when loading or route changing
     if (isLoading || isRouteChanging) {
@@ -295,6 +291,7 @@ export default function QuickSearch() {
                                             <ProductCard product={selectedProducts[0]} />
                                         ) : (
                                             <div className="h-full">
+                                                {/* Direct cast to avoid type compatibility issues */}
                                                 <ProductCard product={selectedProducts[0] as any} />
                                             </div>
                                         )}

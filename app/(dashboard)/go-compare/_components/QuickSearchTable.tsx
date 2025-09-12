@@ -14,17 +14,19 @@ interface ProductTableProps {
 function DraggableRow({
   product,
   onRowClick,
-  isQuickSearchResult = false
+  isQuickSearchResult = false,
+  rowIndex,
 }: {
   product: ProductObj | QuickSearchResult;
   onRowClick: (product: ProductObj | QuickSearchResult) => void;
   isQuickSearchResult?: boolean;
+  rowIndex: number;
 }) {
   // Handle QuickSearchResult type
   if (isQuickSearchResult) {
     const quickSearchProduct = product as QuickSearchResult;
     const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
-      id: `${quickSearchProduct.store_name}-${quickSearchProduct.asin}`,
+      id: `${quickSearchProduct.store_name}-${quickSearchProduct.asin}-${rowIndex}`,
       data: { product: quickSearchProduct },
     });
 
@@ -78,22 +80,15 @@ function DraggableRow({
           </span>
         </td>
         <td className="px-4 py-1.5">
-          <div className="w-12 h-12 relative">
-            <img 
-              src={placeholder.src} 
-              alt={quickSearchProduct.store_name} 
-              className="object-contain w-10 h-10"
-              onError={(e) => {
-                (e.target as HTMLImageElement).src = "https://via.placeholder.com/40?text=Store";
-              }}
-            />
+          <div className="w-auto h-auto px-2 py-1 flex items-center">
+            <span className="text-sm font-medium">{quickSearchProduct.store_name || 'Unknown Store'}</span>
           </div>
         </td>
-        <td className="px-4 py-1.5 text-sm">{quickSearchProduct.price}</td>
-        <td className="px-4 py-1.5 text-sm">N/A</td>
-        <td className="px-4 py-1.5 text-sm">N/A</td>
-        <td className="px-4 py-1.5 text-sm">N/A</td>
-        <td className="px-4 py-1.5 text-sm">N/A</td>
+        <td className="px-4 py-1.5 text-sm">{quickSearchProduct.profit_margin ? `${quickSearchProduct.profit_margin}%` : 'N/A'}</td>
+        <td className="px-4 py-1.5 text-sm">{quickSearchProduct.gross_roi ? `${quickSearchProduct.gross_roi}%` : 'N/A'}</td>
+        <td className="px-4 py-1.5 text-sm">{quickSearchProduct.target_fees || 'N/A'}</td>
+        <td className="px-4 py-1.5 text-sm">{quickSearchProduct.sales_rank || 'N/A'}</td>
+        <td className="px-4 py-1.5 text-sm">{quickSearchProduct.price || quickSearchProduct.buybox_price || 'N/A'}</td>
         <td className="px-4 py-1.5 text-sm">N/A</td>
       </tr>
     );
@@ -154,20 +149,16 @@ function DraggableRow({
         </span>
       </td>
       <td className="px-4 py-1.5">
-        <div className="w-12 h-12 relative">
-          {productObj.scraped_product?.store_logo_url ?
-            <img src={productObj.scraped_product?.store_logo_url} alt={productObj.store.name} className="object-contain w-10 h-10" /> : (
-              <img src={placeholder.src} alt={productObj.store.name} className="object-contain w-10 h-10" />
-            )
-          }
+        <div className="w-auto h-auto px-2 py-1 flex items-center">
+          <span className="text-sm font-medium">{productObj.store?.name || productObj.scraped_product?.store_name || 'Unknown Store'}</span>
         </div>
       </td>
-      <td className="px-4 py-1.5 text-sm">{productObj.scraped_product.price.formatted}</td>
-      <td className="px-4 py-1.5 text-sm">{formattedAmazonPrice}</td>
       <td className="px-4 py-1.5 text-sm">{formattedProfitMargin}</td>
       <td className="px-4 py-1.5 text-sm">{formattedROI}</td>
-      <td className="px-4 py-1.5 text-sm">{productObj.potential_monthly_sales}</td>
-      <td className="px-4 py-1.5 text-sm">N/A</td>
+      <td className="px-4 py-1.5 text-sm">{productObj.target_fees || 'N/A'}</td>
+      <td className="px-4 py-1.5 text-sm">{productObj.sales_rank || 'N/A'}</td>
+      <td className="px-4 py-1.5 text-sm">{productObj.price || productObj.buybox_price || 'N/A'}</td>
+      <td className="px-4 py-1.5 text-sm">{productObj.number_of_sellers || 'N/A'}</td>
     </tr>
   )
 }
@@ -208,21 +199,22 @@ export default function QuickSearchTable({ products, onRowClick }: ProductTableP
               <tr className="bg-gray-50 border-b">
                 <th className="px-4 py-3 text-left font-medium text-gray-600">Product name</th>
                 <th className="px-4 py-3 text-left font-medium text-gray-600">Store</th>
-                <th className="px-4 py-3 text-left font-medium text-gray-600">Store Price</th>
-                <th className="px-4 py-3 text-left font-medium text-gray-600">Amazon Price</th>
                 <th className="px-4 py-3 text-left font-medium text-gray-600">Profit Margin</th>
                 <th className="px-4 py-3 text-left font-medium text-gray-600">Gross ROI</th>
-                <th className="px-4 py-3 text-left font-medium text-gray-600">Estimated Monthly Sales</th>
+                <th className="px-4 py-3 text-left font-medium text-gray-600">Target Fees</th>
+                <th className="px-4 py-3 text-left font-medium text-gray-600">Sales Rank</th>
+                <th className="px-4 py-3 text-left font-medium text-gray-600">BuyBox Price</th>
                 <th className="px-4 py-3 text-left font-medium text-gray-600">No. of Sellers</th>
               </tr>
             </thead>
             <tbody>
-              {currentData.map((product) => (
+              {currentData.map((product, index) => (
                 <DraggableRow
-                  key={isQuickSearchResult ? `${(product as any).store_name}-${(product as any).asin}` : (product as any).scraped_product.id}
+                  key={`${isQuickSearchResult ? `${(product as any).store_name}-${(product as any).asin}` : (product as any).scraped_product.id}-${index}`}
                   product={product}
                   onRowClick={onRowClick}
                   isQuickSearchResult={isQuickSearchResult}
+                  rowIndex={index}
                 />
               ))}
             </tbody>

@@ -6,7 +6,7 @@ export interface SearchRecord {
     amazonPrice: string
     country: string
     countryCode: string
-    countryId: string
+    countryId?: number;
     countryFlag: string
     stores: Store[]
     // storeLogo: string
@@ -44,17 +44,23 @@ export interface CountryResponse {
 }
 
 export interface ApiSearchResponseItem {
-    id: string;
-    user_id: number;
+    id: number;
+    asin_upc: string;
+    search_type: string;
+    search_date: string;
+    amazon_price: number | null;
+    country: {
+        country: string;
+        id: number;
+    };
+    stores: any[];
+    results_count: number;
     query: string;
-    amazon_price: string;
-    number_of_results: number;
     type_of_search: string;
-    created_at: CreatedAt;
-    updated_at: string;
-    stores: Store[];
-    country: Country;
-    marketplace: string | null;
+    created_at: {
+        string: string;
+    };
+    number_of_results: number;
 }
 
 

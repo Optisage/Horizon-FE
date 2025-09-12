@@ -26,9 +26,8 @@ export const quickSearchApi = createApi({
         }),
         searchHistory: builder.query({
             query: ({ page, perPage }) => ({
-                url: `team-b/reroute?include=store,marketplace,country&page=${page}&perPage=${perPage}`,
+                url: `/go-compare/search-history?page=${page}&per_page=${perPage}`,
                 method: "GET",
-                meta: { endpointHeader: '/search-histories', }
             }),
         }),
         getSearchById: builder.query({

@@ -11,7 +11,7 @@ interface ProductTableProps {
     onRowClick: (product: ReverseSearchData) => void
 }
 
-type SortColumn = 'profit_margin' | 'roi_percentage' | 'estimated_monthly_sales' | null;
+type SortColumn = 'profit_margin' | 'roi_percentage' | 'buybox_price' | null;
 type SortDirection = 'asc' | 'desc'
 
 function DraggableRow({ product, onRowClick }: { product: ReverseSearchData; onRowClick: (product: ReverseSearchData) => void }) {
@@ -66,19 +66,15 @@ function DraggableRow({ product, onRowClick }: { product: ReverseSearchData; onR
                 </span>
             </td>
             <td className="px-4 py-1.5">
-                <div className="w-12 h-12 relative">
-                    {product.scraped_product?.store.logo ?
-                        <img src={product.scraped_product?.store.logo} alt={product.scraped_product.store.name} className="object-contain w-10 h-10" /> : (
-                            <img src={placeholder.src} alt={product.scraped_product.store.name} className="object-contain w-10 h-10" />
-                        )
-                    }
+                <div className="w-auto h-auto px-2 py-1 flex items-center">
+                    <span className="text-sm font-medium">{product.scraped_product?.store?.name || 'Unknown Store'}</span>
                 </div>
             </td>
-            <td className="px-4 py-1.5 text-sm">{product.scraped_product.currency} {product.scraped_product.price}</td>
             <td className="px-4 py-1.5 text-sm">{formattedProfitMargin}</td>
             <td className="px-4 py-1.5 text-sm">{formattedROI}</td>
-            <td className="px-4 py-1.5 text-sm">{product.amazon_product?.metrics.estimated_monthly_sales ?? '-'}</td>
-            <td className="px-4 py-1.5 text-sm">{product.amazon_product?.metrics.number_of_sellers ?? 'N/A'}</td>
+            <td className="px-4 py-1.5 text-sm">{product.target_fees || 'N/A'}</td>
+            <td className="px-4 py-1.5 text-sm">{product.price || product.buybox_price || product.amazon_product?.price || product.amazon_product?.buybox_price || 'N/A'}</td>
+            <td className="px-4 py-1.5 text-sm">{product.amazon_product?.metrics?.number_of_sellers ?? 'N/A'}</td>
         </tr>
     )
 }
@@ -132,9 +128,23 @@ export default function ReverseSearchTable({ products, onRowClick }: ProductTabl
         let aValue: number = 0;
         let bValue: number = 0;
 
-        if (sortColumn === 'estimated_monthly_sales') {
-            aValue = a.amazon_product?.metrics?.estimated_monthly_sales ?? 0;
-            bValue = b.amazon_product?.metrics?.estimated_monthly_sales ?? 0;
+        if (sortColumn === 'buybox_price') {
+            // Handle price as string with currency symbol
+            const getNumericPrice = (price: any): number => {
+                if (typeof price === 'number') return price;
+                if (typeof price === 'string') {
+                    // Remove currency symbols and parse to number
+                    const numericValue = parseFloat(price.replace(/[$£€,]/g, ''));
+                    return isNaN(numericValue) ? 0 : numericValue;
+                }
+                return 0;
+            };
+            
+            const aPriceValue = a.price || a.buybox_price || a.amazon_product?.price || a.amazon_product?.buybox_price || 0;
+            const bPriceValue = b.price || b.buybox_price || b.amazon_product?.price || b.amazon_product?.buybox_price || 0;
+            
+            aValue = getNumericPrice(aPriceValue);
+            bValue = getNumericPrice(bPriceValue);
         } else {
             aValue = a[sortColumn] ?? 0;
             bValue = b[sortColumn] ?? 0;
@@ -167,7 +177,6 @@ export default function ReverseSearchTable({ products, onRowClick }: ProductTabl
                             <tr className="bg-gray-50 border-b">
                                 <th className="px-4 py-3 text-left font-medium text-gray-600">Product name</th>
                                 <th className="px-4 py-3 text-left font-medium text-gray-600">Store</th>
-                                <th className="px-4 py-3 text-left font-medium text-gray-600">Store Price</th>
                                 <th className="px-4 py-3 text-left font-medium text-gray-600">
                                     <div className="flex items-center">
                                         Profit Margin
@@ -180,10 +189,11 @@ export default function ReverseSearchTable({ products, onRowClick }: ProductTabl
                                         <SortButton column="roi_percentage" currentColumn={sortColumn} currentDirection={sortDirection} onSort={handleSort} />
                                     </div>
                                 </th>
+                                <th className="px-4 py-3 text-left font-medium text-gray-600">Target Fees</th>
                                 <th className="px-4 py-3 text-left font-medium text-gray-600">
                                     <div className="flex items-center">
-                                        Estimated Monthly Sales
-                                        <SortButton column="estimated_monthly_sales" currentColumn={sortColumn} currentDirection={sortDirection} onSort={handleSort} />
+                                        BuyBox Price
+                                        <SortButton column="buybox_price" currentColumn={sortColumn} currentDirection={sortDirection} onSort={handleSort} />
                                     </div>
                                 </th>
                                 <th className="px-4 py-3 text-left font-medium text-gray-600">No. of Sellers</th>

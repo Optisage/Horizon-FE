@@ -1,7 +1,7 @@
 import Link from "next/link";
-import { AmazonProduct, ProductObj, ReverseAmazon, ReverseAmazonScraped } from "@/types/goCompare";
+import { AmazonProduct, ProductObj, ReverseAmazon, ReverseAmazonScraped, QuickSearchResult } from "@/types/goCompare";
 
-type ProductCardType = ProductObj | AmazonProduct | ReverseAmazon | ReverseAmazonScraped;
+type ProductCardType = ProductObj | AmazonProduct | ReverseAmazon | ReverseAmazonScraped | QuickSearchResult;
 
 interface ProductCardProps {
   product: ProductCardType;
@@ -31,6 +31,7 @@ export function ProductCard({ product }: ProductCardProps) {
   const isAmazonProduct = (p: ProductCardType): p is AmazonProduct => 'store' in p && 'pricing' in p;
   const isProductObj = (p: ProductCardType): p is ProductObj => 'scraped_product' in p;
   const isReverseAmazonScraped = (p: ProductCardType): p is ReverseAmazonScraped => 'id' in p && 'image' in p && 'price' in p && 'name' in p;
+  const isQuickSearchResult = (p: ProductCardType): p is QuickSearchResult => 'store_name' in p && 'asin' in p;
 
   let imageUrl = "";
   let productUrl = "";
@@ -63,15 +64,24 @@ export function ProductCard({ product }: ProductCardProps) {
       logoUrl = product.store && product.store.logo ? product.store.logo : '';
       currencySign = getCurrencySign(product.currency || '');
       price = product.price || 0;
-    } else {
-      // Handle QuickSearchResult or any other type
+    } 
+    else if (isQuickSearchResult(product)) {
+      imageUrl = product.image_url || '';
+      productUrl = product.product_url || '#';
+      productName = product.product_name || 'Product Name';
+      logoUrl = '';  // QuickSearchResult typically doesn't have a logo URL
+      currencySign = getCurrencySign(product.currency || '$');
+      price = product.price || 0;
+    } 
+    else {
+      // Handle any other type as fallback
       imageUrl = (product as any).image_url || (product as any).image || '';
       productUrl = (product as any).product_url || (product as any).url || '#';
       productName = (product as any).product_name || (product as any).name || 'Product Name';
       
       // Handle store logo safely
-      if ((product as any).store && typeof (product as any).store === 'object' && (product as any).store.logo) {
-        logoUrl = (product as any).store.logo;
+      if (('store' in product && product.store && typeof product.store === 'object' && product.store.logo)) {
+        logoUrl = product.store.logo;
       } else if ((product as any).store_logo_url) {
         logoUrl = (product as any).store_logo_url;
       } else {
@@ -86,6 +96,8 @@ export function ProductCard({ product }: ProductCardProps) {
         const numericPrice = parseFloat(price.replace(/[$£€,]/g, ''));
         if (!isNaN(numericPrice)) {
           price = numericPrice;
+          // Don't add currency sign since it already has one
+          currencySign = '';
         }
       }
     }
@@ -101,14 +113,17 @@ export function ProductCard({ product }: ProductCardProps) {
   }
 
   // Format price to show with commas for thousands
-  const formattedPrice = typeof price === 'number' 
-    ? new Intl.NumberFormat('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(price)
-    : price;
+  // If price is a string with currency symbol, use it as-is without adding currency sign
+  const formattedPrice = typeof price === 'string' && /[$£€]/.test(price)
+    ? price
+    : typeof price === 'number'
+      ? new Intl.NumberFormat('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(price)
+      : price;
 
   // Determine marketplace logo
   let marketplaceLogo = "";
   const storeName = (product as any).store_name || 
-                   (product.store && typeof product.store === 'object' ? product.store.name : null) || 
+                   ('store' in product && product.store && typeof product.store === 'object' ? product.store.name : null) || 
                    "";
   
   if (isAmazonProduct(product) || storeName.toLowerCase().includes("amazon")) {
@@ -136,7 +151,9 @@ export function ProductCard({ product }: ProductCardProps) {
           {productName}
         </Link>
         <div className="flex items-center justify-between mt-2">
-          <span className="text-xl font-bold">{currencySign}{formattedPrice}</span>
+          <span className="text-xl font-bold">
+            {typeof price === 'string' && /[$£€]/.test(price) ? formattedPrice : `${currencySign}${formattedPrice}`}
+          </span>
           <div className="h-8 w-16 flex items-center justify-center">
             {marketplaceLogo ? (
               <img 
@@ -149,7 +166,7 @@ export function ProductCard({ product }: ProductCardProps) {
               />
             ) : logoUrl ? (
               <img 
-                src={logoUrl} 
+                src={logoUrl.startsWith('data:') ? logoUrl : `data:image/png;base64,${logoUrl}`} 
                 alt="Store logo" 
                 className="object-contain h-full" 
                 onError={(e) => {
