@@ -47,7 +47,7 @@ export const quickSearchApi = createApi({
         }),
         getProductDetails: builder.query({
             query: ({ asin, marketplace_id }) => ({
-                url: `/team-b/products/details?asin=${asin}&marketplace_id=${marketplace_id}`,
+                url: `team-b/products/details?asin=${asin}&marketplace_id=${marketplace_id}`,
                 method: "GET",
             }),
         }),

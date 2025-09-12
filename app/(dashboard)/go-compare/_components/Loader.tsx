@@ -13,7 +13,7 @@ const GoCompareLoader: React.FC<GoCompareLoaderProps> = ({ asin, storeNames, isL
   const [animatedProgress, setAnimatedProgress] = useState<number[]>([]);
   const [isCompilingResults, setIsCompilingResults] = useState(false);
 
-  const steps = [
+  const steps = storeNames.length > 0 ? [
     ...storeNames.map((storeName, index) => ({
       percent: `${Math.round(((index + 1) / (storeNames.length + 1)) * 100)}%`,
       description: `Searching arbitrage opportunities for ${asin} in ${storeName}...`,
@@ -25,6 +25,25 @@ const GoCompareLoader: React.FC<GoCompareLoaderProps> = ({ asin, storeNames, isL
       description: "Compiling results and finalizing data...",
       isStoreStep: false,
       storeIndex: storeNames.length,
+    }
+  ] : [
+    {
+      percent: "33%",
+      description: `Initializing search for ${asin}...`,
+      isStoreStep: true,
+      storeIndex: 0,
+    },
+    {
+      percent: "66%",
+      description: "Searching for products across marketplaces...",
+      isStoreStep: true,
+      storeIndex: 1,
+    },
+    {
+      percent: "100%",
+      description: "Compiling results and finalizing data...",
+      isStoreStep: false,
+      storeIndex: 2,
     }
   ];
 

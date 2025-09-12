@@ -39,56 +39,129 @@ export function ProductCard({ product }: ProductCardProps) {
   let currencySign = "";
   let price: number | string = "";
 
-  if (isAmazonProduct(product)) {
-    imageUrl = product.image_url;
-    productUrl = product.page_url;
-    productName = product.product_name;
-    logoUrl = product.store.logo;
-    currencySign = getCurrencySign(product.store.country_id);
-    price = product.pricing.current_price;
+  try {
+    if (isAmazonProduct(product)) {
+      imageUrl = product.image_url || '';
+      productUrl = product.page_url || '#';
+      productName = product.product_name || 'Product Name';
+      logoUrl = product.store && product.store.logo ? product.store.logo : '';
+      currencySign = getCurrencySign(product.store && product.store.country_id ? product.store.country_id : 1);
+      price = product.pricing && product.pricing.current_price ? product.pricing.current_price : 0;
+    }
+    else if (isProductObj(product)) {
+      imageUrl = product.scraped_product && product.scraped_product.image_url ? product.scraped_product.image_url : '';
+      productUrl = product.scraped_product && product.scraped_product.product_url ? product.scraped_product.product_url : '#';
+      productName = product.scraped_product && product.scraped_product.product_name ? product.scraped_product.product_name : 'Product Name';
+      logoUrl = product.scraped_product && product.scraped_product.store_logo_url ? product.scraped_product.store_logo_url : '';
+      currencySign = getCurrencySign(product.scraped_product && product.scraped_product.price && product.scraped_product.price.currency ? product.scraped_product.price.currency : '');
+      price = product.scraped_product && product.scraped_product.price && product.scraped_product.price.amount ? product.scraped_product.price.amount : 0;
+    }
+    else if (isReverseAmazonScraped(product)) {
+      imageUrl = product.image || '';
+      productUrl = product.url || '#';
+      productName = product.name || 'Product Name';
+      logoUrl = product.store && product.store.logo ? product.store.logo : '';
+      currencySign = getCurrencySign(product.currency || '');
+      price = product.price || 0;
+    } else {
+      // Handle QuickSearchResult or any other type
+      imageUrl = (product as any).image_url || (product as any).image || '';
+      productUrl = (product as any).product_url || (product as any).url || '#';
+      productName = (product as any).product_name || (product as any).name || 'Product Name';
+      
+      // Handle store logo safely
+      if ((product as any).store && typeof (product as any).store === 'object' && (product as any).store.logo) {
+        logoUrl = (product as any).store.logo;
+      } else if ((product as any).store_logo_url) {
+        logoUrl = (product as any).store_logo_url;
+      } else {
+        logoUrl = '';
+      }
+      
+      currencySign = getCurrencySign((product as any).currency || 1);
+      price = (product as any).price || 0;
+      
+      // If price is a string with currency symbol, try to extract just the number
+      if (typeof price === 'string' && /[$£€]/.test(price)) {
+        const numericPrice = parseFloat(price.replace(/[$£€,]/g, ''));
+        if (!isNaN(numericPrice)) {
+          price = numericPrice;
+        }
+      }
+    }
+  } catch (error) {
+    console.error("Error processing product data:", error);
+    // Set defaults if there's an error
+    imageUrl = '';
+    productUrl = '#';
+    productName = 'Product Name';
+    logoUrl = '';
+    currencySign = '$';
+    price = 0;
   }
-  else if (isProductObj(product)) {
-    imageUrl = product.scraped_product.image_url;
-    productUrl = product.scraped_product.product_url;
-    productName = product.scraped_product.product_name;
-    logoUrl = product.scraped_product.store_logo_url;
-    currencySign = getCurrencySign(product.scraped_product.price.currency);
-    price = product.scraped_product.price.amount;
-  }
-  else if (isReverseAmazonScraped(product)) {
-    imageUrl = product.image;
-    productUrl = product.url;
-    productName = product.name;
-    logoUrl = product.store.logo;
-    logoUrl = product.store.logo;
-    currencySign = getCurrencySign(product.currency);
-    price = product.price;
-  } else {
-    imageUrl = product.image;
-    productUrl = product.url;
-    productName = product.product_name;
-    logoUrl = product.store.logo;
-    logoUrl = product.store.logo;
-    currencySign = getCurrencySign(product.currency);
-    price = product.price;
+
+  // Format price to show with commas for thousands
+  const formattedPrice = typeof price === 'number' 
+    ? new Intl.NumberFormat('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(price)
+    : price;
+
+  // Determine marketplace logo
+  let marketplaceLogo = "";
+  const storeName = (product as any).store_name || 
+                   (product.store && typeof product.store === 'object' ? product.store.name : null) || 
+                   "";
+  
+  if (isAmazonProduct(product) || storeName.toLowerCase().includes("amazon")) {
+    marketplaceLogo = "/assets/images/amazon-logo.png"; // Adjust path as needed
+  } else if (storeName.toLowerCase().includes("ebay") || logoUrl?.toLowerCase()?.includes("ebay")) {
+    marketplaceLogo = "/assets/images/ebay-logo.png"; // Adjust path as needed
   }
 
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden p-2.5 pb-0 h-[326px]">
-      <div className="relative h-48 ">
-        <img src={imageUrl} alt={productName} className="object-contain w-full h-full rounded-md object-center" />
+      <div className="relative h-48">
+        <img 
+          src={imageUrl} 
+          alt={productName} 
+          className="object-contain w-full h-full rounded-md object-center" 
+          onError={(e) => {
+            (e.target as HTMLImageElement).src = "https://via.placeholder.com/150?text=No+Image";
+          }}
+        />
       </div>
       <div className="mt-3">
-        <Link className="text-sm text-left mb-1 line-clamp-2 hover:underline"
+        <Link className="text-sm text-left mb-2 line-clamp-2 hover:underline block"
           target="_blank" rel="noopener noreferrer" href={productUrl || "#"}
         >
           {productName}
         </Link>
-        <div className="flex items-center justify-between">
-          <span className="font-bold">{currencySign}{price}</span>
-          {logoUrl && (
-            <img src={logoUrl} alt="Store logo" className="object-contain w-10 h-10" />
-          )}
+        <div className="flex items-center justify-between mt-2">
+          <span className="text-xl font-bold">{currencySign}{formattedPrice}</span>
+          <div className="h-8 w-16 flex items-center justify-center">
+            {marketplaceLogo ? (
+              <img 
+                src={marketplaceLogo} 
+                alt="Marketplace logo" 
+                className="object-contain h-full" 
+                onError={(e) => {
+                  (e.target as HTMLImageElement).style.display = 'none';
+                }}
+              />
+            ) : logoUrl ? (
+              <img 
+                src={logoUrl} 
+                alt="Store logo" 
+                className="object-contain h-full" 
+                onError={(e) => {
+                  (e.target as HTMLImageElement).src = "https://via.placeholder.com/40?text=Store";
+                }}
+              />
+            ) : (
+              <div className="h-8 w-16 bg-gray-100 flex items-center justify-center rounded-md">
+                <span className="text-xs text-gray-500">Store</span>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>

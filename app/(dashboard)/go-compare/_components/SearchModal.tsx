@@ -26,6 +26,7 @@ export function SearchModal({ isOpen, onClose, title, inputLabel }: SearchModalP
     const dispatch = useDispatch();
     const [getCountries, { data: countries }] = useLazyGetAllCountriesQuery();
     const [selectedCountry, setSelectedCountry] = useState<Country | undefined>();
+    const [isLoading, setIsLoading] = useState(true);
     const [asinOrUpc, setAsinOrUpc] = useState("");
     const [selectedSearchType, setSelectedSearchType] = useState(searchTypes[0]);
     const [isCountryDropdownOpen, setIsCountryDropdownOpen] = useState(false);
@@ -33,6 +34,7 @@ export function SearchModal({ isOpen, onClose, title, inputLabel }: SearchModalP
     const dropdownRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
+        setIsLoading(true);
         getCountries({});
     }, []);
 
@@ -54,6 +56,7 @@ export function SearchModal({ isOpen, onClose, title, inputLabel }: SearchModalP
             };
             const marketplaceId = marketplaceMapping[defaultCountry.short_code] || 1;
             dispatch(setMarketPlaceId(marketplaceId));
+            setIsLoading(false);
         }
     }, [countries, dispatch]);
 
@@ -70,6 +73,14 @@ export function SearchModal({ isOpen, onClose, title, inputLabel }: SearchModalP
             message.error("Missing required fields");
             return;
         }
+        
+        // Show loading message before navigation
+        message.loading({
+            content: "Initiating search...",
+            key: "searchLoading",
+            duration: 1
+        });
+        
         if (title === "Quick Search") {
             const marketplaceMapping: { [key: string]: number } = {
                 'US': 1,
@@ -82,15 +93,23 @@ export function SearchModal({ isOpen, onClose, title, inputLabel }: SearchModalP
                 'IN': 8
             };
             const marketplaceId = marketplaceMapping[selectedCountry.short_code] || 1;
-            router.push(
-                `/go-compare/quick-search?asin=${asinOrUpc}&marketplace_id=${marketplaceId}&queue=${selectedSearchType.value}`
-            );
+            
+            // Set a small timeout to ensure the loading message is shown
+            setTimeout(() => {
+                router.push(
+                    `/go-compare/quick-search?asin=${asinOrUpc}&marketplace_id=${marketplaceId}&queue=${selectedSearchType.value}`
+                );
+                handleClose();
+            }, 100);
         } else {
-            router.push(
-                `/go-compare/reverse-search?query=${asinOrUpc}`
-            );
+            // Set a small timeout to ensure the loading message is shown
+            setTimeout(() => {
+                router.push(
+                    `/go-compare/reverse-search?query=${asinOrUpc}`
+                );
+                handleClose();
+            }, 100);
         }
-        handleClose();
     };
 
     if (!isOpen) return null;
@@ -128,12 +147,27 @@ export function SearchModal({ isOpen, onClose, title, inputLabel }: SearchModalP
                                 className="w-full text-[#9F9FA3] text-sm p-3 border border-gray-300 rounded-md bg-white flex items-center justify-between focus:outline-none focus:ring-2 focus:ring-[#4C3CC6]"
                             >
                                 <div className="flex items-center">
-                                    <img
-                                        src={selectedCountry?.flag}
-                                        alt={`${selectedCountry?.name} flag`}
-                                        className="inline-block w-4 h-4 mr-2 mt-2 rounded-sm"
-                                    />
-                                    <span>{selectedCountry?.name}</span>
+                                    {isLoading ? (
+                                        <div className="inline-block w-4 h-4 mr-2 mt-2 rounded-sm bg-gray-200 flex items-center justify-center animate-pulse">
+                                            <span className="text-xs">🌍</span>
+                                        </div>
+                                    ) : selectedCountry?.flag ? (
+                                        <img
+                                            src={selectedCountry.flag}
+                                            alt={`${selectedCountry.name} flag`}
+                                            className="inline-block w-4 h-4 mr-2 mt-2 rounded-sm"
+                                            onError={(e) => {
+                                                (e.target as HTMLImageElement).style.display = 'none';
+                                                const nextElement = (e.target as HTMLImageElement).nextElementSibling as HTMLElement;
+                                                if (nextElement) nextElement.style.display = 'flex';
+                                            }}
+                                        />
+                                    ) : (
+                                        <div className="inline-block w-4 h-4 mr-2 mt-2 rounded-sm bg-gray-200 flex items-center justify-center">
+                                            <span className="text-xs">🌍</span>
+                                        </div>
+                                    )}
+                                    <span>{isLoading ? "Loading..." : selectedCountry?.name}</span>
                                 </div>
                                 <GoChevronDown size={18} color="black" />
                             </button>
@@ -161,11 +195,30 @@ export function SearchModal({ isOpen, onClose, title, inputLabel }: SearchModalP
                                             }}
                                             className="w-full text-left px-4 py-2 hover:bg-gray-100 flex items-center border-b"
                                         >
-                                            <img
-                                                src={country.flag}
-                                                alt={`${country.name} flag`}
-                                                className="inline-block w-4 h-4 mr-2 mt-2 rounded-sm"
-                                            />
+                                            {country.flag ? (
+                                                <>
+                                                    <img
+                                                        src={country.flag}
+                                                        alt={`${country.name} flag`}
+                                                        className="inline-block w-4 h-4 mr-2 mt-2 rounded-sm"
+                                                        onError={(e) => {
+                                                            (e.target as HTMLImageElement).style.display = 'none';
+                                                            const parentElement = (e.target as HTMLImageElement).parentElement;
+                                                            if (parentElement) {
+                                                                const nextElement = parentElement.nextElementSibling as HTMLElement;
+                                                                if (nextElement) nextElement.style.display = 'flex';
+                                                            }
+                                                        }}
+                                                    />
+                                                    <div className="hidden inline-block w-4 h-4 mr-2 mt-2 rounded-sm bg-gray-200 items-center justify-center">
+                                                        <span className="text-xs">🌍</span>
+                                                    </div>
+                                                </>
+                                            ) : (
+                                                <div className="inline-block w-4 h-4 mr-2 mt-2 rounded-sm bg-gray-200 flex items-center justify-center">
+                                                    <span className="text-xs">🌍</span>
+                                                </div>
+                                            )}
                                             <span>{country.name}</span>
                                         </button>
                                     ))}

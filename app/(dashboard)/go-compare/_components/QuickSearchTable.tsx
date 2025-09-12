@@ -62,7 +62,14 @@ function DraggableRow({
       >
         <td className="px-4 py-1.5 flex items-center gap-2">
           <div className="w-8 h-8 relative rounded overflow-hidden">
-            <img src={quickSearchProduct.image_url} alt={quickSearchProduct.store_name} className="object-cover" />
+            <img 
+            src={quickSearchProduct.image_url} 
+            alt={quickSearchProduct.store_name} 
+            className="object-cover"
+            onError={(e) => {
+              (e.target as HTMLImageElement).src = "https://via.placeholder.com/32?text=No+Image";
+            }}
+          />
           </div>
           <span className="text-sm line-clamp-1">
             {quickSearchProduct.product_name.length > 25
@@ -72,7 +79,14 @@ function DraggableRow({
         </td>
         <td className="px-4 py-1.5">
           <div className="w-12 h-12 relative">
-            <img src={placeholder.src} alt={quickSearchProduct.store_name} className="object-contain w-10 h-10" />
+            <img 
+              src={placeholder.src} 
+              alt={quickSearchProduct.store_name} 
+              className="object-contain w-10 h-10"
+              onError={(e) => {
+                (e.target as HTMLImageElement).src = "https://via.placeholder.com/40?text=Store";
+              }}
+            />
           </div>
         </td>
         <td className="px-4 py-1.5 text-sm">{quickSearchProduct.price}</td>

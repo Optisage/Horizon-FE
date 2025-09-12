@@ -79,7 +79,8 @@ export default function QuickSearch() {
                 return (product as QuickSearchResult).asin;
             }
         }
-        return null;
+        // If no product is selected, use the ASIN from the URL for initial load
+        return asin || null;
     };
 
     const selectedAsin = getSelectedProductAsin();
@@ -87,13 +88,20 @@ export default function QuickSearch() {
         { asin: selectedAsin || '', marketplace_id: marketplace_id || 1 },
         { skip: !selectedAsin || !marketplace_id }
     );
+    
+    // Log the product details response for debugging
+    useEffect(() => {
+        if (productDetailsResult.data) {
+            console.log("Product details response:", productDetailsResult.data);
+        }
+    }, [productDetailsResult.data]);
 
     const sensors = useSensors(
         useSensor(PointerSensor, {
             activationConstraint: {
-                distance: 1,
-                tolerance: 5,
-                delay: 0,
+                distance: 8,  // Increased from 1 to make drag easier to initiate
+                tolerance: 8, // Increased from 5 for better responsiveness
+                delay: 0,     // Keep at 0 for immediate response
             },
         }),
     )
@@ -163,18 +171,33 @@ export default function QuickSearch() {
         }))
     }
 
+    // Create product data object from API response
     const productData = {
-        "Avg. Amazon 90 day price": selectedProductDetails?.avg_amazon_90_day_price ? `$${selectedProductDetails.avg_amazon_90_day_price.toFixed(2)}` : 'N/A',
-        "Gross ROI": selectedProductDetails?.gross_roi ? `${selectedProductDetails.gross_roi.toFixed(1)}%` : '0%',
-        "Match quality%": 'N/A',
-        "Sales rank": selectedProductDetails?.sales_rank ? String(selectedProductDetails.sales_rank) : 'N/A',
-        "Avg. 3 month sales rank": selectedProductDetails?.avg_3_month_sales_rank ? String(selectedProductDetails.avg_3_month_sales_rank) : 'N/A',
-        ASIN: selectedProductDetails?.asin || String(asin ?? '-'),
-        "Number of sellers": selectedProductDetails?.number_of_sellers ? String(selectedProductDetails.number_of_sellers) : 'N/A',
-        "Amazon on listing": selectedProductDetails?.amazon_on_listing !== undefined ? (selectedProductDetails.amazon_on_listing ? 'YES' : 'NO') : 'N/A',
-        "Est. Monthly Sales": selectedProductDetails?.estMonthlySales ? String(selectedProductDetails.estMonthlySales) : 'N/A',
-        "Amazon Fees": selectedProductDetails?.amazon_fees ? `$${selectedProductDetails.amazon_fees.toFixed(2)}` : 'N/A',
-        "Current Price": selectedProductDetails?.current_price ? `$${selectedProductDetails.current_price.toFixed(2)}` : 'N/A'
+        "Avg. Amazon 90 day price": selectedProductDetails?.avg_amazon_90_day_price !== null && selectedProductDetails?.avg_amazon_90_day_price !== undefined
+            ? `$${Number(selectedProductDetails.avg_amazon_90_day_price).toFixed(2)}`
+            : 'N/A',
+        
+        "Gross ROI": selectedProductDetails?.gross_roi !== null && selectedProductDetails?.gross_roi !== undefined
+            ? `${Number(selectedProductDetails.gross_roi).toFixed(1)}%`
+            : 'N/A',
+        
+        "Sales rank": selectedProductDetails?.sales_rank !== null && selectedProductDetails?.sales_rank !== undefined
+            ? String(selectedProductDetails.sales_rank)
+            : 'N/A',
+        
+        "Avg. 3 month sales rank": selectedProductDetails?.avg_3_month_sales_rank !== null && selectedProductDetails?.avg_3_month_sales_rank !== undefined
+            ? String(selectedProductDetails.avg_3_month_sales_rank)
+            : 'N/A',
+        
+        "ASIN": selectedProductDetails?.asin || asin || 'N/A',
+        
+        "Number of Sellers": selectedProductDetails?.number_of_sellers !== null && selectedProductDetails?.number_of_sellers !== undefined
+            ? String(selectedProductDetails.number_of_sellers)
+            : 'N/A',
+        
+        "Amazon on listing": selectedProductDetails?.amazon_on_listing !== undefined
+            ? (selectedProductDetails.amazon_on_listing ? 'YES' : 'NO')
+            : 'N/A'
     }
 
     useEffect(() => {
@@ -208,13 +231,15 @@ export default function QuickSearch() {
         }
     }, [productDetailsResult.data]);
 
-    if ((isLoading || isRouteChanging) && searchId) return <Loader />;
+    // Always show a loader when loading or route changing
     if (isLoading || isRouteChanging) {
+        if (searchId) return <Loader />;
+        
         return (
             <GoCompareLoader
                 asin={asin}
                 storeNames={Array.isArray(data) && data.length > 0 && 'store_name' in data[0] ? data.map(item => item.store_name) : []}
-                isLoading={isLoading || isRouteChanging}
+                isLoading={true}
             />
         );
     }
@@ -246,33 +271,31 @@ export default function QuickSearch() {
             <section className="flex flex-col gap-8 min-h-[50dvh] md:min-h-[80dvh]">
                 <div className="flex flex-col lg:flex-row gap-6">
                     <div className="flex-1">
-                        <p className="font-semibold">Comparison Workspace</p>
+                        <h2 className="text-lg font-semibold mb-4">Comparison Workspace</h2>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2.5">
+                            {/* First product card */}
                             {Array.isArray(data) && data.length > 0 && 'store_name' in data[0] ? (
-                                <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-                                    <h3 className="font-medium text-gray-900 mb-2">Search Results for {asin}</h3>
-                                    <p className="text-sm text-gray-600">Found {data.length} product(s) across {new Set(data.map(item => item.store_name)).size} store(s)</p>
-                                </div>
+                                <ProductCard product={data[0]} />
                             ) : data && 'amazon_product' in data && data.amazon_product ? (
                                 <ProductCard product={data.amazon_product} />
                             ) : (
-                                <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-                                    <p className="text-gray-500">No Amazon product data available</p>
+                                <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 h-[326px] flex items-center justify-center">
+                                    <p className="text-gray-500">No product data available</p>
                                 </div>
                             )}
+                            
+                            {/* Droppable area for comparison */}
                             <Droppable
                                 id="droppable-area"
-                                className={selectedProducts.length > 0 ? `` : 'bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden p-2.5 h-[326px]'}
+                                className={selectedProducts.length > 0 ? `` : 'bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden h-[326px]'}
                             >
                                 {selectedProducts.length > 0 ? (
                                     <div className="relative h-full">
                                         {selectedProducts[0] && 'scraped_product' in selectedProducts[0] ? (
                                             <ProductCard product={selectedProducts[0]} />
                                         ) : (
-                                            <div className="p-4">
-                                                <h4 className="font-medium">{(selectedProducts[0] as QuickSearchResult).product_name}</h4>
-                                                <p className="text-sm text-gray-600">{(selectedProducts[0] as QuickSearchResult).store_name}</p>
-                                                <p className="text-lg font-semibold text-green-600">{(selectedProducts[0] as QuickSearchResult).price}</p>
+                                            <div className="h-full">
+                                                <ProductCard product={selectedProducts[0] as any} />
                                             </div>
                                         )}
                                         <button
