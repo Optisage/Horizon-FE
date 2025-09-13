@@ -8,7 +8,6 @@ import { HiOutlineArrowPath } from "react-icons/hi2";
 import {
   useChatMutation,
   useAnalyzeMutation,
-  useLazyPurchaseQuantityQuery,
 } from "./../../../../redux/api/totanAi"; // Ensure this path is correct for your project
 import { useAppSelector, useAppDispatch } from "@/redux/hooks"; // Ensure this path is correct
 import {
@@ -31,49 +30,177 @@ type Message = {
 };
 
 /**
- * Custom hook for a typing animation effect.
- * @param text The full text to be typed out.
- * @param speed The speed of typing in milliseconds per character.
- * @returns An object containing the currently displayed text and a boolean indicating if typing is active.
+ * Enhanced typing effect hook that simulates natural typing for the first 30-40 seconds,
+ * then displays the rest of the message instantly
  */
-const useTypingEffect = (text: string, speed: number = 30) => {
+const useNaturalTypingEffect = (
+  text: string,
+  maxTypingDuration: number = 35000
+) => {
   const [displayedText, setDisplayedText] = useState("");
   const [isTyping, setIsTyping] = useState(true);
+  const [showCursor, setShowCursor] = useState(true);
 
   useEffect(() => {
     setDisplayedText("");
     setIsTyping(true);
-    
+    setShowCursor(true);
+
     if (text.length === 0) {
       setIsTyping(false);
+      setShowCursor(false);
       return;
     }
 
     let index = 0;
-    const timer = setInterval(() => {
-      if (index < text.length) {
-        setDisplayedText(text.slice(0, index + 1));
-        index++;
-      } else {
+    let timeoutId: NodeJS.Timeout;
+    let totalTimeElapsed = 0;
+    const startTime = Date.now();
+
+    const typeNextCharacter = () => {
+      const currentTime = Date.now();
+      totalTimeElapsed = currentTime - startTime;
+
+      // If we've exceeded the max typing duration, show the rest of the text immediately
+      if (totalTimeElapsed >= maxTypingDuration) {
+        setDisplayedText(text);
         setIsTyping(false);
-        clearInterval(timer);
+        setTimeout(() => setShowCursor(false), 500);
+        return;
       }
-    }, speed);
 
-    return () => clearInterval(timer);
-  }, [text, speed]);
+      if (index >= text.length) {
+        setIsTyping(false);
+        // Hide cursor after a brief delay when done typing
+        setTimeout(() => setShowCursor(false), 500);
+        return;
+      }
 
-  return { displayedText, isTyping };
+      const char = text[index];
+
+      // Calculate dynamic delay based on character type
+      let delay = 30; // Base delay
+
+      if (char === " ") {
+        delay = 50; // Slightly longer for spaces
+      } else if (char === "." || char === "!" || char === "?") {
+        delay = 300; // Pause at sentence endings
+      } else if (char === "," || char === ";" || char === ":") {
+        delay = 150; // Medium pause for punctuation
+      } else if (char === "\n") {
+        delay = 200; // Pause at line breaks
+      } else if (/[a-zA-Z]/.test(char)) {
+        // Variable speed for letters to simulate natural typing rhythm
+        delay = Math.random() * 40 + 20; // 20-60ms
+      } else if (/[0-9]/.test(char)) {
+        delay = Math.random() * 30 + 25; // Numbers typed slightly slower
+      }
+
+      // Add occasional longer pauses to simulate thinking
+      if (Math.random() < 0.03) {
+        // 3% chance
+        delay += Math.random() * 200 + 100; // Extra 100-300ms pause
+      }
+
+      // Faster typing for common words
+      const upcomingWord = text.slice(index).split(" ")[0].toLowerCase();
+      const commonWords = [
+        "the",
+        "and",
+        "or",
+        "but",
+        "in",
+        "on",
+        "at",
+        "to",
+        "for",
+        "of",
+        "with",
+        "by",
+        "this",
+        "that",
+        "is",
+        "are",
+        "was",
+        "were",
+        "be",
+        "been",
+        "have",
+        "has",
+        "had",
+        "do",
+        "does",
+        "did",
+        "will",
+        "would",
+        "could",
+        "should",
+        "can",
+        "may",
+        "might",
+      ];
+
+      if (
+        commonWords.includes(upcomingWord) &&
+        index > 0 &&
+        text[index - 1] === " "
+      ) {
+        delay *= 0.7; // 30% faster for common words
+      }
+
+      // As we approach the time limit, speed up typing progressively
+      const timeRatio = totalTimeElapsed / maxTypingDuration;
+      if (timeRatio > 0.7) {
+        // After 70% of the time has passed
+        delay *= (1 - timeRatio) * 2; // Speed up significantly
+        delay = Math.max(delay, 5); // But never go below 5ms
+      }
+
+      setDisplayedText(text.slice(0, index + 1));
+      index++;
+
+      timeoutId = setTimeout(typeNextCharacter, delay);
+    };
+
+    // Start typing with a small initial delay
+    timeoutId = setTimeout(typeNextCharacter, 100);
+
+    return () => clearTimeout(timeoutId);
+  }, [text, maxTypingDuration]);
+
+  // Cursor blinking effect
+  useEffect(() => {
+    if (!showCursor) return;
+
+    const cursorInterval = setInterval(() => {
+      setShowCursor((prev) => !prev);
+    }, 530); // Natural cursor blink rate
+
+    return () => clearInterval(cursorInterval);
+  }, [showCursor, isTyping]);
+
+  return {
+    displayedText,
+    isTyping,
+    showCursor: showCursor && isTyping, // Only show cursor while typing
+  };
 };
 
 /**
- * A component to render an AI message with a typing effect.
- * It calls an onComplete callback once the animation finishes.
+ * Enhanced TypingMessage component with natural typing effect and cursor
  */
-const TypingMessage = ({ message, onComplete }: { message: Message; onComplete?: () => void }) => {
-  const { displayedText, isTyping } = useTypingEffect(message.text, 20);
+const NaturalTypingMessage = ({
+  message,
+  onComplete,
+}: {
+  message: Message;
+  onComplete?: () => void;
+}) => {
+  const { displayedText, isTyping, showCursor } = useNaturalTypingEffect(
+    message.text
+  );
   const hasCompletedRef = useRef(false);
-  
+
   useEffect(() => {
     if (!isTyping && !hasCompletedRef.current && onComplete) {
       hasCompletedRef.current = true;
@@ -106,10 +233,13 @@ const TypingMessage = ({ message, onComplete }: { message: Message; onComplete?:
             : "bg-[#ECF1F6] text-[#4B4B62]"
         }`}
       >
-        <div className="whitespace-pre-line">
+        <div className="whitespace-pre-line relative">
           {displayedText}
+          {showCursor && (
+            <span className="inline-block w-0.5 h-4 bg-current ml-0.5 animate-pulse" />
+          )}
         </div>
-        {message.type === "retry" && message.retryAction && (
+        {message.type === "retry" && message.retryAction && !isTyping && (
           <button
             onClick={message.retryAction}
             className="mt-3 flex items-center gap-2 px-3 py-2 bg-orange-100 hover:bg-orange-200 text-orange-800 rounded-lg transition-colors text-sm font-medium"
@@ -126,25 +256,25 @@ const TypingMessage = ({ message, onComplete }: { message: Message; onComplete?:
 const TotanChat = () => {
   const dispatch = useAppDispatch();
   const currentSession = useAppSelector(selectCurrentSession);
-  
+
   const [input, setInput] = useState("");
   const [pendingMessages, setPendingMessages] = useState<Message[]>([]);
   const [currentTypingIndex, setCurrentTypingIndex] = useState(-1);
 
   const { marketplaceId } = useAppSelector((state) => state?.global);
-  const { first_name, last_name } = useAppSelector((state) => state.api?.user) || {};
-  
+  const { first_name, last_name } =
+    useAppSelector((state) => state.api?.user) || {};
+
   const getUserInitials = () => {
-    const firstInitial = first_name?.charAt(0)?.toUpperCase() || '';
-    const lastInitial = last_name?.charAt(0)?.toUpperCase() || '';
-    return firstInitial + lastInitial || 'U';
+    const firstInitial = first_name?.charAt(0)?.toUpperCase() || "";
+    const lastInitial = last_name?.charAt(0)?.toUpperCase() || "";
+    return firstInitial + lastInitial || "U";
   };
 
   const chatEndRef = useRef<HTMLDivElement | null>(null);
 
   const [analyzeProduct, { isLoading: isAnalyzing }] = useAnalyzeMutation();
   const [sendChat, { isLoading: isChatting }] = useChatMutation();
-  const [getPurchaseQuantity] = useLazyPurchaseQuantityQuery();
 
   // Initialize a chat session on component mount if one doesn't exist
   useEffect(() => {
@@ -152,7 +282,7 @@ const TotanChat = () => {
       dispatch(createNewSession({ firstName: first_name }));
     }
   }, [currentSession, dispatch, first_name]);
-  
+
   const validateASIN = (asin: string): boolean => {
     const asinRegex = /^[A-Z0-9]{10}$/i;
     return asinRegex.test(asin.trim());
@@ -165,8 +295,20 @@ const TotanChat = () => {
 
   const validateFulfillment = (response: string): boolean | null => {
     const normalized = response.toLowerCase().trim();
-    if (normalized === "yes" || normalized === "y" || normalized === "true" || normalized === "1") return true;
-    if (normalized === "no" || normalized === "n" || normalized === "false" || normalized === "0") return false;
+    if (
+      normalized === "yes" ||
+      normalized === "y" ||
+      normalized === "true" ||
+      normalized === "1"
+    )
+      return true;
+    if (
+      normalized === "no" ||
+      normalized === "n" ||
+      normalized === "false" ||
+      normalized === "0"
+    )
+      return false;
     return null;
   };
 
@@ -178,11 +320,14 @@ const TotanChat = () => {
 
   // Called when a message is done typing; dispatches it to Redux and moves to the next
   const handleTypingComplete = () => {
-    if (currentTypingIndex >= 0 && currentTypingIndex < pendingMessages.length) {
+    if (
+      currentTypingIndex >= 0 &&
+      currentTypingIndex < pendingMessages.length
+    ) {
       dispatch(addMessage(pendingMessages[currentTypingIndex]));
-      
+
       if (currentTypingIndex < pendingMessages.length - 1) {
-        setTimeout(() => setCurrentTypingIndex(prev => prev + 1), 300); // Delay before next message
+        setTimeout(() => setCurrentTypingIndex((prev) => prev + 1), 300); // Delay before next message
       } else {
         setPendingMessages([]);
         setCurrentTypingIndex(-1);
@@ -208,48 +353,27 @@ const TotanChat = () => {
         dispatch(updateSessionId(analysis.session_id));
         dispatch(updateConversationState("chat_ready"));
 
-        const analysisMessage = `🎉 **Analysis Complete!**
+        const analysisMessage = `🎉 Analysis Complete
 
 📊 **Overall Score**: ${analysis.score} (${analysis.category})
-💰 **ROI**: ${analysis.roi}%
-📈 **Profit Margin**: ${analysis.profit_margin}%
-📦 **Monthly Sales**: ${analysis.monthly_sales.toLocaleString()} units
 
-**Detailed Breakdown:**
-• Amazon on Listing: ${analysis.breakdown.amazon_on_listing}
-• FBA Sellers: ${analysis.breakdown.fba_sellers}
-• Buy Box Eligible: ${analysis.breakdown.buy_box_eligible}
-• Variation Listing: ${analysis.breakdown.variation_listing}
-• Sales Rank Impact: ${analysis.breakdown.sales_rank_impact}
-• Estimated Demand: ${analysis.breakdown.estimated_demand}
-• Offer Count: ${analysis.breakdown.offer_count}
-• Profitability: ${analysis.breakdown.profitability}
+You can now ask me any questions about this product's score and what it means for your business! 💬`;
 
-Now you can ask me any questions about this product! 💬`;
-
-        const messagesToAdd: Message[] = [{ sender: "ai", text: analysisMessage, type: "analysis" }];
-        
-        try {
-          const quantityResult = await getPurchaseQuantity(currentSession.collectedData.asin).unwrap();
-          const quantityData = quantityResult.data;
-          const quantityMessage = `📦 **Purchase Quantity Recommendations:**
-• **Conservative Approach**: ${Math.round(quantityData.conservative_quantity)} units
-• **Aggressive Approach**: ${Math.round(quantityData.aggressive_quantity)} units`;
-          messagesToAdd.push({ sender: "ai", text: quantityMessage, type: "analysis" });
-        } catch (error) {
-          console.error("Failed to get purchase quantity:", error);
-        }
+        const messagesToAdd: Message[] = [
+          { sender: "ai", text: analysisMessage, type: "analysis" },
+        ];
 
         addAIMessagesWithTyping(messagesToAdd);
       }
     } catch (error: any) {
       console.error("Analysis failed:", error);
-      
+
       // Check if it's a timeout error
-      const isTimeoutError = error?.data?.error?.includes('cURL error 28') || 
-                            error?.data?.error?.includes('Operation timed out') ||
-                            error?.data?.message?.includes('timeout') ||
-                            error?.message?.includes('timeout');
+      const isTimeoutError =
+        error?.data?.error?.includes("cURL error 28") ||
+        error?.data?.error?.includes("Operation timed out") ||
+        error?.data?.message?.includes("timeout") ||
+        error?.message?.includes("timeout");
 
       if (isTimeoutError) {
         addAIMessagesWithTyping([
@@ -269,7 +393,13 @@ Now you can ask me any questions about this product! 💬`;
           },
         ]);
         dispatch(updateConversationState("waiting_for_asin"));
-        dispatch(updateCollectedData({ asin: "", costPrice: 0, isAmazonFulfilled: false }));
+        dispatch(
+          updateCollectedData({
+            asin: "",
+            costPrice: 0,
+            isAmazonFulfilled: false,
+          })
+        );
       }
     }
   };
@@ -286,11 +416,19 @@ Now you can ask me any questions about this product! 💬`;
           dispatch(updateCollectedData({ asin }));
           addAIMessagesWithTyping([
             { sender: "ai", text: `Great! I've got the ASIN: ${asin}` },
-            { sender: "ai", text: "Now, what will be the cost price of this product? (Enter the amount in USD, e.g., 125)" },
+            {
+              sender: "ai",
+              text: "Now, what will be the cost price of this product? (Enter the amount in USD, e.g., 125)",
+            },
           ]);
           dispatch(updateConversationState("waiting_for_cost_price"));
         } else {
-          addAIMessagesWithTyping([{ sender: "ai", text: "❌ That doesn't look like a valid ASIN. ASINs are 10-character codes (letters and numbers). Please try again." }]);
+          addAIMessagesWithTyping([
+            {
+              sender: "ai",
+              text: "❌ That doesn't look like a valid ASIN. ASINs are 10-character codes (letters and numbers). Please try again.",
+            },
+          ]);
         }
         break;
 
@@ -300,11 +438,19 @@ Now you can ask me any questions about this product! 💬`;
           dispatch(updateCollectedData({ costPrice: price }));
           addAIMessagesWithTyping([
             { sender: "ai", text: `Perfect! Cost price set to $${price}` },
-            { sender: "ai", text: "Last question: Will this product be Amazon Fulfilled (FBA)? Please answer 'yes' or 'no'." },
+            {
+              sender: "ai",
+              text: "Last question: Will this product be Amazon Fulfilled (FBA)? Please answer 'yes' or 'no'.",
+            },
           ]);
           dispatch(updateConversationState("waiting_for_fulfillment"));
         } else {
-          addAIMessagesWithTyping([{ sender: "ai", text: "❌ Please enter a valid price (numbers only, greater than 0). For example: 125 or 99.99" }]);
+          addAIMessagesWithTyping([
+            {
+              sender: "ai",
+              text: "❌ Please enter a valid price (numbers only, greater than 0). For example: 125 or 99.99",
+            },
+          ]);
         }
         break;
 
@@ -313,12 +459,27 @@ Now you can ask me any questions about this product! 💬`;
         if (fulfillment !== null) {
           dispatch(updateCollectedData({ isAmazonFulfilled: fulfillment }));
           addAIMessagesWithTyping([
-            { sender: "ai", text: `Got it! ${fulfillment ? "Amazon Fulfilled (FBA)" : "Merchant Fulfilled (FBM)"}`},
-            { sender: "ai", text: "🔄 Now analyzing your product... This may take a moment." },
+            {
+              sender: "ai",
+              text: `Got it! ${
+                fulfillment
+                  ? "Amazon Fulfilled (FBA)"
+                  : "Merchant Fulfilled (FBM)"
+              }`,
+            },
+            {
+              sender: "ai",
+              text: "🔄 Now analyzing your product... This may take a moment.",
+            },
           ]);
           await performAnalysis();
         } else {
-          addAIMessagesWithTyping([{ sender: "ai", text: "❌ Please answer with 'yes' or 'no' to indicate if the product will be Amazon Fulfilled (FBA)." }]);
+          addAIMessagesWithTyping([
+            {
+              sender: "ai",
+              text: "❌ Please answer with 'yes' or 'no' to indicate if the product will be Amazon Fulfilled (FBA).",
+            },
+          ]);
         }
         break;
 
@@ -330,11 +491,18 @@ Now you can ask me any questions about this product! 💬`;
             question: userInput,
           }).unwrap();
           if (result.success) {
-            addAIMessagesWithTyping([{ sender: "ai", text: result.data.response, type: "chat" }]);
+            addAIMessagesWithTyping([
+              { sender: "ai", text: result.data.response, type: "chat" },
+            ]);
           }
         } catch (error) {
           console.error("Chat failed:", error);
-          addAIMessagesWithTyping([{ sender: "ai", text: "❌ Sorry, I couldn't process your question. Please try again." }]);
+          addAIMessagesWithTyping([
+            {
+              sender: "ai",
+              text: "❌ Sorry, I couldn't process your question. Please try again.",
+            },
+          ]);
         }
         break;
     }
@@ -346,7 +514,7 @@ Now you can ask me any questions about this product! 💬`;
     setInput("");
     await handleConversationalInput(userInput);
   };
-  
+
   const startNewAnalysis = () => {
     dispatch(startNewAnalysisInSession({ firstName: first_name }));
   };
@@ -354,12 +522,18 @@ Now you can ask me any questions about this product! 💬`;
   const getPlaceholderText = () => {
     if (!currentSession) return "Loading session...";
     switch (currentSession.conversationState) {
-      case "waiting_for_asin": return "Enter ASIN (e.g., B0D9YZJ3V7)...";
-      case "waiting_for_cost_price": return "Enter cost price (e.g., 125)...";
-      case "waiting_for_fulfillment": return "Type 'yes' or 'no'...";
-      case "analyzing": return "Analyzing product...";
-      case "chat_ready": return "Ask anything about this product...";
-      default: return "Type your message...";
+      case "waiting_for_asin":
+        return "Enter ASIN (e.g., B0D9YZJ3V7)...";
+      case "waiting_for_cost_price":
+        return "Enter cost price (e.g., 125)...";
+      case "waiting_for_fulfillment":
+        return "Type 'yes' or 'no'...";
+      case "analyzing":
+        return "Analyzing product...";
+      case "chat_ready":
+        return "Ask anything about this product score...";
+      default:
+        return "Type your message...";
     }
   };
 
@@ -389,10 +563,14 @@ Now you can ask me any questions about this product! 💬`;
             </h1>
             {currentSession.conversationState !== "waiting_for_asin" && (
               <p className="text-sm text-gray-500">
-                {currentSession.conversationState === "waiting_for_cost_price" && "Collecting cost price..."}
-                {currentSession.conversationState === "waiting_for_fulfillment" && "Checking fulfillment method..."}
-                {currentSession.conversationState === "analyzing" && "Analyzing product..."}
-                {currentSession.conversationState === "chat_ready" && "Ready for questions"}
+                {currentSession.conversationState ===
+                  "waiting_for_cost_price" && "Collecting cost price..."}
+                {currentSession.conversationState ===
+                  "waiting_for_fulfillment" && "Checking fulfillment method..."}
+                {currentSession.conversationState === "analyzing" &&
+                  "Analyzing product..."}
+                {currentSession.conversationState === "chat_ready" &&
+                  "Ready for questions"}
               </p>
             )}
           </div>
@@ -433,7 +611,7 @@ Now you can ask me any questions about this product! 💬`;
             <div
               className={`max-w-[80%] px-4 py-2 rounded-2xl text-base ${
                 msg.type === "analysis"
-                  ? "bg-blue-50 text-blue-900 border border-blue-200"
+                  ? " text-blue-900 border border-blue-200"
                   : msg.type === "system"
                   ? "bg-gray-100 text-gray-600 text-center font-medium text-sm"
                   : msg.type === "error"
@@ -441,9 +619,9 @@ Now you can ask me any questions about this product! 💬`;
                   : msg.type === "retry"
                   ? "bg-orange-50 text-orange-900 border border-orange-200"
                   : "bg-[#ECF1F6] text-[#4B4B62]"
-              } ${msg.sender === "ai" ? "rounded-bl-none" : "rounded-br-none"} ${
-                msg.type === "system" ? "w-full max-w-none mx-auto" : ""
-              }`}
+              } ${
+                msg.sender === "ai" ? "rounded-bl-none" : "rounded-br-none"
+              } ${msg.type === "system" ? "w-full max-w-none mx-auto" : ""}`}
             >
               <div className="whitespace-pre-line">{msg.text}</div>
               {msg.type === "retry" && msg.retryAction && (
@@ -461,8 +639,8 @@ Now you can ask me any questions about this product! 💬`;
 
         {/* Currently typing message */}
         {currentTypingIndex >= 0 && pendingMessages[currentTypingIndex] && (
-          <TypingMessage 
-            message={pendingMessages[currentTypingIndex]} 
+          <NaturalTypingMessage
+            message={pendingMessages[currentTypingIndex]}
             onComplete={handleTypingComplete}
           />
         )}
@@ -486,6 +664,21 @@ Now you can ask me any questions about this product! 💬`;
 
       {/* Input field */}
       <div className="relative">
+        <button
+          type="button"
+          aria-label="Send message"
+          onClick={handleSend}
+          disabled={
+            isAnalyzing ||
+            isChatting ||
+            currentSession.conversationState === "analyzing" ||
+            currentTypingIndex >= 0
+          }
+          className="absolute top-0 bottom-0 size-10 my-auto right-3 flex items-center justify-center gap-2 rounded-lg sm:w-[110px] sm:h-[42px] py-2 px-4 text-white font-semibold bg-primary hover:bg-primary/90 disabled:bg-gray-300 duration-150 transition-colors"
+        >
+          <span className="hidden sm:block">Send</span>
+          <IoSend className="size-10 sm:size-5" />
+        </button>
         <input
           className="flex-1 outline-none bg-transparent border border-[#D1D1D1] p-4 pr-32 rounded-2xl w-full focus:border-primary"
           placeholder={getPlaceholderText()}
@@ -493,7 +686,10 @@ Now you can ask me any questions about this product! 💬`;
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && handleSend()}
           disabled={
-            isAnalyzing || isChatting || currentSession.conversationState === "analyzing" || currentTypingIndex >= 0
+            isAnalyzing ||
+            isChatting ||
+            currentSession.conversationState === "analyzing" ||
+            currentTypingIndex >= 0
           }
         />
         
@@ -503,7 +699,10 @@ Now you can ask me any questions about this product! 💬`;
           aria-label="Send message"
           onClick={handleSend}
           disabled={
-            isAnalyzing || isChatting || currentSession.conversationState === "analyzing" || currentTypingIndex >= 0
+            isAnalyzing ||
+            isChatting ||
+            currentSession.conversationState === "analyzing" ||
+            currentTypingIndex >= 0
           }
           className="absolute top-0 bottom-0 size-10 my-auto right-16 sm:right-28 flex items-center justify-center gap-2 rounded-lg sm:w-[110px] sm:h-[42px] py-2 px-4 text-white font-semibold bg-primary hover:bg-primary/90 disabled:bg-gray-300 duration-150 transition-colors"
         >
