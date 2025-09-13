@@ -2,10 +2,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { useLazyGetPricingQuery, useSignupMutation } from "@/redux/api/auth";
-//import { useLazyCreateStripeSubscriptionV2Query } from "@/redux/api/subscriptionApi";
-import { useSearchParams } from "next/navigation";
+import { useLazyCreateStripeSubscriptionV2Query } from "@/redux/api/subscriptionApi";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
-import { IoIosCheckmark } from "react-icons/io";
+import { IoIosCheckmark, IoIosCheckmarkCircle } from "react-icons/io";
 import { message } from "antd";
 import { MdCancel } from "react-icons/md";
 import { FaCircle } from "react-icons/fa6";
@@ -14,7 +14,6 @@ interface Feature {
   name: string;
   description: string;
 }
-
 
 interface PricingPlan {
   id: number;
@@ -37,7 +36,7 @@ interface PricingPlan {
 }
 
 export default function Packages() {
-  //const router = useRouter();
+  const router = useRouter();
   const searchParams = useSearchParams();
   const [messageApi, contextHolder] = message.useMessage();
 
@@ -48,6 +47,7 @@ export default function Packages() {
   }>({});
   const [selectedPlanId, setSelectedPlanId] = useState<number | null>(null);
   const [showModal, setShowModal] = useState(false);
+  const [showEmailExistsModal, setShowEmailExistsModal] = useState(false);
 
   // User data from signup flow
   const [userEmail, setUserEmail] = useState<string>("");
@@ -60,7 +60,28 @@ export default function Packages() {
   const [subscribe, { isLoading: isCheckoutLoading }] = useSignupMutation();
   //const [subscribe, { isLoading: isCheckoutLoading }] = useLazyCreateStripeSubscriptionV2Query();
 
-  
+  const stats = [
+    {
+      value: "$92",
+      title: "Blended ARPU",
+      subtitle: "Weighted average revenue per user",
+    },
+    {
+      value: "85%",
+      title: "Gross Margins",
+      subtitle: "High-margin SaaS model",
+    },
+    {
+      value: "8%",
+      title: "Monthly Churn",
+      subtitle: "Industry-competitive retention",
+    },
+    {
+      value: "2.3x",
+      title: "LTV/CAC Ratio",
+      subtitle: "Healthy unit economics",
+    },
+  ];
 
   // Handle URL params from signup redirect
   useEffect(() => {
@@ -97,6 +118,19 @@ export default function Packages() {
         fontSize: 16,
       },
     });
+  };
+
+  // Navigation functions for email exists modal
+  const handleGoToLogin = () => {
+    setShowEmailExistsModal(false);
+    // Navigate to login page - adjust the route as needed
+    router.push('/');
+  };
+
+  const handleResetPassword = () => {
+    setShowEmailExistsModal(false);
+    // Navigate to reset password page - adjust the route as needed
+    router.push('/forgot-password');
   };
 
   // Direct checkout function for signup flow
@@ -137,7 +171,14 @@ export default function Packages() {
       }
     } catch (err: any) {
       console.error("Checkout error:", err);
-      error(err?.data?.message || "An error occurred during checkout");
+      
+      // Check if it's the email already exists error
+      if (err?.data?.responseCode === "91" || 
+          (err?.data?.status === 422 && err?.data?.message?.includes("already registered"))) {
+        setShowEmailExistsModal(true);
+      } else {
+        error(err?.data?.message || "An error occurred during checkout");
+      }
     }
   };
 
@@ -153,7 +194,7 @@ export default function Packages() {
       (a, b) => parseFloat(a.price) - parseFloat(b.price)
     );
 
-    return sortedPlans.map((plan, _index) => {
+    return sortedPlans.map((plan, index) => {
       // Determine if this is the default highlighted plan (Premium)
       const isDefaultHighlighted = plan.name.toUpperCase() === "PREMIUM";
 
@@ -549,6 +590,59 @@ export default function Packages() {
                 disabled={isCheckoutLoading}
               >
                 {isCheckoutLoading ? "Processing..." : "Checkout"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Email Already Exists Modal */}
+      {showEmailExistsModal && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 p-4 sm:p-0 z-50">
+          <div className="bg-white p-6 rounded-lg shadow-lg max-w-md text-center">
+            <div className="mb-4">
+              <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-yellow-100">
+                <svg
+                  className="h-6 w-6 text-yellow-600"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  strokeWidth="1.5"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z"
+                  />
+                </svg>
+              </div>
+            </div>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">
+              Account Already Exists
+            </h3>
+            <p className="text-sm text-gray-500 mb-6">
+              We notice this email <span className=" font-semibold">({userEmail})</span> already exists in our system. You can either login to your existing account or reset your password if you&apos;ve forgotten it.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-3 justify-around">
+              {/** 
+              <button
+                className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors"
+                onClick={() => setShowEmailExistsModal(false)}
+              >
+                Cancel
+              </button>
+              */}
+              <button
+                className="px-4 py-2 bg-white border border-green-600 text-green-600 rounded-lg hover:bg-green-600 hover:text-white transition-colors"
+                onClick={handleGoToLogin}
+              >
+                Go to Login
+              </button>
+              <button
+                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                onClick={handleResetPassword}
+              >
+                Reset Password
               </button>
             </div>
           </div>
