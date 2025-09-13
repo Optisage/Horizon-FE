@@ -1,5 +1,6 @@
 "use client"
 /* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { InfoCard } from "../info-card"
 import { BSRIcon, PriceTagIcon, ProductSalesIcon, MaximumCostIcon, ROIIcon } from "../icons"
 import { Skeleton, Tooltip as AntTooltip } from "antd"
