@@ -664,21 +664,7 @@ You can now ask me any questions about this product's score and what it means fo
 
       {/* Input field */}
       <div className="relative">
-        <button
-          type="button"
-          aria-label="Send message"
-          onClick={handleSend}
-          disabled={
-            isAnalyzing ||
-            isChatting ||
-            currentSession.conversationState === "analyzing" ||
-            currentTypingIndex >= 0
-          }
-          className="absolute top-0 bottom-0 size-10 my-auto right-3 flex items-center justify-center gap-2 rounded-lg sm:w-[110px] sm:h-[42px] py-2 px-4 text-white font-semibold bg-primary hover:bg-primary/90 disabled:bg-gray-300 duration-150 transition-colors"
-        >
-          <span className="hidden sm:block">Send</span>
-          <IoSend className="size-10 sm:size-5" />
-        </button>
+       
         <input
           className="flex-1 outline-none bg-transparent border border-[#D1D1D1] p-4 pr-32 rounded-2xl w-full focus:border-primary"
           placeholder={getPlaceholderText()}
