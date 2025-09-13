@@ -268,6 +268,10 @@ export default function Pricing() {
   return (
     <section className="bg-[#E7EBEE] py-12">
       <div className="max-w-6xl mx-auto lg:px-8">
+        <div className=" text-center mb-5">
+          <h1 className=" text-4xl font-bold">Our Pricing</h1>
+          <p>Choose the plan that fits your needs.</p>
+        </div>
         <div className="bg-white p-6 pb-20 rounded-3xl">
           {/* Toggle */}
           <div className="flex justify-center mb-20">
