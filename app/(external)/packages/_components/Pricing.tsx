@@ -259,7 +259,7 @@ export default function Packages() {
           notes.find((note) => note.includes("Support")) ||
           "Annual subscription";
       }
-
+ const isDisabled = plan.name.toUpperCase() == "SAGE";
       return {
         id: plan.id,
         name: plan.name, // Keep original name without modification
@@ -274,6 +274,7 @@ export default function Packages() {
         stripePriceId: plan.id,
         interval: plan.interval,
         trial: plan.trial,
+        isDisabled
       };
     });
   };
@@ -306,15 +307,15 @@ export default function Packages() {
     setSelectedPlanId(planId);
   };
 
-  const handleGetStarted = (planId: number) => {
+ const handleGetStarted = (planId: number) => {
     const plan = processedPlans.find((p) => p.id === planId);
-    if (plan) {
+    if (plan && !plan.isDisabled) {
       if (plan.trial > 0) {
         // Show modal for free trial plans
         setSelectedPlanId(planId);
         setShowModal(true);
       } else {
-        // Direct checkout for non-trial plans
+        // Direct redirect for non-trial plans
         handlePlanSelection(plan);
       }
     }
@@ -421,6 +422,12 @@ export default function Packages() {
                       : "bg-white border border-[#D6D6D6] hover:border-[#08B27C] hover:shadow-md"
                   }`}
                 >
+                  {/* Coming Soon Badge for disabled plans */}
+                  {plan.isDisabled && (
+                    <div className="absolute top-2 right-2 bg-gray-600 text-white px-3 py-1 text-sm rounded-lg">
+                      Coming Soon
+                    </div>
+                  )}
                   {isHighlighted && (
                     <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 border border-[#08B27D] bg-white text-[#596375] text-xs px-3 py-1 rounded-full">
                       {plan.name.toUpperCase() === "PREMIUM" && isSelected ? "Most Popular" : "Selected"}
@@ -524,17 +531,17 @@ export default function Packages() {
                     >
                       {plan.note}
                     </p>
-                    <button
+                     <button
                       onClick={(e) => {
                         e.stopPropagation(); // Prevent card selection when clicking button
                         handleGetStarted(plan.id);
                       }}
-                      disabled={
-                        !isSelected || isButtonLoading(plan, isSelected)
-                      }
+                      disabled={!isSelected || plan.isDisabled}
                       className={`mt-3 w-full rounded-lg text-sm py-2 font-medium transition-all duration-200
                     ${
-                      isSelected && !isButtonLoading(plan, isSelected)
+                      plan.isDisabled
+                        ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                        : isSelected
                         ? isHighlighted
                           ? "bg-[#FFB951] text-white hover:bg-[#FF8E51] cursor-pointer"
                           : "bg-[#FFB951] text-white hover:bg-[#FF8E51] cursor-pointer"
@@ -542,7 +549,11 @@ export default function Packages() {
                     }
                   `}
                     >
-                      {getButtonText(plan, isSelected)}
+                      {plan.isDisabled
+                        ? "Unavailable"
+                        : isSelected
+                        ? plan.buttonText
+                        : "Select plan first"}
                     </button>
                   </div>
                 </div>
