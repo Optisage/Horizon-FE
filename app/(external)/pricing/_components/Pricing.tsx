@@ -144,7 +144,7 @@ export default function Pricing() {
 
       // Check if plan should be disabled (only STARTER (PRO) is available)
       //const isDisabled = plan.name.toUpperCase() !== 'STARTER (PRO)';
-      const isDisabled = plan.name.toUpperCase() == "";
+      const isDisabled = plan.name.toUpperCase() == "SAGE";
 
       return {
         id: plan.id,
