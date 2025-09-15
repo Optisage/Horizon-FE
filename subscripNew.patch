@@ -1,0 +1,114 @@
+diff --git a/app/(dashboard)/subscriptions/_components/Subscriptions.tsx b/app/(dashboard)/subscriptions/_components/Subscriptions.tsx
+index 47d81b0..9afe00d 100644
+--- a/app/(dashboard)/subscriptions/_components/Subscriptions.tsx
++++ b/app/(dashboard)/subscriptions/_components/Subscriptions.tsx
+@@ -1,4 +1,5 @@
+ /* eslint-disable @typescript-eslint/no-unused-vars */
++/* eslint-disable @typescript-eslint/no-explicit-any */
+ "use client";
+ 
+ import { useEffect, useState } from "react";
+@@ -9,6 +10,7 @@ import { useAppSelector } from "@/redux/hooks";
+ import {
+   useLazyGetPricingQuery,
+   useLazyGetProfileQuery,
++  useLazyGetUserPricingQuery,
+ } from "@/redux/api/auth";
+ import { Button, message, Modal } from "antd";
+ import { GoAlert } from "react-icons/go";
+@@ -30,7 +32,7 @@ interface PricingPlan {
+   price: string;
+   stripe_price_id: string;
+   meta_data?: {
+-    features?: string[];
++    features?: any[];
+   };
+ }
+ 
+@@ -59,7 +61,7 @@ const Subscriptions = () => {
+     useAppSelector((state) => state.global) || {};
+ 
+   const [getPricing, { data, isLoading: isLoadingPricing }] =
+-    useLazyGetPricingQuery();
++    useLazyGetUserPricingQuery();
+   const [changeSubscription, { isLoading: changeLoading }] =
+     useChangeSubscriptionMutation();
+   const [getProfile] = useLazyGetProfileQuery();
+@@ -69,6 +71,15 @@ const Subscriptions = () => {
+ 
+   const { convertPrice } = useCurrencyConverter(currencyCode);
+ 
++  // Helper function to safely render features
++  const renderFeature = (feature: any): string => {
++    if (typeof feature === 'string') return feature;
++    if (typeof feature === 'object' && feature !== null) {
++      return feature.name || feature.description || "";
++    }
++    return "";
++  };
++
+   useEffect(() => {
+     getSubscription({});
+     getPricing({}).then((response) => {
+@@ -176,8 +187,9 @@ const Subscriptions = () => {
+           {/* Dynamically render pricing plans */}
+           {pricingData.map((plan, index) => {
+             const features = plan.meta_data?.features || [];
+-            const firstFeature = features[0] || "";
++            const firstFeature = features[0];
+             const remainingFeatures = features.slice(1, 4);
++            
+             return (
+               <div
+                 key={plan.id}
+@@ -202,15 +214,16 @@ const Subscriptions = () => {
+                     >
+                       {isMonthly
+                         ? convertPrice(plan.price)
+-                        : convertPrice(parseFloat(plan.price) * 12)}
++                        : convertPrice((parseFloat(plan.price) * 12).toString())}
+                     </span>{" "}
+                     &nbsp;
+                     <span>/</span> {isMonthly ? "mo" : "yr"}
+                   </p>
+                 </span>
+-                <p className=" truncate">{firstFeature}</p>
++                
++                <p className="truncate">{renderFeature(firstFeature)}</p>
+ 
+-                <ul className=" mt-1 text-left space-y-2 h-fit pt-2">
++                <ul className="mt-1 text-left space-y-2 h-fit pt-2">
+                   {remainingFeatures.slice(0, 3).map((feature, idx) => (
+                     <li className="flex gap-2 items-center" key={idx}>
+                       <FaCheckCircle
+@@ -218,7 +231,7 @@ const Subscriptions = () => {
+                           index === 2 ? "text-white" : ""
+                         }`}
+                       />
+-                      <span className="truncate w-full">{feature}</span>
++                      <span className="truncate w-full">{renderFeature(feature)}</span>
+                     </li>
+                   ))}
+                 </ul>
+@@ -229,12 +242,12 @@ const Subscriptions = () => {
+                     plan.name !== "STARTER (PRO)" ||
+                     plan.name === subscription_type
+                   }
+-                  className={`px-6 py-2.5 text-sm  rounded-xl font-medium duration-200 disabled:bg-gray-300 disabled:text-gray-500 ${
++                  className={`px-6 py-2.5 text-sm rounded-xl font-medium duration-200 disabled:bg-gray-300 disabled:text-gray-500 ${
+                     plan.name === subscription_type
+                       ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                       : plan.name === "STARTER (PRO)"
+                       ? "border-transparent text-white bg-primary hover:bg-primary-hover"
+-                      : " hover:bg-gray-50 text-white cursor-not-allowed bg-primary hover:bg-primary-hover"
++                      : "hover:bg-gray-50 text-white cursor-not-allowed bg-primary hover:bg-primary-hover"
+                   }`}
+                   onClick={() => {
+                     setIsModalVisible(true);
+@@ -370,4 +383,4 @@ const Subscriptions = () => {
+   );
+ };
+ 
+-export default Subscriptions;
++export default Subscriptions;
+\ No newline at end of file
