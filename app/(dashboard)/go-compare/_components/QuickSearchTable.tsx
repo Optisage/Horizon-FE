@@ -89,7 +89,7 @@ function DraggableRow({
         <td className="px-4 py-1.5 text-sm">{quickSearchProduct.target_fees || 'N/A'}</td>
         <td className="px-4 py-1.5 text-sm">{quickSearchProduct.sales_rank || 'N/A'}</td>
         <td className="px-4 py-1.5 text-sm">{quickSearchProduct.price || quickSearchProduct.buybox_price || 'N/A'}</td>
-        <td className="px-4 py-1.5 text-sm">N/A</td>
+        <td className="px-4 py-1.5 text-sm">{quickSearchProduct.number_of_sellers || 'N/A'}</td>
       </tr>
     );
   }
@@ -150,14 +150,14 @@ function DraggableRow({
       </td>
       <td className="px-4 py-1.5">
         <div className="w-auto h-auto px-2 py-1 flex items-center">
-          <span className="text-sm font-medium">{productObj.store?.name || productObj.scraped_product?.store_name || 'Unknown Store'}</span>
+          <span className="text-sm font-medium">{productObj.store?.name || 'Unknown Store'}</span>
         </div>
       </td>
       <td className="px-4 py-1.5 text-sm">{formattedProfitMargin}</td>
       <td className="px-4 py-1.5 text-sm">{formattedROI}</td>
       <td className="px-4 py-1.5 text-sm">{productObj.target_fees || 'N/A'}</td>
       <td className="px-4 py-1.5 text-sm">{productObj.sales_rank || 'N/A'}</td>
-      <td className="px-4 py-1.5 text-sm">{productObj.price || productObj.buybox_price || 'N/A'}</td>
+      <td className="px-4 py-1.5 text-sm">{productObj.scraped_product.price?.formatted || productObj.buybox_price || 'N/A'}</td>
       <td className="px-4 py-1.5 text-sm">{productObj.number_of_sellers || 'N/A'}</td>
     </tr>
   )

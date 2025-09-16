@@ -133,52 +133,30 @@ export function ProductCard({ product }: ProductCardProps) {
   }
 
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden p-2.5 pb-0 h-[326px]">
-      <div className="relative h-48">
+    <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden p-2.5 pb-0 flex flex-col h-full min-h-[250px] max-h-[326px]">
+      <div className="relative flex-grow flex items-center justify-center p-2">
         <img 
           src={imageUrl} 
           alt={productName} 
-          className="object-contain w-full h-full rounded-md object-center" 
+          className="object-contain w-full max-h-[180px] rounded-md" 
           onError={(e) => {
             (e.target as HTMLImageElement).src = "https://via.placeholder.com/150?text=No+Image";
           }}
         />
       </div>
-      <div className="mt-3">
+      <div className="mt-auto p-2">
         <Link className="text-sm text-left mb-2 line-clamp-2 hover:underline block"
           target="_blank" rel="noopener noreferrer" href={productUrl || "#"}
         >
           {productName}
         </Link>
-        <div className="flex items-center justify-between mt-2">
+        <div className="flex flex-wrap items-center justify-between mt-2">
           <span className="text-xl font-bold">
             {typeof price === 'string' && /[$£€]/.test(price) ? formattedPrice : `${currencySign}${formattedPrice}`}
           </span>
-          <div className="h-8 w-16 flex items-center justify-center">
-            {marketplaceLogo ? (
-              <img 
-                src={marketplaceLogo} 
-                alt="Marketplace logo" 
-                className="object-contain h-full" 
-                onError={(e) => {
-                  (e.target as HTMLImageElement).style.display = 'none';
-                }}
-              />
-            ) : logoUrl ? (
-              <img 
-                src={logoUrl.startsWith('data:') ? logoUrl : `data:image/png;base64,${logoUrl}`} 
-                alt="Store logo" 
-                className="object-contain h-full" 
-                onError={(e) => {
-                  (e.target as HTMLImageElement).src = "https://via.placeholder.com/40?text=Store";
-                }}
-              />
-            ) : (
-              <div className="h-8 w-16 bg-gray-100 flex items-center justify-center rounded-md">
-                <span className="text-xs text-gray-500">Store</span>
-              </div>
-            )}
-          </div>
+          <span className="text-sm text-gray-600 font-medium">
+            {storeName || "Unknown Store"}
+          </span>
         </div>
       </div>
     </div>

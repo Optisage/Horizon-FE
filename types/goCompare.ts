@@ -111,6 +111,12 @@ export interface QuickSearchResult {
     product_url: string;
     image_url: string;
     created_at: string;
+    number_of_sellers?: number;
+    profit_margin?: number;
+    gross_roi?: number;
+    target_fees?: string | number;
+    sales_rank?: number;
+    buybox_price?: string;
 }
 
 export interface QuickSearchResponse {
@@ -199,6 +205,10 @@ export type ProductObj = {
     profit_margin: number
     estimated_profit: number
     amazon_fees: number
+    target_fees?: string | number
+    sales_rank?: number
+    buybox_price?: string
+    number_of_sellers?: number
     potential_monthly_sales: number
     store: {
         id: string
