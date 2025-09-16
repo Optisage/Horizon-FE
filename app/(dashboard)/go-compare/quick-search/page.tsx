@@ -212,6 +212,7 @@ export default function QuickSearch() {
             lastQueryParams.queue !== currentParams.queue;
 
         if (hasParamsChanged) {
+            // Immediately set route changing to show loading screen without delay
             setIsRouteChanging(true);
             setLastQueryParams(currentParams);
         }

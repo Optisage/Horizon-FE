@@ -13,6 +13,7 @@ const GoCompareLoader: React.FC<GoCompareLoaderProps> = ({ asin, storeNames, isL
   const [animatedProgress, setAnimatedProgress] = useState<number[]>([]);
   const [isCompilingResults, setIsCompilingResults] = useState(false);
 
+  // Use fixed steps when storeNames is empty to ensure consistent 33%, 66%, 100% progression
   const steps = storeNames.length > 0 ? [
     ...storeNames.map((storeName, index) => ({
       percent: `${Math.round(((index + 1) / (storeNames.length + 1)) * 100)}%`,
@@ -57,6 +58,9 @@ const GoCompareLoader: React.FC<GoCompareLoaderProps> = ({ asin, storeNames, isL
     if (currentStoreIndex === 0) {
     }
 
+    // Ensure we progress through each step with consistent timing
+    const progressTiming = 15000; // 15 seconds per step
+    
     const storeInterval = setInterval(() => {
       setCurrentStoreIndex(prev => {
         if (prev < storeNames.length - 1) {
@@ -76,7 +80,7 @@ const GoCompareLoader: React.FC<GoCompareLoaderProps> = ({ asin, storeNames, isL
           return prev;
         }
       });
-    }, 45000);
+    }, progressTiming);
 
     return () => clearInterval(storeInterval);
   }, [isLoading, storeNames.length]);
@@ -94,7 +98,8 @@ const GoCompareLoader: React.FC<GoCompareLoaderProps> = ({ asin, storeNames, isL
 
     if (currentStoreIndex < storeNames.length && !isCompilingResults) {
       let progress = 0;
-      const increment = 100 / (45000 / 100); 
+      const progressTiming = 15000; // 15 seconds per step (must match storeInterval)
+      const increment = 100 / (progressTiming / 100); 
 
       const currentStoreInterval = setInterval(() => {
         progress += increment;
