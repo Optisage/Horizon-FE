@@ -27,7 +27,10 @@ function DraggableRow({
     const quickSearchProduct = product as QuickSearchResult;
     const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
       id: `${quickSearchProduct.store_name}-${quickSearchProduct.asin}-${rowIndex}`,
-      data: { product: quickSearchProduct },
+      data: { 
+        product: quickSearchProduct,
+        type: 'quickSearchResult'
+      },
     });
 
     const [mouseDownTime, setMouseDownTime] = useState<number | null>(null);
@@ -98,7 +101,10 @@ function DraggableRow({
   const productObj = product as ProductObj;
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: productObj.scraped_product.id,
-    data: { product: productObj },
+    data: { 
+      product: productObj,
+      type: 'productObj' 
+    },
   });
 
   const [mouseDownTime, setMouseDownTime] = useState<number | null>(null);

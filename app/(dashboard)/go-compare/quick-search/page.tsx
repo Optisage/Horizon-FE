@@ -3,7 +3,7 @@ import { DndContext, type DragEndEvent, DragOverlay, type DragStartEvent, Pointe
 import { restrictToWindowEdges } from "@dnd-kit/modifiers"
 import { useGetSearchByIdQuery, useQuickSearchQuery, useGetProductDetailsQuery } from '@/redux/api/quickSearchApi';
 import { usePathname, useSearchParams } from 'next/navigation';
-import React, { useEffect, useState, useCallback } from 'react'
+import React, { useEffect, useState, useCallback, useRef } from 'react'
 import { TbListSearch } from "react-icons/tb";
 import { Droppable } from "../_components/dnd/Droppable";
 import { ProductCard } from "../_components/ProductCard";
@@ -25,6 +25,9 @@ export default function QuickSearch() {
     const queueParam = params.get('queue');
     const queue = queueParam === 'true';
     const searchId = params.get('searchId');
+    
+    // Create a reference to the Comparison Workspace section
+    const comparisonWorkspaceRef = useRef<HTMLDivElement>(null);
 
     const [lastQueryParams, setLastQueryParams] = useState({
         asin, marketplace_id, queue
@@ -103,10 +106,21 @@ export default function QuickSearch() {
         console.log("Drag started:", event)
         const { active } = event
 
-        // Handle QuickSearchResult[] data structure
+        // Extract the product directly from event data if available
+        if (active.data.current?.product) {
+            setActiveProduct(active.data.current.product);
+            return;
+        }
+
+        // Handle QuickSearchResult[] data structure (fallback if data is not in event)
         if (Array.isArray(data) && data.length > 0 && 'store_name' in data[0]) {
+            const idParts = String(active.id).split('-');
+            // Remove rowIndex from the end to match with data
+            const productId = idParts.length > 2 ? `${idParts[0]}-${idParts[1]}` : String(active.id);
+            
             const draggedProduct = (data as QuickSearchResult[]).find(
-                (product) => `${product.store_name}-${product.asin}` === active.id
+                (product) => `${product.store_name}-${product.asin}` === productId || 
+                             `${product.store_name}-${product.asin}` === active.id
             )
             if (draggedProduct) {
                 setActiveProduct(draggedProduct as any)
@@ -126,15 +140,49 @@ export default function QuickSearch() {
     const handleDragEnd = useCallback((event: DragEndEvent) => {
         const { active, over } = event
         console.log("Drag ended:", { active, over })
+        
+        // Reset active product
         setActiveProduct(null)
+        
+        // Only process if dropping in the droppable area
         if (over && over.id === "droppable-area") {
-            // Handle QuickSearchResult[] data structure
+                // Handle direct product data from the drag event
+                if (active.data.current?.product) {
+                    const draggedProduct = active.data.current.product;
+                    // Set product for comparison
+                    setSelectedProducts([draggedProduct])
+                    
+                    // Update selected ASIN for product details
+                    if ('asin' in draggedProduct) {
+                        setSelectedAsin(draggedProduct.asin);
+                    } else if ('scraped_product' in draggedProduct) {
+                        setSelectedAsin(draggedProduct.scraped_product.id);
+                    }
+                    
+                    // Scroll to Comparison Workspace section
+                    setTimeout(() => {
+                        comparisonWorkspaceRef.current?.scrollIntoView({ 
+                            behavior: 'smooth', 
+                            block: 'start'
+                        });
+                    }, 100);
+                    
+                    return;
+                }
+            
+            // Fallback to handle QuickSearchResult[] data structure if no direct data
             if (Array.isArray(data) && data.length > 0 && 'store_name' in data[0]) {
+                const idParts = String(active.id).split('-');
+                // Remove rowIndex from the end to match with data
+                const productId = idParts.length > 2 ? `${idParts[0]}-${idParts[1]}` : String(active.id);
+                
                 const draggedProduct = (data as QuickSearchResult[]).find(
-                    (product) => `${product.store_name}-${product.asin}` === active.id
+                    (product) => `${product.store_name}-${product.asin}` === productId || 
+                                 `${product.store_name}-${product.asin}` === active.id
                 )
                 if (draggedProduct) {
                     setSelectedProducts([draggedProduct as any])
+                    setSelectedAsin(draggedProduct.asin);
                 }
             }
             // Handle old QuickSearchData structure
@@ -144,6 +192,7 @@ export default function QuickSearch() {
                 )
                 if (draggedProduct) {
                     setSelectedProducts([draggedProduct])
+                    setSelectedAsin(draggedProduct.scraped_product.id);
                 }
             }
         }
@@ -156,6 +205,14 @@ export default function QuickSearch() {
         } else if ('scraped_product' in product) {
             setSelectedAsin(product.scraped_product.id);
         }
+        
+        // Scroll to Comparison Workspace section with smooth behavior
+        setTimeout(() => {
+            comparisonWorkspaceRef.current?.scrollIntoView({ 
+                behavior: 'smooth', 
+                block: 'start'
+            });
+        }, 100); // Small delay to ensure state updates complete
     }
 
     const handleRemoveProduct = (productId: string) => {
@@ -266,9 +323,9 @@ export default function QuickSearch() {
             modifiers={[restrictToWindowEdges]}
         >
             <section className="flex flex-col gap-8 min-h-[50dvh] md:min-h-[80dvh]">
-                <div className="flex flex-col lg:flex-row gap-6">
+                <div className="flex flex-col lg:flex-row gap-6" ref={comparisonWorkspaceRef}>
                     <div className="flex-1">
-                        <h2 className="text-lg font-semibold mb-4">Comparison Workspace</h2>
+                        <h2 className="text-lg font-semibold mb-4" id="comparison-workspace">Comparison Workspace</h2>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2.5">
                             {/* First product card */}
                             {Array.isArray(data) && data.length > 0 && 'store_name' in data[0] ? (
@@ -353,9 +410,23 @@ export default function QuickSearch() {
                     <Overlay activeProduct={activeProduct} />
                 ) : activeProduct && 'store_name' in activeProduct ? (
                     <div className="p-4 bg-white border rounded-lg shadow-lg">
-                        <h4 className="font-medium">{(activeProduct as QuickSearchResult).product_name}</h4>
+                        <div className="flex items-center gap-3">
+                            <div className="w-12 h-12 flex-shrink-0 relative overflow-hidden rounded">
+                                <img 
+                                    src={(activeProduct as QuickSearchResult).image_url} 
+                                    alt={(activeProduct as QuickSearchResult).product_name} 
+                                    className="w-full h-full object-contain"
+                                    onError={(e) => {
+                                        (e.target as HTMLImageElement).src = "https://via.placeholder.com/48?text=No+Image";
+                                    }}
+                                />
+                            </div>
+                            <div className="flex-1">
+                                <h4 className="font-medium line-clamp-1">{(activeProduct as QuickSearchResult).product_name}</h4>
                         <p className="text-sm text-gray-600">{(activeProduct as QuickSearchResult).store_name}</p>
                         <p className="text-lg font-semibold text-green-600">{(activeProduct as QuickSearchResult).price}</p>
+                            </div>
+                        </div>
                     </div>
                 ) : null}
             </DragOverlay>
