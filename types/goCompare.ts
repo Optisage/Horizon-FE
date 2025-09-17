@@ -6,7 +6,7 @@ export interface SearchRecord {
     amazonPrice: string
     country: string
     countryCode: string
-    countryId: string
+    countryId?: number;
     countryFlag: string
     stores: Store[]
     // storeLogo: string
@@ -30,26 +30,37 @@ interface Store {
 }
 
 export interface Country {
-    id: number;
+    id: string;
     name: string;
     flag: string;
     short_code: string;
-    created_at: CreatedAt;
-    stores?: Store[]
+}
+
+export interface CountryResponse {
+    status: number;
+    message: string;
+    data: Country[];
+    meta: any[];
 }
 
 export interface ApiSearchResponseItem {
-    id: string;
-    user_id: number;
+    id: number;
+    asin_upc: string;
+    search_type: string;
+    search_date: string;
+    amazon_price: number | null;
+    country: {
+        country: string;
+        id: number;
+    };
+    stores: any[];
+    results_count: number;
     query: string;
-    amazon_price: string;
-    number_of_results: number;
     type_of_search: string;
-    created_at: CreatedAt;
-    updated_at: string;
-    stores: Store[];
-    country: Country;
-    marketplace: string | null;
+    created_at: {
+        string: string;
+    };
+    number_of_results: number;
 }
 
 
@@ -89,6 +100,59 @@ export interface AmazonProduct {
     store: Store;
 }
 
+// New QuickSearchResult interface for the updated API
+export interface QuickSearchResult {
+    store_name: string;
+    product_name: string;
+    asin: string;
+    price: string;
+    currency: string;
+    country: string;
+    product_url: string;
+    image_url: string;
+    created_at: string;
+    number_of_sellers?: number;
+    profit_margin?: number;
+    gross_roi?: number;
+    target_fees?: string | number;
+    sales_rank?: number;
+    buybox_price?: string;
+}
+
+export interface QuickSearchResponse {
+    status: number;
+    message: string;
+    data: QuickSearchResult[];
+    meta: any[];
+}
+
+// Product Details API interfaces
+export interface ProductDetails {
+    product_name: string;
+    current_price: number;
+    avg_amazon_90_day_price: number | null;
+    gross_roi: number;
+    sales_rank: number;
+    avg_3_month_sales_rank: number;
+    asin: string;
+    number_of_sellers: number;
+    monthly_sellers: number;
+    amazon_on_listing: boolean;
+    product_url: string;
+    image_url: string;
+    amazon_fees: number;
+    estMonthlySales: number;
+}
+
+export interface ProductDetailsResponse {
+    status: number;
+    message: string;
+    data: ProductDetails;
+    responseCode: string;
+    meta: any[];
+}
+
+// Keep the old interface for backward compatibility
 export interface QuickSearchData {
     amazon_product: AmazonProduct | null;
     opportunities: ProductObj[];
@@ -141,6 +205,10 @@ export type ProductObj = {
     profit_margin: number
     estimated_profit: number
     amazon_fees: number
+    target_fees?: string | number
+    sales_rank?: number
+    buybox_price?: string
+    number_of_sellers?: number
     potential_monthly_sales: number
     store: {
         id: string
