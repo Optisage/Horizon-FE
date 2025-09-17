@@ -2,7 +2,6 @@
 import { useEffect, useRef, useState } from "react";
 import { GoChevronDown } from "react-icons/go";
 import { IoCloseOutline } from "react-icons/io5";
-import { RiCheckboxBlankCircleFill } from "react-icons/ri";
 import { useLazyGetAllCountriesQuery } from "@/redux/api/quickSearchApi";
 import { useRouter } from "next/navigation";
 import { Country } from "@/types/goCompare";
@@ -15,7 +14,6 @@ interface SearchModalProps {
     onClose: () => void;
     title: string;
     inputLabel: string;
-    isMultiStore?: boolean;
 }
 
 const searchTypes = [
@@ -23,12 +21,12 @@ const searchTypes = [
     { id: 2, type: "Deep Search - (Longer wait time)", value: true },
 ];
 
-export function SearchModal({ isOpen, onClose, title, inputLabel, isMultiStore = false }: SearchModalProps) {
+export function SearchModal({ isOpen, onClose, title, inputLabel }: SearchModalProps) {
     const router = useRouter();
     const dispatch = useDispatch();
     const [getCountries, { data: countries }] = useLazyGetAllCountriesQuery();
     const [selectedCountry, setSelectedCountry] = useState<Country | undefined>();
-    const [selectedStores, setSelectedStores] = useState<string[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
     const [asinOrUpc, setAsinOrUpc] = useState("");
     const [selectedSearchType, setSelectedSearchType] = useState(searchTypes[0]);
     const [isCountryDropdownOpen, setIsCountryDropdownOpen] = useState(false);
@@ -36,52 +34,82 @@ export function SearchModal({ isOpen, onClose, title, inputLabel, isMultiStore =
     const dropdownRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
+        setIsLoading(true);
         getCountries({});
     }, []);
 
     useEffect(() => {
-        if (countries?.data?.data?.length > 0) {
-            const defaultCountry = countries?.data?.data[0];
+        if (countries?.data?.length > 0) {
+            const defaultCountry = countries?.data[0];
             setSelectedCountry(defaultCountry);
-            const id = defaultCountry.id === 3 ? 6 : defaultCountry.id;
-            dispatch(setMarketPlaceId(id));
+            // For the new API, we'll use the short_code to determine marketplace ID
+            // This is a placeholder - you may need to adjust based on your marketplace mapping
+            const marketplaceMapping: { [key: string]: number } = {
+                'US': 1,
+                'UK': 2,
+                'CA': 6,
+                'AU': 4,
+                'DE': 5,
+                'FR': 3,
+                'NG': 7,
+                'IN': 8
+            };
+            const marketplaceId = marketplaceMapping[defaultCountry.short_code] || 1;
+            dispatch(setMarketPlaceId(marketplaceId));
+            setIsLoading(false);
         }
     }, [countries, dispatch]);
 
-    const toggleStore = (storeName: string) => {
-        if (isMultiStore) {
-            setSelectedStores((prev) =>
-                prev.includes(storeName) ? prev.filter((s) => s !== storeName) : [...prev, storeName]
-            );
-        } else {
-            setSelectedStores([storeName]);
-        }
-    };
 
     const handleClose = () => {
         setAsinOrUpc("");
-        setSelectedStores([]);
         setSelectedSearchType(searchTypes[0]);
-        setSelectedCountry(countries?.data?.data[0]);
+        setSelectedCountry(countries?.data[0]);
         onClose();
     };
 
     const handleSearch = () => {
-        if (!asinOrUpc || !selectedCountry || selectedStores.length === 0) {
+        if (!asinOrUpc || !selectedCountry) {
             message.error("Missing required fields");
             return;
         }
-        const storeParam = isMultiStore ? selectedStores.join(",") : selectedStores[0];
+        
+        // Show loading message before navigation
+        message.loading({
+            content: "Initiating search...",
+            key: "searchLoading",
+            duration: 1
+        });
+        
         if (title === "Quick Search") {
-            router.push(
-                `/go-compare/quick-search?asin=${asinOrUpc}&country=${selectedCountry.id}&stores=${storeParam}&queue=${selectedSearchType.value}`
-            );
+            const marketplaceMapping: { [key: string]: number } = {
+                'US': 1,
+                'UK': 2,
+                'CA': 6,
+                'AU': 4,
+                'DE': 5,
+                'FR': 3,
+                'NG': 7,
+                'IN': 8
+            };
+            const marketplaceId = marketplaceMapping[selectedCountry.short_code] || 1;
+            
+            // Set a small timeout to ensure the loading message is shown
+            setTimeout(() => {
+                router.push(
+                    `/go-compare/quick-search?asin=${asinOrUpc}&marketplace_id=${marketplaceId}&queue=${selectedSearchType.value}`
+                );
+                handleClose();
+            }, 100);
         } else {
-            router.push(
-                `/go-compare/reverse-search?query=${asinOrUpc}&store=${storeParam}`
-            );
+            // Set a small timeout to ensure the loading message is shown
+            setTimeout(() => {
+                router.push(
+                    `/go-compare/reverse-search?query=${asinOrUpc}`
+                );
+                handleClose();
+            }, 100);
         }
-        handleClose();
     };
 
     if (!isOpen) return null;
@@ -119,33 +147,78 @@ export function SearchModal({ isOpen, onClose, title, inputLabel, isMultiStore =
                                 className="w-full text-[#9F9FA3] text-sm p-3 border border-gray-300 rounded-md bg-white flex items-center justify-between focus:outline-none focus:ring-2 focus:ring-[#4C3CC6]"
                             >
                                 <div className="flex items-center">
-                                    <span
-                                        className="inline-block w-4 h-4 mr-2 mt-2"
-                                        dangerouslySetInnerHTML={{ __html: selectedCountry?.flag || "" }}
-                                    />
-                                    <span>{selectedCountry?.name}</span>
+                                    {isLoading ? (
+                                        <div className="inline-block w-4 h-4 mr-2 mt-2 rounded-sm bg-gray-200 flex items-center justify-center animate-pulse">
+                                            <span className="text-xs">🌍</span>
+                                        </div>
+                                    ) : selectedCountry?.flag ? (
+                                        <img
+                                            src={selectedCountry.flag}
+                                            alt={`${selectedCountry.name} flag`}
+                                            className="inline-block w-4 h-4 mr-2 mt-2 rounded-sm"
+                                            onError={(e) => {
+                                                (e.target as HTMLImageElement).style.display = 'none';
+                                                const nextElement = (e.target as HTMLImageElement).nextElementSibling as HTMLElement;
+                                                if (nextElement) nextElement.style.display = 'flex';
+                                            }}
+                                        />
+                                    ) : (
+                                        <div className="inline-block w-4 h-4 mr-2 mt-2 rounded-sm bg-gray-200 flex items-center justify-center">
+                                            <span className="text-xs">🌍</span>
+                                        </div>
+                                    )}
+                                    <span>{isLoading ? "Loading..." : selectedCountry?.name}</span>
                                 </div>
                                 <GoChevronDown size={18} color="black" />
                             </button>
 
                             {isCountryDropdownOpen && (
                                 <div className="absolute z-10 mt-1 px-2 w-full text-sm bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-auto">
-                                    {countries?.data?.data.map((country: Country) => (
+                                    {countries?.data.map((country: Country) => (
                                         <button
                                             key={country.id}
                                             onClick={() => {
                                                 setSelectedCountry(country);
-                                                setSelectedStores([]);
                                                 setIsCountryDropdownOpen(false);
-                                                const id = country.id === 3 ? 6 : country.id;
-                                                dispatch(setMarketPlaceId(id));
+                                                const marketplaceMapping: { [key: string]: number } = {
+                                                    'US': 1,
+                                                    'UK': 2,
+                                                    'CA': 3,
+                                                    'AU': 4,
+                                                    'DE': 5,
+                                                    'FR': 6,
+                                                    'NG': 7,
+                                                    'IN': 8
+                                                };
+                                                const marketplaceId = marketplaceMapping[country.short_code] || 1;
+                                                dispatch(setMarketPlaceId(marketplaceId));
                                             }}
                                             className="w-full text-left px-4 py-2 hover:bg-gray-100 flex items-center border-b"
                                         >
-                                            <span
-                                                className="inline-block w-4 h-4 mr-2 mt-2"
-                                                dangerouslySetInnerHTML={{ __html: country.flag || "" }}
-                                            />
+                                            {country.flag ? (
+                                                <>
+                                                    <img
+                                                        src={country.flag}
+                                                        alt={`${country.name} flag`}
+                                                        className="inline-block w-4 h-4 mr-2 mt-2 rounded-sm"
+                                                        onError={(e) => {
+                                                            (e.target as HTMLImageElement).style.display = 'none';
+                                                            const parentElement = (e.target as HTMLImageElement).parentElement;
+                                                            if (parentElement) {
+                                                                const nextElement = parentElement.nextElementSibling as HTMLElement;
+                                                                if (nextElement) nextElement.style.display = 'flex';
+                                                            }
+                                                        }}
+                                                    />
+                                                    <div className="hidden inline-block w-4 h-4 mr-2 mt-2 rounded-sm bg-gray-200 items-center justify-center">
+                                                        <span className="text-xs">🌍</span>
+                                                    </div>
+                                                </>
+                                            ) : (
+                                                <div className="inline-block w-4 h-4 mr-2 mt-2 rounded-sm bg-gray-200 flex items-center justify-center">
+                                                    <span className="text-xs">🌍</span>
+                                                </div>
+                                            )}
                                             <span>{country.name}</span>
                                         </button>
                                     ))}
@@ -184,28 +257,6 @@ export function SearchModal({ isOpen, onClose, title, inputLabel, isMultiStore =
                         </div>
                     </div>
 
-                    <div>
-                        <label className="block text-xs text-[#737379] mb-1.5">{selectedCountry?.name} Stores</label>
-                        <div className="space-y-2">
-                            {selectedCountry?.stores?.map((store) => (
-                                <div
-                                    key={store.id}
-                                    onClick={() => toggleStore(store.name)}
-                                    className={`text-xs px-3 py-4 border rounded-md flex items-center justify-between cursor-pointer ${selectedStores.includes(store.name) ? "border-[#4C3CC6] bg-gray-100" : "border-gray-300"
-                                        }`}
-                                >
-                                    <span>{store.name}</span>
-                                    {selectedStores.includes(store.name) ? (
-                                        <div className="h-4 w-4 bg-[#365AF9] rounded-full flex items-center justify-center">
-                                            <RiCheckboxBlankCircleFill color="white" size={10} />
-                                        </div>
-                                    ) : (
-                                        <div className="h-4 w-4 border border-gray-300 rounded-full bg-white" />
-                                    )}
-                                </div>
-                            ))}
-                        </div>
-                    </div>
                 </div>
 
                 <div className="p-5 text-sm font-medium flex justify-end space-x-3">
