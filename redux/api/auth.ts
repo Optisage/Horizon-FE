@@ -167,6 +167,12 @@ export const authApi = createApi({
     }),
     getPricing: builder.query<any, {}>({
       query: () => ({
+        url: "pricing/new",
+        method: "GET",
+      }),
+    }),
+    getUserPricing: builder.query<any, {}>({
+      query: () => ({
         url: "pricing",
         method: "GET",
       }),
@@ -203,6 +209,7 @@ export const {
   useCreatePasswordMutation,
   useForgetPasswordMutation,
   useLazyGetPricingQuery,
+  useLazyGetUserPricingQuery,
   useSetPasswordMutation,
   useResetPasswordMutation,
   useLazyAmazonAuthQuery,

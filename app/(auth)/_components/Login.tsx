@@ -37,27 +37,59 @@ const Login = () => {
     dispatch(logout());
   }, [dispatch]);
 
-  const handleSubmit = async (
-    values: { email: string; password: string },
-    setFieldError: (field: string, message: string) => void
-  ) => {
-    try {
-      const response = await login(values).unwrap();
-      if (response?.data?.user?.has_connected_amazon_account === true) {
-        router.push("/dashboard");
-      } else {
-        router.push("/connect-amazon");
-      }
+const handleSubmit = async (
+  values: { email: string; password: string },
+  setFieldError: (field: string, message: string) => void
+) => {
+  try {
+    const response = await login(values).unwrap();
+    
+    // Extract user data and signup_checkpoint from the response
+    const user = response?.data?.user;
+    const signupCheckpoint = user?.signup_checkpoint;
+    
+    // Check if user has completed signup process
+    if (signupCheckpoint === 7) {
+      // User has completed all signup steps, redirect to dashboard
+      router.push("/dashboard");
       messageApi.success("Login Successful");
-    } catch (error) {
-      messageApi.error("Login Failed");
-      console.log(error);
-      const errorMessage =
-        (error as { message?: string; data?: { message?: string } })?.data
-          ?.message || "An error occurred";
-      setFieldError("password", errorMessage);
+    } else if (signupCheckpoint && signupCheckpoint >= 3 && signupCheckpoint < 7) {
+      // User needs to complete signup process from step 3 onwards
+      // Pass user data to pre-populate the form
+      const signupUrl = new URL('/signUp', window.location.origin);
+      signupUrl.searchParams.set('step', signupCheckpoint.toString());
+      signupUrl.searchParams.set('email', values.email);
+      signupUrl.searchParams.set('fullname', `${user?.first_name || ''} ${user?.last_name || ''}`.trim());
+      
+      // Pass the token for authentication in subsequent API calls
+      if (response?.data?.token) {
+        signupUrl.searchParams.set('token', response.data.token);
+      }
+      
+      router.push(signupUrl.toString());
+      messageApi.success("Redirecting to complete your profile...");
+    } else if (signupCheckpoint && signupCheckpoint < 3) {
+      // User needs to complete early signup steps (email/password verification)
+      const signupUrl = new URL('/signUp', window.location.origin);
+      signupUrl.searchParams.set('step', signupCheckpoint.toString());
+      signupUrl.searchParams.set('email', values.email);
+      
+      router.push(signupUrl.toString());
+      messageApi.success("Please complete your account setup...");
+    } else {
+      // Fallback: redirect to dashboard if checkpoint is null/undefined
+      router.push("/dashboard");
+      messageApi.success("Login Successful");
     }
-  };
+  } catch (error) {
+    messageApi.error("Login Failed");
+    console.log(error);
+    const errorMessage =
+      (error as { message?: string; data?: { message?: string } })?.data
+        ?.message || "An error occurred";
+    setFieldError("password", errorMessage);
+  }
+};
 
   return (
     <div>
@@ -131,9 +163,9 @@ const Login = () => {
                 <span className="text-center">
                   Don't have an Account?{" "}
                   <Link
-                    href="https://optisage.ai/#pricing"
+                    href="/signUp"
                     className="text-[#3895F9] hover:underline"
-                    target="_blank"
+                    //target="_blank"
                     rel="noopener noreferrer"
                   >
                     Signup

@@ -23,6 +23,7 @@ import {
   useLazyGetExperinceLevelQuery,
   useLazyGetCountriesQuery,
   useUpdateUserMutation,
+  useSignupMutation,
 } from "@/redux/api/auth";
 import { useFormik } from "formik";
 import { email, passwordSchema } from "@/lib/validationSchema"; // Adjust path as needed
@@ -44,6 +45,8 @@ const Signup = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [dataFetched, setDataFetched] = useState(false);
   const [isDashboardNavigating, setIsDashboardNavigating] = useState(false);
+  const [needsPackageSelection, setNeedsPackageSelection] = useState(false);
+    const [showEmailExistsModal, setShowEmailExistsModal] = useState(false);
 
   // Subscription related states
   const [refCode, setRefCode] = useState<string>("");
@@ -54,8 +57,8 @@ const Signup = () => {
   
   // FIX: Added local state for checkout loading to ensure it resets correctly
   const [isCheckoutLoading, setIsCheckoutLoading] = useState(false);
-
-  const [subscribe, { isLoading }] = useLazyCreateStripeSubscriptionV2Query();
+const [subscribe, { isLoading }] = useSignupMutation();
+  //const [subscribe, { isLoading }] = useLazyCreateStripeSubscriptionV2Query();
   const [setPassword, { isLoading: isSettingPassword }] =
     useSetPasswordMutation();
   const [messageApi, contextHolder] = message.useMessage();
@@ -163,6 +166,18 @@ const Signup = () => {
     }
   };
 
+  // Navigation functions for email exists modal
+  const handleGoToLogin = () => {
+    setShowEmailExistsModal(false);
+    // Navigate to login page - adjust the route as needed
+    router.push('/');
+  };
+
+  const handleResetPassword = () => {
+    setShowEmailExistsModal(false);
+    // Navigate to reset password page - adjust the route as needed
+    router.push('/forgot-password');
+  };
   // Load data from session storage on component mount
   useEffect(() => {
     // Load form data from session storage first
@@ -243,6 +258,14 @@ const Signup = () => {
     const token = searchParams.get("token");
     const amazonConnected = searchParams.get("amazon_connected");
     const amazonErrorParam = searchParams.get("amazon_error");
+
+    // Check if pricing ID is empty or not provided
+  if (!pricing || pricing.trim() === "") {
+    setNeedsPackageSelection(true);
+  } else {
+    setNeedsPackageSelection(false);
+    setSelectedPlan(pricing);
+  }
 
     // Only override form data with URL params if they are explicitly provided
     // This prevents clearing saved data when redirected from callback
@@ -371,12 +394,12 @@ const Signup = () => {
     const payload: {
       pricing_id: string;
       email: string;
-      fullname: string;
+      name: string;
       referral_code?: string;
     } = {
       pricing_id: selectedPlan,
       email: form.email,
-      fullname: form.fullname,
+      name: form.fullname,
     };
 
     if (refCode) {
@@ -398,13 +421,18 @@ const Signup = () => {
           // FIX: Manually set loading state to false on failure
           setIsCheckoutLoading(false);
         }
-      })
-      .catch((err) => {
-        console.error(err);
+      }).catch ((err: any)=> {
+      console.error("Checkout error:", err);
+      
+      // Check if it's the email already exists error
+      if (err?.data?.responseCode === "91" || 
+          (err?.data?.status === 422 && err?.data?.message?.includes("already registered"))) {
+        setShowEmailExistsModal(true);
+      } else {
         error(err?.data?.message || "An error occurred during checkout");
-        // FIX: Manually set loading state to false on error
-        setIsCheckoutLoading(false);
-      });
+      }
+    })
+     
   };
 
   const handleUpdateUser = async () => {
@@ -514,6 +542,23 @@ const Signup = () => {
         emailFormik.setTouched({ email: true });
         return;
       }
+
+       // Check if user needs to select a package
+    if (needsPackageSelection) {
+      // Redirect to packages page with current form data
+      const packageUrl = new URL('/packages', window.location.origin);
+      packageUrl.searchParams.set('email', form.email);
+      packageUrl.searchParams.set('fullname', form.fullname);
+      if (refCode) {
+        packageUrl.searchParams.set('ref', refCode);
+      }
+      
+      // Save current form state before redirecting
+      saveToSessionStorage(SESSION_KEYS.FORM_DATA, form);
+      
+      router.push(packageUrl.toString());
+      return;
+    }
       
       if (selectedPlan && form.email && form.fullname) {
         confirmSubscription();
@@ -595,13 +640,16 @@ const Signup = () => {
   };
 
   const StepHeader1 = () => (
-    <div className="mb-6">
-      <h1 className="text-[#2E2E2E] text-xl md:text-2xl">Sign up</h1>
-      <p className="text-[#4D4D4D] text-base mt-2">
-        Welcome, signup with us at Optisage
-      </p>
-    </div>
-  );
+  <div className="mb-6">
+    <h1 className="text-[#2E2E2E] text-xl md:text-2xl">Sign up</h1>
+    <p className="text-[#4D4D4D] text-base mt-2">
+      {needsPackageSelection && currentStep === 1 
+        ? "Next, you'll choose a package that fits your needs"
+        : "Welcome, signup with us at Optisage"
+      }
+    </p>
+  </div>
+);
 
   const StepHeader2 = () => (
     <div className="mb-6">
@@ -960,23 +1008,28 @@ const Signup = () => {
   ];
 
   const getButtonText = () => {
-    if (currentStep === 1 && selectedPlan) {
+  if (currentStep === 1) {
+    if (needsPackageSelection) {
+      return "Choose Package";
+    }
+    if (selectedPlan) {
       return "Proceed to Checkout";
     }
-    if (currentStep === 2 && verificationToken) {
-      return "Set Password";
-    }
-    if (currentStep === 6) {
-      return "Complete Profile";
-    }
-    if (currentStep < 3) {
-      return "Submit";
-    }
-    if (currentStep === steps.length - 1) {
-      return "Go to Dashboard";
-    }
-    return "Continue";
-  };
+  }
+  if (currentStep === 2 && verificationToken) {
+    return "Set Password";
+  }
+  if (currentStep === 6) {
+    return "Complete Profile";
+  }
+  if (currentStep < 3) {
+    return "Submit";
+  }
+  if (currentStep === steps.length - 1) {
+    return "Go to Dashboard";
+  }
+  return "Continue";
+};
 
   const isButtonLoading = () => {
     // FIX: Use local state for checkout loading
@@ -1026,6 +1079,59 @@ const Signup = () => {
           {isButtonLoading() ? "Processing..." : getButtonText()}
         </button>
       </div>
+
+         {/* Email Already Exists Modal */}
+      {showEmailExistsModal && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 p-4 sm:p-0 z-50">
+          <div className="bg-white p-6 rounded-lg shadow-lg max-w-md text-center">
+            <div className="mb-4">
+              <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-yellow-100">
+                <svg
+                  className="h-6 w-6 text-yellow-600"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  strokeWidth="1.5"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z"
+                  />
+                </svg>
+              </div>
+            </div>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">
+              Account Already Exists
+            </h3>
+            <p className="text-sm text-gray-500 mb-6">
+              We notice this email <span className=" font-semibold">({form.email})</span> already exists in our system. You can either login to your existing account or reset your password if you&apos;ve forgotten it.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-3 justify-around">
+              {/** 
+              <button
+                className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors"
+                onClick={() => setShowEmailExistsModal(false)}
+              >
+                Cancel
+              </button>
+              */}
+              <button
+                className="px-4 py-2 bg-white border border-green-600 text-green-600 rounded-lg hover:bg-green-600 hover:text-white transition-colors"
+                onClick={handleGoToLogin}
+              >
+                Go to Login
+              </button>
+              <button
+                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                onClick={handleResetPassword}
+              >
+                Reset Password
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

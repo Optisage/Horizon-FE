@@ -22,18 +22,16 @@ const SearchHistory = () => {
     const router = useRouter();
 
     const { data, isLoading, isFetching, isError } = useSearchHistoryQuery({ page, perPage });
-    const searchData: SearchRecord[] = data?.data?.data?.map((item: ApiSearchResponseItem) => ({
+    const searchData: SearchRecord[] = data?.data?.map((item: ApiSearchResponseItem) => ({
         id: item.id,
-        asinOrUpc: item.query,
-        searchType: item.type_of_search,
-        searchDate: new Date(item.created_at.string).toLocaleDateString(),
+        asinOrUpc: item.asin_upc,
+        searchType: item.search_type,
+        searchDate: new Date(item.search_date).toLocaleDateString(),
         amazonPrice: item.amazon_price ? `$${item.amazon_price}` : "-",
-        country: item.country.name,
-        countryCode: item.country.short_code,
+        country: item.country.country,
+        stores: item.stores || [],
+        results: item.results_count,
         countryId: item.country.id,
-        countryFlag: item.country.flag,
-        stores: item.stores,
-        results: item.number_of_results,
     })) || []
 
 
@@ -48,9 +46,10 @@ const SearchHistory = () => {
 
     const handleRouting = (record: SearchRecord) => {
         if (record.searchType === 'quick_search') {
-            router.push(`/go-compare/quick-search?asin=${record.asinOrUpc}&country=${record.countryId}&stores=${record.stores[0].name}&queue=false&searchId=${record.id}`)
+            const storeName = record.stores && record.stores.length > 0 ? record.stores[0].name : '';
+            router.push(`/go-compare/quick-search?asin=${record.asinOrUpc}&country=${record.countryId}&stores=${storeName}&queue=false&searchId=${record.id}`)
         } else {
-            const storeNames = record.stores.map(store => store.name).join(',');
+            const storeNames = record.stores && record.stores.length > 0 ? record.stores.map(store => store.name).join(',') : '';
             router.push(`/go-compare/reverse-search?queryName=${record.asinOrUpc}&store=${encodeURIComponent(storeNames)}&searchId=${record.id}`);
         }
     }
@@ -85,16 +84,12 @@ const SearchHistory = () => {
                                         <td className="px-4 py-3">{record.amazonPrice}</td>
                                         <td className="px-4 py-3">
                                             <div className="flex items-center gap-2">
-                                                <div
-                                                    className="w-4 h-4 mt-2"
-                                                    dangerouslySetInnerHTML={{ __html: record.countryFlag.trim() || "" }}
-                                                />
                                                 <span className="font-normal">{record.country}</span>
                                             </div>
                                         </td>
                                         <td className="px-4 py-3">
                                             <div className="flex gap-2 items-center justify-center">
-                                                {[...new Map(record.stores.filter(store => store.logo).map(store => [store.name || store.id, store])).values()].map((store) => (
+                                                {[...new Map((record.stores || []).filter(store => store.logo).map(store => [store.name || store.id, store])).values()].map((store) => (
                                                     <img key={store.id} src={store.logo} alt="" className="object-contain w-10 h-10" />
                                                 ))}
                                             </div>
@@ -106,7 +101,7 @@ const SearchHistory = () => {
                             </tbody>
                         </table>
                     </div>
-                    <TablePagination page={page} perPage={perPage} totalPages={data?.data?.meta?.last_page} handlePageChange={handlePageChange} handlePerPageChange={handlePerPageChange} />
+                    <TablePagination page={page} perPage={perPage} totalPages={data?.meta?.last_page} handlePageChange={handlePageChange} handlePerPageChange={handlePerPageChange} />
                     <p className="text-green-600 text-end mx-4 mb-2 text-sm">Results will be cleared after 7 days</p>
 
                 </div>

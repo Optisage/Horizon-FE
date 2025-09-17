@@ -1,101 +1,62 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
-
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { useLazyGetPricingQuery } from "@/redux/api/auth";
-//import { useCreateStripeSubscriptionMutation } from "@/redux/api/subscriptionApi";
-import { Button } from "antd";
-import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
-import { FaCheckCircle } from "react-icons/fa";
-import { FaDollarSign } from "react-icons/fa6";
+import { useSearchParams } from "next/navigation";
+import { IoIosCheckmark } from "react-icons/io";
+import { FaCircle } from "react-icons/fa";
 
-// Component to handle the dropdown-like list of features with smooth transition
-const FeatureList = ({
-  items,
-  initialCount = 3,
-  expanded,
-  onExpand,
-}: {
-  items: string[];
-  initialCount?: number;
-  expanded: boolean;
-  onExpand: (expanded: boolean) => void;
-}) => {
-  //const [expanded, setExpanded] = useState(false);
+interface Feature {
+  name: string;
+  description: string;
+}
 
-  const safeInitialCount = Math.max(0, initialCount);
+interface PricingPlan {
+  id: number;
+  name: string;
+  stripe_price_id: string;
+  price: string;
+  trial: number;
+  currency: string;
+  interval: string;
+  meta_data: {
+    notes?: string[];
+    tooltip?: string;
+    features?: Feature[];
+    billing_note?: string;
+  };
+  status: number;
+  created_at: string;
+  updated_at: string;
+  stripe_product_id: string;
+}
 
-  // Always visible items
-  const initialItems = items.slice(0, safeInitialCount);
-  // Extra items to show/hide with animation
-  const extraItems = items.slice(safeInitialCount);
-
-  return (
-    <>
-      <ul className="mt-1 text-left space-y-2 h-fit border-t pt-4">
-        {initialItems.map((subItem, index) => (
-          <li className="flex gap-2 items-center" key={index}>
-            <div>
-              <FaCheckCircle className="text-green-700 !h-[20px] !w-[20px]" />
-            </div>
-            <span className={`${expanded ? "" : "truncate"} w-full`}>
-              {subItem}
-            </span>
-          </li>
-        ))}
-        {/* Extra items container with smooth height & opacity transition */}
-        {extraItems.length > 0 && (
-          <div
-            className={`overflow-hidden transition-all duration-300 ease-in-out space-y-2 ${
-              expanded ? "max-h-96 opacity-100" : "max-h-0 opacity-0"
-            }`}
-          >
-            {extraItems.map((subItem, index) => (
-              <li className="flex gap-2 items-center" key={index}>
-                <div>
-                  <FaCheckCircle className="text-green-700 !h-[20px] !w-[20px]" />
-                </div>
-                {subItem}
-              </li>
-            ))}
-          </div>
-        )}
-      </ul>
-      {extraItems.length > 0 && (
-        <button
-          className="text-primary text-sm mt-1 w-fit"
-          onClick={() => onExpand(!expanded)}
-        >
-          {expanded ? "See less" : "See more details"}
-        </button>
-      )}
-    </>
-  );
-};
-
-const Pricing = () => {
+export default function Pricing() {
   const searchParams = useSearchParams();
-  //const router = useRouter()
-  const [getPricing, { data }] = useLazyGetPricingQuery();
-  const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
-  const [expandedCards, setExpandedCards] = useState<Record<string, boolean>>(
-    {}
-  );
-  const [showModal, setShowModal] = useState(false);
+  const [isAnnual, setIsAnnual] = useState(false);
+  const [pricingData, setPricingData] = useState<PricingPlan[]>([]);
+  const [expandedFeatures, setExpandedFeatures] = useState<{
+    [key: number]: boolean;
+  }>({});
+  const [selectedPlanId, setSelectedPlanId] = useState<number | null>(null);
   const [refCode, setRefCode] = useState<string | null>(null);
-  //const [subscribe, { isLoading: subscribeLoading }] = useCreateStripeSubscriptionMutation();
+  const [showModal, setShowModal] = useState(false);
+  const [pricings, { data: apiResponse, isLoading }] = useLazyGetPricingQuery();
+
+ 
 
   useEffect(() => {
-    getPricing({});
-  }, [getPricing]);
+    pricings({});
+  }, [pricings]);
 
-  const handleExpand = (planKey: string, isExpanded: boolean) => {
-    setExpandedCards((prev) => ({
-      ...prev,
-      [planKey]: isExpanded,
-    }));
-  };
+  useEffect(() => {
+    if (apiResponse?.data) {
+      setPricingData(apiResponse.data);
+    }
+  }, [apiResponse]);
 
+  // Extract URL parameters
   useEffect(() => {
     const ref = searchParams.get("ref");
     if (ref) {
@@ -103,130 +64,389 @@ const Pricing = () => {
     }
   }, [searchParams]);
 
-  interface SubInfoItem {
-    key: string;
-    title: string;
-    price: string;
-    subTitle: string;
-    subItems: string[];
+  // Process pricing data to get plans for current billing interval
+  const getProcessedPlans = () => {
+    const currentInterval = isAnnual ? "year" : "month";
+    const filteredPlans = pricingData.filter(
+      (plan) => plan.interval === currentInterval
+    );
+
+    // Sort plans by price (ascending)
+    const sortedPlans = filteredPlans.sort(
+      (a, b) => parseFloat(a.price) - parseFloat(b.price)
+    );
+
+    return sortedPlans.map((plan, _index) => {
+      // Determine if this is the default highlighted plan (Premium)
+      const isDefaultHighlighted = plan.name.toUpperCase() === "PREMIUM";
+
+      // Calculate display price based on interval
+      let displayPrice, priceLabel;
+      if (plan.interval === "year") {
+        // For annual plans, show the full annual price
+        displayPrice = parseFloat(plan.price).toFixed(0);
+        priceLabel = "Per year";
+      } else {
+        // For monthly plans, show monthly price
+        displayPrice = parseFloat(plan.price).toFixed(0);
+        priceLabel = "Per month";
+      }
+
+      // Get features from meta_data or use fallback
+      const features = plan.meta_data.features?.map((f) => f.name) || [];
+
+      // Get description from tooltip or generate based on plan name
+      let description = plan.meta_data.tooltip || "";
+      if (!description) {
+        switch (plan.name.toUpperCase()) {
+          case "STARTER (PRO)":
+          case "STARTER":
+            description = "New sellers & small businesses";
+            break;
+          case "PREMIUM":
+            description = "For growing sellers & established brands";
+            break;
+          case "SAGE":
+          case "ENTERPRISE":
+            description = "Large sellers & enterprises";
+            break;
+          default:
+            description = "Professional plan";
+        }
+      }
+
+      // Get notes and billing information
+      const notes = plan.meta_data.notes || [];
+      const billingNote =
+        plan.meta_data.billing_note ||
+        (plan.interval === "year" ? `Annual billing` : "Monthly billing");
+
+      // For monthly plans, prioritize upgrade notes and avoid annual billing notes
+      // For annual plans, use billing notes or upgrade notes
+      let upgradeNote;
+      if (plan.interval === "month") {
+        // For monthly plans, find upgrade note or support note, avoid annual billing mentions
+        upgradeNote =
+          notes.find(
+            (note) =>
+              note.includes("upgrade") && !note.toLowerCase().includes("annual")
+          ) ||
+          notes.find((note) => note.includes("Support")) ||
+          "Monthly subscription";
+      } else {
+        // For annual plans, use billing note or any relevant note
+        upgradeNote =
+          billingNote ||
+          notes.find((note) => note.includes("upgrade")) ||
+          notes.find((note) => note.includes("Support")) ||
+          "Annual subscription";
+      }
+
+      // Check if plan should be disabled (only STARTER (PRO) is available)
+      //const isDisabled = plan.name.toUpperCase() !== 'STARTER (PRO)';
+      const isDisabled = plan.name.toUpperCase() == "SAGE";
+
+      return {
+        id: plan.id,
+        name: plan.name, // Keep original name without modification
+        price: parseInt(displayPrice),
+        originalPrice: parseFloat(plan.price),
+        priceLabel,
+        description,
+        features,
+        note: upgradeNote,
+        buttonText: isDisabled
+          ? "Unavailable"
+          : plan.trial > 0
+          ? "Start Free Trial"
+          : billingNote,
+        isDefaultHighlighted,
+        stripePriceId: plan.stripe_price_id,
+        interval: plan.interval,
+        trial: plan.trial,
+        isDisabled,
+      };
+    });
+  };
+
+  const processedPlans = getProcessedPlans();
+
+  // Set default selected plan when plans are loaded
+  useEffect(() => {
+    if (processedPlans.length > 0 && selectedPlanId === null) {
+      const defaultPlan =
+        processedPlans.find((plan) => plan.isDefaultHighlighted) ||
+        processedPlans[0];
+      setSelectedPlanId(defaultPlan.id);
+    }
+  }, [processedPlans, selectedPlanId]);
+
+  // Reset selection when billing interval changes
+  useEffect(() => {
+    setSelectedPlanId(null);
+  }, [isAnnual]);
+
+  const toggleFeatures = (planId: number) => {
+    setExpandedFeatures((prev) => ({
+      ...prev,
+      [planId]: !prev[planId],
+    }));
+  };
+
+  const handleCardClick = (planId: number) => {
+    setSelectedPlanId(planId);
+  };
+
+  const handleGetStarted = (planId: number) => {
+    const plan = processedPlans.find((p) => p.id === planId);
+    if (plan && !plan.isDisabled) {
+      if (plan.trial > 0) {
+        // Show modal for free trial plans
+        setSelectedPlanId(planId);
+        setShowModal(true);
+      } else {
+        // Direct redirect for non-trial plans
+        handlePlanSelection(plan);
+      }
+    }
+  };
+
+  const handlePlanSelection = (plan: any) => {
+    // Handle the plan selection logic here with window redirect for iframe usage
+    console.log("Selected plan:", plan);
+
+    // Construct URL with parameters
+    const url = `/signUp?ref=${refCode || ""}&pricing=${plan.id}`;
+
+    // Use window.open for iframe compatibility
+    if (window.top && window.top !== window) {
+      // If in iframe, open in parent window
+      window.top.open(url, "_blank");
+    } else {
+      // If not in iframe, open normally
+      window.open(url, "_blank");
+    }
+  };
+
+  const confirmSubscription = () => {
+    const selectedPlan = processedPlans.find((p) => p.id === selectedPlanId);
+    if (selectedPlan) {
+      handlePlanSelection(selectedPlan);
+      setShowModal(false);
+    }
+  };
+
+  if (isLoading) {
+    return (
+    <div className="flex justify-center h-screen items-center">
+          <div className="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-primary"></div>
+        </div>
+    );
   }
 
-  const subInfo: SubInfoItem[] = data?.data
-    ? data.data.map((item: any) => {
-        const features = item.meta_data?.features || [];
-        const subTitle = features[0] || "";
-        const subItems = features.slice(1);
-        return {
-          key: item.id.toString(),
-          title: item.name,
-          price: item.price,
-          subTitle: subTitle,
-          subItems: subItems,
-        };
-      })
-    : [];
-
-  const handleGetStarted = (planId: string) => {
-    setSelectedPlan(planId);
-    setShowModal(true);
-  };
-
-  /** 
-  const confirmSubscription = () => {
-    if (!selectedPlan) {
-      console.error("No plan selected");
-      return;
-    }
-    subscribe({
-      pricing_id: selectedPlan,
-      referral_code: refCode || "",
-    })
-      .unwrap()
-      .then((res) => {
-        console.log(res)
-        if (res?.url) {
-          if (window.top) {
-            window.top.location.href = res?.url;
-          } else {
-            window.open(res?.url, "_blank");
-          }
-        } else {
-          console.error("No checkout URL returned");
-        }
-        console.log(res);
-      })
-      .catch((err) => {
-        console.log(err);
-      });
-  };
-  */
-
   return (
-    <section className="py-12 px-4 bg-white h-dvh flex flex-col gap-12">
-      <div className="max-w-4xl mx-auto text-center">
-        <h2 className="text-3xl font-bold">Our Pricing</h2>
-        <p className="text-gray-600 mt-2">
-          Choose the plan that fits your needs.
-        </p>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-3 w-full gap-6 max-w-6xl mx-auto font-medium">
-        {subInfo.map((item, index) => (
-          <div
-            key={index}
-            className={`
-              
-              bg-white p-6 rounded-xl shadow-md flex flex-col gap-4 relative morope-font border
-              transition-transform duration-300 ease-in-out h-fit min-w-0
-            `}
-          >
-            {item.title !== "STARTER (PRO)" && (
-              <span className="absolute top-2 right-2 bg-green-600 text-white px-3 py-1 text-sm rounded-lg">
-                Coming Soon
-              </span>
-            )}
-            <h3 className="text-xl font-semibold capitalize truncate w-full max-w-full text-nowrap">
-              {item.title}
-            </h3>
-            <div className="flex items-baseline relative">
-              <div className=" -mb-5">
-                <FaDollarSign size={25} />
-              </div>
-              <p className="text-4xl font-semibold">{item.price}</p>
-              <div className="-mb-5">
-                <span className="text-lg font-semibold">/mo</span>
-              </div>
+    <section className="bg-[#E7EBEE] py-12">
+      <div className="max-w-6xl mx-auto lg:px-8">
+        <div className="bg-white p-6 pb-20 rounded-3xl">
+          {/* Toggle */}
+          <div className="flex justify-center mb-20">
+            <div className="flex items-center space-x-4 bg-[#F3F8FB] rounded-full px-2 py-2">
+              <button
+                onClick={() => setIsAnnual(false)}
+                className={`text-sm font-medium px-3 py-1 rounded-full transition-colors ${
+                  !isAnnual ? "text-white bg-[#0BAB79]" : "text-gray-600"
+                }`}
+              >
+                Monthly
+              </button>
+              <button
+                onClick={() => setIsAnnual(true)}
+                className={`text-sm font-medium px-3 py-1 rounded-full transition-colors ${
+                  isAnnual ? "text-white bg-[#0BAB79]" : "text-gray-600"
+                }`}
+              >
+                Annually
+              </button>
             </div>
-            <p className="text-gray-600 text-sm">{item.subTitle}</p>
-            {/* Use the dropdown feature list with smooth animation */}
-            <FeatureList
-              items={item.subItems}
-              initialCount={3}
-              expanded={expandedCards[item.key] || false}
-              onExpand={(isExpanded) => handleExpand(item.key, isExpanded)}
-            />
-
-            <button
-              className="mt-4 bg-green-500 text-white px-4 py-2 rounded-lg w-full transition duration-300 hover:bg-green-600 disabled:bg-slate-300"
-              onClick={() => handleGetStarted(item.key)}
-              disabled={item.title !== "STARTER (PRO)"}
-            >
-              {item.title !== "STARTER (PRO)"
-                ? "Unavailable"
-                : "Start Free Trial"}
-            </button>
           </div>
-        ))}
+
+          {/* Pricing Cards */}
+          <div className="grid gap-6 md:grid-cols-3 ">
+            {processedPlans.map((plan) => {
+              const isSelected = selectedPlanId === plan.id;
+              const isHighlighted = isSelected;
+
+              return (
+                <div
+                  key={plan.id}
+                  onClick={() => handleCardClick(plan.id)}
+                  className={`rounded-2xl py-6 px-3 flex flex-col justify-between relative cursor-pointer transition-all duration-200 ${
+                    isHighlighted
+                      ? "bg-gradient-to-b from-[#08B27C] to-[#11946C] text-white scale-105 shadow-lg"
+                      : "bg-white border border-[#D6D6D6] hover:border-[#08B27C] hover:shadow-md"
+                  }`}
+                >
+                  {/* Coming Soon Badge for disabled plans */}
+                  {plan.isDisabled && (
+                    <div className="absolute top-2 right-2 bg-gray-600 text-white px-3 py-1 text-sm rounded-lg">
+                      Coming Soon
+                    </div>
+                  )}
+
+                    {isHighlighted && (
+                    <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 border border-[#08B27D] bg-white text-[#596375] text-xs px-3 py-1 rounded-full">
+                      {plan.name.toUpperCase() === "PREMIUM" && isSelected ? "Most Popular" : "Selected"}
+                    </div>
+                  )}
+
+                  <div className="flex flex-col items-center space-y-4">
+                    <h3
+                      className={`text-2xl font-semibold text-center ${
+                        isHighlighted ? "text-white" : "text-gray-900"
+                      }`}
+                    >
+                      {plan.name}
+                    </h3>
+                    <p className="mt-2 text-6xl text-center font-bold">
+                      <span
+                        className={`${
+                          isHighlighted
+                            ? "text-white"
+                            : "bg-gradient-to-r from-[#11946C] to-[#08B27C] bg-clip-text text-transparent"
+                        }`}
+                      >
+                        ${plan.price}
+                      </span>
+                    </p>
+                    <div
+                      className={`px-3 py-[2px] rounded-2xl text-white w-fit
+                  ${isHighlighted ? "bg-[#232323]" : "bg-[#09AD7A]"}
+                      `}
+                    >
+                      <span className="text-sm">{plan.priceLabel}</span>
+                    </div>
+                    <p
+                      className={`mt-1 text-base text-center font-semibold ${
+                        isHighlighted ? "text-white" : "text-[#222222]"
+                      }`}
+                    >
+                      {plan.description}
+                    </p>
+                    <ul className="!mt-7 space-y-4 text-sm">
+                      {/* Show first 5 features or all if expanded */}
+                      {(expandedFeatures[plan.id]
+                        ? plan.features
+                        : plan.features.slice(0, 5)
+                      ).map((feature, idx) => (
+                        <li key={idx} className="flex gap-2">
+                          <div className="relative w-6 h-6 flex-shrink-0">
+                            {/* Circle background */}
+                            <FaCircle
+                              className={`absolute  inset-0 ${
+                                isHighlighted
+                                  ? "text-[#dbdbdb54]"
+                                  : "text-[#009F6D]/40"
+                              }`}
+                            />
+                            {/* White check */}
+                            <IoIosCheckmark
+                              className={`absolute inset-0  ${
+                                isHighlighted
+                                  ? "text-[#DBDBDB]"
+                                  : "text-[#009F6D]"
+                              }`}
+                            />
+                          </div>
+                          <span>{feature}</span>
+                        </li>
+                      ))}
+
+                      {/* Show expand/collapse button if more than 5 features */}
+                      {plan.features.length > 5 && (
+                        <li className="ml-6">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation(); // Prevent card selection when clicking expand
+                              toggleFeatures(plan.id);
+                            }}
+                            className={`text-xs font-medium underline hover:no-underline transition-colors ${
+                              isHighlighted
+                                ? "text-white hover:text-gray-200"
+                                : "text-[#009F6D] hover:text-[#007A55]"
+                            }`}
+                          >
+                            {expandedFeatures[plan.id]
+                              ? "Show less"
+                              : `+${plan.features.length - 5} more features`}
+                          </button>
+                        </li>
+                      )}
+                    </ul>
+                  </div>
+                  <div className="mt-6">
+                    <p
+                      className={`text-sm text-[#006D4B] w-full py-3 px-5 font-medium rounded-md bg-[#E0F4EE] text-center ${
+                        isHighlighted ? "" : ""
+                      }`}
+                    >
+                      {plan.note}
+                    </p>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation(); // Prevent card selection when clicking button
+                        handleGetStarted(plan.id);
+                      }}
+                      disabled={!isSelected || plan.isDisabled}
+                      className={`mt-3 w-full rounded-lg text-sm py-2 font-medium transition-all duration-200
+                    ${
+                      plan.isDisabled
+                        ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                        : isSelected
+                        ? isHighlighted
+                          ? "bg-[#FFB951] text-white hover:bg-[#FF8E51] cursor-pointer"
+                          : "bg-[#FFB951] text-white hover:bg-[#FF8E51] cursor-pointer"
+                        : "bg-gray-200 text-gray-400 cursor-not-allowed"
+                    }
+                  `}
+                    >
+                      {plan.isDisabled
+                        ? "Unavailable"
+                        : isSelected
+                        ? plan.buttonText
+                        : "Select plan first"}
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Stats Section */}
+        {/**
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mt-6 text-center">
+          {stats.map((stat, idx) => (
+            <div key={idx} className="bg-white space-y-4 rounded-xl p-5 px-7">
+              <p className="font-bold text-[#009F6D] text-4xl">{stat.value}</p>
+              <p className="font-semibold text-[#3F3F3F] text-xl">
+                {stat.title}
+              </p>
+              <p className="text-xs text-[#676A75]">{stat.subtitle}</p>
+            </div>
+          ))}
+        </div>
+ */}
       </div>
 
+      {/* Free Trial Modal */}
       {showModal && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 p-4 sm:p-0">
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 p-4 sm:p-0 z-50">
           <div className="bg-[#0A0A0A] p-6 rounded-lg shadow-lg max-w-96 text-center text-white">
             <h3 className="text-xl font-bold">7-Day Free Trial</h3>
-            <p className=" mt-2 text-white">
-              You won&apos;t be charged today. Your 7-day free trial begins after you
-              enter your card details, and you can cancel anytime before the trial
-              ends.
+            <p className="mt-2 text-white">
+              You won&apos;t be charged today. Your 7-day free trial begins
+              after you enter your card details, and you can cancel anytime
+              before the trial ends.
             </p>
             <div className="mt-4 flex flex-col-reverse sm:flex-row gap-3 justify-center">
               <button
@@ -235,21 +455,16 @@ const Pricing = () => {
               >
                 Cancel
               </button>
-              <Button
-                className="!px-4 !py-2 !bg-green-500 !border-none !h-[40px] !text-white !rounded-lg"
-                //onClick={confirmSubscription}
-                onClick={()=>window.open(`/pre-signup?ref=${refCode || ""}&pricing=${selectedPlan}`)}
-                //loading={subscribeLoading}
-                //disabled={subscribeLoading}
+              <button
+                className="px-4 py-2 bg-green-500 border-none h-[40px] text-white rounded-lg hover:bg-green-600 transition-colors"
+                onClick={confirmSubscription}
               >
-                Continue to Checkout
-              </Button>
+                Continue to SignUp
+              </button>
             </div>
           </div>
         </div>
       )}
     </section>
   );
-};
-
-export default Pricing;
+}
