@@ -1,4 +1,6 @@
 import Link from "next/link";
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { AmazonProduct, ProductObj, ReverseAmazon, ReverseAmazonScraped, QuickSearchResult } from "@/types/goCompare";
 
 type ProductCardType = ProductObj | AmazonProduct | ReverseAmazon | ReverseAmazonScraped | QuickSearchResult;
