@@ -73,7 +73,9 @@ export interface AmazonProduct {
     product_name: string;
     page_url: string;
     image_url: string;
+    price: string;
     seller: string;
+    buybox_price:string
     pricing: {
         current_price: number;
         original_price: number | null;
@@ -159,6 +161,9 @@ export interface QuickSearchData {
 }
 
 export interface ReverseSearchData {
+    buybox_price: any
+    price: any
+    target_fees: string
     id: string
     display_message: string
     reason: string
