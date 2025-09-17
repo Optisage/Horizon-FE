@@ -127,7 +127,7 @@ export default function ReverseSearch() {
             setActiveProduct(draggedProduct);
         }
 
-        console.log("Drag started:", draggedProduct);
+       
     };
 
     const handleDragEnd = (event: DragEndEvent) => {
@@ -138,7 +138,7 @@ export default function ReverseSearch() {
         }
 
         setActiveProduct(null);
-        console.log("Drag ended:", { active, over });
+      
     };
 
 
