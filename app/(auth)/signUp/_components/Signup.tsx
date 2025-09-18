@@ -607,19 +607,24 @@ const [subscribe, { isLoading }] = useSignupMutation();
 
   // Helper function to get the full name
   const getFullName = () => {
-    if (userData) {
-      return `${userData.first_name} ${userData.last_name}`.trim();
-    }
-    return form.fullname || "Dereck Jackson";
-  };
+  if (userData) {
+    const fullName = `${userData.first_name} ${userData.last_name}`.trim();
+    // Return email if no meaningful name is available
+    return fullName && fullName !== ' ' ? fullName : userData.email;
+  }
+  // Return email if no fullname is provided
+  return form.fullname.trim() || form.email;
+};
 
   // Helper function to get first name only
   const getFirstName = () => {
-    if (userData) {
-      return userData.first_name;
-    }
-    return form.fullname.split(" ")[0] || "Dereck";
-  };
+  if (userData) {
+    // Return first name if available, otherwise return email
+    return userData.first_name || userData.email;
+  }
+  // Return first part of fullname if available, otherwise return email
+  return form.fullname.split(" ")[0] || form.email;
+};
 
   const StepHeader1 = () => (
   <div className="mb-6">
