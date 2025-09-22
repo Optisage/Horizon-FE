@@ -35,23 +35,8 @@ const sellers: Seller[] = [
 
 const OffersAndSellerFeedback = () => {
   return (
-    <div className="rounded-xl bg-white p-4 lg:p-5">
-      <div className="flex items-center gap-3">
-        <button
-          type="button"
-          className="bg-primary px-3 py-1.5 rounded-3xl text-white font-semibold text-sm w-max flex items-center gap-1.5"
-        >
-          <MdOutlineInsertChartOutlined className="size-5" />
-          Offers
-        </button>
-        <button
-          type="button"
-          className="bg-[#F3F4F6] px-3 py-1.5 rounded-3xl text-[#676A75] font-semibold text-sm w-max flex items-center gap-1.5"
-        >
-          <MdOutlineInsertChartOutlined className="size-5" />
-          Seller Feedback
-        </button>
-      </div>
+    <div className="">
+    
 
       <div className="mt-5 overflow-x-auto">
         <table className="min-w-full text-left text-sm text-gray-700">

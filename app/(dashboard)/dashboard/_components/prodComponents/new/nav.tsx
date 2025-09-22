@@ -10,6 +10,7 @@ import { TbCalculatorFilled } from "react-icons/tb";
 import { IoPricetag } from "react-icons/io5";
 import { AiOutlinePercentage } from "react-icons/ai";
 import AmazonIcon from "@/public/assets/svg/amazon-icon.svg";
+import toatanAiIcon from "@/public/assets/svg/ai.svg";
 import Tool1 from "@/public/assets/svg/tool-1.svg";
 import Tool2 from "@/public/assets/svg/tool-2.svg";
 import Tool3 from "@/public/assets/svg/tool-3.svg";
@@ -22,9 +23,12 @@ type NavItem = {
 };
 
 const navItems: NavItem[] = [
-  { href: "", icon: <PiLightningFill className="size-6 text-[#0F172A]" /> },
-  { href: "", icon: <FaHashtag className="size-6 text-[#0F172A]" /> },
-  { href: "", icon: <HiMiniBell className="size-6 text-[#0F172A]" /> },
+   { href: "", icon: <FaGoogle className="size-6 text-[#0F172A]" /> },
+    { href: "", icon: <TbCalculatorFilled className="size-6 text-[#0F172A]" /> },
+     { href: "", icon: <HiMiniBell className="size-6 text-[#0F172A]" /> },
+  //{ href: "", icon: <PiLightningFill className="size-6 text-[#0F172A]" /> },
+  //{ href: "", icon: <FaHashtag className="size-6 text-[#0F172A]" /> },
+ /** 
   {
     href: "",
     icon: (
@@ -52,12 +56,12 @@ const navItems: NavItem[] = [
       </svg>
     ),
   },
-  { href: "", icon: <TbCalculatorFilled className="size-6 text-[#0F172A]" /> },
-  { href: "", icon: <FaGoogle className="size-6 text-[#0F172A]" /> },
-  { href: "", icon: <IoPricetag className="size-6 text-[#0F172A]" /> },
-  { href: "", icon: <AiOutlinePercentage className="size-6 text-[#0F172A]" /> },
-  { href: "", icon: <HiMiniShoppingCart className="size-6 text-[#0F172A]" /> },
-  { href: "", icon: <HiMiniEye className="size-6 text-[#0F172A]" /> },
+ */
+ 
+  //{ href: "", icon: <IoPricetag className="size-6 text-[#0F172A]" /> },
+  //{ href: "", icon: <AiOutlinePercentage className="size-6 text-[#0F172A]" /> },
+  //{ href: "", icon: <HiMiniShoppingCart className="size-6 text-[#0F172A]" /> },
+  //{ href: "", icon: <HiMiniEye className="size-6 text-[#0F172A]" /> },
   {
     href: "",
     external: true,
@@ -71,6 +75,7 @@ const navItems: NavItem[] = [
       />
     ),
   },
+ 
 ];
 
 const NavIcon: FC<NavItem> = ({ href, icon, external = false }) => (
@@ -93,6 +98,13 @@ const Nav: FC = () => {
           {navItems.map((item, idx) => (
             <NavIcon key={idx} {...item} />
           ))}
+            <Image
+        src={toatanAiIcon}
+        alt="Totan AI icon"
+        width={32}
+        height={32}
+        className="size-12"
+      />
         </div>
       </div>
 

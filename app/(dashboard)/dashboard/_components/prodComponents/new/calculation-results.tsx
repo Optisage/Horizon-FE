@@ -1,6 +1,6 @@
 const CalculationResults = () => {
   return (
-    <div className="rounded-xl bg-white lg:col-span-2 md:grid grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-[#D7CACA] min-h-[610px] font-semibold text-sm">
+    <div className="rounded-xl h-full bg-white lg:col-span-2 md:grid grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-[#D7CACA] min-h-[610px] font-semibold text-sm">
       {/* left column */}
       <div className="p-6 lg:p-8 min-h-[610px]">
         <div className="text-[#828995]">

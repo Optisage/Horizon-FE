@@ -4,12 +4,15 @@ import { NotificationIcon } from "./icons";
 const QuickInfo = () => {
   return (
     <div className="rounded-xl bg-white">
-      <div className="border-b border-[#E7EBEE] p-4 lg:p-5 flex items-center gap-2">
-        <span className="bg-primary px-3 py-1.5 rounded-3xl text-white font-semibold text-sm w-max">
+      <div className="border-b border-[#E7EBEE] py-4 px-3 lg:p-5 flex items-center gap-1.5">
+        <span className="bg-primary px-2 py-1.5 rounded-3xl text-white font-semibold text-sm w-max">
           Quick Info
         </span>
-        <span className="bg-[#F3F4F6] px-3 py-1.5 rounded-3xl text-[#676A75] font-semibold text-sm w-max">
-          Optisage Analysis
+        <span className="bg-[#F3F4F6] px-2 py-1.5 rounded-3xl text-[#676A75] font-semibold text-sm w-max">
+          Sales Analytics
+        </span>
+        <span className="bg-[#F3F4F6] px-2 py-1.5 rounded-3xl text-[#676A75] font-semibold text-sm w-max">
+          Totan (AI)
         </span>
       </div>
 

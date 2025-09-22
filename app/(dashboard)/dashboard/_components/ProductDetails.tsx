@@ -26,34 +26,34 @@ const ProductDetails = () => {
         {/* column 1 */}
         <div className="flex flex-col gap-4">
           <ProductOverview />
-          <MarketAnalysis />
-          <MultiMarketAnalyzer />
-          <Alerts />
+         <ProductEligibility />
+          <QuickInfo />
         </div>
 
         {/* column 2 */}
-        <div className="flex flex-col gap-4">
-          <QuickInfo />
-          <ProductEligibility />
-          <NewOfferCount />
-          {/* fix table overflow */}
-          <TopSellers />
-          {/*  */}
-          <Keepa />
+        <div className="flex flex-col gap-4 col-span-2">
+            <TopSellers />
+           
+           <CalculationResults />
+          
+          
         </div>
 
-        {/* column 3 */}
+        {/* column 3 
         <div className="flex flex-col gap-4">
           <SalesAnalytics />
           <ProfitabilityCalculator />
-          {/* fix table overflow */}
-          <OffersAndSellerFeedback />
-          {/*  */}
+        
           <BuyboxAnalysis />
         </div>
+        */}
 
         {/* calculation results */}
-        <CalculationResults />
+       
+      </div>
+
+      <div className=" col-span-3">
+        <MarketAnalysis />
       </div>
     </section>
   );
