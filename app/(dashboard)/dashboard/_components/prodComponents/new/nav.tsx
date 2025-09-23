@@ -9,102 +9,157 @@ import { HiMiniBell, HiMiniEye, HiMiniShoppingCart } from "react-icons/hi2";
 import { TbCalculatorFilled } from "react-icons/tb";
 import { IoPricetag } from "react-icons/io5";
 import { AiOutlinePercentage } from "react-icons/ai";
+import { Tooltip as AntTooltip } from "antd";
 import AmazonIcon from "@/public/assets/svg/amazon-icon.svg";
 import toatanAiIcon from "@/public/assets/svg/ai.svg";
 import Tool1 from "@/public/assets/svg/tool-1.svg";
 import Tool2 from "@/public/assets/svg/tool-2.svg";
 import Tool3 from "@/public/assets/svg/tool-3.svg";
 import Tool4 from "@/public/assets/svg/tool-4.svg";
+import ExportToSheetsButton from "@/utils/exportGoogle";
+
+interface NavProps {
+  product?: any;
+  buyboxWinnerPrice?: number;
+  lowestFBAPrice?: number;
+  lowestFBMPrice?: number;
+  monthlySales?: number;
+  sellerCount?: number;
+  fbaSellers?: number;
+  fbmSellers?: number;
+  stockLevels?: number;
+}
 
 type NavItem = {
-  href: string;
+  href?: string;
   icon: ReactNode;
   external?: boolean;
+  onClick?: () => void;
+  tooltip?: string;
 };
 
-const navItems: NavItem[] = [
-   { href: "", icon: <FaGoogle className="size-6 text-[#0F172A]" /> },
-    { href: "", icon: <TbCalculatorFilled className="size-6 text-[#0F172A]" /> },
-     { href: "", icon: <HiMiniBell className="size-6 text-[#0F172A]" /> },
-  //{ href: "", icon: <PiLightningFill className="size-6 text-[#0F172A]" /> },
-  //{ href: "", icon: <FaHashtag className="size-6 text-[#0F172A]" /> },
- /** 
-  {
-    href: "",
-    icon: (
-      <svg
-        width="31"
-        height="29"
-        viewBox="0 0 31 29"
-        fill="none"
-        xmlns="http://www.w3.org/2000/svg"
-        className="size-6 text-[#0F172A]"
+const Nav: FC<NavProps> = ({
+  product,
+  buyboxWinnerPrice = 0,
+  lowestFBAPrice = 0,
+  lowestFBMPrice = 0,
+  monthlySales = 0,
+  sellerCount = 0,
+  fbaSellers = 0,
+  fbmSellers = 0,
+  stockLevels = 0
+}) => {
+  const handleFindSupplier = () => {
+    if (product?.product_name) {
+      const query = encodeURIComponent(`${product.product_name} supplier`);
+      window.open(`https://www.google.com/search?q=${query}`, "_blank");
+    }
+  };
+
+  const handleViewOnAmazon = () => {
+    if (product?.amazon_link) {
+      window.open(product.amazon_link, "_blank");
+    }
+  };
+
+  const navItems: NavItem[] = [
+    { 
+      icon: <FaGoogle className="size-6 text-[#0F172A]" />,
+      onClick: handleFindSupplier,
+      tooltip: "Search Google for suppliers of this product to explore sourcing options"
+    },
+    { 
+      icon: <TbCalculatorFilled className="size-6 text-[#0F172A]" />,
+      tooltip: "Export this product's information to a Google Sheet for further analysis or record keeping"
+    },
+    { 
+      icon: <HiMiniBell className="size-6 text-[#0F172A]" />,
+      tooltip: "Notifications"
+    },
+    {
+      icon: (
+        <Image
+          src={AmazonIcon}
+          alt="Amazon icon"
+          width={32}
+          height={32}
+          className="size-6"
+        />
+      ),
+      external: true,
+      onClick: handleViewOnAmazon,
+      tooltip: "Visit the product's Amazon page to see listings, reviews, and more details"
+    },
+  ];
+
+  const NavIcon: FC<NavItem & { isCalculator?: boolean }> = ({ 
+    href, 
+    icon, 
+    external = false, 
+    onClick,
+    tooltip,
+    isCalculator = false
+  }) => {
+    const content = (
+      <div
+        onClick={onClick}
+        className="size-12 flex items-center justify-center rounded-lg bg-[#F3F4F6] cursor-pointer hover:bg-gray-200 transition-colors"
       >
-        <path
-          d="M7.55078 17.9999L14.3008 11.2499L18.6072 15.5564C19.8109 13.188 21.805 11.2022 24.421 10.0375L27.1617 8.81726M27.1617 8.81726L21.2204 6.53662M27.1617 8.81726L24.881 14.7585"
-          stroke="#0F172A"
-          strokeWidth="3"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-        <path
-          d="M2.00195 2V26C2.00195 26.5523 2.44967 27 3.00195 27H29.002"
-          stroke="#0F172A"
-          strokeWidth="3"
-          strokeLinecap="round"
-        />
-      </svg>
-    ),
-  },
- */
- 
-  //{ href: "", icon: <IoPricetag className="size-6 text-[#0F172A]" /> },
-  //{ href: "", icon: <AiOutlinePercentage className="size-6 text-[#0F172A]" /> },
-  //{ href: "", icon: <HiMiniShoppingCart className="size-6 text-[#0F172A]" /> },
-  //{ href: "", icon: <HiMiniEye className="size-6 text-[#0F172A]" /> },
-  {
-    href: "",
-    external: true,
-    icon: (
-      <Image
-        src={AmazonIcon}
-        alt="Amazon icon"
-        width={32}
-        height={32}
-        className="size-6"
-      />
-    ),
-  },
- 
-];
+        {isCalculator && product ? (
+          <ExportToSheetsButton
+            productData={{
+              asin: product?.asin,
+              title: product?.product_name,
+              brand: product?.vendor,
+              category: product?.category,
+              upcEan: product?.upc || product?.ean,
+              buyBoxPrice: buyboxWinnerPrice,
+              lowestFBAPrice: lowestFBAPrice,
+              lowestFBMPrice: lowestFBMPrice,
+              monthlySales: monthlySales,
+              sellerCount: sellerCount,
+              fbaSellers: fbaSellers,
+              fbmSellers: fbmSellers,
+              stockLevels: stockLevels,
+            }}
+            currencySymbol="$"
+          />
+        ) : (
+          icon
+        )}
+      </div>
+    );
 
-const NavIcon: FC<NavItem> = ({ href, icon, external = false }) => (
-  <Link
-    href={href}
-    target={external ? "_blank" : undefined}
-    rel={external ? "noopener noreferrer" : undefined}
-    className="size-12 flex items-center justify-center rounded-lg bg-[#F3F4F6]"
-  >
-    {icon}
-  </Link>
-);
+    if (tooltip) {
+      return (
+        <AntTooltip title={tooltip} placement="top">
+          {content}
+        </AntTooltip>
+      );
+    }
 
-const Nav: FC = () => {
+    return content;
+  };
+
   return (
     <div className="rounded-xl bg-white p-4 lg:p-5 flex flex-col lg:flex-row justify-between gap-4 md:gap-8">
       <div>
         <p className="mb-2 text-[#676A75] text-xs font-medium">Navigation</p>
         <div className="flex items-center gap-2 flex-wrap">
           {navItems.map((item, idx) => (
-            <NavIcon key={idx} {...item} />
+            <NavIcon 
+              key={idx} 
+              {...item} 
+              isCalculator={idx === 1} // TbCalculatorFilled is at index 1
+            />
           ))}
-            <Image
-        src={toatanAiIcon}
-        alt="Totan AI icon"
-        width={32}
-        height={32}
-        className="size-12"
-      />
+          <Image
+            src={toatanAiIcon}
+            alt="Totan AI icon"
+            width={32}
+            height={32}
+            className="size-12"
+          />
         </div>
       </div>
 
@@ -178,4 +233,3 @@ const Nav: FC = () => {
 };
 
 export default Nav;
-

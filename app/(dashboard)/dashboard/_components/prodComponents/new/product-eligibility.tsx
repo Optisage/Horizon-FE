@@ -4,27 +4,96 @@ import { useState } from "react";
 import { FiArrowRightCircle } from "react-icons/fi";
 import { Drawer } from "antd";
 import Link from "next/link";
+import { Tooltip as AntTooltip } from "antd";
 
-const ProductEligibility = () => {
+
+interface ProductEligibilityProps {
+  product?: any;
+  ipData?: any;
+  eligibility?: boolean;
+  setIpIssue?: number;
+  asin: string;
+  marketplaceId: number;
+  isLoadingIpData?: boolean;
+}
+
+const ProductEligibility = ({
+  product,
+  ipData,
+  eligibility = false,
+  setIpIssue = 0,
+  asin,
+  marketplaceId,
+  isLoadingIpData = false
+}: ProductEligibilityProps) => {
   const [open, setOpen] = useState(false);
+
+  if (isLoadingIpData) {
+    return (
+      <div className="h-[150px] w-full bg-[url(/assets/svg/product-eligibility.svg)] bg-cover bg-no-repeat bg-center p-4 lg:px-5 flex flex-col justify-center items-center">
+        <div className="flex items-center gap-3">
+          <div className="flex space-x-1">
+            <div className="w-2 h-2 bg-white rounded-full animate-bounce [animation-delay:-0.3s]"></div>
+            <div className="w-2 h-2 bg-white rounded-full animate-bounce [animation-delay:-0.15s]"></div>
+            <div className="w-2 h-2 bg-white rounded-full animate-bounce"></div>
+          </div>
+          <span className="text-white font-medium text-sm">Analyzing product eligibility...</span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <>
       <div className="h-[150px] w-full bg-[url(/assets/svg/product-eligibility.svg)] bg-cover bg-no-repeat bg-center p-4 lg:px-5 flex flex-col justify-end">
-        <p className="text-white text-sm font-medium">
-          This Product is eligible to sell
-        </p>
+        {eligibility ? (
+          <AntTooltip
+            title="✅ You can list and sell this product! You have the necessary approvals and this product is not restricted (GATED) for your seller account."
+            placement="top"
+          >
+            <p className="text-white text-sm font-medium cursor-help">
+              This Product is eligible to sell
+            </p>
+          </AntTooltip>
+        ) : (
+          <AntTooltip
+            title="⚠️ You can't list or sell this product yet because it's restricted (GATED) by the brand or category. You'll need approval first."
+            placement="top"
+          >
+            <p className="text-white text-sm font-medium cursor-help">
+              This Product is NOT eligible to sell
+            </p>
+          </AntTooltip>
+        )}
 
         <div className="text-xs font-medium mt-4">
-          <p className="text-xs text-white">There are 2 issues</p>
-          <button
-            type="button"
-            onClick={() => setOpen(true)}
-            className="mt-1.5 bg-white rounded-md py-1 px-2 text-[#0EAC7E] flex items-center gap-1.5"
+          <AntTooltip
+            title={
+              setIpIssue > 0
+                ? "⚠️ Issues detected that prevent you from selling this product. Click 'See all alerts' below to see detailed information about each issue and potential solutions."
+                : "✅ No restrictions found!"
+            }
+            placement="top"
           >
-            See all alerts
-            <FiArrowRightCircle />
-          </button>
+            <p className={`text-xs cursor-help ${setIpIssue ? "text-white" : "text-white/80"}`}>
+              {setIpIssue === 1
+                ? "There is 1 issue"
+                : setIpIssue > 1
+                  ? `There are ${setIpIssue} issues`
+                  : "No issues found"}
+            </p>
+          </AntTooltip>
+          
+          <div className="mt-1.5">
+            <button
+              type="button"
+              onClick={() => setOpen(true)}
+              className="bg-white rounded-md py-1 px-2 text-[#0EAC7E] flex items-center gap-1.5 text-xs font-medium"
+            >
+              See all alerts
+              <FiArrowRightCircle />
+            </button>
+          </div>
         </div>
       </div>
 
@@ -45,7 +114,7 @@ const ProductEligibility = () => {
 
             <div className="flex items-center gap-1.5 text-white font-bold text-sm">
               <span className="bg-primary rounded-full size-8 flex items-center justify-center">
-                6
+                {setIpIssue}
               </span>
               <span className="bg-[#FFC56E] opacity-15 rounded-full size-8 flex items-center justify-center" />
               <span className="bg-[#DF4740] opacity-15 rounded-full size-8 flex items-center justify-center" />
@@ -68,27 +137,39 @@ const ProductEligibility = () => {
             <div className="mt-5 text-[#8C94A3] text-sm font-medium flex flex-col gap-4">
               <span className="flex gap-4 items-center justify-between">
                 <p>Amazon Share Buy Box</p>
-                <p className="text-[#008158]">Never on Listing</p>
+                <p className="text-[#008158]">
+                  {ipData?.amazon_share_buybox ? `${ipData.amazon_share_buybox}%` : "Never on Listing"}
+                </p>
               </span>
               <span className="flex gap-4 items-center justify-between">
                 <p>Private Label</p>
-                <p className="text-[#008158]">Unlikely</p>
+                <p className="text-[#008158]">
+                  {ipData?.private_label || "Unlikely"}
+                </p>
               </span>
               <span className="flex gap-4 items-center justify-between">
                 <p>IP Analysis</p>
-                <p className="text-[#008158]">No known IP issues</p>
+                <p className="text-[#008158]">
+                  {ipData?.ip_analysis?.description || "No known IP issues"}
+                </p>
               </span>
               <span className="flex gap-4 items-center justify-between">
                 <p>Size</p>
-                <p className="text-[#008158]">Standard Size</p>
+                <p className="text-[#008158]">
+                  {ipData?.size || ipData?.size_text || "Standard Size"}
+                </p>
               </span>
               <span className="flex gap-4 items-center justify-between">
                 <p>Meltable</p>
-                <p className="text-[#008158]">No</p>
+                <p className="text-[#008158]">
+                  {ipData?.is_meltable ? "Yes" : "No"}
+                </p>
               </span>
               <span className="flex gap-4 items-center justify-between">
                 <p>Variations</p>
-                <p className="text-[#008158]">No</p>
+                <p className="text-[#008158]">
+                  {ipData?.has_variations ? "Yes" : "No"}
+                </p>
               </span>
             </div>
           </div>
@@ -99,4 +180,3 @@ const ProductEligibility = () => {
 };
 
 export default ProductEligibility;
-

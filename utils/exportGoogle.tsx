@@ -4,6 +4,7 @@ import { useGoogleLogin } from "@react-oauth/google";
 import { message } from "antd";
 import { RxArrowTopRight } from "react-icons/rx";
 import { SiGooglesheets } from "react-icons/si";
+import { TbCalculatorFilled } from "react-icons/tb";
 
 interface ExportButtonProps {
   productData: {
@@ -180,11 +181,11 @@ const ExportToSheetsButton = ({
 
       <button
         type="button"
-        className="border border-border text-primary px-3 py-2 rounded-xl hidden md:flex gap-1 items-center font-semibold hover:bg-gray-50 active:scale-95 duration-200 text-sm md:text-base"
+        className=""
         onClick={() => handleExport()}
       >
-        Export to Google Sheets
-        <RxArrowTopRight className="size-5" />
+       <TbCalculatorFilled className="size-6 text-[#0F172A]" />
+      
       </button>
     </>
   );

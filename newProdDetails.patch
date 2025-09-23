@@ -1,0 +1,2785 @@
+diff --git a/app/(dashboard)/dashboard/_components/prodComponents/new/alerts.tsx b/app/(dashboard)/dashboard/_components/prodComponents/new/alerts.tsx
+new file mode 100644
+index 0000000..ea51008
+--- /dev/null
++++ b/app/(dashboard)/dashboard/_components/prodComponents/new/alerts.tsx
+@@ -0,0 +1,65 @@
++import Link from "next/link";
++
++const Alerts = () => {
++  return (
++    <div className="rounded-xl bg-white">
++      <div className="border-b border-[#E7EBEE] p-4 lg:p-5 flex items-center gap-6 justify-between">
++        <span className="bg-[#F3F4F6] px-3 py-1.5 rounded-3xl text-[#676A75] font-semibold text-sm w-max">
++          Alerts
++        </span>
++
++        <div className="flex items-center gap-1.5 text-white font-bold text-sm">
++          <span className="bg-primary rounded-full size-8 flex items-center justify-center">
++            6
++          </span>
++          <span className="bg-[#FFC56E] opacity-15 rounded-full size-8 flex items-center justify-center" />
++          <span className="bg-[#DF4740] opacity-15 rounded-full size-8 flex items-center justify-center" />
++        </div>
++      </div>
++
++      <div className="p-4 lg:p-5">
++        <div className="bg-[#FAF5EC] rounded-xl p-4 text-sm font-medium flex items-center gap-3 justify-between">
++          <p className="text-[#CA7D09] max-w-[250px]">
++            Some alerts require you to be logged in to Seller Central
++          </p>
++          <Link
++            href=""
++            className="bg-white hover:bg-gray-50 transition-colors duration-200 text-black py-1.5 px-4 rounded-[10px]"
++          >
++            Login
++          </Link>
++        </div>
++
++        <div className="mt-5 text-[#8C94A3] text-sm font-medium flex flex-col gap-4">
++          <span className="flex gap-4 items-center justify-between">
++            <p>Amazon Share Buy Box</p>
++            <p className="text-[#008158]">Never on Listing</p>
++          </span>
++          <span className="flex gap-4 items-center justify-between">
++            <p>Private Label</p>
++            <p className="text-[#008158]">Unlikely</p>
++          </span>
++          <span className="flex gap-4 items-center justify-between">
++            <p>IP Analysis</p>
++            <p className="text-[#008158]">No known IP issues</p>
++          </span>
++          <span className="flex gap-4 items-center justify-between">
++            <p>Size</p>
++            <p className="text-[#008158]">Standard Size</p>
++          </span>
++          <span className="flex gap-4 items-center justify-between">
++            <p>Meltable</p>
++            <p className="text-[#008158]">No</p>
++          </span>
++          <span className="flex gap-4 items-center justify-between">
++            <p>Variations</p>
++            <p className="text-[#008158]">No</p>
++          </span>
++        </div>
++      </div>
++    </div>
++  );
++};
++
++export default Alerts;
++
+diff --git a/app/(dashboard)/dashboard/_components/prodComponents/new/buybox-analysis.tsx b/app/(dashboard)/dashboard/_components/prodComponents/new/buybox-analysis.tsx
+new file mode 100644
+index 0000000..b8040b9
+--- /dev/null
++++ b/app/(dashboard)/dashboard/_components/prodComponents/new/buybox-analysis.tsx
+@@ -0,0 +1,149 @@
++"use client";
++
++import { BiChevronDown } from "react-icons/bi";
++import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
++
++const data = new Array(50)
++  .fill(1)
++  .map((_, i) => ({ name: `Step ${i + 1}`, value: 1 }));
++
++const gradientColors = [
++  // 8–20: Orange-y yellow
++  "#FDCA40",
++  "#FDCA40",
++  "#FDCA40",
++  "#FDCA40",
++  "#FDCA40",
++  "#FDCA40",
++  "#FDCA40",
++  "#FDCA40",
++  "#FDCA40",
++  "#FDCA40",
++  "#FDCA40",
++  "#FDCA40",
++  "#FDCA40",
++  // 21–24: Warm orange
++  "#FFA15B",
++  "#FFA15B",
++  "#FFA15B",
++  "#FFA15B",
++  // 0–4: Purple
++  "#6610F2",
++  "#6610F2",
++  "#6610F2",
++  "#6610F2",
++  "#6610F2",
++  // 5–7: Blue
++  "#458BE1",
++  "#458BE1",
++  "#458BE1",
++  // 25–35: Red-orange
++  "#FF715B",
++  "#FF715B",
++  "#FF715B",
++  "#FF715B",
++  "#FF715B",
++  "#FF715B",
++  "#FF715B",
++  "#FF715B",
++  "#FF715B",
++  "#FF715B",
++  "#FF715B",
++  // 36–45: Transition yellow-orange
++  "#F38D2E",
++  "#F38D2E",
++  "#F38D2E",
++  "#FDCA40",
++  "#FDCA40",
++  "#FFA15B",
++  "#FFA15B",
++  "#FDCA40",
++  "#FDCA40",
++  "#F38D2E",
++
++  // 46–49: Orange
++  "#FFA15B",
++  "#FFA15B",
++  "#FFA15B",
++  "#FFA15B",
++];
++
++const BuyboxAnalysis = () => {
++  return (
++    <div className="rounded-xl bg-white p-4 lg:p-5">
++      <div className="flex gap-4 items-center justify-between">
++        <span className="bg-[#F3F4F6] px-3 py-1.5 rounded-3xl text-[#676A75] font-semibold text-sm w-max">
++          Buy Box Analysis
++        </span>
++
++        <div className="relative">
++          <select
++            aria-label="Filter"
++            className="bg-primary flex items-center gap-2.5 rounded-2xl py-2 pl-3 pr-8 text-white font-semibold w-max text-xs appearance-none outline-none"
++          >
++            <option value="30" className="bg-white text-black rounded-t-md">
++              30 days
++            </option>
++            <option value="90" className="bg-white text-black rounded-t-md">
++              90 days
++            </option>
++            <option value="180" className="bg-white text-black rounded-t-md">
++              180 days
++            </option>
++            <option value="all" className="bg-white text-black rounded-t-md">
++              All time
++            </option>
++          </select>
++          <BiChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 text-white pointer-events-none" />
++        </div>
++      </div>
++
++      <div className="mt-6">{/* Chart */}</div>
++
++      <div
++        className="relative flex items-center justify-center"
++        style={{ height: 250 }}
++      >
++        <ResponsiveContainer width="100%" height="100%">
++          <PieChart>
++            <Pie
++              data={data}
++              cx="50%"
++              cy="50%"
++              innerRadius={50}
++              outerRadius={100}
++              startAngle={90}
++              endAngle={-270}
++              paddingAngle={1}
++              dataKey="value"
++              stroke="none"
++            >
++              {data.map((_, index) => (
++                <Cell
++                  key={`cell-${index}`}
++                  fill={gradientColors[index % gradientColors.length]}
++                />
++              ))}
++            </Pie>
++          </PieChart>
++        </ResponsiveContainer>
++
++        {/* Center Label */}
++        <div className="absolute text-center">
++          <div className="text-2xl lg:text-3xl xl:text-[32px] font-bold text-[#414D55]">
++            60+
++          </div>
++          <div className="text-xs text-[#696D6E] font-medium">PRODUCTS</div>
++        </div>
++
++        {/* First Step Tag */}
++        <div className="absolute top-6 left-1/2 -translate-x-1/2 -translate-y-full bg-white px-2 py-1 rounded-full shadow text-xs font-semibold text-black">
++          FIRST STEP
++        </div>
++      </div>
++    </div>
++  );
++};
++
++export default BuyboxAnalysis;
++
+diff --git a/app/(dashboard)/dashboard/_components/prodComponents/new/calculation-results.tsx b/app/(dashboard)/dashboard/_components/prodComponents/new/calculation-results.tsx
+new file mode 100644
+index 0000000..b891b0d
+--- /dev/null
++++ b/app/(dashboard)/dashboard/_components/prodComponents/new/calculation-results.tsx
+@@ -0,0 +1,99 @@
++const CalculationResults = () => {
++  return (
++    <div className="rounded-xl h-full bg-white lg:col-span-2 md:grid grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-[#D7CACA] min-h-[610px] font-semibold text-sm">
++      {/* left column */}
++      <div className="p-6 lg:p-8 min-h-[610px]">
++        <div className="text-[#828995]">
++          <div className="mb-10 flex items-center gap-5 justify-between">
++            <span className="flex items-center gap-2">
++              <p className="text-[#8E949F] text-lg">Profit</p>
++              <span className="bg-primary size-4 rounded-full" />
++            </span>
++            <h5 className="text-[#3C485C] font-bold text-2xl lg:text-3xl xl:text-[32px]">
++              C$ 9.13
++            </h5>
++          </div>
++
++          <div className="border-y border-[#E5E5E5] py-10 flex flex-col gap-4">
++            <span className="flex gap-5 justify-between items-center">
++              <p>Sales Price</p>
++              <p>C$ 30.08</p>
++            </span>
++            <span className="flex gap-5 justify-between items-center">
++              <p>Cost Price</p>
++              <p>C$ 5.00</p>
++            </span>
++            <span className="flex gap-5 justify-between items-center">
++              <p>Total Fees</p>
++              <p>C$ 15.00</p>
++            </span>
++            <span className="flex gap-5 justify-between items-center">
++              <p>Sales Tax</p>
++              <p>C$ 0.95</p>
++            </span>
++            <span className="flex gap-5 justify-between items-center">
++              <p>Est. Amazon Payout</p>
++              <p>C$14.13</p>
++            </span>
++          </div>
++        </div>
++
++        <div className="mt-8">
++          <p className="text-[#596375]">Fulfilment Type</p>
++          <div className="flex items-center gap-4 mt-2">
++            <button
++              type="button"
++              className="bg-[#FF8551] px-6 py-2 rounded-full text-white"
++            >
++              FBA
++            </button>
++            <button
++              type="button"
++              className="border border-[#D2D2D2] px-6 py-2 rounded-full text-[#B0B0B1] hover:bg-gray-50"
++            >
++              FBM
++            </button>
++          </div>
++        </div>
++      </div>
++
++      {/* right column */}
++      <div className="p-6 lg:p-8 flex flex-col items-center justify-center text-center min-h-[610px]">
++        <svg
++          width="129"
++          height="129"
++          viewBox="0 0 129 129"
++          fill="none"
++          xmlns="http://www.w3.org/2000/svg"
++        >
++          <path
++            d="M129 64.5C129 100.122 100.122 129 64.5 129C28.8776 129 0 100.122 0 64.5C0 28.8776 28.8776 0 64.5 0C100.122 0 129 28.8776 129 64.5ZM28.0943 64.5C28.0943 84.6063 44.3937 100.906 64.5 100.906C84.6063 100.906 100.906 84.6063 100.906 64.5C100.906 44.3937 84.6063 28.0943 64.5 28.0943C44.3937 28.0943 28.0943 44.3937 28.0943 64.5Z"
++            fill="#F8F9FA"
++          />
++        </svg>
++
++        <p className="max-w-[215px] text-[#596375] mt-10">
++          Click the Break down or total fee button display information{" "}
++        </p>
++
++        <div className="flex items-center gap-4 mt-8">
++          <button
++            type="button"
++            className="bg-primary px-6 py-2 rounded-full text-white"
++          >
++            Breakdown
++          </button>
++          <button
++            type="button"
++            className="border border-primary px-6 py-2 rounded-full text-primary hover:bg-gray-50"
++          >
++            Total Fees
++          </button>
++        </div>
++      </div>
++    </div>
++  );
++};
++
++export default CalculationResults;
++
+diff --git a/app/(dashboard)/dashboard/_components/prodComponents/new/datePicker.tsx b/app/(dashboard)/dashboard/_components/prodComponents/new/datePicker.tsx
+new file mode 100644
+index 0000000..8fe49bf
+--- /dev/null
++++ b/app/(dashboard)/dashboard/_components/prodComponents/new/datePicker.tsx
+@@ -0,0 +1,73 @@
++"use client";
++
++import { useRef, useState } from "react";
++import { DatePicker } from "antd";
++import { FiChevronLeft, FiChevronRight } from "react-icons/fi";
++import dayjs, { Dayjs } from "dayjs";
++import { MdOutlineCalendarMonth } from "react-icons/md";
++
++const ProductDatePicker = () => {
++  const [selectedDate, setSelectedDate] = useState<Dayjs>(dayjs());
++  const [open, setOpen] = useState(false);
++  const pickerRef = useRef(null);
++
++  const handlePrev = () => setSelectedDate((prev) => prev.subtract(1, "day"));
++  const handleNext = () => setSelectedDate((prev) => prev.add(1, "day"));
++  const handleTriggerClick = () => setOpen(true);
++
++  return (
++    <div className=" inline-flex flex-col items-start ">
++      {/* Custom pill UI */}
++      <div className="flex w-full items-center divide-x-2 border border-border rounded-full bg-white text-[#8C94A2]">
++        <button
++          type="button"
++          aria-label="Previous"
++          onClick={handlePrev}
++          className="hover:text-gray-700 p-1"
++        >
++          <FiChevronLeft size={20} />
++        </button>
++
++        <button
++          type="button"
++          onClick={handleTriggerClick}
++          className="flex w-[100px]  items-center space-x-2 hover:text-gray-800 focus:outline-none p-1"
++        >
++          <MdOutlineCalendarMonth size={20} />
++          <span className="text-xs font-medium">
++            {selectedDate.format("MMM, DD")}
++          </span>
++        </button>
++
++        <button
++          type="button"
++          aria-label="Next"
++          onClick={handleNext}
++          className="hover:text-gray-700 p-1"
++        >
++          <FiChevronRight size={20} />
++        </button>
++      </div>
++
++      {/* Keep DatePicker, just for the calendar, but make it invisible */}
++      <div className="absolute top-2 left-0 w-0 h-0 overflow-hidden">
++        <DatePicker
++          ref={pickerRef}
++          open={open}
++          value={selectedDate}
++          onChange={(date) => {
++            if (date) setSelectedDate(date);
++            setOpen(false);
++          }}
++          onOpenChange={(nextOpen) => setOpen(nextOpen)}
++          allowClear={false}
++          format="YYYY-MM-DD"
++          popupClassName="z-[9999]"
++        />
++      </div>
++    </div>
++  );
++};
++
++export default ProductDatePicker;
++
+diff --git a/app/(dashboard)/dashboard/_components/prodComponents/new/icons.tsx b/app/(dashboard)/dashboard/_components/prodComponents/new/icons.tsx
+new file mode 100644
+index 0000000..8ad6994
+--- /dev/null
++++ b/app/(dashboard)/dashboard/_components/prodComponents/new/icons.tsx
+@@ -0,0 +1,215 @@
++export const SubtitleIcon = () => {
++  return (
++    <svg
++      width="19"
++      height="19"
++      viewBox="0 0 19 19"
++      fill="none"
++      xmlns="http://www.w3.org/2000/svg"
++    >
++      <path
++        d="M11.8015 17.5079H7.22449C3.08228 17.5079 1.3125 15.7382 1.3125 11.596V7.01893C1.3125 2.87672 3.08228 1.10693 7.22449 1.10693H11.8015C15.9437 1.10693 17.7135 2.87672 17.7135 7.01893V11.596C17.7135 15.7382 15.9437 17.5079 11.8015 17.5079ZM7.22449 2.25119C3.70781 2.25119 2.45676 3.50224 2.45676 7.01893V11.596C2.45676 15.1126 3.70781 16.3637 7.22449 16.3637H11.8015C15.3182 16.3637 16.5693 15.1126 16.5693 11.596V7.01893C16.5693 3.50224 15.3182 2.25119 11.8015 2.25119H7.22449Z"
++        fill="white"
++      />
++      <path
++        d="M13.7099 13.7546H12.2987C11.9859 13.7546 11.7266 13.4952 11.7266 13.1825C11.7266 12.8697 11.9859 12.6104 12.2987 12.6104H13.7099C14.0227 12.6104 14.2821 12.8697 14.2821 13.1825C14.2821 13.4952 14.0227 13.7546 13.7099 13.7546Z"
++        fill="white"
++      />
++      <path
++        d="M10.2538 13.7546H5.31822C5.00546 13.7546 4.74609 13.4952 4.74609 13.1825C4.74609 12.8697 5.00546 12.6104 5.31822 12.6104H10.2538C10.5665 12.6104 10.8259 12.8697 10.8259 13.1825C10.8259 13.4952 10.5742 13.7546 10.2538 13.7546Z"
++        fill="white"
++      />
++      <path
++        d="M13.7086 10.886H9.4901C9.17733 10.886 8.91797 10.6266 8.91797 10.3138C8.91797 10.0011 9.17733 9.7417 9.4901 9.7417H13.7086C14.0214 9.7417 14.2807 10.0011 14.2807 10.3138C14.2807 10.6266 14.0214 10.886 13.7086 10.886Z"
++        fill="white"
++      />
++      <path
++        d="M7.43128 10.886H5.31822C5.00546 10.886 4.74609 10.6266 4.74609 10.3138C4.74609 10.0011 5.00546 9.7417 5.31822 9.7417H7.43128C7.74405 9.7417 8.00341 10.0011 8.00341 10.3138C8.00341 10.6266 7.74405 10.886 7.43128 10.886Z"
++        fill="white"
++      />
++    </svg>
++  );
++};
++
++export const JustifyIcon = () => {
++  return (
++    <svg
++      width="15"
++      height="16"
++      viewBox="0 0 15 16"
++      fill="none"
++      xmlns="http://www.w3.org/2000/svg"
++    >
++      <path
++        d="M13.1229 4.41558H2.15054C1.90061 4.41558 1.69336 4.13633 1.69336 3.79958C1.69336 3.46284 1.90061 3.18359 2.15054 3.18359H13.1229C13.3728 3.18359 13.5801 3.46284 13.5801 3.79958C13.5801 4.13633 13.3728 4.41558 13.1229 4.41558Z"
++        fill="#030303"
++      />
++      <path
++        d="M13.1229 8.52251H2.15054C1.90061 8.52251 1.69336 8.24326 1.69336 7.90652C1.69336 7.56978 1.90061 7.29053 2.15054 7.29053H13.1229C13.3728 7.29053 13.5801 7.56978 13.5801 7.90652C13.5801 8.24326 13.3728 8.52251 13.1229 8.52251Z"
++        fill="#030303"
++      />
++      <path
++        d="M13.1229 12.629H2.15054C1.90061 12.629 1.69336 12.3497 1.69336 12.013C1.69336 11.6762 1.90061 11.397 2.15054 11.397H13.1229C13.3728 11.397 13.5801 11.6762 13.5801 12.013C13.5801 12.3497 13.3728 12.629 13.1229 12.629Z"
++        fill="#030303"
++      />
++    </svg>
++  );
++};
++
++export const GoogleIcon = () => {
++  return (
++    <svg
++      width="15"
++      height="14"
++      viewBox="0 0 15 14"
++      fill="none"
++      xmlns="http://www.w3.org/2000/svg"
++    >
++      <path
++        fill-rule="evenodd"
++        clip-rule="evenodd"
++        d="M14.3162 7.21583C14.3168 6.7421 14.2755 6.26913 14.1927 5.80225H7.42578V8.47983H11.3015C11.1413 9.34396 10.6236 10.1072 9.8684 10.5925V12.3306H12.1815C13.5359 11.1207 14.3162 9.33147 14.3162 7.21583Z"
++        fill="#4285F4"
++      />
++      <path
++        fill-rule="evenodd"
++        clip-rule="evenodd"
++        d="M7.42473 14.0089C9.36114 14.0089 10.9915 13.3928 12.1805 12.3307L9.86735 10.5927C9.22362 11.0156 8.39446 11.257 7.42473 11.257C5.55318 11.257 3.96459 10.0346 3.39658 8.38721H1.01367V10.1784C2.23165 12.5267 4.71228 14.0087 7.42473 14.0089Z"
++        fill="#34A853"
++      />
++      <path
++        fill-rule="evenodd"
++        clip-rule="evenodd"
++        d="M3.39501 8.3879C3.09465 7.52474 3.09465 6.58988 3.39501 5.72672V3.93555H1.0121C-0.00663772 5.89966 -0.00663772 8.21496 1.0121 10.1791L3.39501 8.3879Z"
++        fill="#FBBC04"
++      />
++      <path
++        fill-rule="evenodd"
++        clip-rule="evenodd"
++        d="M7.42474 2.85645C8.44801 2.84015 9.43675 3.21481 10.1774 3.89928L12.2253 1.91497C10.9267 0.733198 9.20624 0.0843609 7.42474 0.104457C4.71228 0.104566 2.23165 1.58669 1.01367 3.93491L3.39658 5.72608C3.96459 4.07884 5.55318 2.85645 7.42474 2.85645Z"
++        fill="#EA4335"
++      />
++    </svg>
++  );
++};
++
++export const DesktopIcon = () => {
++  return (
++    <svg
++      width="24"
++      height="24"
++      viewBox="0 0 24 24"
++      fill="none"
++      xmlns="http://www.w3.org/2000/svg"
++    >
++      <path
++        d="M3.18164 12.8818V7.52401C3.18164 5.55132 4.78082 3.95215 6.7535 3.95215H17.469C19.4418 3.95215 21.0409 5.55132 21.0409 7.524V12.8818C21.0409 14.8545 19.4417 16.4537 17.469 16.4537H6.7535C4.78081 16.4537 3.18164 14.8545 3.18164 12.8818Z"
++        stroke="#1C1C1C"
++        stroke-width="1.62103"
++      />
++      <path
++        d="M6.29883 20.0254H17.9252"
++        stroke="#1C1C1C"
++        stroke-width="1.62103"
++        stroke-linecap="round"
++      />
++    </svg>
++  );
++};
++
++export const RobotIcon = () => {
++  return (
++    <svg
++      width="19"
++      height="19"
++      viewBox="0 0 19 19"
++      fill="none"
++      xmlns="http://www.w3.org/2000/svg"
++    >
++      <path
++        d="M7.09096 11.5963C6.88865 11.5963 6.69461 11.5159 6.55156 11.3728C6.4085 11.2298 6.32812 11.0358 6.32812 10.8334V9.30776C6.32812 9.10544 6.4085 8.91141 6.55156 8.76835C6.69461 8.62529 6.88865 8.54492 7.09096 8.54492C7.29328 8.54492 7.48731 8.62529 7.63037 8.76835C7.77343 8.91141 7.8538 9.10544 7.8538 9.30776V10.8334C7.8538 11.0358 7.77343 11.2298 7.63037 11.3728C7.48731 11.5159 7.29328 11.5963 7.09096 11.5963Z"
++        fill="#333333"
++      />
++      <path
++        d="M11.6671 11.5963C11.4648 11.5963 11.2708 11.5159 11.1277 11.3728C10.9847 11.2298 10.9043 11.0358 10.9043 10.8334V9.30776C10.9043 9.10544 10.9847 8.91141 11.1277 8.76835C11.2708 8.62529 11.4648 8.54492 11.6671 8.54492C11.8695 8.54492 12.0635 8.62529 12.2065 8.76835C12.3496 8.91141 12.43 9.10544 12.43 9.30776V10.8334C12.43 11.0358 12.3496 11.2298 12.2065 11.3728C12.0635 11.5159 11.8695 11.5963 11.6671 11.5963Z"
++        fill="#333333"
++      />
++      <path
++        d="M4.80252 6.25579C4.70212 6.25637 4.6026 6.23712 4.50966 6.19916C4.41672 6.1612 4.33218 6.10526 4.2609 6.03456L1.97239 3.74605C1.82875 3.60241 1.74805 3.40758 1.74805 3.20444C1.74805 3.10385 1.76786 3.00425 1.80635 2.91132C1.84485 2.81839 1.90127 2.73395 1.97239 2.66282C2.04352 2.59169 2.12796 2.53527 2.22089 2.49678C2.31382 2.45829 2.41342 2.43848 2.51401 2.43848C2.71715 2.43848 2.91198 2.51918 3.05562 2.66282L5.34413 4.95133C5.41563 5.02225 5.47238 5.10662 5.51111 5.19958C5.54984 5.29254 5.56978 5.39225 5.56978 5.49295C5.56978 5.59365 5.54984 5.69336 5.51111 5.78632C5.47238 5.87928 5.41563 5.96365 5.34413 6.03456C5.27285 6.10526 5.18832 6.1612 5.09538 6.19916C5.00244 6.23712 4.90291 6.25637 4.80252 6.25579Z"
++        fill="#333333"
++      />
++      <path
++        d="M13.9548 6.25579C13.8544 6.25637 13.7548 6.23712 13.6619 6.19916C13.569 6.1612 13.4844 6.10526 13.4131 6.03456C13.3416 5.96365 13.2849 5.87928 13.2462 5.78632C13.2074 5.69336 13.1875 5.59365 13.1875 5.49295C13.1875 5.39225 13.2074 5.29254 13.2462 5.19958C13.2849 5.10662 13.3416 5.02225 13.4131 4.95133L15.7017 2.66282C15.8453 2.51918 16.0401 2.43848 16.2433 2.43848C16.4464 2.43848 16.6412 2.51918 16.7849 2.66282C16.9285 2.80647 17.0092 3.00129 17.0092 3.20444C17.0092 3.40758 16.9285 3.60241 16.7849 3.74605L14.4964 6.03456C14.4251 6.10526 14.3406 6.1612 14.2476 6.19916C14.1547 6.23712 14.0552 6.25637 13.9548 6.25579Z"
++        fill="#333333"
++      />
++      <path
++        d="M16.2439 15.4099H2.51284C2.31052 15.4099 2.11649 15.3296 1.97343 15.1865C1.83037 15.0434 1.75 14.8494 1.75 14.6471V11.2143C1.75 9.19114 2.5537 7.25084 3.9843 5.82024C5.4149 4.38964 7.35521 3.58594 9.37838 3.58594C11.4015 3.58594 13.3419 4.38964 14.7725 5.82024C16.2031 7.25084 17.0068 9.19114 17.0068 11.2143V14.6471C17.0068 14.8494 16.9264 15.0434 16.7833 15.1865C16.6403 15.3296 16.4462 15.4099 16.2439 15.4099ZM3.27568 13.8842H15.4811V11.2143C15.4811 9.59578 14.8381 8.04353 13.6936 6.89905C12.5492 5.75457 10.9969 5.11161 9.37838 5.11161C7.75984 5.11161 6.20759 5.75457 5.06312 6.89905C3.91864 8.04353 3.27568 9.59578 3.27568 11.2143V13.8842Z"
++        fill="#333333"
++      />
++    </svg>
++  );
++};
++
++export const CopyIcon = () => {
++  return (
++    <svg
++      width="11"
++      height="11"
++      viewBox="0 0 11 11"
++      fill="none"
++      xmlns="http://www.w3.org/2000/svg"
++    >
++      <path
++        d="M5.51353 10.1973H3.88296C1.99923 10.1973 1.1582 9.35625 1.1582 7.47251V5.84195C1.1582 3.95822 1.99923 3.11719 3.88296 3.11719H5.17025C5.34618 3.11719 5.49208 3.26308 5.49208 3.43901C5.49208 3.61494 5.34618 3.76083 5.17025 3.76083H3.88296C2.3468 3.76083 1.80185 4.30578 1.80185 5.84195V7.47251C1.80185 9.00868 2.3468 9.55363 3.88296 9.55363H5.51353C7.0497 9.55363 7.59465 9.00868 7.59465 7.47251V6.18523C7.59465 6.0093 7.74054 5.8634 7.91647 5.8634C8.0924 5.8634 8.23829 6.0093 8.23829 6.18523V7.47251C8.23829 9.35625 7.39726 10.1973 5.51353 10.1973Z"
++        fill="#18CB96"
++      />
++      <path
++        d="M7.91569 6.50739H6.54259C5.33683 6.50739 4.84766 6.01822 4.84766 4.81246V3.43935C4.84766 3.31062 4.92489 3.19048 5.04504 3.14328C5.16519 3.09178 5.3025 3.12182 5.3969 3.21193L8.14312 5.95815C8.23323 6.04826 8.26326 6.18986 8.21177 6.31001C8.16457 6.43015 8.04442 6.50739 7.91569 6.50739ZM5.4913 4.21602V4.81246C5.4913 5.66636 5.68868 5.86375 6.54259 5.86375H7.13903L5.4913 4.21602Z"
++        fill="#18CB96"
++      />
++      <path
++        d="M7.31555 1.61581H5.59917C5.42324 1.61581 5.27734 1.46992 5.27734 1.29399C5.27734 1.11806 5.42324 0.972168 5.59917 0.972168H7.31555C7.49148 0.972168 7.63737 1.11806 7.63737 1.29399C7.63737 1.46992 7.49148 1.61581 7.31555 1.61581Z"
++        fill="#18CB96"
++      />
++      <path
++        d="M3.62456 2.9031C3.44863 2.9031 3.30273 2.75721 3.30273 2.58128C3.30273 1.69305 4.02362 0.972168 4.91185 0.972168H6.03608C6.21201 0.972168 6.3579 1.11806 6.3579 1.29399C6.3579 1.46992 6.21201 1.61581 6.03608 1.61581H4.91185C4.37977 1.61581 3.94638 2.0492 3.94638 2.58128C3.94638 2.75721 3.80049 2.9031 3.62456 2.9031Z"
++        fill="#18CB96"
++      />
++      <path
++        d="M8.85503 8.0519C8.6791 8.0519 8.5332 7.906 8.5332 7.73008C8.5332 7.55415 8.6791 7.40825 8.85503 7.40825C9.3442 7.40825 9.73896 7.00919 9.73896 6.52431V3.86821C9.73896 3.69228 9.88486 3.54639 10.0608 3.54639C10.2367 3.54639 10.3826 3.69228 10.3826 3.86821V6.52431C10.3826 7.36534 9.69605 8.0519 8.85503 8.0519Z"
++        fill="#18CB96"
++      />
++      <path
++        d="M10.0605 4.19024H8.77317C7.63178 4.19024 7.16406 3.72253 7.16406 2.58113V1.29385C7.16406 1.16512 7.2413 1.04497 7.36145 0.997769C7.48159 0.946277 7.6189 0.976314 7.71331 1.06642L10.2879 3.641C10.378 3.73111 10.408 3.87271 10.3565 3.99286C10.3093 4.11301 10.1892 4.19024 10.0605 4.19024ZM7.80771 2.07051V2.58113C7.80771 3.36638 7.98793 3.5466 8.77317 3.5466H9.2838L7.80771 2.07051Z"
++        fill="#18CB96"
++      />
++    </svg>
++  );
++};
++
++export const NotificationIcon = () => {
++  return (
++    <svg
++      width="15"
++      height="15"
++      viewBox="0 0 15 15"
++      fill="none"
++      xmlns="http://www.w3.org/2000/svg"
++    >
++      <path
++        opacity="0.4"
++        d="M11.3605 9.15831L10.7883 8.20858C10.6682 7.99689 10.5595 7.5964 10.5595 7.36183V5.91434C10.5595 4.0492 9.04334 2.52734 7.17248 2.52734C5.30162 2.52734 3.78548 4.0492 3.78548 5.91434V7.36183C3.78548 7.5964 3.67678 7.99689 3.55663 8.20286L2.97878 9.15831C2.74993 9.54164 2.69844 9.96501 2.84147 10.3541C2.97878 10.7374 3.3049 11.0349 3.72827 11.1779C4.8382 11.5555 6.00534 11.7386 7.17248 11.7386C8.33962 11.7386 9.50677 11.5555 10.6167 11.1836C11.0172 11.0521 11.3261 10.7488 11.4749 10.3541C11.6236 9.95929 11.5836 9.52447 11.3605 9.15831Z"
++        fill="#18CB96"
++      />
++      <path
++        d="M8.44831 2.76742C8.05355 2.61294 7.62445 2.52712 7.17247 2.52712C6.72621 2.52712 6.29711 2.60722 5.90234 2.76742C6.14836 2.30399 6.63467 2.01221 7.17247 2.01221C7.71599 2.01221 8.19658 2.30399 8.44831 2.76742Z"
++        fill="#292D32"
++      />
++      <path
++        d="M8.7794 12.3163C8.53911 12.9799 7.90404 13.4548 7.16028 13.4548C6.7083 13.4548 6.26204 13.2717 5.94736 12.9456C5.76428 12.774 5.62697 12.5451 5.54688 12.3105C5.62125 12.322 5.69563 12.3277 5.77573 12.3392C5.90732 12.3563 6.04463 12.3735 6.18194 12.3849C6.50805 12.4135 6.83988 12.4307 7.17172 12.4307C7.49783 12.4307 7.82395 12.4135 8.14434 12.3849C8.26448 12.3735 8.38463 12.3678 8.49906 12.3506C8.5906 12.3392 8.68214 12.3277 8.7794 12.3163Z"
++        fill="#292D32"
++      />
++    </svg>
++  );
++};
++
+diff --git a/app/(dashboard)/dashboard/_components/prodComponents/new/keepa.tsx b/app/(dashboard)/dashboard/_components/prodComponents/new/keepa.tsx
+new file mode 100644
+index 0000000..7007f75
+--- /dev/null
++++ b/app/(dashboard)/dashboard/_components/prodComponents/new/keepa.tsx
+@@ -0,0 +1,182 @@
++import Image from "next/image";
++import { BiChevronDown } from "react-icons/bi";
++import Marketplace1 from "@/public/assets/svg/marketplace-1.svg";
++import Marketplace2 from "@/public/assets/svg/marketplace-2.svg";
++import Marketplace3 from "@/public/assets/svg/marketplace-3.svg";
++import Marketplace4 from "@/public/assets/svg/marketplace-4.svg";
++import Marketplace5 from "@/public/assets/svg/marketplace-5.svg";
++import Marketplace6 from "@/public/assets/svg/marketplace-6.svg";
++import Marketplace7 from "@/public/assets/svg/marketplace-7.svg";
++import {
++  LineChart,
++  Line,
++  XAxis,
++  YAxis,
++  Tooltip,
++  ResponsiveContainer,
++  CartesianGrid,
++} from "recharts";
++
++const data = [
++  { date: "Jan 1", amazon: 500, salesRank: 100, newFba: 300 },
++  { date: "Jan 2", amazon: 2000, salesRank: 200, newFba: 100 },
++  { date: "Jan 3", amazon: 800, salesRank: 150, newFba: 200 },
++  { date: "Jan 4", amazon: 1500, salesRank: 100, newFba: 400 },
++  { date: "Jan 5", amazon: 1200, salesRank: 200, newFba: 100 },
++];
++
++const COLORS = {
++  amazon: "#FF715B",
++  salesRank: "#04E762",
++  newFba: "#968EEC",
++};
++
++const Keepa = () => {
++  return (
++    <div className="rounded-xl bg-white p-4 lg:p-5">
++      <div className="flex gap-4 items-center justify-between">
++        <span className="bg-[#F3F4F6] px-3 py-1.5 rounded-3xl text-[#676A75] font-semibold text-sm w-max">
++          Keepa
++        </span>
++
++        <div className="relative">
++          <select
++            aria-label="Filter"
++            className="bg-primary flex items-center gap-2.5 rounded-2xl py-2 pl-3 pr-8 text-white font-semibold w-max text-xs appearance-none outline-none"
++          >
++            <option value="30" className="bg-white text-black rounded-t-md">
++              30 days
++            </option>
++            <option value="90" className="bg-white text-black rounded-t-md">
++              90 days
++            </option>
++            <option value="180" className="bg-white text-black rounded-t-md">
++              180 days
++            </option>
++            <option value="all" className="bg-white text-black rounded-t-md">
++              All time
++            </option>
++          </select>
++          <BiChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 text-white pointer-events-none" />
++        </div>
++      </div>
++
++      <div className="mt-5">
++        <span className="text-[#676A75] text-xs">
++          <p>Market Place</p>
++          <span className="flex items-center gap-2 mt-1">
++            <Image
++              src={Marketplace1}
++              alt="Marketplace"
++              className="w-[27px] h-5"
++              quality={90}
++              unoptimized
++            />
++            <Image
++              src={Marketplace2}
++              alt="Marketplace"
++              className="w-[27px] h-5"
++              quality={90}
++              unoptimized
++            />
++            <Image
++              src={Marketplace3}
++              alt="Marketplace"
++              className="w-[27px] h-5"
++              quality={90}
++              unoptimized
++            />
++            <Image
++              src={Marketplace4}
++              alt="Marketplace"
++              className="w-[27px] h-5"
++              quality={90}
++              unoptimized
++            />
++            <Image
++              src={Marketplace5}
++              alt="Marketplace"
++              className="w-[27px] h-5"
++              quality={90}
++              unoptimized
++            />
++            <Image
++              src={Marketplace6}
++              alt="Marketplace"
++              className="w-[27px] h-5"
++              quality={90}
++              unoptimized
++            />
++            <Image
++              src={Marketplace7}
++              alt="Marketplace"
++              className="w-[27px] h-5"
++              quality={90}
++              unoptimized
++            />
++          </span>
++        </span>
++
++        <div className="mt-6 flex flex-col gap-8">
++          {/* charts */}
++          <ResponsiveContainer width="100%" height={300}>
++            <LineChart
++              data={data}
++              margin={{ top: 0, right: 10, left: -52, bottom: 0 }}
++            >
++              <CartesianGrid strokeDasharray="3 3" vertical={false} />
++              <XAxis dataKey="date" />
++              <YAxis tick={false} />
++
++              <Tooltip
++                formatter={(value: number) => `$${value.toLocaleString()}`}
++                cursor={{ strokeDasharray: "3 3" }}
++              />
++              <Line
++                type="monotone"
++                dataKey="amazon"
++                stroke={COLORS.amazon}
++                strokeWidth={3}
++                dot={{ r: 4 }}
++                activeDot={{ r: 6 }}
++              />
++              <Line
++                type="monotone"
++                dataKey="salesRank"
++                stroke={COLORS.salesRank}
++                strokeWidth={3}
++                dot={false}
++              />
++              <Line
++                type="monotone"
++                dataKey="newFba"
++                stroke={COLORS.newFba}
++                strokeWidth={3}
++                dot={false}
++              />
++            </LineChart>
++          </ResponsiveContainer>
++
++          {/* Legend */}
++          <div className="text-[#121212] uppercase font-semibold text-[10px] flex items-center gap-5">
++            <span className="flex items-center gap-2">
++              <span className="w-2.5 h-4 bg-[#FF715B] rounded-md" />
++              amazon
++            </span>
++            <span className="flex items-center gap-2">
++              <span className="w-2.5 h-4 bg-[#04E762] rounded-md" />
++              sales rank
++            </span>
++            <span className="flex items-center gap-2">
++              <span className="w-2.5 h-4 bg-[#968EEC] rounded-md" />
++              new fba
++            </span>
++          </div>
++        </div>
++      </div>
++    </div>
++  );
++};
++
++export default Keepa;
++
+diff --git a/app/(dashboard)/dashboard/_components/prodComponents/new/market-analysis.tsx b/app/(dashboard)/dashboard/_components/prodComponents/new/market-analysis.tsx
+new file mode 100644
+index 0000000..1c1d27b
+--- /dev/null
++++ b/app/(dashboard)/dashboard/_components/prodComponents/new/market-analysis.tsx
+@@ -0,0 +1,377 @@
++"use client";
++
++import { useState, useMemo } from "react";
++import { Skeleton, Tooltip as AntTooltip } from "antd";
++import dayjs from "dayjs";
++import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, AreaChart } from "recharts";
++import { useGetMarketAnalysisQuery } from "@/redux/api/productsApi";
++import MiniDatePicker from "@/app/(dashboard)/upc-scanner/_components/date-picker";
++import type { TooltipProps } from "recharts";
++import {
++  ValueType,
++  NameType,
++} from "recharts/types/component/DefaultTooltipContent";
++import CustomDatePicker from "../../CustomDatePicker";
++
++interface MarketAnalysisProps {
++  asin: string;
++  marketplaceId: number;
++  isLoading?: boolean;
++}
++
++interface MarketAnalysisData {
++  buybox: Array<{ date: string; price: number }>;
++  amazon: Array<{ date: string; price: number }>;
++}
++
++interface MergedDataPoint {
++  date: string;
++  buyBox: number | null;
++  amazon: number | null;
++  Amazon: number; // For compatibility with existing chart
++  BuyBox: number; // For compatibility with existing chart
++}
++
++const MarketAnalysis = ({ asin, marketplaceId, isLoading }: MarketAnalysisProps) => {
++  const [statStartDate, setStatStartDate] = useState(dayjs().format("YYYY-MM-DD"));
++  const [statEndDate, setStatEndDate] = useState(dayjs().add(1, "month").format("YYYY-MM-DD"));
++  const [selectedMetric, setSelectedMetric] = useState("price");
++
++  const {
++    data: marketAnalysisData,
++    error: marketAnalysisError,
++    isLoading: isLoadingMarketAnalysis,
++  } = useGetMarketAnalysisQuery({
++    marketplaceId,
++    itemAsin: asin,
++    statStartDate,
++    statEndDate,
++  });
++
++  const ShadowDot = (props: any) => {
++    const { cx, cy, fill, stroke, strokeWidth, r, payload, index } = props;
++    
++    // Only show dot if this index is in the random selected indices
++    if (!randomIndices.includes(index)) {
++      return null;
++    }
++    
++    return (
++      <g>
++        {/* Shadow circle */}
++        <circle
++          cx={cx}
++          cy={cy + 2}
++          r={r}
++          fill="rgba(0, 0, 0, 0.15)"
++          filter="blur(2px)"
++        />
++        {/* Main dot */}
++        <circle
++          cx={cx}
++          cy={cy}
++          r={r}
++          fill={fill}
++          stroke={stroke}
++          strokeWidth={strokeWidth}
++        />
++      </g>
++    );
++  };
++
++  // Custom active dot component with larger shadow
++  const ShadowActiveDot = (props: any) => {
++    const { cx, cy, fill, stroke, strokeWidth, r } = props;
++    
++    return (
++      <g>
++        {/* Shadow circle */}
++        <circle
++          cx={cx}
++          cy={cy + 3}
++          r={r + 1}
++          fill="rgba(0, 0, 0, 0.2)"
++          filter="blur(3px)"
++        />
++        {/* Main dot */}
++        <circle
++          cx={cx}
++          cy={cy}
++          r={r}
++          fill={fill}
++          stroke={stroke}
++          strokeWidth={strokeWidth}
++        />
++      </g>
++    );
++  };
++
++  const handleDateChange = (dates: any) => {
++    if (dates && dates.length === 2) {
++      const [startDate, endDate] = dates;
++      setStatStartDate(startDate.format("YYYY-MM-DD"));
++      setStatEndDate(endDate.format("YYYY-MM-DD"));
++    }
++  };
++
++  // Transform the API data to match the chart's expected format
++  const transformData = (data: MarketAnalysisData | undefined): MergedDataPoint[] => {
++    if (!data) return [];
++
++    const buyboxMap = new Map(data.buybox.map((item) => [dayjs(item.date).format("MMM D"), item.price]));
++    const amazonMap = new Map(data.amazon.map((item) => [dayjs(item.date).format("MMM D"), item.price]));
++
++    const allDates = new Set([...Array.from(buyboxMap.keys()), ...Array.from(amazonMap.keys())]);
++
++    const mergedData: MergedDataPoint[] = Array.from(allDates).map((date) => {
++      const buyBoxPrice = buyboxMap.get(date) ?? null;
++      const amazonPrice = amazonMap.get(date) ?? null;
++      
++      return {
++        date,
++        buyBox: buyBoxPrice,
++        amazon: amazonPrice,
++        // For compatibility with existing chart structure
++        Amazon: amazonPrice || 0,
++        BuyBox: buyBoxPrice || 0,
++      };
++    });
++
++    return mergedData.sort((a, b) => (dayjs(a.date, "MMM D").isBefore(dayjs(b.date, "MMM D")) ? -1 : 1));
++  };
++
++  const chartData = transformData(marketAnalysisData?.data);
++
++  // Generate random indices for showing dots (max 5 dots)
++  const randomIndices = useMemo(() => {
++    if (chartData.length === 0) return [];
++    
++    const maxDots = Math.min(5, chartData.length);
++    const indices: number[] = [];
++    
++    // Generate unique random indices
++    while (indices.length < maxDots) {
++      const randomIndex = Math.floor(Math.random() * chartData.length);
++      if (!indices.includes(randomIndex)) {
++        indices.push(randomIndex);
++      }
++    }
++    
++    return indices.sort((a, b) => a - b); // Sort for consistency
++  }, [chartData.length]);
++
++  // Custom tooltip formatter for the chart
++  const CustomTooltip = ({ active, payload, label }: TooltipProps<ValueType, NameType>) => {
++    if (active && payload && payload.length > 0) {
++      return (
++        <div className="bg-white p-3 border rounded-lg shadow-lg text-sm">
++          <p className="text-gray-700 font-medium mb-1">{`${label}`}</p>
++          {payload.map((entry, index) => (
++            <div key={index} className="flex items-center gap-2">
++              <div 
++                className="w-3 h-3 rounded-full" 
++                style={{ backgroundColor: entry.color }}
++              />
++              <p style={{ color: entry.color }} className="font-medium">
++                {`${entry.name}: ${Number(entry.value).toFixed(2)}`}
++              </p>
++            </div>
++          ))}
++        </div>
++      );
++    }
++    return null;
++  };
++
++  // Get price range for tooltips
++  const getMinMaxPrices = () => {
++    if (!chartData.length) return { min: 'N/A', max: 'N/A' };
++    
++    const allPrices = chartData.flatMap(item => {
++      const prices = [];
++      if (item.amazon !== null) prices.push(item.amazon);
++      if (item.buyBox !== null) prices.push(item.buyBox);
++      return prices;
++    });
++    
++    if (!allPrices.length) return { min: 'N/A', max: 'N/A' };
++    
++    return {
++      min: `$${Math.min(...allPrices).toFixed(2)}`,
++      max: `$${Math.max(...allPrices).toFixed(2)}`
++    };
++  };
++
++  const priceRange = getMinMaxPrices();
++
++  if (isLoading || isLoadingMarketAnalysis) {
++    return <MarketAnalysisSkeleton />;
++  }
++
++  return (
++    <div className="rounded-xl bg-white p-4 lg:p-5">
++      <div className="flex items-center gap-4 justify-between">
++        <AntTooltip title={`Price analysis from ${statStartDate} to ${statEndDate}. Price range: ${priceRange.min} - ${priceRange.max}`} placement="top">
++          <span className="bg-[#F3F4F6] px-3 py-1.5 rounded-3xl text-[#676A75] font-semibold text-sm w-max">
++            Market Analysis
++          </span>
++        </AntTooltip>
++
++        <CustomDatePicker isRange onChange={handleDateChange} />
++      </div>
++
++      <div className="mt-5 flex items-center gap-1 text-xs">
++        <button
++          type="button"
++          className={`border rounded-full px-3 py-2 font-semibold transition-colors ${
++            selectedMetric === "price"
++              ? "bg-[#18CB961F] border-transparent text-[#009F6D]"
++              : "border-border text-[#939AA6]"
++          }`}
++          onClick={() => setSelectedMetric("price")}
++        >
++          Price
++        </button>
++        <AntTooltip title="Volume data not available in current API" placement="top">
++          <button
++            type="button"
++            className="border border-border rounded-full px-3 py-2 text-[#939AA6] opacity-50 cursor-not-allowed"
++            disabled
++          >
++            Volume
++          </button>
++        </AntTooltip>
++        <AntTooltip title="Reviews data not available in current API" placement="top">
++          <button
++            type="button"
++            className="border border-border rounded-full px-3 py-2 text-[#939AA6] opacity-50 cursor-not-allowed"
++            disabled
++          >
++            Reviews
++          </button>
++        </AntTooltip>
++      </div>
++
++      {/* legend */}
++      <div className="mt-5 text-[#596375] text-sm font-semibold flex items-center gap-4">
++        <span className="flex gap-1 items-center">
++          <span className="size-3.5 bg-[#F20B7A] rounded-md" />
++          <AntTooltip title="Price history when sold directly by Amazon" placement="top">
++            <p className="cursor-help">Amazon</p>
++          </AntTooltip>
++        </span>
++        <span className="flex gap-1 items-center">
++          <span className="size-3.5 bg-[#18CB96] rounded-md" />
++          <AntTooltip title="Price history of the Buy Box (featured offer on Amazon)" placement="top">
++            <p className="cursor-help">Buy Box</p>
++          </AntTooltip>
++        </span>
++      </div>
++
++      <div className="mt-5">
++        {chartData.length > 0 ? (
++          isLoadingMarketAnalysis ? (
++            <div className="h-[300px] flex items-center justify-center font-medium">Loading...</div>
++          ) : marketAnalysisError ? (
++            <div className="h-[300px] flex items-center justify-center text-red-500 font-medium">
++              Error loading market analysis data
++            </div>
++          ) : (
++            <AntTooltip title={`Price trends from ${statStartDate} to ${statEndDate}. Hover over the chart to see exact prices.`} placement="top">
++              <ResponsiveContainer width="100%" height={300}>
++                <AreaChart
++                  data={chartData}
++                  margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
++                >
++                  <defs>
++                    <linearGradient id="colorAmazon" x1="0" y1="0" x2="0" y2="1">
++                      <stop offset="5%" stopColor="#f81d75" stopOpacity={0.3}/>
++                      <stop offset="95%" stopColor="#f81d75" stopOpacity={0.05}/>
++                    </linearGradient>
++                    <linearGradient id="colorBuyBox" x1="0" y1="0" x2="0" y2="1">
++                      <stop offset="5%" stopColor="#00c48c" stopOpacity={0.3}/>
++                      <stop offset="95%" stopColor="#00c48c" stopOpacity={0.05}/>
++                    </linearGradient>
++                  </defs>
++                  <CartesianGrid 
++                    strokeDasharray=" 2 2" 
++                    vertical={true} 
++                    horizontal={false}
++                    stroke="#e0e0e0"
++                    strokeWidth={1}
++                  />
++                  <XAxis 
++                    dataKey="date"
++                    axisLine={false}
++                    tickLine={false}
++                    tick={{ fontSize: 12, fill: '#666' }}
++                    tickFormatter={(value) => {
++                      const date = new Date(value);
++                      return `${date.toLocaleString("default", { month: "short" })} ${date.getDate()}`;
++                    }}
++                  />
++                  <YAxis 
++                    axisLine={false}
++                    tickLine={false}
++                    tick={false}
++                    tickFormatter={(value) => `${value}`}
++                  />
++                  <Tooltip content={<CustomTooltip />} />
++                  <Area
++                    type="monotone"
++                    dataKey="Amazon"
++                    stroke="#f81d75"
++                    strokeWidth={2}
++                    fill="url(#colorAmazon)"
++                    fillOpacity={1}
++                    dot={<ShadowDot fill="#f81d75" strokeWidth={2} r={6} stroke="#fff" />}
++                    activeDot={<ShadowActiveDot r={6} stroke="#f81d75" strokeWidth={2} fill="#fff" />}
++                  />
++                  <Area
++                    type="monotone"
++                    dataKey="BuyBox"
++                    stroke="#00c48c"
++                    strokeWidth={2}
++                    fill="url(#colorBuyBox)"
++                    fillOpacity={1}
++                    dot={<ShadowDot fill="#00c48c" strokeWidth={2} stroke="#fff" r={6} />}
++                    activeDot={<ShadowActiveDot r={6} stroke="#00c48c" strokeWidth={2} fill="#fff" />}
++                  />
++                </AreaChart>
++              </ResponsiveContainer>
++            </AntTooltip>
++          )
++        ) : (
++          <div className="h-[300px] flex items-center justify-center text-gray-500">
++            No market analysis data available for the selected date range.
++          </div>
++        )}
++      </div>
++    </div>
++  );
++};
++
++const MarketAnalysisSkeleton = () => {
++  return (
++    <div className="rounded-xl bg-white p-4 lg:p-5">
++      <div className="flex items-center gap-4 justify-between">
++        <Skeleton.Button active size="small" style={{ width: 150 }} />
++        <Skeleton.Button active size="small" style={{ width: 200 }} />
++      </div>
++      <div className="mt-5 flex items-center gap-1">
++        <Skeleton.Button active size="small" style={{ width: 60 }} />
++        <Skeleton.Button active size="small" style={{ width: 80 }} />
++        <Skeleton.Button active size="small" style={{ width: 70 }} />
++      </div>
++      <div className="mt-5 flex items-center gap-4">
++        <Skeleton.Button active size="small" style={{ width: 100 }} />
++        <Skeleton.Button active size="small" style={{ width: 100 }} />
++      </div>
++      <div className="mt-5">
++        <Skeleton.Button active size="large" block style={{ height: 300 }} />
++      </div>
++    </div>
++  );
++};
++
++export default MarketAnalysis;
+\ No newline at end of file
+diff --git a/app/(dashboard)/dashboard/_components/prodComponents/new/multi-market-analyzer.tsx b/app/(dashboard)/dashboard/_components/prodComponents/new/multi-market-analyzer.tsx
+new file mode 100644
+index 0000000..541b27b
+--- /dev/null
++++ b/app/(dashboard)/dashboard/_components/prodComponents/new/multi-market-analyzer.tsx
+@@ -0,0 +1,89 @@
++import Country1 from "@/public/assets/svg/country-1.svg";
++import Country2 from "@/public/assets/svg/country-2.svg";
++import Country3 from "@/public/assets/svg/country-3.svg";
++import Image from "next/image";
++
++const MultiMarketAnalyzer = () => {
++  const data = [
++    {
++      flag: Country1,
++      bsr: "#19.8k",
++      price: "£16.00",
++      profit: "3.94",
++      roi: "32.71",
++      breakeven: "9.61",
++    },
++    {
++      flag: Country2,
++      bsr: "-",
++      price: "-",
++      profit: "-",
++      roi: "-",
++      breakeven: "-",
++    },
++    {
++      flag: Country3,
++      bsr: "#19.8k",
++      price: "£16.00",
++      profit: "3.94",
++      roi: "32.71",
++      breakeven: "9.61",
++    },
++  ];
++
++  return (
++    <div className="rounded-xl bg-white p-4 lg:p-5">
++      <span className="bg-[#F3F4F6] px-3 py-1.5 rounded-3xl text-[#676A75] font-semibold text-sm w-max">
++        Multi-Market Analyzer
++      </span>
++
++      <div className="flex flex-col gap-6 mt-5">
++        <div className="flex flex-col gap-4">
++          <div className="bg-white drop-shadow-md rounded-3xl px-3 py-2 text-[#7F8BA1] font-semibold text-sm flex gap-4 items-center">
++            <span className="rounded-full w-[33px] h-[21px]" />
++
++            <div className="flex flex-1 items-center divide-x divide-[#7F8BA1]">
++              <p className="flex-1 text-center pr-3">#BSR</p>
++              <p className="flex-1 text-center">Price</p>
++              <p className="flex-1 text-center">Profit</p>
++              <p className="flex-1 text-center">ROI%</p>
++              <p className="flex-1 text-center pl-3">B/E</p>
++            </div>
++          </div>
++
++          {data.map((row, index) => (
++            <div
++              key={index}
++              className="bg-white drop-shadow-md rounded-3xl px-3 py-2 text-[#596375] font-normal text-sm flex gap-4 items-center"
++            >
++              <Image
++                src={row.flag}
++                alt="country flag"
++                className="rounded-full w-[33px] h-[21px]"
++                quality={90}
++                unoptimized
++              />
++              <div className="flex flex-1 items-center">
++                <p className="flex-1 text-center pr-2">{row.bsr}</p>
++                <p className="flex-1 text-center">{row.price}</p>
++                <p className="flex-1 text-center">{row.profit}</p>
++                <p className="flex-1 text-center">{row.roi}</p>
++                <p className="flex-1 text-center pl-2">{row.breakeven}</p>
++              </div>
++            </div>
++          ))}
++        </div>
++
++        <span className="bg-[#F3F4F6] px-3 py-1.5 rounded-3xl text-[#596375] font-medium text-xs flex items-center gap-2 justify-between">
++          <p className="font-normal text-sm">Exchange Rate(s)</p>
++          <p>£1 = €1.18 </p>
++          <p>£1 = $1.23</p>
++          <p>£1 = CA$1.77</p>
++        </span>
++      </div>
++    </div>
++  );
++};
++
++export default MultiMarketAnalyzer;
++
+diff --git a/app/(dashboard)/dashboard/_components/prodComponents/new/nav.tsx b/app/(dashboard)/dashboard/_components/prodComponents/new/nav.tsx
+new file mode 100644
+index 0000000..5796783
+--- /dev/null
++++ b/app/(dashboard)/dashboard/_components/prodComponents/new/nav.tsx
+@@ -0,0 +1,235 @@
++"use client";
++
++import Image from "next/image";
++import Link from "next/link";
++import { FC, ReactNode } from "react";
++import { FaGoogle, FaHashtag } from "react-icons/fa6";
++import { PiLightningFill } from "react-icons/pi";
++import { HiMiniBell, HiMiniEye, HiMiniShoppingCart } from "react-icons/hi2";
++import { TbCalculatorFilled } from "react-icons/tb";
++import { IoPricetag } from "react-icons/io5";
++import { AiOutlinePercentage } from "react-icons/ai";
++import { Tooltip as AntTooltip } from "antd";
++import AmazonIcon from "@/public/assets/svg/amazon-icon.svg";
++import toatanAiIcon from "@/public/assets/svg/ai.svg";
++import Tool1 from "@/public/assets/svg/tool-1.svg";
++import Tool2 from "@/public/assets/svg/tool-2.svg";
++import Tool3 from "@/public/assets/svg/tool-3.svg";
++import Tool4 from "@/public/assets/svg/tool-4.svg";
++import ExportToSheetsButton from "@/utils/exportGoogle";
++
++interface NavProps {
++  product?: any;
++  buyboxWinnerPrice?: number;
++  lowestFBAPrice?: number;
++  lowestFBMPrice?: number;
++  monthlySales?: number;
++  sellerCount?: number;
++  fbaSellers?: number;
++  fbmSellers?: number;
++  stockLevels?: number;
++}
++
++type NavItem = {
++  href?: string;
++  icon: ReactNode;
++  external?: boolean;
++  onClick?: () => void;
++  tooltip?: string;
++};
++
++const Nav: FC<NavProps> = ({
++  product,
++  buyboxWinnerPrice = 0,
++  lowestFBAPrice = 0,
++  lowestFBMPrice = 0,
++  monthlySales = 0,
++  sellerCount = 0,
++  fbaSellers = 0,
++  fbmSellers = 0,
++  stockLevels = 0
++}) => {
++  const handleFindSupplier = () => {
++    if (product?.product_name) {
++      const query = encodeURIComponent(`${product.product_name} supplier`);
++      window.open(`https://www.google.com/search?q=${query}`, "_blank");
++    }
++  };
++
++  const handleViewOnAmazon = () => {
++    if (product?.amazon_link) {
++      window.open(product.amazon_link, "_blank");
++    }
++  };
++
++  const navItems: NavItem[] = [
++    { 
++      icon: <FaGoogle className="size-6 text-[#0F172A]" />,
++      onClick: handleFindSupplier,
++      tooltip: "Search Google for suppliers of this product to explore sourcing options"
++    },
++    { 
++      icon: <TbCalculatorFilled className="size-6 text-[#0F172A]" />,
++      tooltip: "Export this product's information to a Google Sheet for further analysis or record keeping"
++    },
++    { 
++      icon: <HiMiniBell className="size-6 text-[#0F172A]" />,
++      tooltip: "Notifications"
++    },
++    {
++      icon: (
++        <Image
++          src={AmazonIcon}
++          alt="Amazon icon"
++          width={32}
++          height={32}
++          className="size-6"
++        />
++      ),
++      external: true,
++      onClick: handleViewOnAmazon,
++      tooltip: "Visit the product's Amazon page to see listings, reviews, and more details"
++    },
++  ];
++
++  const NavIcon: FC<NavItem & { isCalculator?: boolean }> = ({ 
++    href, 
++    icon, 
++    external = false, 
++    onClick,
++    tooltip,
++    isCalculator = false
++  }) => {
++    const content = (
++      <div
++        onClick={onClick}
++        className="size-12 flex items-center justify-center rounded-lg bg-[#F3F4F6] cursor-pointer hover:bg-gray-200 transition-colors"
++      >
++        {isCalculator && product ? (
++          <ExportToSheetsButton
++            productData={{
++              asin: product?.asin,
++              title: product?.product_name,
++              brand: product?.vendor,
++              category: product?.category,
++              upcEan: product?.upc || product?.ean,
++              buyBoxPrice: buyboxWinnerPrice,
++              lowestFBAPrice: lowestFBAPrice,
++              lowestFBMPrice: lowestFBMPrice,
++              monthlySales: monthlySales,
++              sellerCount: sellerCount,
++              fbaSellers: fbaSellers,
++              fbmSellers: fbmSellers,
++              stockLevels: stockLevels,
++            }}
++            currencySymbol="$"
++          />
++        ) : (
++          icon
++        )}
++      </div>
++    );
++
++    if (tooltip) {
++      return (
++        <AntTooltip title={tooltip} placement="top">
++          {content}
++        </AntTooltip>
++      );
++    }
++
++    return content;
++  };
++
++  return (
++    <div className="rounded-xl bg-white p-4 lg:p-5 flex flex-col lg:flex-row justify-between gap-4 md:gap-8">
++      <div>
++        <p className="mb-2 text-[#676A75] text-xs font-medium">Navigation</p>
++        <div className="flex items-center gap-2 flex-wrap">
++          {navItems.map((item, idx) => (
++            <NavIcon 
++              key={idx} 
++              {...item} 
++              isCalculator={idx === 1} // TbCalculatorFilled is at index 1
++            />
++          ))}
++          <Image
++            src={toatanAiIcon}
++            alt="Totan AI icon"
++            width={32}
++            height={32}
++            className="size-12"
++          />
++        </div>
++      </div>
++
++      <div className="bg-[#FAFBFC] flex flex-col md:flex-row md:items-center justify-between gap-4 w-full max-w-[327px] p-4 pr-9 bg-[url(/assets/svg/worktools-bg.svg)] bg-cover bg-no-repeat bg-center rounded-lg shadow-sm">
++        <div className="flex flex-col gap-2">
++          <p className="text-[#676A75] font-semibold text-xs">
++            Your WorkTools:
++          </p>
++          <div className="flex gap-1">
++            <Image
++              src={Tool1}
++              alt="Tool"
++              className="size-8"
++              width={24}
++              height={23}
++              quality={90}
++              unoptimized
++            />
++            <Image
++              src={Tool2}
++              alt="Tool"
++              className="size-8"
++              width={24}
++              height={24}
++              quality={90}
++              unoptimized
++            />
++            <Image
++              src={Tool3}
++              alt="Tool"
++              className="size-8"
++              width={31}
++              height={28}
++              quality={90}
++              unoptimized
++            />
++            <Image
++              src={Tool4}
++              alt="Tool"
++              className="size-8"
++              width={22}
++              height={21}
++              quality={90}
++              unoptimized
++            />
++          </div>
++        </div>
++
++        <span className="flex gap-3 items-center">
++          <Link href="" className="text-[10px] text-[#5B656C] hover:underline">
++            How to use <br />
++            Watch Tutorial
++          </Link>
++          <svg
++            width="17"
++            height="17"
++            viewBox="0 0 17 17"
++            fill="none"
++            xmlns="http://www.w3.org/2000/svg"
++          >
++            <circle cx="8.5" cy="8.5" r="8.5" fill="#F5473F" />
++            <path
++              d="M11.25 8.06699C11.5833 8.25944 11.5833 8.74056 11.25 8.93301L7.5 11.0981C7.16667 11.2905 6.75 11.05 6.75 10.6651L6.75 6.33494C6.75 5.95004 7.16667 5.70947 7.5 5.90192L11.25 8.06699Z"
++              fill="white"
++            />
++          </svg>
++        </span>
++      </div>
++    </div>
++  );
++};
++
++export default Nav;
+\ No newline at end of file
+diff --git a/app/(dashboard)/dashboard/_components/prodComponents/new/new-offer-count.tsx b/app/(dashboard)/dashboard/_components/prodComponents/new/new-offer-count.tsx
+new file mode 100644
+index 0000000..d2eb99d
+--- /dev/null
++++ b/app/(dashboard)/dashboard/_components/prodComponents/new/new-offer-count.tsx
+@@ -0,0 +1,57 @@
++import {
++  BarChart,
++  Bar,
++  XAxis,
++  YAxis,
++  Tooltip,
++  ResponsiveContainer,
++  CartesianGrid,
++} from "recharts";
++
++const data = [
++  { name: "7 Days", value: 15 },
++  { name: "30 Days", value: 10 },
++  { name: "90 Days", value: 15 },
++  { name: "180 Days", value: 11 },
++  { name: "365 Days", value: 16 },
++  { name: "All Time", value: 14 },
++];
++
++const NewOfferCount = () => {
++  return (
++    <div className="rounded-xl bg-white p-4 lg:p-5">
++      <span className="bg-[#F3F4F6] px-3 py-1.5 rounded-3xl text-[#676A75] font-semibold text-sm w-max">
++        New Offer Count
++      </span>
++
++      <div className="mt-5 h-72">
++        <ResponsiveContainer width="100%" height="100%">
++          <BarChart
++            data={data}
++            barSize={30}
++            margin={{ top: 20, right: -10, left: -45, bottom: 20 }}
++          >
++            <CartesianGrid vertical={false} strokeDasharray="3 3" />
++            <XAxis dataKey="name" tick={{ fontSize: 12 }} />
++            <YAxis tick={{ fontSize: 12 }} />
++            <Tooltip />
++            <Bar
++              dataKey="value"
++              fill="url(#colorGradient)"
++              radius={[10, 10, 0, 0]}
++            />
++            <defs>
++              <linearGradient id="colorGradient" x1="0" y1="0" x2="0" y2="1">
++                <stop offset="0%" stopColor="#3895F9" stopOpacity={1} />
++                <stop offset="100%" stopColor="#1C72CE" stopOpacity={0.7} />
++              </linearGradient>
++            </defs>
++          </BarChart>
++        </ResponsiveContainer>
++      </div>
++    </div>
++  );
++};
++
++export default NewOfferCount;
++
+diff --git a/app/(dashboard)/dashboard/_components/prodComponents/new/offers-and-seller-feedback.tsx b/app/(dashboard)/dashboard/_components/prodComponents/new/offers-and-seller-feedback.tsx
+new file mode 100644
+index 0000000..fa26631
+--- /dev/null
++++ b/app/(dashboard)/dashboard/_components/prodComponents/new/offers-and-seller-feedback.tsx
+@@ -0,0 +1,73 @@
++import { MdOutlineInsertChartOutlined } from "react-icons/md";
++
++type Seller = {
++  id: string;
++  type: string;
++  name: string;
++
++  price: number;
++  stock: string;
++};
++
++const sellers: Seller[] = [
++  {
++    id: "1",
++    type: "FBA",
++    name: "Madelyn Herwitz",
++    price: 20,
++    stock: "21",
++  },
++  {
++    id: "2",
++    type: "FBM",
++    name: "Erin Korsgaard",
++    price: 12,
++    stock: "18",
++  },
++  {
++    id: "3",
++    type: "FBM",
++    name: "Haylie George",
++    price: 123,
++    stock: "23",
++  },
++];
++
++const OffersAndSellerFeedback = () => {
++  return (
++    <div className="">
++    
++
++      <div className="mt-5 overflow-x-auto">
++        <table className="min-w-full text-left text-sm text-gray-700">
++          <thead>
++            <tr className="border-b bg-[#F7F7F7] font-medium">
++              <th className="p-4">S/N</th>
++              <th className="p-4">Type</th>
++              <th className="p-4">Seller</th>
++              <th className="p-4">Stock</th>
++              <th className="p-4">Price</th>
++            </tr>
++          </thead>
++          <tbody>
++            {sellers.map((seller) => (
++              <tr
++                key={seller.name}
++                className="border-b last:border-none text-[#252525] text-sm"
++              >
++                <td className="p-4">{seller.id}</td>
++                <td className="p-4 min-w-[150px]">{seller.name}</td>
++                <td className="p-4">{seller.type}</td>
++                <td className="p-4">{seller.stock}</td>
++                <td className="p-4">${seller.price.toFixed(2)}</td>
++              </tr>
++            ))}
++          </tbody>
++        </table>
++      </div>
++    </div>
++  );
++};
++
++export default OffersAndSellerFeedback;
++
+diff --git a/app/(dashboard)/dashboard/_components/prodComponents/new/product-eligibility.tsx b/app/(dashboard)/dashboard/_components/prodComponents/new/product-eligibility.tsx
+new file mode 100644
+index 0000000..2dee081
+--- /dev/null
++++ b/app/(dashboard)/dashboard/_components/prodComponents/new/product-eligibility.tsx
+@@ -0,0 +1,182 @@
++"use client";
++
++import { useState } from "react";
++import { FiArrowRightCircle } from "react-icons/fi";
++import { Drawer } from "antd";
++import Link from "next/link";
++import { Tooltip as AntTooltip } from "antd";
++
++
++interface ProductEligibilityProps {
++  product?: any;
++  ipData?: any;
++  eligibility?: boolean;
++  setIpIssue?: number;
++  asin: string;
++  marketplaceId: number;
++  isLoadingIpData?: boolean;
++}
++
++const ProductEligibility = ({
++  product,
++  ipData,
++  eligibility = false,
++  setIpIssue = 0,
++  asin,
++  marketplaceId,
++  isLoadingIpData = false
++}: ProductEligibilityProps) => {
++  const [open, setOpen] = useState(false);
++
++  if (isLoadingIpData) {
++    return (
++      <div className="h-[150px] w-full bg-[url(/assets/svg/product-eligibility.svg)] bg-cover bg-no-repeat bg-center p-4 lg:px-5 flex flex-col justify-center items-center">
++        <div className="flex items-center gap-3">
++          <div className="flex space-x-1">
++            <div className="w-2 h-2 bg-white rounded-full animate-bounce [animation-delay:-0.3s]"></div>
++            <div className="w-2 h-2 bg-white rounded-full animate-bounce [animation-delay:-0.15s]"></div>
++            <div className="w-2 h-2 bg-white rounded-full animate-bounce"></div>
++          </div>
++          <span className="text-white font-medium text-sm">Analyzing product eligibility...</span>
++        </div>
++      </div>
++    );
++  }
++
++  return (
++    <>
++      <div className="h-[150px] w-full bg-[url(/assets/svg/product-eligibility.svg)] bg-cover bg-no-repeat bg-center p-4 lg:px-5 flex flex-col justify-end">
++        {eligibility ? (
++          <AntTooltip
++            title="✅ You can list and sell this product! You have the necessary approvals and this product is not restricted (GATED) for your seller account."
++            placement="top"
++          >
++            <p className="text-white text-sm font-medium cursor-help">
++              This Product is eligible to sell
++            </p>
++          </AntTooltip>
++        ) : (
++          <AntTooltip
++            title="⚠️ You can't list or sell this product yet because it's restricted (GATED) by the brand or category. You'll need approval first."
++            placement="top"
++          >
++            <p className="text-white text-sm font-medium cursor-help">
++              This Product is NOT eligible to sell
++            </p>
++          </AntTooltip>
++        )}
++
++        <div className="text-xs font-medium mt-4">
++          <AntTooltip
++            title={
++              setIpIssue > 0
++                ? "⚠️ Issues detected that prevent you from selling this product. Click 'See all alerts' below to see detailed information about each issue and potential solutions."
++                : "✅ No restrictions found!"
++            }
++            placement="top"
++          >
++            <p className={`text-xs cursor-help ${setIpIssue ? "text-white" : "text-white/80"}`}>
++              {setIpIssue === 1
++                ? "There is 1 issue"
++                : setIpIssue > 1
++                  ? `There are ${setIpIssue} issues`
++                  : "No issues found"}
++            </p>
++          </AntTooltip>
++          
++          <div className="mt-1.5">
++            <button
++              type="button"
++              onClick={() => setOpen(true)}
++              className="bg-white rounded-md py-1 px-2 text-[#0EAC7E] flex items-center gap-1.5 text-xs font-medium"
++            >
++              See all alerts
++              <FiArrowRightCircle />
++            </button>
++          </div>
++        </div>
++      </div>
++
++      <Drawer
++        title="Alerts"
++        placement="right"
++        closable
++        onClose={() => setOpen(false)}
++        open={open}
++        width={500}
++        bodyStyle={{ padding: 0 }}
++      >
++        <div className="rounded-xl bg-white h-full">
++          <div className="border-b border-[#E7EBEE] p-4 lg:p-5 flex items-center gap-6 justify-between">
++            <span className="bg-[#F3F4F6] px-3 py-1.5 rounded-3xl text-[#676A75] font-semibold text-sm w-max">
++              Alerts
++            </span>
++
++            <div className="flex items-center gap-1.5 text-white font-bold text-sm">
++              <span className="bg-primary rounded-full size-8 flex items-center justify-center">
++                {setIpIssue}
++              </span>
++              <span className="bg-[#FFC56E] opacity-15 rounded-full size-8 flex items-center justify-center" />
++              <span className="bg-[#DF4740] opacity-15 rounded-full size-8 flex items-center justify-center" />
++            </div>
++          </div>
++
++          <div className="p-4 lg:p-5">
++            <div className="bg-[#FAF5EC] rounded-xl p-4 text-sm font-medium flex items-center gap-3 justify-between">
++              <p className="text-[#CA7D09] max-w-[250px]">
++                Some alerts require you to be logged in to Seller Central
++              </p>
++              <Link
++                href=""
++                className="bg-white hover:bg-gray-50 transition-colors duration-200 text-black py-1.5 px-4 rounded-[10px]"
++              >
++                Login
++              </Link>
++            </div>
++
++            <div className="mt-5 text-[#8C94A3] text-sm font-medium flex flex-col gap-4">
++              <span className="flex gap-4 items-center justify-between">
++                <p>Amazon Share Buy Box</p>
++                <p className="text-[#008158]">
++                  {ipData?.amazon_share_buybox ? `${ipData.amazon_share_buybox}%` : "Never on Listing"}
++                </p>
++              </span>
++              <span className="flex gap-4 items-center justify-between">
++                <p>Private Label</p>
++                <p className="text-[#008158]">
++                  {ipData?.private_label || "Unlikely"}
++                </p>
++              </span>
++              <span className="flex gap-4 items-center justify-between">
++                <p>IP Analysis</p>
++                <p className="text-[#008158]">
++                  {ipData?.ip_analysis?.description || "No known IP issues"}
++                </p>
++              </span>
++              <span className="flex gap-4 items-center justify-between">
++                <p>Size</p>
++                <p className="text-[#008158]">
++                  {ipData?.size || ipData?.size_text || "Standard Size"}
++                </p>
++              </span>
++              <span className="flex gap-4 items-center justify-between">
++                <p>Meltable</p>
++                <p className="text-[#008158]">
++                  {ipData?.is_meltable ? "Yes" : "No"}
++                </p>
++              </span>
++              <span className="flex gap-4 items-center justify-between">
++                <p>Variations</p>
++                <p className="text-[#008158]">
++                  {ipData?.has_variations ? "Yes" : "No"}
++                </p>
++              </span>
++            </div>
++          </div>
++        </div>
++      </Drawer>
++    </>
++  );
++};
++
++export default ProductEligibility;
+\ No newline at end of file
+diff --git a/app/(dashboard)/dashboard/_components/prodComponents/new/product-overview.tsx b/app/(dashboard)/dashboard/_components/prodComponents/new/product-overview.tsx
+new file mode 100644
+index 0000000..ec14200
+--- /dev/null
++++ b/app/(dashboard)/dashboard/_components/prodComponents/new/product-overview.tsx
+@@ -0,0 +1,266 @@
++"use client";
++
++import Image from "next/image";
++import { useState } from "react";
++import { Tooltip as AntTooltip, message } from "antd";
++import {
++  CopyIcon,
++  DesktopIcon,
++  GoogleIcon,
++  JustifyIcon,
++  RobotIcon,
++  SubtitleIcon,
++} from "./icons";
++import AmazonIcon from "@/public/assets/svg/amazon.svg";
++import Sneakers from "@/public/assets/svg/sneakers.svg";
++import ProductThumbnail from "@/public/assets/images/women-shoes.png";
++import { CustomSelect as Select } from "@/lib/AntdComponents";
++import { useProductVariation } from "@/hooks/use-product-variation";
++
++interface ProductOverviewProps {
++  product?: any;
++  asin: string;
++  marketplaceId: number;
++  isLoading?: boolean;
++}
++
++const ProductOverview = ({ product, asin, marketplaceId, isLoading }: ProductOverviewProps) => {
++  const { handleVariationChange } = useProductVariation(asin, marketplaceId);
++  const [copyText, setCopyText] = useState("copy");
++
++  const handleCopyAsin = async () => {
++    try {
++      const textToCopy = product?.asin || asin;
++      await navigator.clipboard.writeText(textToCopy);
++      
++      // Visual feedback
++      setCopyText("copied!");
++      message.success("ASIN copied to clipboard!");
++      
++      // Reset text after 2 seconds
++      setTimeout(() => {
++        setCopyText("copy");
++      }, 2000);
++    } catch (err) {
++      // Fallback for browsers that don't support clipboard API
++      const textArea = document.createElement("textarea");
++      textArea.value = product?.asin || asin;
++      document.body.appendChild(textArea);
++      textArea.select();
++      try {
++        document.execCommand("copy");
++        setCopyText("copied!");
++        message.success("ASIN copied to clipboard!");
++        setTimeout(() => {
++          setCopyText("copy");
++        }, 2000);
++      } catch (fallbackErr) {
++        message.error("Failed to copy ASIN");
++      }
++      document.body.removeChild(textArea);
++    }
++  };
++
++  if (isLoading || !product) {
++    return (
++      <div className="rounded-xl bg-white">
++        <div className="p-4 lg:p-5">
++          <span className="bg-[#F3F4F6] px-3 py-1.5 rounded-3xl text-[#676A75] font-semibold text-sm flex items-center gap-2 w-max">
++            Product Overview
++            <span className="bg-[#FE4848] rounded-full size-[18px] flex items-center justify-center text-white text-xs font-semibold">
++              1
++            </span>
++          </span>
++          <div className="mt-4 h-[200px] flex items-center justify-center">
++            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
++          </div>
++        </div>
++      </div>
++    );
++  }
++
++  // Generate options for the select dropdown
++  const variationOptions =
++    product?.variations?.map((variation: any) => {
++      const attributeLabels = variation.attributes.map((attr: any) => `${attr.dimension}: ${attr.value}`).join(", ");
++
++      return {
++        value: variation.asin,
++        label: attributeLabels || variation.asin,
++      };
++    }) || [];
++
++  return (
++    <div className="rounded-xl bg-white">
++      <div className="p-4 lg:p-5">
++        <span className="bg-[#F3F4F6] px-3 py-1.5 rounded-3xl text-[#676A75] font-semibold text-sm flex items-center gap-2 w-max">
++          Product Overview
++          <span className="bg-[#FE4848] rounded-full size-[18px] flex items-center justify-center text-white text-xs font-semibold">
++            1
++          </span>
++        </span>
++
++        <div className="mt-4 flex flex-col sm:grid sm:grid-cols-1 lg:grid-cols-[auto_1fr] gap-4">
++          <div className="bg-[#F3F4F6] w-[143px] h-[136px] flex items-center justify-center rounded-xl overflow-hidden mx-auto sm:mx-0">
++            <Image
++              src={product?.product_image || ProductThumbnail}
++              alt="Product"
++              className="size-[105px] object-cover"
++              width={105}
++              height={105}
++              quality={90}
++              unoptimized
++            />
++          </div>
++          <div className="flex flex-col gap-3 min-w-0 flex-1">
++            <AntTooltip title="Product name as displayed on Amazon marketplace." placement="top">
++              <h3 className="text-[#5B656C] font-semibold text-sm cursor-help break-words line-clamp-3 overflow-hidden">
++                {product?.product_name || "Product name not available"}
++              </h3>
++            </AntTooltip>
++            
++            {product?.rating && (
++              <AntTooltip
++                title="Average customer rating out of 5 stars. Higher ratings typically indicate better customer satisfaction and product quality."
++                placement="top"
++              >
++                <div className="flex items-center gap-1 text-[#858F96] text-xs font-medium cursor-help flex-wrap">
++                  <div className="flex items-center gap-1">
++                    {[...Array(5)].map((_, i) => (
++                      <svg
++                        key={i}
++                        className={`size-4 flex-shrink-0 ${
++                          i < Math.floor(product.rating.stars) ? "fill-[#FFB951]" : "fill-gray-300"
++                        }`}
++                        viewBox="0 0 20 20"
++                        aria-hidden="true"
++                      >
++                        <polygon points="10,1.5 12.59,7.36 18.9,7.97 14,12.14 15.45,18.36 10,15.1 4.55,18.36 6,12.14 1.1,7.97 7.41,7.36" />
++                      </svg>
++                    ))}
++                  </div>
++                  <span className="whitespace-nowrap">{product.rating.stars}/5</span>
++                  <span className="text-gray-500 whitespace-nowrap">({product.rating.count?.toLocaleString()})</span>
++                </div>
++              </AntTooltip>
++            )}
++            
++            {/* Product variations dropdown */}
++            <div className="w-full">
++              {product?.variations?.length > 0 ? (
++                <Select
++                  value={asin}
++                  onChange={handleVariationChange}
++                  options={variationOptions}
++                  style={{ width: "100%", borderRadius: 13 }}
++                  placeholder="Product variations"
++                  loading={isLoading}
++                />
++              ) : (
++                <Select
++                  options={[
++                    {
++                      value: "no_variations",
++                      label: "No variations available",
++                    },
++                  ]}
++                  style={{ width: "100%", borderRadius: 13 }}
++                  placeholder="Product variations"
++                  disabled
++                />
++              )}
++            </div>
++          </div>
++        </div>
++
++        <div className="mt-4 flex items-center gap-5 bg-[#F3F4F6E0] p-4 rounded-xl relative">
++          <span className="bg-[#DDE0E5] h-[45px] w-[6.8px] rounded-3xl" />
++          <span className="flex-1">
++            <h5 className="text-[#595959] font-medium text-sm">
++              {product?.category || "Category not available"}
++            </h5>
++            <p className="text-xs text-[#9E9D9D]">
++              <AntTooltip
++                title="Amazon Standard Identification Number - A unique product identifier assigned by Amazon."
++                placement="top"
++              >
++                <span className="cursor-help border-b border-dotted border-gray-400">
++                  ASIN: {product?.asin || asin}
++                </span>
++              </AntTooltip>
++            </p>
++          </span>
++
++          <span className="absolute bottom-3 right-3">
++            <AntTooltip title="Copy ASIN to clipboard" placement="top">
++              <button
++                type="button"
++                onClick={handleCopyAsin}
++                className="bg-white text-primary text-xs flex items-center gap-1 px-2 py-1 rounded-full hover:bg-gray-50 transition-colors active:scale-95 duration-200"
++              >
++                <CopyIcon />
++                {copyText}
++              </button>
++            </AntTooltip>
++          </span>
++        </div>
++      </div>
++
++      <div className="border-t border-[#E7EBEE] p-4 lg:px-5 flex items-center gap-2 flex-wrap">
++        <button
++          type="button"
++          className="bg-[#18CB96] rounded-lg p-2"
++          aria-label="Details"
++        >
++          <SubtitleIcon />
++        </button>
++        <button
++          type="button"
++          className="bg-[#F4F5F7] rounded-lg p-2"
++          aria-label="Details"
++        >
++          <JustifyIcon />
++        </button>
++
++        <button
++          type="button"
++          className="bg-[#F4F5F7] rounded-lg p-2"
++          aria-label="Details"
++        >
++          <Image
++            src={AmazonIcon}
++            alt="Amazon icon"
++            className="size-5"
++            unoptimized
++          />
++        </button>
++
++        <button
++          type="button"
++          className="bg-[#F4F5F7] rounded-lg p-2"
++          aria-label="Details"
++        >
++          <GoogleIcon />
++        </button>
++
++        <button
++          type="button"
++          className="bg-[#F4F5F7] rounded-lg p-2"
++          aria-label="Details"
++        >
++          <DesktopIcon />
++        </button>
++
++        <button
++          type="button"
++          className="bg-[#F4F5F7] rounded-lg p-2"
++          aria-label="Details"
++        >
++          <RobotIcon />
++        </button>
++      </div>
++    </div>
++  );
++};
++
++export default ProductOverview;
+\ No newline at end of file
+diff --git a/app/(dashboard)/dashboard/_components/prodComponents/new/profitability-calculator.tsx b/app/(dashboard)/dashboard/_components/prodComponents/new/profitability-calculator.tsx
+new file mode 100644
+index 0000000..73da7c1
+--- /dev/null
++++ b/app/(dashboard)/dashboard/_components/prodComponents/new/profitability-calculator.tsx
+@@ -0,0 +1,159 @@
++"use client";
++
++import { JSX, useState } from "react";
++
++type TabKey = "maximumCost" | "totalFees";
++
++const tabLabels: Record<TabKey, string> = {
++  maximumCost: "Maximum Cost",
++  totalFees: "Total Fees",
++};
++
++const tabContent: Record<TabKey, JSX.Element> = {
++  maximumCost: (
++    <div className="px-2 text-[#8C94A3] text-sm font-medium">
++      <p>&quot;Maximum Cost&quot;.</p>
++    </div>
++  ),
++
++  totalFees: (
++    <div className="px-2 flex flex-col gap-3">
++      <div className="flex gap-4 items-center justify-between text-[#8C94A3] text-sm font-medium">
++        <p>VAT on Fees</p>
++        <span className="flex items-center gap-2">
++          <span className="w-[33px] h-2.5 rounded-3xl bg-gradient-to-r from-[#C4B5FD] to-[#7A5FE0]" />
++          <p className="text-[#596375]">$0.80</p>
++        </span>
++      </div>
++      <div className="flex gap-4 items-center justify-between text-[#8C94A3] text-sm font-medium">
++        <p>Discount</p>
++        <span className="flex items-center gap-2">
++          <span className="w-[45px] h-2.5 rounded-3xl bg-gradient-to-r from-[#FF8551] to-[#E94F0E]" />
++          <p className="text-[#596375]">$0.00</p>
++        </span>
++      </div>
++      <div className="flex gap-4 items-center justify-between text-[#8C94A3] text-sm font-medium">
++        <p>Profit Margin</p>
++        <span className="flex items-center gap-2">
++          <span className="w-[68px] h-2.5 rounded-3xl bg-gradient-to-r from-[#18CB96] to-[#0D8D67]" />
++          <p className="text-[#596375]">0.59%</p>
++        </span>
++      </div>
++      <div className="flex gap-4 items-center justify-between text-[#8C94A3] text-sm font-medium">
++        <p>Breakeven Sale Price</p>
++        <span className="flex items-center gap-2">
++          <span className="w-[45px] h-2.5 rounded-3xl bg-gradient-to-r from-[#1499FF] to-[#0C5C99]" />
++          <p className="text-[#596375]">$28.72</p>
++        </span>
++      </div>
++      <div className="flex gap-4 items-center justify-between text-[#8C94A3] text-sm font-medium">
++        <p className="underline">Estimated Amz. Payout</p>
++        <span className="flex items-center gap-2">
++          <span className="w-16 h-2.5 rounded-3xl bg-gradient-to-r from-[#6AD8DE] to-[#397578]" />
++          <p className="text-[#596375]">$13.18</p>
++        </span>
++      </div>
++    </div>
++  ),
++};
++
++const ProfitabilityCalculator = () => {
++  const [activeTab, setActiveTab] = useState<TabKey>("totalFees");
++
++  return (
++    <div className="rounded-xl bg-white">
++      <div className="p-4 lg:p-5">
++        <span className="bg-[#F3F4F6] px-3 py-1.5 rounded-3xl text-[#676A75] font-semibold text-sm w-max">
++          Profitability Calculator
++        </span>
++      </div>
++
++      <div className="p-4 lg:p-5 border-y border-[#E7EBEE] text-sm flex items-center gap-5 justify-between">
++        <p className="font-semibold">Fulfilment Type</p>
++
++        <span className="flex items-center gap-2">
++          <button
++            type="button"
++            className="bg-[#FF8551] rounded-3xl border border-transparent px-3  py-1 text-white text-xs font-semibold"
++          >
++            FBA
++          </button>
++          <button
++            type="button"
++            className="bg-transparent rounded-3xl border border-[#D2D2D2] px-3  py-1 text-[#B0B0B1] text-xs font-semibold"
++          >
++            FBM
++          </button>
++        </span>
++      </div>
++
++      <div className="p-4 lg:p-5">
++        <div className="text-[#676A75] text-sm flex flex-col gap-4">
++          <span className="flex gap-4 items-center justify-between">
++            <label htmlFor="cost_price">Cost Price</label>
++            <input
++              id="cost_price"
++              type="text"
++              defaultValue={"$40,000"}
++              className="text-[#596375] text-sm font-normal border border-border focus:border-primary rounded-[10px] px-3 py-2 outline-none transition-colors"
++            />
++          </span>
++          <span className="flex gap-4 items-center justify-between">
++            <label htmlFor="sales_price">Sales Price</label>
++            <input
++              id="sales_price"
++              type="text"
++              defaultValue={"$40,000"}
++              className="text-[#596375] text-sm font-normal border border-border focus:border-primary rounded-[10px] px-3 py-2 outline-none transition-colors"
++            />
++          </span>
++        </div>
++
++        <div className="mt-5 flex flex-col gap-6">
++          <div className="bg-[#F3F4F6] rounded-3xl p-1.5 grid grid-cols-2 gap-2">
++            {Object.entries(tabLabels).map(([key, label]) => {
++              const isActive = key === activeTab;
++
++              const baseClasses =
++                "text-sm font-semibold px-4 py-2 rounded-3xl transition-colors";
++              const activeClasses =
++                "bg-white shadow-md shadow-[#00000008] text-[#333333]";
++              const inactiveClasses = "bg-transparent text-[#676A75]";
++
++              return (
++                <button
++                  key={key}
++                  type="button"
++                  onClick={() => setActiveTab(key as TabKey)}
++                  className={`${baseClasses} ${
++                    isActive ? activeClasses : inactiveClasses
++                  }`}
++                >
++                  {label}
++                </button>
++              );
++            })}
++          </div>
++
++          {/* Tab content */}
++          {tabContent[activeTab]}
++        </div>
++      </div>
++
++      <div className="p-4 lg:p-5 border-y border-[#E7EBEE] text-sm">
++        <span className="flex gap-4 items-center justify-between">
++          <label htmlFor="quantity">Quantity</label>
++          <input
++            id="quantity"
++            type="text"
++            defaultValue={"1"}
++            className="text-[#596375] max-w-[77px] text-sm font-normal border border-border focus:border-primary rounded-[10px] px-3 py-2 outline-none transition-colors"
++          />
++        </span>
++      </div>
++    </div>
++  );
++};
++
++export default ProfitabilityCalculator;
++
+diff --git a/app/(dashboard)/dashboard/_components/prodComponents/new/quick-info.tsx b/app/(dashboard)/dashboard/_components/prodComponents/new/quick-info.tsx
+new file mode 100644
+index 0000000..81103b3
+--- /dev/null
++++ b/app/(dashboard)/dashboard/_components/prodComponents/new/quick-info.tsx
+@@ -0,0 +1,227 @@
++import { BiChevronRight } from "react-icons/bi";
++import { NotificationIcon } from "./icons";
++import Image from "next/image";
++import { Tooltip as AntTooltip } from "antd";
++import { useState } from "react";
++import AmazonIcon from "@/public/assets/svg/amazon-icon.svg"
++
++type Tab = "info" | "totan";
++
++const QuickInfo = () => {
++  const [activeTab, setActiveTab] = useState<Tab>("info");
++
++  return (
++    <div className="rounded-xl bg-white h-full">
++      <div className="border-b border-[#E7EBEE] py-4 px-3 lg:p-5 flex items-center gap-1.5">
++        <span
++          onClick={() => setActiveTab("info")}
++          className={`${
++            activeTab === "info"
++              ? "bg-primary text-white"
++              : "bg-[#F3F4F6] text-[#676A75]"
++          } cursor-pointer px-2 py-1.5 rounded-3xl  font-semibold text-sm w-max`}
++        >
++          Quick Info
++        </span>
++        <span className="bg-[#F3F4F6] px-2 py-1.5 rounded-3xl text-[#676A75] font-semibold text-sm w-max">
++          Sales Analytics
++        </span>
++        <span
++          onClick={() => setActiveTab("totan")}
++          className={`${
++            activeTab === "totan"
++              ? "bg-primary text-white"
++              : "bg-[#F3F4F6] text-[#676A75]"
++          } cursor-pointer  px-2 py-1.5 rounded-3xl  font-semibold text-sm w-max`}
++        >
++          Totan (AI)
++        </span>
++      </div>
++
++      <div className="p-2 lg:p-2">
++        {/**
++        <div className="grid grid-cols-[4fr_2fr] gap-4">
++          <div className="border border-[#FFE6C2] text-[#4A4A4A] rounded-[10px] text-xs flex flex-col">
++            <span className="px-4 py-3 rounded-t-[10px]">
++              Eligible For Sale
++            </span>
++            <button className="px-4 py-3 rounded-b-[10px] bg-[#FFC56E1F] text-[#FFA216] font-semibold flex items-center justify-between gap-4">
++              <p>Check Alerts Panel</p>
++              <BiChevronRight size={20} />
++            </button>
++          </div>
++          <div className="border border-[#E0E4EE] text-[#4A4A4A] rounded-[10px] text-xs flex flex-col">
++            <span className="p-3 rounded-t-[10px]">Alerts</span>
++            <span className="p-3 rounded-b-[10px] bg-[#18CB9612] text-[#009F6D] font-semibold flex items-center justify-between gap-4">
++              <p>6</p>
++              <NotificationIcon />
++            </span>
++          </div>
++        </div>
++         */}
++
++        {activeTab === "info" && (
++          <div>
++            <div className="mt-5 border border-[#E0E4EE] text-[#8E949F] rounded-[10px] text-xs flex divide-x divide-[#E0E4EE]">
++              <div className="flex-1 flex flex-col gap-0.5 p-4">
++                <span className="flex items-center gap-1">
++                  BSR
++                  <span className="bg-[#FF8551] w-[12.5px] h-2 rounded-full" />
++                </span>
++                <p className="text-[#596375] font-bold text-base">3k (1%)</p>
++              </div>
++              <div className="flex-1 flex flex-col gap-0.5 p-4 bg-[#FAFBFB]">
++                <span className="flex items-center gap-1">
++                  Est. Sales
++                  <span className="bg-[#3895F9] w-[12.5px] h-2 rounded-full" />
++                </span>
++                <p className="text-[#596375] font-bold text-base">
++                  500+/<span className="text-[#939EB2]">mo</span>
++                </p>
++              </div>
++              <div className="flex-1 flex flex-col gap-0.5 p-4">
++                <span className="flex items-center gap-1">
++                  Max Cost
++                  <span className="bg-primary w-[12.5px] h-2 rounded-full" />
++                </span>
++                <p className="text-[#596375] font-bold text-base">C$ 36.50</p>
++              </div>
++            </div>
++
++            <div className="mt-5 text-[#676A75] font-medium text-xs grid grid-cols-2 gap-4">
++              <span className="flex flex-col gap-2">
++                <label htmlFor="cost_price">Cost Price</label>
++                <input
++                  id="cost_price"
++                  type="text"
++                  defaultValue={"$40,000"}
++                  className="text-[#596375] text-sm font-normal border border-border focus:border-primary rounded-[10px] px-3 py-2 outline-none transition-colors"
++                />
++              </span>
++              <span className="flex flex-col gap-2">
++                <label htmlFor="sales_price">Sales Price</label>
++                <input
++                  id="sales_price"
++                  type="text"
++                  defaultValue={"$40,000"}
++                  className="text-[#596375] text-sm font-normal border border-border focus:border-primary rounded-[10px] px-3 py-2 outline-none transition-colors"
++                />
++              </span>
++            </div>
++
++            <div className="mt-5 bg-[#FAFBFB] border border-[#E0E4EE] text-[#8E949F] rounded-[10px] text-xs flex divide-x divide-[#E0E4EE]">
++              <div className="flex-1 flex flex-col gap-0.5 p-4">
++                <span className="flex items-center gap-1">
++                  Profit
++                  <span className="bg-primary w-[12.5px] h-2 rounded-full" />
++                </span>
++                <p className="text-[#596375] font-bold text-base">C$ 9.13</p>
++              </div>
++              <div className="flex-1 flex flex-col gap-0.5 p-4">
++                <span className="flex items-center gap-1">
++                  Profit (%)
++                  <span className="bg-[#3895F9] w-[12.5px] h-2 rounded-full" />
++                </span>
++                <p className="text-[#596375] font-bold text-base">14.85%</p>
++              </div>
++              <div className="flex-1 flex flex-col gap-0.5 p-4">
++                <span className="flex items-center gap-1">
++                  ROI
++                  <span className="bg-[#FF8551] w-[12.5px] h-2 rounded-full" />
++                </span>
++                <p className="text-[#596375] font-bold text-base">25.01%</p>
++              </div>
++            </div>
++          </div>
++        )}
++
++        {activeTab === "totan" && (
++          <div className=" flex flex-col gap-3">
++            {/* Score and Info Row */}
++            <div className="flex items-center justify-between">
++              {/* Circular Score */}
++              <div className="relative size-32">
++                <svg
++                  className="w-full h-full transform -rotate-90"
++                  viewBox="0 0 36 36"
++                >
++                  <path
++                    className="text-[#F3F4F6]"
++                    stroke="currentColor"
++                    strokeWidth="3"
++                    fill="none"
++                    d="M18 2.0845
++                a 15.9155 15.9155 0 0 1 0 31.831
++                a 15.9155 15.9155 0 0 1 0 -31.831"
++                  />
++                  <path
++                    className="text-primary"
++                    stroke="currentColor"
++                    strokeWidth="3"
++                    strokeDasharray="80, 100"
++                    fill="none"
++                    d="M18 2.0845
++                a 15.9155 15.9155 0 0 1 0 31.831
++                a 15.9155 15.9155 0 0 1 0 -31.831"
++                  />
++                </svg>
++                <div className="absolute inset-0 flex flex-col items-center justify-center text-xs">
++                  <span className="text-[10px] text-[#676A75] font-medium uppercase text-center">
++                    <p>ABOVE</p>
++                    <p>AVERAGE</p>
++                  </span>
++
++                  <span className="text-lg font-semibold text-[#060606]">
++                    5.19
++                  </span>
++                </div>
++              </div>
++
++              {/* Analysis Box */}
++              <div className="flex flex-col gap-2">
++                <div className="bg-muted rounded-md px-3 py-1 text-sm font-medium text-muted-foreground">
++                  <div className="bg-[#F3F4F6] rounded-lg p-3 text-[#676A75] text-sm">
++                    <p className="font-semibold">Analysis</p>
++                    <p>Average Return on…</p>
++                  </div>
++                </div>
++
++                <div className="flex items-center gap-2 bg-muted rounded-md px-3 py-1 text-sm text-muted-foreground">
++                  <span className="bg-[#F3F4F6] rounded-lg p-2">
++                    <Image
++                      src={ AmazonIcon || "/placeholder.svg"}
++                      alt="Amazon icon"
++                      width={32}
++                      height={32}
++                    />
++                  </span>
++
++                  <span className="bg-[#F3F4F6] rounded-lg p-3 text-[#676A75] text-xs">
++                    Amazon Owns the buybox
++                  </span>
++                </div>
++              </div>
++            </div>
++
++            {/* Quantity Selector */}
++            <div className="flex items-center gap-4">
++              <AntTooltip
++                title="The recommended quantity to purchase based on market demand, competition, and inventory turnover rate."
++                placement="top"
++              >
++                <span className="text-sm text-[#676A75] font-medium cursor-help border-b border-dotted border-gray-400">
++                  Suggested Purchase Quantity
++                </span>
++              </AntTooltip>
++              <p className="border border-input rounded-md px-4 py-1 text-sm">
++                5
++              </p>
++            </div>
++          </div>
++        )}
++      </div>
++    </div>
++  );
++};
++
++export default QuickInfo;
+diff --git a/app/(dashboard)/dashboard/_components/prodComponents/new/sales-analytics.tsx b/app/(dashboard)/dashboard/_components/prodComponents/new/sales-analytics.tsx
+new file mode 100644
+index 0000000..baff73e
+--- /dev/null
++++ b/app/(dashboard)/dashboard/_components/prodComponents/new/sales-analytics.tsx
+@@ -0,0 +1,81 @@
++import { BsArrowDown, BsArrowUp } from "react-icons/bs";
++
++const SalesAnalytics = () => {
++  return (
++    <div className="rounded-xl bg-white p-4 lg:p-5">
++      <span className="bg-[#F3F4F6] px-3 py-1.5 rounded-3xl text-[#676A75] font-semibold text-sm w-max">
++        Sales Analytics
++      </span>
++
++      <div className="mt-5 bg-[#FEF9F5] rounded-[10px] p-3 text-sm font-medium flex items-center gap-6 justify-between">
++        <span className="flex flex-col gap-1.5">
++          <p className="text-[#E88001]">Net Revenue</p>
++          <p className="text-black text-lg font-semibold">$55.82</p>
++        </span>
++        <p className="text-[#18CB96] flex items-center gap-1">
++          <BsArrowUp /> 23.5%
++        </p>
++      </div>
++
++      <div className="mt-5 bg-[#FAFAFB] border border-[#E0E4EE] text-[#595959] rounded-[10px] text-sm flex divide-x divide-[#E0E4EE]">
++        <div className="flex-1 flex flex-col gap-1 p-3">
++          <p className="text-[#009F6D] flex items-center gap-1">
++            <BsArrowUp /> 23.5%
++          </p>
++          <p className="flex items-center gap-1">Price</p>
++          <p className="text-[#596375] font-bold text-lg">$34.19</p>
++        </div>
++
++        <div className="flex-1 flex flex-col gap-1 p-3">
++          <p className="text-[#009F6D] flex items-center gap-1">
++            <BsArrowUp /> 23.5%
++          </p>
++          <p className="flex items-center gap-1">Monthly Units Sold</p>
++          <p className="text-[#596375] font-bold text-lg">8000 / month</p>
++        </div>
++      </div>
++
++      <div className="mt-4 border border-[#E0E4EE] text-[#595959] rounded-[10px] text-sm flex divide-x divide-[#E0E4EE]">
++        <div className="flex-1 flex flex-col gap-1 p-3">
++          <p className="text-[#FD3E3E] flex items-center gap-1">
++            <BsArrowDown /> 23.5%
++          </p>
++          <p className="flex items-center gap-1">Daily Units Sold</p>
++          <p className="text-[#596375] font-bold text-lg">573</p>
++        </div>
++
++        <div className="flex-1 flex flex-col gap-1 p-3">
++          <p className="text-[#009F6D] flex items-center gap-1">
++            <BsArrowUp /> 23.5%
++          </p>
++          <p className="flex items-center gap-1">Monthly Revenue</p>
++          <p className="text-[#596375] font-bold text-lg">$481,278</p>
++        </div>
++      </div>
++
++      <div className="mt-5 flex flex-col gap-1.5 text-sm text-[#595959] px-2">
++        <span className="flex items-center gap-4 justify-between">
++          <p>Date First Available</p>
++          <p className="text-black font-semibold">07/05/2021</p>
++        </span>
++        <span className="flex items-center gap-4 justify-between">
++          <p>Seller Type</p>
++          <p className="text-black font-semibold">AMZ</p>
++        </span>
++        <span className="flex items-center gap-4 justify-between">
++          <p>No of Sellers</p>
++          <p className="text-black font-semibold flex items-center gap-2">
++            <span className="bg-[#009F6D0A] py-1 px-2 rounded-full text-[8px] text-[#008E61] flex items-center gap-1">
++              <BsArrowUp />
++              23.5%
++            </span>
++            5 Sellers
++          </p>
++        </span>
++      </div>
++    </div>
++  );
++};
++
++export default SalesAnalytics;
++
+diff --git a/app/(dashboard)/dashboard/_components/prodComponents/new/top-sellers.tsx b/app/(dashboard)/dashboard/_components/prodComponents/new/top-sellers.tsx
+new file mode 100644
+index 0000000..0bacf8b
+--- /dev/null
++++ b/app/(dashboard)/dashboard/_components/prodComponents/new/top-sellers.tsx
+@@ -0,0 +1,150 @@
++import { MdOutlineInsertChartOutlined } from "react-icons/md";
++import { FaStar } from "react-icons/fa";
++import { useState } from "react";
++import OffersAndSellerFeedback from "./offers-and-seller-feedback";
++import { CustomSelect as Select } from "@/lib/AntdComponents";
++import MiniDatePicker from "@/app/(dashboard)/upc-scanner/_components/date-picker";
++import ProductDatePicker from "./datePicker";
++import { GoDotFill } from "react-icons/go";
++
++type Seller = {
++  name: string;
++  reviews: number;
++  price: number;
++  won: string;
++  lastWon: string;
++};
++
++const sellers: Seller[] = [
++  {
++    name: "T0SSI",
++    reviews: 763,
++    price: 30.08,
++    won: "21%",
++    lastWon: "3 weeks ago",
++  },
++  {
++    name: "Peak Health",
++    reviews: 347,
++    price: 29.65,
++    won: "18%",
++    lastWon: "2 weeks ago",
++  },
++  {
++    name: "CB Int",
++    reviews: 213,
++    price: 31.58,
++    won: "23%",
++    lastWon: "3 weeks ago",
++  },
++];
++
++const TopSellers = () => {
++  const [active, setActive] = useState("sellers");
++  return (
++    <div className="rounded-xl bg-white p-4 lg:p-5">
++      <div className=" flex justify-between items-center">
++      <div className="flex items-center gap-3">
++        <button
++          onClick={() => setActive("sellers")}
++          className={` ${
++            active === "sellers"
++              ? "bg-primary text-white"
++              : "bg-[#F3F4F6] text-[#676A75]"
++          }  px-3 py-1.5 rounded-3xl  font-semibold text-sm w-max flex items-center gap-1.5`}
++        >
++          <MdOutlineInsertChartOutlined className="size-5" />
++          Top Sellers
++        </button>
++
++        <button
++          type="button"
++          className={` ${
++            active === "feedback"
++              ? "bg-primary text-white"
++              : "bg-[#F3F4F6] text-[#676A75]"
++          }  px-3 py-1.5 rounded-3xl  font-semibold text-sm w-max flex items-center gap-1.5`}
++          onClick={() => setActive("feedback")}
++        >
++          <MdOutlineInsertChartOutlined className="size-5" />
++          Seller Feedback
++        </button>
++      </div>
++
++      <div className=" ">
++        <div className=" flex items-center gap-3">
++          <span className=" text-xs text-[#8C94A2] text-nowrap">Filter by</span>
++            <Select
++                        options={[
++                          {
++                            value: "variation_1",
++                            label: "Current",
++                          },
++                        ]}
++                        style={{ width: "100%", maxWidth: 300, borderRadius: 100, height: '35 !important' }}
++                        
++                        placeholder="Curernt"
++                      />
++
++                        <ProductDatePicker />
++        </div>
++         
++      </div>
++      </div>
++
++      {active === "sellers" ? (
++        <div className="mt-5 overflow-x-auto">
++          <table className="min-w-full text-left text-sm text-gray-700">
++            <thead>
++              <tr className="border-b bg-[#F7F7F7] font-medium">
++                <th className="p-4  w-[70px]">#</th>
++                <th className="p-4">Seller</th>
++                <th className="p-4">Price</th>
++                <th className="p-4">Won</th>
++                <th className="p-4">Last Won</th>
++              </tr>
++            </thead>
++            <tbody>
++              {sellers.map((seller, index) => (
++                <tr
++                  key={seller.name}
++                  className="border-b last:border-none text-[#252525] text-sm"
++                >
++                   <td className="p-4 flex gap-3 ">
++                    {index + 1}
++                    <GoDotFill color=" #0F172A"/>
++                    </td>
++                   
++                  <td className="p-4 min-w-[160px] ">
++                    <div>
++                      {seller.name} ({seller.reviews})
++                    </div>
++                    <div className="flex text-yellow-400 mt-1">
++                      {Array.from({ length: 5 }).map((_, i) => (
++                        <FaStar key={i} className="size-3" />
++                      ))}
++                    </div>
++                  </td>
++                  <td className="p-4">${seller.price.toFixed(2)}</td>
++                  <td className="p-4">{seller.won}</td>
++                  <td className="p-4 whitespace-nowrap">{seller.lastWon}</td>
++                </tr>
++              ))}
++            </tbody>
++          </table>
++        </div>
++      ) : (
++        <OffersAndSellerFeedback />
++      )}
++
++      <div className=" mt-5 px-5">
++        <div className=" flex items-start gap-5">
++        <button className=" h-[28px] w-[61px] bg-[#4D4D4D] text-white text-xs font-medium rounded-xl">FBA : 3</button>
++        <button className=" h-[28px] w-[61px] bg-[#18CB96] text-white text-xs font-medium rounded-xl">FBM : 1</button>
++      </div>
++      </div>
++    </div>
++  );
++};
++
++export default TopSellers;
