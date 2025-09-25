@@ -24,7 +24,7 @@ import { Tooltip } from "antd";
 
 // Sidebar data
 const menuData = [
-  { id: "1", path: "/dashboard", label: "Dashboard", icon: HiOutlineHome },
+  { id: "1", path: "/dashboard", label: "Product Search", icon: HiOutlineHome },
   {
     id: "2",
     path: "/history",
@@ -97,19 +97,23 @@ const DashSider = () => {
           key={item.id}
           className={`flex items-center rounded-md text-base cursor-pointer relative ${
             isActive
-              ? "bg-[#18CB960A] text-primary"
+              ? "bg-[#18CB960A] text-[#18CB96]"
               : "text-[#0F172A] hover:bg-[#F7F7F7]"
           } ${collapsed ? "justify-center px-2 py-3" : "px-4 py-3"}`}
         >
           <item.icon
-            className={`size-6 text-inherit ${collapsed ? "mr-0" : "mr-3"} ${
+            className={`size-6 ${
+              isActive ? "text-[#18CB96]" : "text-inherit"
+            } ${collapsed ? "mr-0" : "mr-3"} ${
               item.id === "6" ? "size-5" : ""
             }`}
           />
 
           {!collapsed && (
             <>
-              <span>{item.label}</span>
+              <span className={isActive ? "text-[#18CB96]" : "text-[#787891]"}>
+                {item.label}
+              </span>
 
               {item.comingSoon && (
                 <span className="ml-auto bg-primary text-white text-xs px-1.5 py-0.5 rounded-md">
@@ -126,7 +130,7 @@ const DashSider = () => {
           )}
 
           {isActive && !collapsed && (
-            <HiOutlineChevronRight className="absolute right-4 text-primary size-4" />
+            <HiOutlineChevronRight className="absolute right-4 text-[#18CB96] size-4" />
           )}
         </Link>
       );
@@ -189,7 +193,7 @@ const DashSider = () => {
           >
             Dashboard
           </div>
-          <ul className="space-y-1 px-4">{renderMenu(menuData)}</ul>
+          <ul className="space-y-1 px-4 !text-[#787891]">{renderMenu(menuData)}</ul>
 
           <div
             className={`px-4 pb-2 pt-4 text-sm text-[#4B4B62] ${
@@ -279,4 +283,3 @@ const DashSider = () => {
 };
 
 export default DashSider;
-
