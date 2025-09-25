@@ -30,7 +30,7 @@ const ProductEligibility = ({
 
   if (isLoadingIpData) {
     return (
-      <div className="h-[150px] w-full bg-[url(/assets/svg/product-eligibility.svg)] bg-cover bg-no-repeat bg-center p-4 lg:px-5 flex flex-col justify-center items-center">
+      <div className="h-[250px] w-full bg-[url(/assets/svg/product-eligibility.svg)] bg-cover bg-no-repeat bg-center p-4 lg:px-5 flex flex-col justify-center items-center">
         <div className="flex items-center gap-3">
           <div className="flex space-x-1">
             <div className="w-2 h-2 bg-white rounded-full animate-bounce [animation-delay:-0.3s]"></div>
@@ -45,7 +45,7 @@ const ProductEligibility = ({
 
   return (
     <>
-      <div className="h-[150px] w-full bg-[url(/assets/svg/product-eligibility.svg)] bg-cover bg-no-repeat bg-center p-4 lg:px-5 flex flex-col justify-end">
+      <div className="h-[250px] w-full bg-[url(/assets/svg/product-eligibility.svg)] bg-cover bg-no-repeat bg-center p-4 lg:px-5 flex flex-col justify-end">
         {eligibility ? (
           <AntTooltip
             title="✅ You can list and sell this product! You have the necessary approvals and this product is not restricted (GATED) for your seller account."
@@ -103,7 +103,7 @@ const ProductEligibility = ({
         closable
         onClose={() => setOpen(false)}
         open={open}
-        width={500}
+        width={400}
         bodyStyle={{ padding: 0 }}
       >
         <div className="rounded-xl bg-white h-full">

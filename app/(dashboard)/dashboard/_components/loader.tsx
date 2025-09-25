@@ -72,7 +72,7 @@ const FinalLoader: React.FC<FinalLoaderProps> = ({ currentStep }) => {
   }, [currentStep]);
 
   return (
-    <div className="flex flex-col space-y-5 max-w-[80%]  w-full min-w-3xl mx-auto p-6">
+    <div className="flex flex-col space-y-5 max-w-[80%]  w-full min-w-3xl mx-auto p-6 bg-white rounded-3xl">
       {steps.map((step, index) => (
         <div key={index} className="flex justify-between items-center">
           {/* Timeline and percentage indicator */}

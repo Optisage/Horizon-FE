@@ -11,6 +11,7 @@ import {
 } from "@/redux/api/productsApi";
 import dayjs from "dayjs";
 
+import FinalLoader from "./loader"; // Import the loader component
 import Alerts from "./prodComponents/new/alerts";
 import BuyboxAnalysis from "./prodComponents/new/buybox-analysis";
 import CalculationResults from "./prodComponents/new/calculation-results";
@@ -38,7 +39,6 @@ interface IpAlertState {
 }
 
 interface IpAlertData {
-  // Add the interface for IP alert data based on your API response
   amazon_share_buybox?: number;
   private_label?: string;
   size?: string;
@@ -59,7 +59,21 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
   const [ipData, setIpData] = useState<IpAlertData | null>(null);
   const [isLoadingIpData, setIsLoadingIpData] = useState(false);
   const previousMarketplaceId = useRef(marketplaceId);
-  
+  const [profitabilityData, setProfitabilityData] = useState<any>(null);
+  const [isCalculating, setIsCalculating] = useState(false);
+
+  // Add loader state
+  const [currentStep, setCurrentStep] = useState(0);
+  const [showLoader, setShowLoader] = useState(true);
+
+  const { currencyCode } = useAppSelector((state) => state.global) || {
+    currencyCode: "USD",
+  };
+
+  const quickInfoRef = useRef<{
+    handleProfitabilityUpdate: (data: any) => void;
+  } | null>(null);
+
   const { setIpIssue, eligibility } = useAppSelector(
     (state) =>
       (state?.global?.ipAlert as IpAlertState) || {
@@ -74,14 +88,13 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
   const [statEndDate, setStatEndDate] = useState(
     dayjs().add(1, "month").format("YYYY-MM-DD")
   );
+
   // RTK Query hooks for fetching product data
-  const {
-    data: buyboxDetailsData,
-    isLoading: isLoadingBuybox,
-  } = useGetBuyboxDetailsQuery({
-    marketplaceId,
-    itemAsin: asin,
-  });
+  const { data: buyboxDetailsData, isLoading: isLoadingBuybox } =
+    useGetBuyboxDetailsQuery({
+      marketplaceId,
+      itemAsin: asin,
+    });
 
   const {
     data,
@@ -92,7 +105,7 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
     itemAsin: asin,
   });
 
-  // Calculate pricing data for Nav component - exact values from old file
+  // Calculate pricing data for Nav component
   const buyboxWinner = buyboxDetailsData?.data?.buybox?.find(
     (offer: any) => offer.is_buybox_winner
   );
@@ -111,9 +124,47 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
   const lowestFBMPrice = fbmOffers?.length
     ? Math.min(...fbmOffers.map((o: any) => o.listing_price))
     : 0;
-  
+
   const monthlySales =
     data?.data?.sales_statistics?.estimated_sales_per_month?.amount;
+
+  // Track loading progress and update steps
+  useEffect(() => {
+    let step = 0;
+    
+    // Step 0: Initial loading started (always true when component mounts)
+    if (asin && marketplaceId) {
+      step = 0;
+    }
+
+    // Step 1: Basic product data loaded
+    if (!isLoadingItem && data) {
+      step = 1;
+    }
+
+    // Step 2: Buybox data loaded
+    if (!isLoadingBuybox && buyboxDetailsData) {
+      step = 2;
+    }
+
+    // Step 3: IP Alert data loaded
+    if (!isLoadingIpData && ipData) {
+      step = 3;
+    }
+
+    // Step 4: All data loaded and ready
+    if (!isLoadingItem && !isLoadingBuybox && !isLoadingIpData && 
+        data && buyboxDetailsData && (ipData !== null || !asin)) {
+      step = 4;
+      // Hide loader after a brief delay when everything is loaded
+      const timer = setTimeout(() => {
+        setShowLoader(false);
+      }, 1000);
+      return () => clearTimeout(timer);
+    }
+
+    setCurrentStep(step);
+  }, [isLoadingItem, isLoadingBuybox, isLoadingIpData, data, buyboxDetailsData, ipData, asin, marketplaceId]);
 
   // Track marketplace changes
   useEffect(() => {
@@ -122,6 +173,8 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
 
       // Reset states when marketplace changes
       setIpData(null);
+      setShowLoader(true);
+      setCurrentStep(0);
       dispatch(
         setIpAlert({
           setIpIssue: 0,
@@ -135,6 +188,8 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
   // Reset IP data immediately when ASIN changes
   useEffect(() => {
     setIpData(null);
+    setShowLoader(true);
+    setCurrentStep(0);
     dispatch(
       setIpAlert({
         setIpIssue: 0,
@@ -156,7 +211,7 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
           statStartDate,
           statEndDate,
         }).unwrap();
-        
+
         dispatch(
           setIpAlert({
             setIpIssue: response?.data?.ip_analysis?.issues ?? 0,
@@ -167,6 +222,8 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
         setIpData(response.data as IpAlertData);
       } catch (error) {
         console.error("Error fetching IP alert:", error);
+        // Set empty data on error so loader can progress
+        setIpData({});
       } finally {
         setIsLoadingIpData(false);
       }
@@ -176,6 +233,24 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
       fetchIpData();
     }
   }, [asin, marketplaceId, dispatch, getIpAlert, statStartDate, statEndDate]);
+
+  // Handle profitability calculation completion
+  const handleCalculationComplete = (data: any) => {
+    setProfitabilityData(data);
+    setIsCalculating(false);
+
+    if (quickInfoRef.current) {
+      quickInfoRef.current.handleProfitabilityUpdate(data);
+    }
+  };
+
+  const handleCalculationStart = () => {
+    setIsCalculating(true);
+  };
+
+  const handleNavigateToTotan = () => {
+    console.log("Navigate to Totan");
+  };
 
   if (error) {
     return (
@@ -188,9 +263,18 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
     );
   }
 
+  // Show loader while data is loading
+  if (showLoader) {
+    return (
+      <div className="flex items-center justify-center min-h-[80vh]">
+        <FinalLoader currentStep={currentStep} />
+      </div>
+    );
+  }
+
   return (
     <section className="flex flex-col gap-4 min-h-[50dvh] md:min-h-[80dvh]">
-      <Nav 
+      <Nav
         product={data?.data}
         buyboxWinnerPrice={buyboxWinnerPrice}
         lowestFBAPrice={lowestFBAPrice}
@@ -200,22 +284,25 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
         fbaSellers={fbaOffers?.length || 0}
         fbmSellers={fbmOffers?.length || 0}
         stockLevels={buyboxDetailsData?.data?.buybox?.reduce(
-          (sum: number, seller: any) =>
-            sum + (seller.stock_quantity || 0),
+          (sum: number, seller: any) => sum + (seller.stock_quantity || 0),
           0
         )}
+        asin={asin}
+        marketplaceId={marketplaceId}
+        profitabilityData={profitabilityData}
+        onNavigateToTotan={handleNavigateToTotan}
       />
 
       <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-3">
         {/* column 1 */}
         <div className="flex flex-col gap-4">
-          <ProductOverview 
+          <ProductOverview
             product={data?.data}
             asin={asin}
             marketplaceId={marketplaceId}
             isLoading={isLoadingItem}
           />
-          <ProductEligibility 
+          <ProductEligibility
             product={data?.data}
             ipData={ipData}
             eligibility={eligibility}
@@ -224,18 +311,39 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
             marketplaceId={marketplaceId}
             isLoadingIpData={isLoadingIpData}
           />
-          <QuickInfo />
+          <QuickInfo
+            ref={quickInfoRef}
+            product={data?.data}
+            buyboxDetails={buyboxDetailsData?.data}
+            asin={asin}
+            marketplaceId={marketplaceId}
+            onNavigateToTotan={handleNavigateToTotan}
+          />
         </div>
 
         {/* column 2 */}
         <div className="flex flex-col gap-4 col-span-2">
-          <TopSellers />
-          <CalculationResults />
+          <TopSellers asin={asin} marketplaceId={marketplaceId} />
+          <CalculationResults
+            profitabilityData={profitabilityData}
+            currencyCode={currencyCode}
+            isCalculating={isCalculating}
+          >
+            <ProfitabilityCalculator
+              asin={asin}
+              marketplaceId={marketplaceId}
+              product={data?.data}
+              isLoading={isLoadingItem}
+              onCalculationComplete={handleCalculationComplete}
+              onCalculationStart={handleCalculationStart}
+              offers={buyboxDetailsData?.data?.buybox || []}
+            />
+          </CalculationResults>
         </div>
       </div>
 
       <div className="col-span-3">
-        <MarketAnalysis 
+        <MarketAnalysis
           asin={asin}
           marketplaceId={marketplaceId}
           isLoading={isLoadingItem}

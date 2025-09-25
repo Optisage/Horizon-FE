@@ -1,94 +1,141 @@
-const CalculationResults = () => {
+import { ReactNode, useState, useEffect } from "react";
+
+interface ProfitabilityData {
+  profitAmount: number;
+  costPrice: string;
+  salePrice: number;
+  totalFees: number;
+  vatOnFees: number;
+  estimatedAmzPayout: number;
+  fulfillmentType: string;
+  roi: number;
+  profitMargin: number;
+}
+
+interface CalculationResultsProps {
+  children?: ReactNode;
+  profitabilityData?: ProfitabilityData | null;
+  currencyCode?: string;
+  isCalculating?: boolean;
+}
+
+const CalculationResults = ({ 
+  children, 
+  profitabilityData,
+  currencyCode = "USD",
+  isCalculating = false 
+}: CalculationResultsProps) => {
+  const [displayData, setDisplayData] = useState<ProfitabilityData | null>(null);
+  const [fulfillmentType, setFulfillmentType] = useState("FBA");
+
+  // Update display data when profitabilityData changes
+  useEffect(() => {
+    if (profitabilityData) {
+      setDisplayData(profitabilityData);
+      setFulfillmentType(profitabilityData.fulfillmentType || "FBA");
+    }
+  }, [profitabilityData]);
+
+  const formatCurrency = (value: number | string) => {
+    const numValue = typeof value === 'string' ? parseFloat(value) : value;
+    const symbol = currencyCode === 'CAD' ? 'C$' : currencyCode === 'USD' ? '$' : currencyCode;
+    return `${symbol} ${numValue.toFixed(2)}`;
+  };
+
+  const getStatusColor = (profit: number) => {
+    if (profit > 5) return "#10B981"; // Green for good profit
+    if (profit > 0) return "#F59E0B"; // Orange for low profit  
+    return "#EF4444"; // Red for loss
+  };
+
+  const defaultData = {
+    profitAmount: 0,
+    costPrice: "0",
+    salePrice: 0,
+    totalFees: 0,
+    vatOnFees: 0,
+    estimatedAmzPayout: 0,
+    fulfillmentType: "FBA",
+    roi: 0,
+    profitMargin: 0
+  };
+
+  const data = displayData || defaultData;
+  const profitColor = getStatusColor(data.profitAmount);
+
   return (
-    <div className="rounded-xl h-full bg-white lg:col-span-2 md:grid grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-[#D7CACA] min-h-[610px] font-semibold text-sm">
+    <div className="rounded-xl h-full bg-white lg:col-span-2 md:grid grid-cols-2   min-h-[610px] font-semibold text-sm">
       {/* left column */}
-      <div className="p-6 lg:p-8 min-h-[610px]">
-        <div className="text-[#828995]">
-          <div className="mb-10 flex items-center gap-5 justify-between">
-            <span className="flex items-center gap-2">
-              <p className="text-[#8E949F] text-lg">Profit</p>
-              <span className="bg-primary size-4 rounded-full" />
-            </span>
-            <h5 className="text-[#3C485C] font-bold text-2xl lg:text-3xl xl:text-[32px]">
-              C$ 9.13
-            </h5>
-          </div>
-
-          <div className="border-y border-[#E5E5E5] py-10 flex flex-col gap-4">
-            <span className="flex gap-5 justify-between items-center">
-              <p>Sales Price</p>
-              <p>C$ 30.08</p>
-            </span>
-            <span className="flex gap-5 justify-between items-center">
-              <p>Cost Price</p>
-              <p>C$ 5.00</p>
-            </span>
-            <span className="flex gap-5 justify-between items-center">
-              <p>Total Fees</p>
-              <p>C$ 15.00</p>
-            </span>
-            <span className="flex gap-5 justify-between items-center">
-              <p>Sales Tax</p>
-              <p>C$ 0.95</p>
-            </span>
-            <span className="flex gap-5 justify-between items-center">
-              <p>Est. Amazon Payout</p>
-              <p>C$14.13</p>
+      <div className="min-h-[610px]">
+        {children || (
+          <div className="p-4">
+            <span className="bg-[#F3F4F6] px-3 py-1.5 rounded-3xl text-[#676A75] font-semibold text-sm w-max">
+              Profitability Calculator
             </span>
           </div>
-        </div>
-
-        <div className="mt-8">
-          <p className="text-[#596375]">Fulfilment Type</p>
-          <div className="flex items-center gap-4 mt-2">
-            <button
-              type="button"
-              className="bg-[#FF8551] px-6 py-2 rounded-full text-white"
-            >
-              FBA
-            </button>
-            <button
-              type="button"
-              className="border border-[#D2D2D2] px-6 py-2 rounded-full text-[#B0B0B1] hover:bg-gray-50"
-            >
-              FBM
-            </button>
-          </div>
-        </div>
+        )}
       </div>
 
       {/* right column */}
-      <div className="p-6 lg:p-8 flex flex-col items-center justify-center text-center min-h-[610px]">
-        <svg
-          width="129"
-          height="129"
-          viewBox="0 0 129 129"
-          fill="none"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <path
-            d="M129 64.5C129 100.122 100.122 129 64.5 129C28.8776 129 0 100.122 0 64.5C0 28.8776 28.8776 0 64.5 0C100.122 0 129 28.8776 129 64.5ZM28.0943 64.5C28.0943 84.6063 44.3937 100.906 64.5 100.906C84.6063 100.906 100.906 84.6063 100.906 64.5C100.906 44.3937 84.6063 28.0943 64.5 28.0943C44.3937 28.0943 28.0943 44.3937 28.0943 64.5Z"
-            fill="#F8F9FA"
-          />
-        </svg>
+      <div className="p-2 lg:p-3 flex flex-col items-center text-center min-h-[610px]">
+        <div className="text-[#828995] bg-[#FAFBFB] w-full p-3 rounded-xl flex-1 flex flex-col">
+          {/* Profit Section */}
+          <div className="mb-10 flex items-center gap-5 justify-between">
+            <span className="flex items-center gap-2">
+              <p className="text-[#8E949F] text-lg">Profit</p>
+              <span 
+                className="size-4 rounded-full" 
+                style={{ backgroundColor: profitColor }}
+              />
+            </span>
+            {isCalculating ? (
+              <div className="h-8 w-20 bg-gray-200 animate-pulse rounded"></div>
+            ) : (
+              <h5 className="text-[#3C485C] font-bold text-2xl lg:text-3xl xl:text-[32px]">
+                {formatCurrency(data.profitAmount)}
+              </h5>
+            )}
+          </div>
 
-        <p className="max-w-[215px] text-[#596375] mt-10">
-          Click the Break down or total fee button display information{" "}
-        </p>
+          {/* Breakdown Section */}
+          <div className=" py-10 flex flex-col gap-4 flex-1">
+            {isCalculating ? (
+              // Loading skeleton
+              Array.from({ length: 5 }).map((_, i) => (
+                <div key={i} className="flex gap-5 justify-between items-center">
+                  <div className="h-4 bg-gray-200 animate-pulse rounded w-20"></div>
+                  <div className="h-4 bg-gray-200 animate-pulse rounded w-16"></div>
+                </div>
+              ))
+            ) : (
+              <>
+                <span className="flex gap-5 justify-between items-center">
+                  <p>Sales Price</p>
+                  <p>{formatCurrency(data.salePrice)}</p>
+                </span>
+                <span className="flex gap-5 justify-between items-center">
+                  <p>Cost Price</p>
+                  <p>{formatCurrency(data.costPrice)}</p>
+                </span>
+                <span className="flex gap-5 justify-between items-center">
+                  <p>Total Fees</p>
+                  <p>{formatCurrency(data.totalFees)}</p>
+                </span>
+                <span className="flex gap-5 justify-between items-center">
+                  <p>Sales Tax</p>
+                  <p>{formatCurrency(data.vatOnFees)}</p>
+                </span>
+                <span className="flex gap-5 justify-between items-center">
+                  <p>Est. Amazon Payout</p>
+                  <p>{formatCurrency(data.estimatedAmzPayout)}</p>
+                </span>
+              </>
+            )}
+          </div>
 
-        <div className="flex items-center gap-4 mt-8">
-          <button
-            type="button"
-            className="bg-primary px-6 py-2 rounded-full text-white"
-          >
-            Breakdown
-          </button>
-          <button
-            type="button"
-            className="border border-primary px-6 py-2 rounded-full text-primary hover:bg-gray-50"
-          >
-            Total Fees
-          </button>
+        
+
+         
         </div>
       </div>
     </div>
@@ -96,4 +143,3 @@ const CalculationResults = () => {
 };
 
 export default CalculationResults;
-

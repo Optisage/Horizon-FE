@@ -61,15 +61,15 @@ const ProductOverview = ({ product, asin, marketplaceId, isLoading }: ProductOve
     }
   };
 
+ 
+
   if (isLoading || !product) {
     return (
       <div className="rounded-xl bg-white">
         <div className="p-4 lg:p-5">
           <span className="bg-[#F3F4F6] px-3 py-1.5 rounded-3xl text-[#676A75] font-semibold text-sm flex items-center gap-2 w-max">
             Product Overview
-            <span className="bg-[#FE4848] rounded-full size-[18px] flex items-center justify-center text-white text-xs font-semibold">
-              1
-            </span>
+            
           </span>
           <div className="mt-4 h-[200px] flex items-center justify-center">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
@@ -95,9 +95,7 @@ const ProductOverview = ({ product, asin, marketplaceId, isLoading }: ProductOve
       <div className="p-4 lg:p-5">
         <span className="bg-[#F3F4F6] px-3 py-1.5 rounded-3xl text-[#676A75] font-semibold text-sm flex items-center gap-2 w-max">
           Product Overview
-          <span className="bg-[#FE4848] rounded-full size-[18px] flex items-center justify-center text-white text-xs font-semibold">
-            1
-          </span>
+        
         </span>
 
         <div className="mt-4 flex flex-col sm:grid sm:grid-cols-1 lg:grid-cols-[auto_1fr] gap-4">
@@ -206,7 +204,9 @@ const ProductOverview = ({ product, asin, marketplaceId, isLoading }: ProductOve
         </div>
       </div>
 
-      <div className="border-t border-[#E7EBEE] p-4 lg:px-5 flex items-center gap-2 flex-wrap">
+
+      <div className="border-t border-[#E7EBEE] p-5 lg:px-5 flex items-center gap-2 flex-wrap">
+        {/** 
         <button
           type="button"
           className="bg-[#18CB96] rounded-lg p-2"
@@ -243,21 +243,9 @@ const ProductOverview = ({ product, asin, marketplaceId, isLoading }: ProductOve
           <GoogleIcon />
         </button>
 
-        <button
-          type="button"
-          className="bg-[#F4F5F7] rounded-lg p-2"
-          aria-label="Details"
-        >
-          <DesktopIcon />
-        </button>
+      */}
 
-        <button
-          type="button"
-          className="bg-[#F4F5F7] rounded-lg p-2"
-          aria-label="Details"
-        >
-          <RobotIcon />
-        </button>
+      
       </div>
     </div>
   );
