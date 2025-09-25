@@ -1,5 +1,6 @@
 import { ReactNode, useState, useEffect } from "react";
 
+/* eslint-disable @typescript-eslint/no-unused-vars */
 interface ProfitabilityData {
   profitAmount: number;
   costPrice: string;

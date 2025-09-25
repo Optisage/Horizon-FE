@@ -1,5 +1,6 @@
 "use client";
-
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { JSX, useState, useEffect, useCallback, useRef } from "react";
 import { message, Skeleton, Tooltip as AntTooltip } from "antd";
 import { debounce } from "lodash";

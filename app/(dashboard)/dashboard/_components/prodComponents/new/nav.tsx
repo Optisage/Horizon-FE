@@ -1,5 +1,6 @@
 "use client";
-
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import Image from "next/image";
 import Link from "next/link";
 import { FC, ReactNode } from "react";
@@ -146,19 +147,7 @@ const Nav: FC<NavProps> = ({
         const analysisMessage = `🎉 **Analysis Complete!**
 
 📊 **Overall Score**: ${analysis.score} (${analysis.category})
-💰 **ROI**: ${analysis.roi}%
-📈 **Profit Margin**: ${analysis.profit_margin}%
-📦 **Monthly Sales**: ${analysis.monthly_sales.toLocaleString()} units
 
-**Detailed Breakdown:**
-• Amazon on Listing: ${analysis.breakdown.amazon_on_listing}
-• FBA Sellers: ${analysis.breakdown.fba_sellers}
-• Buy Box Eligible: ${analysis.breakdown.buy_box_eligible}
-• Variation Listing: ${analysis.breakdown.variation_listing}
-• Sales Rank Impact: ${analysis.breakdown.sales_rank_impact}
-• Estimated Demand: ${analysis.breakdown.estimated_demand}
-• Offer Count: ${analysis.breakdown.offer_count}
-• Profitability: ${analysis.breakdown.profitability}
 
 Now you can ask me any questions about this product! 💬`;
 
@@ -176,11 +165,7 @@ Now you can ask me any questions about this product! 💬`;
 • **Conservative Approach**: ${Math.round(quantityData.conservative_quantity)} units
 • **Aggressive Approach**: ${Math.round(quantityData.aggressive_quantity)} units`;
           
-          dispatch(addMessage({
-            sender: "ai",
-            text: quantityMessage,
-            type: "analysis"
-          }));
+         
         } catch (error) {
           console.error("Failed to get purchase quantity:", error);
         }

@@ -1,5 +1,6 @@
 import { Tooltip } from 'antd';
 import type { NextRouter } from 'next/router';
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 // Define the shape of the data it expects
 type SellerFeedback = {

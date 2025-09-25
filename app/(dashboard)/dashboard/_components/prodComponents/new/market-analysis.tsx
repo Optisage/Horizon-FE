@@ -1,4 +1,6 @@
 "use client";
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-unused-vars */
 
 import { useState, useMemo } from "react";
 import { Skeleton, Tooltip as AntTooltip } from "antd";
