@@ -13,7 +13,8 @@ const GoCompareLoader: React.FC<GoCompareLoaderProps> = ({ asin, storeNames, isL
   const [animatedProgress, setAnimatedProgress] = useState<number[]>([]);
   const [isCompilingResults, setIsCompilingResults] = useState(false);
 
-  const steps = [
+  // Use fixed steps when storeNames is empty to ensure consistent 33%, 66%, 100% progression
+  const steps = storeNames.length > 0 ? [
     ...storeNames.map((storeName, index) => ({
       percent: `${Math.round(((index + 1) / (storeNames.length + 1)) * 100)}%`,
       description: `Searching arbitrage opportunities for ${asin} in ${storeName}...`,
@@ -25,6 +26,25 @@ const GoCompareLoader: React.FC<GoCompareLoaderProps> = ({ asin, storeNames, isL
       description: "Compiling results and finalizing data...",
       isStoreStep: false,
       storeIndex: storeNames.length,
+    }
+  ] : [
+    {
+      percent: "33%",
+      description: `Initializing search for ${asin}...`,
+      isStoreStep: true,
+      storeIndex: 0,
+    },
+    {
+      percent: "66%",
+      description: "Searching for products across marketplaces...",
+      isStoreStep: true,
+      storeIndex: 1,
+    },
+    {
+      percent: "100%",
+      description: "Compiling results and finalizing data...",
+      isStoreStep: false,
+      storeIndex: 2,
     }
   ];
 
@@ -38,6 +58,9 @@ const GoCompareLoader: React.FC<GoCompareLoaderProps> = ({ asin, storeNames, isL
     if (currentStoreIndex === 0) {
     }
 
+    // Ensure we progress through each step with consistent timing
+    const progressTiming = 15000; // 15 seconds per step
+    
     const storeInterval = setInterval(() => {
       setCurrentStoreIndex(prev => {
         if (prev < storeNames.length - 1) {
@@ -57,7 +80,7 @@ const GoCompareLoader: React.FC<GoCompareLoaderProps> = ({ asin, storeNames, isL
           return prev;
         }
       });
-    }, 45000);
+    }, progressTiming);
 
     return () => clearInterval(storeInterval);
   }, [isLoading, storeNames.length]);
@@ -75,7 +98,8 @@ const GoCompareLoader: React.FC<GoCompareLoaderProps> = ({ asin, storeNames, isL
 
     if (currentStoreIndex < storeNames.length && !isCompilingResults) {
       let progress = 0;
-      const increment = 100 / (45000 / 100); 
+      const progressTiming = 15000; // 15 seconds per step (must match storeInterval)
+      const increment = 100 / (progressTiming / 100); 
 
       const currentStoreInterval = setInterval(() => {
         progress += increment;

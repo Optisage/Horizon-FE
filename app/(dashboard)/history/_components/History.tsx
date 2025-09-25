@@ -1,20 +1,18 @@
 "use client";
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { useState, useEffect, useRef } from "react";
-import { SearchInput } from "@/app/(dashboard)/_components";
-import { useRouter } from "next/navigation";
-import Image from "next/image";
-import { GoArrowUpRight } from "react-icons/go";
-import UFO from "@/public/assets/svg/ufo.svg";
-import {
-  useGetSearchHistoryQuery,
-  useSearchProductsHistoryQuery,
-} from "@/redux/api/productsApi";
-import { useAppSelector } from "@/redux/hooks";
-import CircularLoader from "@/utils/circularLoader";
-import SalesStats from "../../dashboard/_components/SalesStats";
-import PaginationComponent from "@/utils/paginationNumber";
+import { useState, useEffect, useRef } from "react"
+import { SearchInput } from "@/app/(dashboard)/_components"
+import { useRouter } from "next/navigation"
+import Image from "next/image"
+import { GoArrowUpRight } from "react-icons/go"
+import { FiCopy, FiCheck } from "react-icons/fi"
+import UFO from "@/public/assets/svg/ufo.svg"
+import { useGetSearchHistoryQuery, useSearchProductsHistoryQuery } from "@/redux/api/productsApi"
+import { useAppSelector } from "@/redux/hooks"
+import CircularLoader from "@/utils/circularLoader"
+import SalesStats from "../../dashboard/_components/SalesStats"
+import PaginationComponent from "@/utils/paginationNumber"
 
 export interface HistoryProduct {
   asin: string;
@@ -61,15 +59,16 @@ const groupByDate = (items: HistoryProduct[]) => {
 };
 
 const History = () => {
-  const [searchValue, setSearchValue] = useState("");
-  const [debouncedSearch, setDebouncedSearch] = useState("");
-  const [isPaginationLoading, setIsPaginationLoading] = useState(false);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [totalItems, setTotalItems] = useState(0);
-  const [itemsPerPage, setItemsPerPage] = useState(10);
-  const [isMarketplaceLoading, setIsMarketplaceLoading] = useState(false);
-  const prevMarketplaceRef = useRef<string | number | null>(null);
+  const [searchValue, setSearchValue] = useState("")
+  const [debouncedSearch, setDebouncedSearch] = useState("")
+  const [isPaginationLoading, setIsPaginationLoading] = useState(false)
+  const [currentPage, setCurrentPage] = useState(1)
+  const [totalPages, setTotalPages] = useState(1)
+  const [totalItems, setTotalItems] = useState(0)
+  const [itemsPerPage, setItemsPerPage] = useState(10)
+  const [isMarketplaceLoading, setIsMarketplaceLoading] = useState(false)
+  const [copiedAsin, setCopiedAsin] = useState<string | null>(null)
+  const prevMarketplaceRef = useRef<string | number | null>(null)
 
   const router = useRouter();
   const { marketplaceId } = useAppSelector((state) => state?.global);
@@ -90,8 +89,31 @@ const History = () => {
       } else {
         return part;
       }
-    });
-  };
+    })
+  }
+
+  const copyToClipboard = async (asin: string) => {
+    try {
+      await navigator.clipboard.writeText(asin)
+      setCopiedAsin(asin)
+      setTimeout(() => setCopiedAsin(null), 2000) // Reset after 2 seconds
+    } catch (err) {
+      console.error('Failed to copy ASIN:', err)
+      // Fallback for older browsers
+      const textArea = document.createElement('textarea')
+      textArea.value = asin
+      document.body.appendChild(textArea)
+      textArea.select()
+      try {
+        document.execCommand('copy')
+        setCopiedAsin(asin)
+        setTimeout(() => setCopiedAsin(null), 2000)
+      } catch (fallbackErr) {
+        console.error('Fallback copy failed:', fallbackErr)
+      }
+      document.body.removeChild(textArea)
+    }
+  }
 
   useEffect(() => {
     const handler = setTimeout(() => {
@@ -319,11 +341,26 @@ const History = () => {
                             </span>
                           </p>
                         )}
-                        <p className="text-sm">
-                          By ASIN: {highlightText(item.asin, debouncedSearch)},
-                          UPC:{" "}
-                          {highlightText(item.upc || "N/A", debouncedSearch)}
-                        </p>
+                        <div className="flex items-center gap-2 text-sm">
+                          <span>By ASIN: {highlightText(item.asin, debouncedSearch)}</span>
+                          {item.asin !== "N/A" && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                copyToClipboard(item.asin)
+                              }}
+                              className="inline-flex items-center justify-center p-1 rounded hover:bg-gray-200 transition-colors duration-200"
+                              title="Copy ASIN"
+                            >
+                              {copiedAsin === item.asin ? (
+                                <FiCheck className="size-3 text-green-600" />
+                              ) : (
+                                <FiCopy className="size-3 text-gray-600 hover:text-gray-800" />
+                              )}
+                            </button>
+                          )}
+                          <span>, UPC: {highlightText(item.upc || "N/A", debouncedSearch)}</span>
+                        </div>
                         {item.category && (
                           <p className="text-sm">
                             {item.category === "NaN" ? "N/A" : item.category} |{" "}

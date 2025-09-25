@@ -1,9 +1,14 @@
-import SignUp from "../_components/signUp";
+import Signup from "./_components/Signup";
+import { Metadata } from "next";
 
-
-const page = () => {
-  return <SignUp />;
+export const metadata: Metadata = {
+  title: "Signup",
+  description: "Create an account to join optisage",
 };
 
-export default page;
+const SignupPage = () => {
+  return <Signup />;
+};
+
+export default SignupPage;
 

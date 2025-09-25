@@ -1,12 +1,12 @@
 "use client";
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { useState, useEffect, useRef } from "react";
-import { useRouter } from "next/navigation";
-import { useAppSelector } from "@/redux/hooks";
-import { useDispatch } from "react-redux";
-import { setIpAlert, setIpIssues } from "@/redux/slice/globalSlice";
-import { SearchInput } from "@/app/(dashboard)/_components";
+import React, { useState, useEffect, useRef, useMemo, useCallback } from "react"
+import { useRouter } from "next/navigation"
+import { useAppSelector } from "@/redux/hooks"
+import { useDispatch } from "react-redux"
+import { setIpAlert, setIpIssues } from "@/redux/slice/globalSlice"
+import { SearchInput } from "@/app/(dashboard)/_components"
 import {
   useGetBuyboxDetailsQuery,
   useGetItemQuery,
@@ -36,14 +36,12 @@ interface IpAlertState {
   eligibility: boolean;
 }
 
-const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
-  const productStatsRef = useRef<{
-    handleProfitabilityUpdate: (data: any) => void;
-  } | null>(null);
-  const dispatch = useDispatch();
-  const router = useRouter();
-  const [getIpAlert] = useLazyGetIpAlertQuery();
-  const [ipData, setIpData] = useState<IpAlertData | null>(null);
+const ProductDetails = React.memo(({ asin, marketplaceId }: ProductDetailsProps) => {
+  const productStatsRef = useRef<{ handleProfitabilityUpdate: (data: any) => void } | null>(null)
+  const dispatch = useDispatch()
+  const router = useRouter()
+  const [getIpAlert] = useLazyGetIpAlertQuery()
+  const [ipData, setIpData] = useState<IpAlertData | null>(null)
   const { setIpIssue, eligibility } = useAppSelector(
     (state) =>
       (state?.global?.ipAlert as IpAlertState) || {
@@ -74,40 +72,63 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
   const previousMarketplaceId = useRef(marketplaceId);
 
   // Loading step state
-  const [loadingStep, setLoadingStep] = useState(0);
-  const [isFullyLoaded, setIsFullyLoaded] = useState(false);
-  const hasMounted = useRef(false);
+  const [loadingStep, setLoadingStep] = useState(0)
+  const [isFullyLoaded, setIsFullyLoaded] = useState(false)
+  const hasMounted = useRef(false)
+
+  // Memoize query parameters to prevent unnecessary re-renders
+  const queryParams = useMemo(() => ({
+    marketplaceId,
+    itemAsin: asin,
+  }), [asin, marketplaceId]);
+
+  const marketAnalysisParams = useMemo(() => ({
+    marketplaceId,
+    itemAsin: asin,
+    statStartDate: dayjs().format("YYYY-MM-DD"),
+    statEndDate: dayjs().add(1, "month").format("YYYY-MM-DD"),
+  }), [asin, marketplaceId]);
+
+  // Add loading guard to prevent queries when essential data is missing
+  const shouldSkipQueries = !asin || !marketplaceId || marketplaceId === 0;
 
   // RTK Query hooks with isFetching
   const {
     data: buyboxDetailsData,
     isLoading: isLoadingBuybox,
     isFetching: isFetchingBuybox,
-  } = useGetBuyboxDetailsQuery({
-    marketplaceId,
-    itemAsin: asin,
-  });
+  } = useGetBuyboxDetailsQuery(
+    queryParams,
+    {
+      skip: shouldSkipQueries,
+      refetchOnMountOrArgChange: false,
+    }
+  )
 
   const {
     data,
     error,
     isLoading: isLoadingItem,
     isFetching: isFetchingItem,
-  } = useGetItemQuery({
-    marketplaceId,
-    itemAsin: asin,
-  });
+  } = useGetItemQuery(
+    queryParams,
+    {
+      skip: shouldSkipQueries,
+      refetchOnMountOrArgChange: false,
+    }
+  )
 
   const {
     data: marketAnalysisData,
     isLoading: isLoadingMarketAnalysis,
     isFetching: isFetchingMarketAnalysis,
-  } = useGetMarketAnalysisQuery({
-    marketplaceId,
-    itemAsin: asin,
-    statStartDate: dayjs().format("YYYY-MM-DD"),
-    statEndDate: dayjs().add(1, "month").format("YYYY-MM-DD"),
-  });
+  } = useGetMarketAnalysisQuery(
+    marketAnalysisParams,
+    {
+      skip: shouldSkipQueries,
+      refetchOnMountOrArgChange: false,
+    }
+  )
 
   // Combined fetching state
   const isAnyQueryFetching =
@@ -165,16 +186,20 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
     }
   }, [marketplaceId, dispatch]);
 
-  // Reset marketplace changing state when all queries finish
+  // Reset marketplace changing state when all queries finish with memoized condition
+  const shouldResetMarketplaceChanging = useMemo(() => {
+    return isMarketplaceChanging && !isAnyQueryFetching
+  }, [isMarketplaceChanging, isAnyQueryFetching])
+
   useEffect(() => {
-    if (isMarketplaceChanging && !isAnyQueryFetching) {
+    if (shouldResetMarketplaceChanging) {
       // Add a small delay to ensure smooth transition
       const timer = setTimeout(() => {
         setIsMarketplaceChanging(false);
       }, 300);
       return () => clearTimeout(timer);
     }
-  }, [isMarketplaceChanging, isAnyQueryFetching]);
+  }, [shouldResetMarketplaceChanging])
 
   // Reset IP data immediately when ASIN changes
   useEffect(() => {
@@ -190,37 +215,37 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
     setLoadingStep(0);
   }, [asin, dispatch]);
 
-  // Fetch IP data
-  useEffect(() => {
-    const fetchIpData = async () => {
-      setIsLoadingIpData(true);
-      try {
-        const response = await getIpAlert({
-          itemAsin: asin,
-          marketplaceId,
-          statStartDate,
-          statEndDate,
-        }).unwrap();
-        dispatch(
-          setIpAlert({
-            setIpIssue: response?.data?.ip_analysis?.issues ?? 0,
-            eligibility: response?.data?.eligible_to_sell ?? false,
-          })
-        );
-        dispatch(setIpIssues(response?.data?.ip_analysis?.issues ?? []));
-        setIpData(response.data as IpAlertData);
-        setLoadingStep((prev) => Math.min(prev + 1, 4));
-      } catch (error) {
-        console.error("Error fetching IP alert:", error);
-      } finally {
-        setIsLoadingIpData(false);
-      }
-    };
-
-    if (asin && marketplaceId) {
-      fetchIpData();
+  // Fetch IP data with optimized dependencies
+  const fetchIpData = useCallback(async () => {
+    if (!asin || !marketplaceId || marketplaceId === 0) return;
+    
+    setIsLoadingIpData(true)
+    try {
+      const response = await getIpAlert({
+        itemAsin: asin,
+        marketplaceId,
+        statStartDate,
+        statEndDate,
+      }).unwrap()
+      dispatch(
+        setIpAlert({
+          setIpIssue: response?.data?.ip_analysis?.issues ?? 0,
+          eligibility: response?.data?.eligible_to_sell ?? false,
+        }),
+      )
+      dispatch(setIpIssues(response?.data?.ip_analysis?.issues ?? []))
+      setIpData(response.data as IpAlertData)
+      setLoadingStep((prev) => Math.min(prev + 1, 4))
+    } catch (error) {
+      console.error("Error fetching IP alert:", error)
+    } finally {
+      setIsLoadingIpData(false)
     }
-  }, [asin, marketplaceId, dispatch, getIpAlert, statStartDate, statEndDate]);
+  }, [asin, marketplaceId, statStartDate, statEndDate, getIpAlert, dispatch])
+
+  useEffect(() => {
+    fetchIpData()
+  }, [fetchIpData])
 
   // Update loading steps based on API responses
   useEffect(() => {
@@ -241,29 +266,24 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
     }
   }, [isLoadingMarketAnalysis, marketAnalysisData]);
 
-  // Set fully loaded when all steps are complete
+  // Set fully loaded when all steps are complete with memoized condition
+  const isAllDataLoaded = useMemo(() => {
+    return loadingStep >= 4 && 
+           !isLoadingItem && 
+           !isLoadingBuybox && 
+           !isLoadingIpData && 
+           !isLoadingMarketAnalysis
+  }, [loadingStep, isLoadingItem, isLoadingBuybox, isLoadingIpData, isLoadingMarketAnalysis])
+
   useEffect(() => {
-    if (
-      loadingStep >= 4 &&
-      !isLoadingItem &&
-      !isLoadingBuybox &&
-      !isLoadingIpData &&
-      !isLoadingMarketAnalysis &&
-      !hasMounted.current
-    ) {
-      hasMounted.current = true;
+    if (isAllDataLoaded && !hasMounted.current) {
+      hasMounted.current = true
       const timer = setTimeout(() => {
         setIsFullyLoaded(true);
       }, 500);
       return () => clearTimeout(timer);
     }
-  }, [
-    loadingStep,
-    isLoadingItem,
-    isLoadingBuybox,
-    isLoadingIpData,
-    isLoadingMarketAnalysis,
-  ]);
+  }, [isAllDataLoaded])
 
   if (error) {
     return (
@@ -344,6 +364,8 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
                   buyboxDetails={buyboxDetailsData?.data}
                   isLoading={false}
                   ref={productStatsRef}
+                  asin={asin}          
+  marketplaceId={marketplaceId}
                 />
               </div>
 
@@ -413,7 +435,7 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
         )}
       </section>
     </>
-  );
-};
-
+  )
+});
+ProductDetails.displayName = "ProductDetails";
 export default ProductDetails;

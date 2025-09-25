@@ -140,11 +140,11 @@ const RenewSubscription = () => {
         .then((res) => {
           router.push(`${res?.data?.url}`)
           messageApi.success("redirecting to checkout...");
-          console.log(res);
+         
         })
         .catch((err) => {
           messageApi.error(err?.data?.message || "renewal failed")
-          console.log(err);
+         
         });
     };
 
