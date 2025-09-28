@@ -2,8 +2,22 @@ import Image from "next/image";
 import { CustomSelect as Select } from "@/lib/AntdComponents";
 import { HiOutlineDocumentArrowDown, HiOutlinePrinter } from "react-icons/hi2";
 import ExcelIcon from "@/public/assets/svg/excel-icon.svg";
+import { baseUrl } from "@/redux/queryInterceptor";
 
 const Header = () => {
+  const handleDownloadTemplate = () => {
+    // Create download URL from the endpoint
+    const downloadUrl = `${baseUrl}/upc-scanner/download-template`;
+    
+    // Create an anchor element and trigger download
+    const link = document.createElement('a');
+    link.href = downloadUrl;
+    link.setAttribute('download', 'upc-template.xlsx');
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   return (
     <div className="p-3 sm:p-4 rounded-xl border border-border flex flex-col lg:flex-row gap-4 justify-between xl:items-center">
       <div className="flex flex-col sm:flex-row sm:items-center gap-2">
@@ -37,6 +51,7 @@ const Header = () => {
         </button>
         <button
           type="button"
+          onClick={handleDownloadTemplate}
           className="flex items-center gap-1.5 hover:bg-gray-50 rounded-full text-[#8C94A2] border border-border font-semibold py-2 px-4"
         >
           <Image
