@@ -164,12 +164,7 @@ const TopSellers = ({ asin, marketplaceId }: TopSellersProps) => {
         </div>
         {/* FILTERS */}
         <div className="flex items-center gap-3">
-          <span className=" text-xs text-[#8C94A2] text-nowrap">Filter by</span>
-          <Select
-            options={[{ value: "current", label: "Current" }]}
-            style={{ width: "100%", maxWidth: 300, borderRadius: 100, height: 35 }}
-            placeholder="Current"
-          />
+        
           <ProductDatePicker />
         </div>
       </div>

@@ -10,6 +10,7 @@ import CountrySelect from "./CountrySelect";
 import { useState } from "react";
 import SearchInput from "./SearchInput";
 import UserProfile from "./UserProfile";
+import { VscBell, VscBellDot } from "react-icons/vsc";
 
 const DashNav = () => {
   // const router = useRouter();
@@ -86,13 +87,13 @@ const DashNav = () => {
           </span> */}
 
           <CountrySelect />
-
+          <VscBell size={25} color="#18cb96" />
           <UserProfile />
         </div>
 
         <label
           htmlFor="my-drawer-2"
-          className="block lg:hidden text-primary-400 md:ml-4"
+          className="block lg:hidden text-primary-400 md:ml-4 "
         >
           <CgMenuRightAlt size="25" />
         </label>
@@ -102,4 +103,3 @@ const DashNav = () => {
 };
 
 export default DashNav;
-

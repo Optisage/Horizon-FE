@@ -393,10 +393,12 @@ Now you can ask me any questions about this product! 💬`;
           </div>
 
           <span className="flex gap-3 items-center">
+            {/** 
             <Link href="" className="text-[10px] text-[#5B656C] hover:underline">
               How to use <br />
               Watch Tutorial
             </Link>
+            */}
             <svg
               width="17"
               height="17"

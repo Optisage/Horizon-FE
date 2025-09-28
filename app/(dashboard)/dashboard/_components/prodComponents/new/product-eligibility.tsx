@@ -128,7 +128,8 @@ const ProductEligibility = ({
                 Some alerts require you to be logged in to Seller Central
               </p>
               <Link
-                href=""
+                href="https://sellercentral.amazon.com/"
+                target="_blank"
                 className="bg-white hover:bg-gray-50 transition-colors duration-200 text-black py-1.5 px-4 rounded-[10px]"
               >
                 Login
