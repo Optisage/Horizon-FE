@@ -15,7 +15,7 @@ export default function StripeCheckout() {
   const router = useRouter();
   const status = searchParams.get("status");
   const [loading, setLoading] = useState(false);
-  const [failed, setFailed] = useState(status !== "success");//
+  const [failed, setFailed] = useState(status !== "success");
   const [verifySubscription] = useVerifyStripeSubscriptionMutation();
   const [verificationToken, setVerificationToken] = useState<string>("");
 
@@ -23,6 +23,7 @@ export default function StripeCheckout() {
   const firstName = searchParams.get("firstName") || "";
   const lastName = searchParams.get("lastName") || "";
   const step = searchParams.get("step") || "2";
+  const isRenewal = searchParams.get("isRenewal") === "1";
 
   // Construct full name
   const fullName = `${firstName} ${lastName}`.trim();
@@ -56,20 +57,28 @@ export default function StripeCheckout() {
   }, [searchParams, verifySubscription]);
 
   const handleContinueRegistration = () => {
-    // Create URL params for the signup page
-    const params = new URLSearchParams();
-    if (email) params.set("email", email);
-    if (fullName) params.set("fullname", fullName);
-    if (step) params.set("step", "2");
-    if (verificationToken) params.set("token", verificationToken);
+    if (isRenewal) {
+      // For renewal, redirect to login page
+      router.push("/");
+    } else {
+      // For new signups, continue with registration
+      const params = new URLSearchParams();
+      if (email) params.set("email", email);
+      if (fullName) params.set("fullname", fullName);
+      if (step) params.set("step", "2");
+      if (verificationToken) params.set("token", verificationToken);
 
-    // Navigate to signup page with user data and token
-    router.push(`/signUp?${params.toString()}`);
+      router.push(`/signUp?${params.toString()}`);
+    }
   };
 
   const handleRetryPayment = () => {
-    // Redirect back to pricing page
-    window.location.href = "https://optisage.ai/#pricing";
+    // Redirect back to pricing page or renewal page based on isRenewal
+    if (isRenewal) {
+      router.push("/renewSubscription");
+    } else {
+      window.location.href = "https://optisage.ai/#pricing";
+    }
   };
 
   return (
@@ -125,16 +134,19 @@ export default function StripeCheckout() {
                 ) : (
                   <div className="text-center space-y-4">
                     <h1 className="font-bold text-3xl mb-6">
-                      Payment Successful!
+                      {isRenewal ? "Renewal Successful!" : "Payment Successful!"}
                     </h1>
                     <div className="space-y-5">
                       <p className="text-[#42444A] text-sm font-normal">
-                        Thank you for subscribing to optisage! Your payment has
-                        been processed successfully.
+                        {isRenewal
+                          ? "Thank you for renewing your subscription! Your payment has been processed successfully."
+                          : "Thank you for subscribing to optisage! Your payment has been processed successfully."}
                       </p>
                      
                       <p className="text-sm text-[#42444A] font-semibold">
-                        Let's complete your account setup to get started.
+                        {isRenewal
+                          ? "You can now continue to your dashboard."
+                          : "Let's complete your account setup to get started."}
                       </p>
                     </div>
                     <div className="mt-10">
@@ -142,7 +154,7 @@ export default function StripeCheckout() {
                         className="w-full !border-none !rounded-2xl !font-semibold !text-base py-2 !h-[55px] !bg-[#18CB96] hover:!bg-primary/90 !text-white"
                         onClick={handleContinueRegistration}
                       >
-                        Continue Registration
+                        {isRenewal ? "Continue to Dashboard" : "Continue Registration"}
                       </Button>
                     </div>
                   </div>
