@@ -916,6 +916,7 @@ const [subscribe, { isLoading }] = useSignupMutation();
 
       <Link href={amazonAuthUrl} target="_blank">
         <button className="w-full border border-[#EDEDED] px-5 py-3 rounded-[10px] flex items-center gap-4 hover:bg-gray-50 transition-colors duration-200 mb-4">
+         
           <Image
             src="https://avatar.iran.liara.run/public/38"
             alt="Avatar"
@@ -932,7 +933,10 @@ const [subscribe, { isLoading }] = useSignupMutation();
             <span className="bg-[#FFC56E66] rounded-full py-1 px-3 text-xs text-[#7E5806] mt-1.5">
               Login to Connect Store
             </span>
+           
+           
           </span>
+           <span className=" text-xs font-semibold">Optional</span>
 
           <HiMiniArrowLongRight className="size-5 text-[#0F172A]" />
         </button>

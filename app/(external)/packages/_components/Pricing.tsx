@@ -233,33 +233,12 @@ export default function Packages() {
         }
       }
 
-      // Get notes and billing information
+      // Get notes - matching renewSubscription component logic
       const notes = plan.meta_data.notes || [];
-      const billingNote =
-        plan.meta_data.billing_note ||
-        (plan.interval === "year" ? `Annual billing` : "Monthly billing");
+      const displayNotes = notes.length > 0 ? notes : [plan.interval === "year" ? "Annual billing" : "Monthly billing"];
 
-      // For monthly plans, prioritize upgrade notes and avoid annual billing notes
-      // For annual plans, use billing notes or upgrade notes
-      let upgradeNote;
-      if (plan.interval === "month") {
-        // For monthly plans, find upgrade note or support note, avoid annual billing mentions
-        upgradeNote =
-          notes.find(
-            (note) =>
-              note.includes("upgrade") && !note.toLowerCase().includes("annual")
-          ) ||
-          notes.find((note) => note.includes("Support")) ||
-          "Monthly subscription";
-      } else {
-        // For annual plans, use billing note or any relevant note
-        upgradeNote =
-          billingNote ||
-          notes.find((note) => note.includes("upgrade")) ||
-          notes.find((note) => note.includes("Support")) ||
-          "Annual subscription";
-      }
- const isDisabled = plan.name.toUpperCase() == "SAGE";
+      const isDisabled = plan.name.toUpperCase() == "SAGE";
+      
       return {
         id: plan.id,
         name: plan.name, // Keep original name without modification
@@ -268,8 +247,8 @@ export default function Packages() {
         priceLabel,
         description,
         features,
-        note: upgradeNote,
-        buttonText: billingNote,
+        notes: displayNotes,
+        buttonText: plan.trial > 0 ? "Start Free Trial" : "Get Started",
         isDefaultHighlighted,
         stripePriceId: plan.id,
         interval: plan.interval,
@@ -524,13 +503,16 @@ export default function Packages() {
                     </ul>
                   </div>
                   <div className="mt-6">
-                    <p
-                      className={`text-sm text-[#006D4B] w-full py-3 px-5 font-medium rounded-md bg-[#E0F4EE] text-center ${
-                        isHighlighted ? "" : ""
-                      }`}
-                    >
-                      {plan.note}
-                    </p>
+                    <div className="space-y-2 mb-3">
+                      {plan.notes.map((note, noteIdx) => (
+                        <p
+                          key={noteIdx}
+                          className={`text-sm text-[#006D4B] w-full py-2 px-5 font-medium rounded-md bg-[#E0F4EE] text-center`}
+                        >
+                          {note}
+                        </p>
+                      ))}
+                    </div>
                      <button
                       onClick={(e) => {
                         e.stopPropagation(); // Prevent card selection when clicking button
