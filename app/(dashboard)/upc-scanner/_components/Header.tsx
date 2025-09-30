@@ -2,21 +2,45 @@ import Image from "next/image";
 import { CustomSelect as Select } from "@/lib/AntdComponents";
 import { HiOutlineDocumentArrowDown, HiOutlinePrinter } from "react-icons/hi2";
 import ExcelIcon from "@/public/assets/svg/excel-icon.svg";
-import { baseUrl } from "@/redux/queryInterceptor";
+import { useCallback } from "react";
 
+// If the API server serves the template directly
 const Header = () => {
-  const handleDownloadTemplate = () => {
-    // Create download URL from the endpoint
-    const downloadUrl = `${baseUrl}/upc-scanner/download-template`;
-    
-    // Create an anchor element and trigger download
-    const link = document.createElement('a');
-    link.href = downloadUrl;
-    link.setAttribute('download', 'upc-template.xlsx');
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
+  const handleDownloadTemplate = useCallback(() => {
+    // Access the API endpoint with credentials
+    fetch('/api/upc-scanner/download-template', {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include', // Important for including cookies/auth
+    })
+      .then(response => {
+        if (!response.ok) {
+          throw new Error('Network response was not ok');
+        }
+        return response.blob();
+      })
+      .then(blob => {
+        // Create a URL for the blob
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.setAttribute('download', 'upc-template.xlsx');
+        
+        // Append to the document body, click it, then remove it
+        document.body.appendChild(link);
+        link.click();
+        
+        // Clean up
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+      })
+      .catch(error => {
+        console.error('Error downloading template:', error);
+        alert('Failed to download template. Please try again.');
+      });
+  }, []);
 
   return (
     <div className="p-3 sm:p-4 rounded-xl border border-border flex flex-col lg:flex-row gap-4 justify-between xl:items-center">
@@ -70,4 +94,3 @@ const Header = () => {
 };
 
 export default Header;
-

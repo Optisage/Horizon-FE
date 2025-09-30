@@ -3,7 +3,7 @@
 import { Tooltip } from "antd";
 import { CustomTable as Table } from "@/lib/AntdComponents";
 import type { ColumnsType } from "antd/es/table";
-import { FC } from "react";
+import { FC, useEffect, useState } from "react";
 import { HiArrowPath, HiEllipsisVertical, HiPrinter } from "react-icons/hi2";
 
 interface ProductData {
@@ -18,7 +18,22 @@ interface ProductData {
   status: "Pending" | "Completed";
 }
 
-const data: ProductData[] = [
+// Interface for API scan result
+interface ScanResult {
+  id: number;
+  product_name: string;
+  product_id: string | null;
+  items_count: number;
+  products_found: number;
+  last_seen: string;
+  last_uploaded: string;
+  status: string;
+  marketplace_id: string;
+  user_id: number;
+}
+
+// Example data for testing
+const initialData: ProductData[] = [
   {
     key: "1",
     index: 1,
@@ -54,7 +69,43 @@ const data: ProductData[] = [
   })),
 ];
 
-const ScanResultsTable: FC = () => {
+interface ScanResultsTableProps {
+  newScan?: ScanResult;
+}
+
+const ScanResultsTable: FC<ScanResultsTableProps> = ({ newScan }) => {
+  const [data, setData] = useState<ProductData[]>(initialData);
+
+  // Format dates from ISO to MM/DD/YY
+  const formatDate = (isoDate: string): string => {
+    try {
+      const date = new Date(isoDate);
+      return `${(date.getMonth() + 1).toString().padStart(2, '0')}/${date.getDate().toString().padStart(2, '0')}/${date.getFullYear().toString().substr(-2)}`;
+    } catch (e) {
+      return isoDate;
+    }
+  };
+
+  // Add new scan to the table when it arrives
+  useEffect(() => {
+    if (newScan) {
+      const formattedScan: ProductData = {
+        key: newScan.id.toString(),
+        index: 0, // Will be set by table rendering
+        name: newScan.product_name,
+        productId: newScan.product_id || 'N/A',
+        items: newScan.items_count,
+        found: newScan.products_found,
+        lastSeen: formatDate(newScan.last_seen),
+        lastUploaded: formatDate(newScan.last_uploaded),
+        status: newScan.status === "pending" ? "Pending" : "Completed",
+      };
+
+      // Add new scan to the top of the list
+      setData(prevData => [formattedScan, ...prevData]);
+    }
+  }, [newScan]);
+
   const columns: ColumnsType<ProductData> = [
     {
       title: "#",
@@ -175,4 +226,3 @@ const ScanResultsTable: FC = () => {
 };
 
 export default ScanResultsTable;
-
