@@ -227,7 +227,7 @@ const Subscriptions = () => {
   }
 
   return (
-    <section className="flex flex-col gap-8 min-h-[50dvh] md:min-h-[80dvh]">
+    <section className="flex flex-col gap-8 min-h-[50dvh] md:min-h-[80dvh] rounded-xl bg-white p-4 lg:p-5">
       {contextHolder}
       <div className=" flex items-center justify-between">
         <Heading
