@@ -116,15 +116,6 @@ const ScanResultsTable: FC<ScanResultsTableProps> = ({
     setData(formattedData);
   }, [scanResults]);
 
-  // Add new scan to the table when it arrives
-  useEffect(() => {
-    if (newScan) {
-      const formattedScan = formatScanResult(newScan);
-      // Add new scan to the top of the list
-      setData(prevData => [formattedScan, ...prevData]);
-    }
-  }, [newScan]);
-
   const columns: ColumnsType<ProductData> = [
     {
       title: "#",
