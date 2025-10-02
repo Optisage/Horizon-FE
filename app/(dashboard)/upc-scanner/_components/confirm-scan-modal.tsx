@@ -5,20 +5,43 @@ import { Modal } from "antd";
 import { IoClose } from "react-icons/io5";
 import ScanVector from "@/public/assets/svg/ufc-scan-vector.svg";
 
-const ConfirmScanModal = () => {
+interface ConfirmScanModalProps {
+  scanId?: number;
+  productName?: string;
+  onConfirm: (scanId: number) => void;
+  trigger?: React.ReactNode;
+}
+
+const ConfirmScanModal: React.FC<ConfirmScanModalProps> = ({
+  scanId = 0,
+  productName = "this product",
+  onConfirm,
+  trigger
+}) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const showModal = () => setIsModalOpen(true);
   const handleCancel = () => setIsModalOpen(false);
+  
+  const handleConfirm = () => {
+    if (scanId) {
+      onConfirm(scanId);
+    }
+    handleCancel();
+  };
 
   return (
     <>
-      <button
-        onClick={showModal}
-        className="bg-primary text-white px-4 py-2 rounded"
-      >
-        Open Modal
-      </button>
+      {trigger ? (
+        <span onClick={showModal}>{trigger}</span>
+      ) : (
+        <button
+          onClick={showModal}
+          className="bg-primary text-white px-4 py-2 rounded"
+        >
+          Open Modal
+        </button>
+      )}
 
       <Modal
         open={isModalOpen}
@@ -50,7 +73,7 @@ const ConfirmScanModal = () => {
           {/* Header */}
           <div className="absolute top-3 z-10 w-full flex items-center justify-between gap-8 px-4 border-b pb-3">
             <h4 className="text-[#0A0A0A] font-medium text-lg">
-              Replace Product Scanner
+              Refresh Product Scan
             </h4>
             <button
               onClick={handleCancel}
@@ -64,8 +87,8 @@ const ConfirmScanModal = () => {
           {/* Modal Content */}
           <div className="pb-6 p-4">
             <div className="bg-[#FAF5EC] rounded-2xl p-4 text-center flex flex-col gap-4">
-              <p className="text-[#CA7D09] font-medium text-base max-w-[250px] mx-auto">
-                Are you sure you want to run another scan?
+              <p className="text-[#CA7D09] font-medium text-base max-w-[300px] mx-auto">
+                Are you sure you want to refresh the scan for {productName}?
               </p>
               <div className="flex items-center justify-center gap-4">
                 <button
@@ -77,7 +100,7 @@ const ConfirmScanModal = () => {
                 </button>
                 <button
                   type="button"
-                  onClick={handleCancel}
+                  onClick={handleConfirm}
                   className="bg-[#FFC56E] border border-[#F6E6CF] rounded-[10px] px-6 py-2 text-black text-sm font-medium"
                 >
                   Yes

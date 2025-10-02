@@ -29,11 +29,22 @@ export async function POST(
       },
     });
 
-    // Get the response data
-    const data = await response.json();
+    // Check if response is empty before parsing
+    const text = await response.text();
+    
+    // Handle empty response
+    if (!text || text.trim() === '') {
+      return NextResponse.json(
+        { status: 200, message: 'Scan restart initiated', data: null },
+        { status: 200 }
+      );
+    }
+    
+    // Parse JSON if response has content
+    const data = text ? JSON.parse(text) : null;
 
     // Return the API response
-    return NextResponse.json(data, { status: response.status });
+    return NextResponse.json(data || { status: 200, message: 'Scan restart initiated' }, { status: response.status });
   } catch (error) {
     console.error('Error restarting UPC scan:', error);
     return NextResponse.json(

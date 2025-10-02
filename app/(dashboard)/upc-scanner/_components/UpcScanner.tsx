@@ -7,6 +7,7 @@ import ScanResultsTable from "./scan-results-table";
 import { HiOutlineCloudArrowUp } from "react-icons/hi2";
 import { HiChevronDown } from "react-icons/hi";
 import ExcelUploadForm from "./ExcelUploadForm";
+import { message } from "antd";
 
 type Tab = "upc" | "new";
 
@@ -95,7 +96,15 @@ const UpcScanner = () => {
   };
   
   // Handle refreshing a specific scan
-  const handleRefreshScan = (scanId: number, updatedScan: ScanResult) => {
+  const handleRefreshScan = (scanId: number, updatedScan: ScanResult | null) => {
+    // If updatedScan is null (empty response), just mark the scan as refreshing
+    if (updatedScan === null) {
+      // We don't update the scan data since the backend is processing it
+      // The user will need to refresh the page to see updated data
+      message.info("Scan refresh initiated. The scan is being refreshed. Please check back in a moment.");
+      return;
+    }
+    
     // Update the specific scan in the results list
     setScanResults(prev => 
       prev.map(scan => scan.id === scanId ? updatedScan : scan)

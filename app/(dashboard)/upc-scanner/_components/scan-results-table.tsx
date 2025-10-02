@@ -6,6 +6,7 @@ import type { ColumnsType } from "antd/es/table";
 import { FC, useEffect, useState } from "react";
 import { HiArrowPath, HiEllipsisVertical, HiPrinter } from "react-icons/hi2";
 import { ScanResult } from "./UpcScanner";
+import ConfirmScanModal from "./confirm-scan-modal";
 
 interface ProductData {
   key: string;
@@ -60,7 +61,7 @@ interface ScanResultsTableProps {
   scanResults: ScanResult[];
   newScan?: ScanResult;
   isLoading: boolean;
-  onRefreshScan?: (scanId: number, updatedScan: ScanResult) => void;
+  onRefreshScan?: (scanId: number, updatedScan: ScanResult | null) => void;
 }
 
 const ScanResultsTable: FC<ScanResultsTableProps> = ({ 
@@ -109,9 +110,25 @@ const ScanResultsTable: FC<ScanResultsTableProps> = ({
         },
       });
       
-      const result = await response.json();
+      // Check if response is ok before trying to parse JSON
+      if (!response.ok) {
+        throw new Error(`Server responded with status: ${response.status}`);
+      }
       
-      if (response.ok && result.status === 200) {
+      // Check if response has content before parsing
+      const text = await response.text();
+      if (!text || text.trim() === '') {
+        // Handle empty response as success
+        if (onRefreshScan) {
+          onRefreshScan(scanId, null);
+        }
+        return;
+      }
+      
+      // Parse the JSON text
+      const result = JSON.parse(text);
+      
+      if (result.status === 200) {
         // Call the parent component's handler with the updated scan
         if (onRefreshScan) {
           onRefreshScan(scanId, result.data);
@@ -230,19 +247,25 @@ const ScanResultsTable: FC<ScanResultsTableProps> = ({
         
         return (
           <div className="flex gap-2">
-            <Tooltip title="Refresh">
-              <button 
-                type="button" 
-                aria-label="Refresh" 
-                onClick={() => handleRefreshScan(scanId)}
-                disabled={isRefreshing}
-              >
-                <HiArrowPath
-                  size={24}
-                  className={`${isRefreshing ? 'animate-spin text-primary' : 'text-[#8C94A3] hover:text-black'}`}
-                />
-              </button>
-            </Tooltip>
+            <ConfirmScanModal
+              scanId={scanId}
+              productName={record.name}
+              onConfirm={handleRefreshScan}
+              trigger={
+                <Tooltip title="Refresh">
+                  <button 
+                    type="button" 
+                    aria-label="Refresh" 
+                    disabled={isRefreshing}
+                  >
+                    <HiArrowPath
+                      size={24}
+                      className={`${isRefreshing ? 'animate-spin text-primary' : 'text-[#8C94A3] hover:text-black'}`}
+                    />
+                  </button>
+                </Tooltip>
+              }
+            />
             <Tooltip title="Print">
               <button type="button" aria-label="Print">
                 <HiPrinter
