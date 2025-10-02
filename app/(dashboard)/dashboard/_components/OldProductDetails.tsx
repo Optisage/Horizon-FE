@@ -20,7 +20,7 @@ import ProfitabilityCalculator from "./prodComponents/profitability-calculator";
 import ProductStats from "./prodComponents/product-stats";
 import OffersSection from "./prodComponents/offers-section";
 import RanksPricesSection from "./prodComponents/ranks-prices-section";
-import BuyBoxAnalysis from "./prodComponents/buy-box-analysis";
+import OldBuyBoxAnalysis from "./prodComponents/buy-box-analysis";
 import MarketAnalysis from "./prodComponents/market-analysis";
 import SearchResults from "./prodComponents/search-results";
 import type { IpAlertData } from "./prodComponents/types";
@@ -382,7 +382,7 @@ const ProductDetails = React.memo(({ asin, marketplaceId }: ProductDetailsProps)
                   marketplaceId={marketplaceId}
                   isLoading={false}
                 />
-                <BuyBoxAnalysis
+                <OldBuyBoxAnalysis
                   asin={asin}
                   marketplaceId={marketplaceId}
                   statStartDate={statStartDate}

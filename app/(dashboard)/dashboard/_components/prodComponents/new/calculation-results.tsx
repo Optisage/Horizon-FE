@@ -1,6 +1,5 @@
 import { ReactNode, useState, useEffect } from "react";
 
-/* eslint-disable @typescript-eslint/no-unused-vars */
 interface ProfitabilityData {
   profitAmount: number;
   costPrice: string;
@@ -15,6 +14,7 @@ interface ProfitabilityData {
 
 interface CalculationResultsProps {
   children?: ReactNode;
+  rightColumn?: ReactNode;
   profitabilityData?: ProfitabilityData | null;
   currencyCode?: string;
   isCalculating?: boolean;
@@ -22,6 +22,7 @@ interface CalculationResultsProps {
 
 const CalculationResults = ({ 
   children, 
+  rightColumn,
   profitabilityData,
   currencyCode = "USD",
   isCalculating = false 
@@ -29,7 +30,6 @@ const CalculationResults = ({
   const [displayData, setDisplayData] = useState<ProfitabilityData | null>(null);
   const [fulfillmentType, setFulfillmentType] = useState("FBA");
 
-  // Update display data when profitabilityData changes
   useEffect(() => {
     if (profitabilityData) {
       setDisplayData(profitabilityData);
@@ -44,9 +44,9 @@ const CalculationResults = ({
   };
 
   const getStatusColor = (profit: number) => {
-    if (profit > 5) return "#10B981"; // Green for good profit
-    if (profit > 0) return "#F59E0B"; // Orange for low profit  
-    return "#EF4444"; // Red for loss
+    if (profit > 5) return "#10B981";
+    if (profit > 0) return "#F59E0B";
+    return "#EF4444";
   };
 
   const defaultData = {
@@ -65,7 +65,7 @@ const CalculationResults = ({
   const profitColor = getStatusColor(data.profitAmount);
 
   return (
-    <div className="rounded-xl h-full bg-white lg:col-span-2 md:grid grid-cols-2   min-h-[610px] font-semibold text-sm">
+    <div className="rounded-xl h-full bg-white lg:col-span-2 grid grid-cols-1 md:grid-cols-2 min-h-[610px] font-semibold text-sm">
       {/* left column */}
       <div className="min-h-[610px]">
         {children || (
@@ -78,10 +78,18 @@ const CalculationResults = ({
       </div>
 
       {/* right column */}
-      <div className="p-2 lg:p-3 flex flex-col items-center text-center min-h-[610px]">
-        <div className="text-[#828995] bg-[#FAFBFB] w-full p-3 rounded-xl flex-1 flex flex-col">
+      <div className="p-2 lg:p-3 flex flex-col gap-3 min-h-[610px] h-full">
+        {/* Calculation Summary */}
+        <div className="text-[#828995] bg-[#FAFBFB] w-full p-3 rounded-xl flex flex-col">
+            {/* Right Column Content (BuyBox Analysis) */}
+        {rightColumn && (
+          <div className="flex-1">
+            {rightColumn}
+          </div>
+        )}
+
           {/* Profit Section */}
-          <div className="mb-10 flex items-center gap-5 justify-between">
+          <div className="mb-6 flex items-center gap-5 justify-between mt-5 pt-5 border-t">
             <span className="flex items-center gap-2">
               <p className="text-[#8E949F] text-lg">Profit</p>
               <span 
@@ -99,9 +107,8 @@ const CalculationResults = ({
           </div>
 
           {/* Breakdown Section */}
-          <div className=" py-10 flex flex-col gap-4 flex-1">
+          <div className="py-4 flex flex-col gap-3">
             {isCalculating ? (
-              // Loading skeleton
               Array.from({ length: 5 }).map((_, i) => (
                 <div key={i} className="flex gap-5 justify-between items-center">
                   <div className="h-4 bg-gray-200 animate-pulse rounded w-20"></div>
@@ -133,11 +140,10 @@ const CalculationResults = ({
               </>
             )}
           </div>
-
-        
-
          
         </div>
+
+       
       </div>
     </div>
   );

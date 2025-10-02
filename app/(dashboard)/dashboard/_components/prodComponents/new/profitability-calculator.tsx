@@ -1,7 +1,7 @@
 "use client";
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { JSX, useState, useEffect, useCallback, useRef } from "react";
+import { JSX, useState, useEffect, useCallback, useRef, forwardRef, useImperativeHandle } from "react";
 import { message, Skeleton, Tooltip as AntTooltip } from "antd";
 import { debounce } from "lodash";
 import { evaluate } from "mathjs";
@@ -56,7 +56,10 @@ const tabLabels: Record<TabKey, string> = {
   totalFees: "Total Fees",
 };
 
-const ProfitabilityCalculator = ({
+const ProfitabilityCalculator = forwardRef<
+  { updateCostPrice: (value: string) => void; updateSalesPrice: (value: string) => void },
+  ProfitabilityCalculatorProps
+>(({
   asin,
   marketplaceId,
   product,
@@ -64,7 +67,7 @@ const ProfitabilityCalculator = ({
   onCalculationComplete,
   offers,
   onCalculationStart
-}: ProfitabilityCalculatorProps) => {
+}, ref) => {
   const [costPrice, setCostPrice] = useState<string>("");
   const [costPriceInput, setCostPriceInput] = useState<string>("");
   const [salePrice, setSalePrice] = useState<string>("");
@@ -121,6 +124,25 @@ const ProfitabilityCalculator = ({
   const cheapestPrice = offers.length > 0 
     ? Math.min(...offers.map(offer => offer.listing_price)) 
     : 0;
+
+  // Expose methods to parent component
+  useImperativeHandle(ref, () => ({
+    updateCostPrice: (value: string) => {
+      const { isValid, result } = evaluateExpression(value);
+      if (isValid) {
+        setCostPriceInput(result);
+        setCostPrice(result);
+        setIsValidExpression(true);
+      } else {
+        setCostPriceInput(value);
+        setCostPrice(value);
+        setIsValidExpression(false);
+      }
+    },
+    updateSalesPrice: (value: string) => {
+      setSalePrice(value);
+    }
+  }));
 
   useEffect(() => {
     if (lastCostPrice) {
@@ -188,7 +210,8 @@ const ProfitabilityCalculator = ({
       message.error("Please enter a valid number for Cost Price");
       return;
     }
- onCalculationStart?.();
+    
+    onCalculationStart?.();
     setIsCalculating(true);
     try {
       const body: CalculationBody = {
@@ -315,7 +338,7 @@ const ProfitabilityCalculator = ({
   }
 
   const tabContent: Record<TabKey, JSX.Element> = {
-     maximumCost: (
+    maximumCost: (
       <div className="px-2 flex flex-col gap-3">
         <div className="flex gap-4 items-center justify-between text-[#8C94A3] text-sm font-medium">
           <StrikethroughIfNull value={minROI}>
@@ -484,8 +507,6 @@ const ProfitabilityCalculator = ({
         </div>
       </div>
     ),
-
-   
   };
 
   return (
@@ -618,22 +639,10 @@ const ProfitabilityCalculator = ({
           )}
         </div>
       </div>
-{/** 
-      <div className="p-4 lg:p-5 border-y border-[#E7EBEE] text-sm">
-        <span className="flex gap-4 items-center justify-between">
-          <label htmlFor="quantity">Quantity</label>
-          <input
-            id="quantity"
-            type="text"
-            defaultValue={"1"}
-            className="text-[#596375] max-w-[77px] text-sm font-normal border border-border focus:border-primary rounded-[10px] px-3 py-2 outline-none transition-colors"
-          />
-        </span>
-      </div>
-      */}
-
     </div>
   );
-};
+});
+
+ProfitabilityCalculator.displayName = "ProfitabilityCalculator";
 
 export default ProfitabilityCalculator;

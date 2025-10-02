@@ -61,8 +61,8 @@ const ProductEligibility = ({
             title="⚠️ You can't list or sell this product yet because it's restricted (GATED) by the brand or category. You'll need approval first."
             placement="top"
           >
-            <p className="text-white text-sm font-medium cursor-help">
-              This Product is NOT eligible to sell
+            <p className="text-white text-xs font-medium cursor-help max-w-[50%]">
+             You are not authorized to sell this product
             </p>
           </AntTooltip>
         )}

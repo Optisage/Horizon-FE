@@ -12,7 +12,7 @@ import {
 } from "@/redux/api/productsApi";
 import dayjs from "dayjs";
 
-import FinalLoader from "./loader"; // Import the loader component
+import FinalLoader from "./loader";
 import Alerts from "./prodComponents/new/alerts";
 import BuyboxAnalysis from "./prodComponents/new/buybox-analysis";
 import CalculationResults from "./prodComponents/new/calculation-results";
@@ -66,6 +66,12 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
   // Add loader state
   const [currentStep, setCurrentStep] = useState(0);
   const [showLoader, setShowLoader] = useState(true);
+
+  // Refs for triggering recalculation
+  const profitCalculatorRef = useRef<{
+    updateCostPrice: (value: string) => void;
+    updateSalesPrice: (value: string) => void;
+  } | null>(null);
 
   const { currencyCode } = useAppSelector((state) => state.global) || {
     currencyCode: "USD",
@@ -133,31 +139,25 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
   useEffect(() => {
     let step = 0;
     
-    // Step 0: Initial loading started (always true when component mounts)
     if (asin && marketplaceId) {
       step = 0;
     }
 
-    // Step 1: Basic product data loaded
     if (!isLoadingItem && data) {
       step = 1;
     }
 
-    // Step 2: Buybox data loaded
     if (!isLoadingBuybox && buyboxDetailsData) {
       step = 2;
     }
 
-    // Step 3: IP Alert data loaded
     if (!isLoadingIpData && ipData) {
       step = 3;
     }
 
-    // Step 4: All data loaded and ready
     if (!isLoadingItem && !isLoadingBuybox && !isLoadingIpData && 
         data && buyboxDetailsData && (ipData !== null || !asin)) {
       step = 4;
-      // Hide loader after a brief delay when everything is loaded
       const timer = setTimeout(() => {
         setShowLoader(false);
       }, 1000);
@@ -172,7 +172,6 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
     if (previousMarketplaceId.current !== marketplaceId) {
       previousMarketplaceId.current = marketplaceId;
 
-      // Reset states when marketplace changes
       setIpData(null);
       setShowLoader(true);
       setCurrentStep(0);
@@ -223,7 +222,6 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
         setIpData(response.data as IpAlertData);
       } catch (error) {
         console.error("Error fetching IP alert:", error);
-        // Set empty data on error so loader can progress
         setIpData({});
       } finally {
         setIsLoadingIpData(false);
@@ -253,6 +251,20 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
     console.log("Navigate to Totan");
   };
 
+  // Handle cost price change from QuickInfo
+  const handleCostPriceChange = (value: string) => {
+    if (profitCalculatorRef.current) {
+      profitCalculatorRef.current.updateCostPrice(value);
+    }
+  };
+
+  // Handle sales price change from QuickInfo
+  const handleSalesPriceChange = (value: string) => {
+    if (profitCalculatorRef.current) {
+      profitCalculatorRef.current.updateSalesPrice(value);
+    }
+  };
+
   if (error) {
     return (
       <div className="h-[400px] flex flex-col items-center justify-center">
@@ -264,7 +276,6 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
     );
   }
 
-  // Show loader while data is loading
   if (showLoader) {
     return (
       <div className="flex items-center justify-center min-h-[80vh]">
@@ -319,6 +330,8 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
             asin={asin}
             marketplaceId={marketplaceId}
             onNavigateToTotan={handleNavigateToTotan}
+            onCostPriceChange={handleCostPriceChange}
+            onSalesPriceChange={handleSalesPriceChange}
           />
         </div>
 
@@ -329,8 +342,10 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
             profitabilityData={profitabilityData}
             currencyCode={currencyCode}
             isCalculating={isCalculating}
+             rightColumn={<BuyboxAnalysis asin={asin} marketplaceId={marketplaceId} />}
           >
             <ProfitabilityCalculator
+              ref={profitCalculatorRef}
               asin={asin}
               marketplaceId={marketplaceId}
               product={data?.data}
@@ -339,7 +354,9 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
               onCalculationStart={handleCalculationStart}
               offers={buyboxDetailsData?.data?.buybox || []}
             />
+         
           </CalculationResults>
+       
         </div>
       </div>
 

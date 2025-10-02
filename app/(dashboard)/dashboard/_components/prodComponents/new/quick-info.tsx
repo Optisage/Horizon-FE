@@ -63,6 +63,8 @@ interface QuickInfoProps {
   asin: string
   marketplaceId: number
   onNavigateToTotan?: () => void
+  onCostPriceChange?: (value: string) => void
+  onSalesPriceChange?: (value: string) => void
 }
 
 const QuickInfo = forwardRef<{ handleProfitabilityUpdate: (data: any) => void }, QuickInfoProps>(({ 
@@ -70,7 +72,9 @@ const QuickInfo = forwardRef<{ handleProfitabilityUpdate: (data: any) => void },
   buyboxDetails, 
   asin, 
   marketplaceId, 
-  onNavigateToTotan 
+  onNavigateToTotan,
+  onCostPriceChange,
+  onSalesPriceChange
 }, ref) => {
   const dispatch = useAppDispatch()
   const [activeTab, setActiveTab] = useState<Tab>("info");
@@ -81,6 +85,10 @@ const QuickInfo = forwardRef<{ handleProfitabilityUpdate: (data: any) => void },
   const [isLoadingQuantity, setIsLoadingQuantity] = useState(false)
   const [messageApi, contextHolder] = message.useMessage();
 
+  // Local state for editable fields
+  const [editableCostPrice, setEditableCostPrice] = useState<string>("")
+  const [editableSalesPrice, setEditableSalesPrice] = useState<string>("")
+
   // RTK Query hooks
   const [analyzeMutation] = useAnalyzeMutation()
   const [getPurchaseQuantity] = useLazyPurchaseQuantityQuery()
@@ -88,6 +96,16 @@ const QuickInfo = forwardRef<{ handleProfitabilityUpdate: (data: any) => void },
   // Get the data from the correct sources
   const extra = buyboxDetails?.extra || product?.extra
   const profitabilityCalc = latestProfitCalc || product?.last_profitability_calculation?.fba
+
+  // Initialize editable values when profitability calc changes
+  useEffect(() => {
+    if (profitabilityCalc?.costPrice) {
+      setEditableCostPrice(profitabilityCalc.costPrice)
+    }
+    if (profitabilityCalc?.salesPrice || extra?.buybox_price) {
+      setEditableSalesPrice(profitabilityCalc?.salesPrice || extra?.buybox_price)
+    }
+  }, [profitabilityCalc, extra])
 
   // Reset states when ASIN changes
   useEffect(() => {
@@ -104,12 +122,53 @@ const QuickInfo = forwardRef<{ handleProfitabilityUpdate: (data: any) => void },
   useImperativeHandle(ref, () => ({
     handleProfitabilityUpdate: (data: any) => {
       setLatestProfitCalc(data)
+      // Update local editable values
+      if (data?.costPrice) {
+        setEditableCostPrice(data.costPrice)
+      }
+      if (data?.salesPrice) {
+        setEditableSalesPrice(data.salesPrice)
+      }
       // Trigger analysis when profitability is updated with the new data
       if (data && activeTab === "totan") {
         performAnalysis(data)
       }
     },
   }))
+
+  // Handle cost price change
+  const handleCostPriceInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value
+    setEditableCostPrice(value)
+  }
+
+  const handleCostPriceBlur = () => {
+    const numValue = parseFloat(editableCostPrice)
+    if (!isNaN(numValue) && numValue > 0) {
+      onCostPriceChange?.(editableCostPrice)
+    } else {
+      messageApi.error("Please enter a valid cost price")
+      // Reset to last valid value
+      setEditableCostPrice(profitabilityCalc?.costPrice || "0")
+    }
+  }
+
+  // Handle sales price change
+  const handleSalesPriceInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value
+    setEditableSalesPrice(value)
+  }
+
+  const handleSalesPriceBlur = () => {
+    const numValue = parseFloat(editableSalesPrice)
+    if (!isNaN(numValue) && numValue > 0) {
+      onSalesPriceChange?.(editableSalesPrice)
+    } else {
+      messageApi.error("Please enter a valid sales price")
+      // Reset to last valid value
+      setEditableSalesPrice(profitabilityCalc?.salesPrice || extra?.buybox_price || "0")
+    }
+  }
 
   // Handle navigation to Totan with prefilled data
   const handleNavigateToTotanWithData = async () => {
@@ -149,7 +208,7 @@ const QuickInfo = forwardRef<{ handleProfitabilityUpdate: (data: any) => void },
       // Add analyzing message
       dispatch(addMessage({
         sender: "ai",
-        text: "🔄 Now analyzing your product... This may take a moment."
+        text: "Now analyzing your product... This may take a moment."
       }))
 
       // Perform the analysis
@@ -167,11 +226,11 @@ const QuickInfo = forwardRef<{ handleProfitabilityUpdate: (data: any) => void },
         dispatch(updateConversationState("chat_ready"))
 
         // Add analysis result message
-        const analysisMessage = `🎉 **Analysis Complete!**
+        const analysisMessage = `Analysis Complete!
 
-📊 **Overall Score**: ${analysis.score} (${analysis.category})
+Overall Score: ${analysis.score} (${analysis.category})
 
-Now you can ask me any questions about this product! 💬`
+Now you can ask me any questions about this product!`
 
         dispatch(addMessage({
           sender: "ai",
@@ -183,11 +242,6 @@ Now you can ask me any questions about this product! 💬`
         try {
           const quantityResult = await getPurchaseQuantity(asin).unwrap()
           const quantityData = quantityResult.data
-          const quantityMessage = `📦 **Purchase Quantity Recommendations:**
-• **Conservative Approach**: ${Math.round(quantityData.conservative_quantity)} units
-• **Aggressive Approach**: ${Math.round(quantityData.aggressive_quantity)} units`
-          
-        
         } catch (error) {
           console.error("Failed to get purchase quantity:", error)
         }
@@ -202,7 +256,7 @@ Now you can ask me any questions about this product! 💬`
       // Handle error - could add error message to chat
       dispatch(addMessage({
         sender: "ai",
-        text: "⚠ Sorry, I couldn't analyze this product. Please try again.",
+        text: "Sorry, I couldn't analyze this product. Please try again.",
         type: "error"
       }))
       
@@ -324,21 +378,21 @@ Now you can ask me any questions about this product! 💬`
 
   // Get score circle properties
   const getScoreProperties = (score: number, category: string) => {
-    const normalizedScore = Math.max(0, Math.min(10, score)) // Ensure score is between 0-10
+    const normalizedScore = Math.max(0, Math.min(10, score))
     const percentage = (normalizedScore / 10) * 100
     const strokeDasharray = `${percentage}, 100`
     
-    let color = "#10B981" // Default green
+    let color = "#10B981"
     let bgColor = "#F0FDF4"
     
     if (category.toLowerCase() === "low") {
-      color = "#EF4444" // Red
+      color = "#EF4444"
       bgColor = "#FEF2F2"
     } else if (category.toLowerCase() === "medium" || category.toLowerCase() === "average") {
-      color = "#F59E0B" // Yellow/Orange
+      color = "#F59E0B"
       bgColor = "#FFFBEB"
     } else if (category.toLowerCase() === "high" || category.toLowerCase() === "above average") {
-      color = "#10B981" // Green
+      color = "#10B981"
       bgColor = "#F0FDF4"
     }
 
@@ -371,9 +425,9 @@ Now you can ask me any questions about this product! 💬`
     const minRoi = profitabilityCalc?.minRoi ?? 0
     
     if (profitabilityCalc?.buying_criteria?.roiIsOk === true) {
-      return `✅ Excellent ROI! This product's ${roi}% return exceeds your minimum requirement of ${minRoi}%, making it a profitable investment that meets your buying criteria.`
+      return `Excellent ROI! This product's ${roi}% return exceeds your minimum requirement of ${minRoi}%, making it a profitable investment that meets your buying criteria.`
     } else if (profitabilityCalc?.buying_criteria?.roiIsOk === false) {
-      return `⚠ ROI Below Target: This product's ${roi}% return is below your minimum requirement of ${minRoi}%. Consider finding a lower cost price or look for other products that meet your ROI criteria.`
+      return `ROI Below Target: This product's ${roi}% return is below your minimum requirement of ${minRoi}%. Consider finding a lower cost price or look for other products that meet your ROI criteria.`
     }
     return "Return on Investment - The percentage return you'll earn on your initial investment in this product."
   }
@@ -385,9 +439,9 @@ Now you can ask me any questions about this product! 💬`
     const minProfit = profitabilityCalc?.minProfit ?? 0
     
     if (profitabilityCalc?.buying_criteria?.profitIsOk === true) {
-      return `✅ Great Profit! This product generates $${profitAmount.toFixed(2)} (${profitMargin.toFixed(0)}%) which exceeds your minimum profit requirement of $${minProfit.toFixed(2)}, making it a solid choice for your business.`
+      return `Great Profit! This product generates $${profitAmount.toFixed(2)} (${profitMargin.toFixed(0)}%) which exceeds your minimum profit requirement of $${minProfit.toFixed(2)}, making it a solid choice for your business.`
     } else if (profitabilityCalc?.buying_criteria?.profitIsOk === false) {
-      return `⚠ Profit Below Target: This product's profit of $${profitAmount.toFixed(2)} (${profitMargin.toFixed(0)}%) is below your minimum requirement of $${minProfit.toFixed(2)}. Consider negotiating a better cost price or look for higher-margin products.`
+      return `Profit Below Target: This product's profit of $${profitAmount.toFixed(2)} (${profitMargin.toFixed(0)}%) is below your minimum requirement of $${minProfit.toFixed(2)}. Consider negotiating a better cost price or look for higher-margin products.`
     }
     return "The total profit amount in dollars and profit margin percentage you can expect from selling this product."
   }
@@ -399,7 +453,7 @@ Now you can ask me any questions about this product! 💬`
     const minProfit = profitabilityCalc?.minProfit ?? 0
     
     if (maxCost > 0) {
-      return `💡 Smart Buying Guide: Based on your criteria (${minRoi}% min ROI, $${minProfit.toFixed(2)} min profit), don't pay more than $${maxCost.toFixed(2)} for this product. This ensures you'll meet your profit targets while maintaining your desired return on investment.`
+      return `Smart Buying Guide: Based on your criteria (${minRoi}% min ROI, $${minProfit.toFixed(2)} min profit), don't pay more than $${maxCost.toFixed(2)} for this product. This ensures you'll meet your profit targets while maintaining your desired return on investment.`
     }
     return "The highest price you should pay for this product to maintain your target profit margin and ROI."
   }
@@ -499,26 +553,42 @@ Now you can ask me any questions about this product! 💬`
                 </div>
               </div>
 
-              {/* Cost Price and Sales Price inputs */}
+              {/* Cost Price and Sales Price inputs - NOW EDITABLE */}
               <div className="mt-5 text-[#676A75] font-medium text-xs grid grid-cols-2 gap-4">
                 <span className="flex flex-col gap-2">
                   <label htmlFor="cost_price">Cost Price</label>
                   <input
                     id="cost_price"
-                    type="text"
-                    value={`$${profitabilityCalc?.costPrice ?? "0"}`}
-                    readOnly
-                    className="text-[#596375] text-sm font-normal border border-border focus:border-primary rounded-[10px] px-3 py-2 outline-none transition-colors bg-gray-50"
+                    type="number"
+                    step="0.01"
+                    value={editableCostPrice}
+                    onChange={handleCostPriceInputChange}
+                    onBlur={handleCostPriceBlur}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.currentTarget.blur()
+                      }
+                    }}
+                    className="text-[#596375] text-sm font-normal border border-border focus:border-primary rounded-[10px] px-3 py-2 outline-none transition-colors"
+                    placeholder="Enter cost price"
                   />
                 </span>
                 <span className="flex flex-col gap-2">
                   <label htmlFor="sales_price">Sales Price</label>
                   <input
                     id="sales_price"
-                    type="text"
-                    value={`$${profitabilityCalc?.salesPrice ?? extra?.buybox_price ?? "0"}`}
-                    readOnly
-                    className="text-[#596375] text-sm font-normal border border-border focus:border-primary rounded-[10px] px-3 py-2 outline-none transition-colors bg-gray-50"
+                    type="number"
+                    step="0.01"
+                    value={editableSalesPrice}
+                    onChange={handleSalesPriceInputChange}
+                    onBlur={handleSalesPriceBlur}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.currentTarget.blur()
+                      }
+                    }}
+                    className="text-[#596375] text-sm font-normal border border-border focus:border-primary rounded-[10px] px-3 py-2 outline-none transition-colors"
+                    placeholder="Enter sales price"
                   />
                 </span>
               </div>
@@ -574,7 +644,6 @@ Now you can ask me any questions about this product! 💬`
           {activeTab === "totan" && (
             <div className="flex flex-col gap-3">
               {!profitabilityCalc?.costPrice ? (
-                // Show nudge message when no profitability calculation exists
                 <div className="flex flex-col items-center justify-center py-8 text-center">
                   <div className=" rounded-lg p-6 max-w-md">
                     <div className="text-primary mb-3">
@@ -591,7 +660,7 @@ Now you can ask me any questions about this product! 💬`
                     </p>
                     <div className="bg-primary/20 border border-primary rounded-md p-3">
                       <p className="text-xs text-black">
-                        💡 The AI analysis uses your profitability data to provide personalized insights and recommendations.
+                        The AI analysis uses your profitability data to provide personalized insights and recommendations.
                       </p>
                     </div>
                   </div>
@@ -603,25 +672,13 @@ Now you can ask me any questions about this product! 💬`
                 </div>
               ) : (
                 <>
-                  {/* Score and Info Row */}
                   <div className="flex items-center justify-between">
-                    {/* Circular Score */}
                     <div className="relative size-32">
                       <svg className="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
                         <path
                           className="text-[#F3F4F6]"
                           stroke="currentColor"
                           strokeWidth="3"
-                          fill="none"
-                          d="M18 2.0845
-                        a 15.9155 15.9155 0 0 1 0 31.831
-                        a 15.9155 15.9155 0 0 1 0 -31.831"
-                        />
-                        <path
-                          className="transition-all duration-1000 ease-out"
-                          stroke={scoreProperties?.color || "#6366F1"}
-                          strokeWidth="3"
-                          strokeDasharray={scoreProperties?.strokeDasharray || "0, 100"}
                           fill="none"
                           d="M18 2.0845
                         a 15.9155 15.9155 0 0 1 0 31.831
@@ -638,7 +695,6 @@ Now you can ask me any questions about this product! 💬`
                       </div>
                     </div>
 
-                    {/* Analysis Box */}
                     <div className="flex flex-col gap-2">
                       <Link href={`/totan`}>
                         <div 
@@ -669,81 +725,6 @@ Now you can ask me any questions about this product! 💬`
                       </div>
                     </div>
                   </div>
-
-                  {/* Quantity Selector 
-                  <div className="flex items-center gap-4">
-                    <AntTooltip
-                      title="The recommended quantity to purchase based on market demand, competition, and inventory turnover rate."
-                      placement="top"
-                    >
-                      <span className="text-sm text-[#676A75] font-medium cursor-help border-b border-dotted border-gray-400">
-                        Suggested Purchase Quantity
-                      </span>
-                    </AntTooltip>
-                    
-                    <div className="flex items-center gap-2">
-                      <AntTooltip
-                        title="Conservative recommended quantity based on low-risk market analysis and steady demand patterns."
-                        placement="top"
-                      >
-                        <div className="border border-input rounded-md px-3 py-1 text-sm cursor-help">
-                          {isLoadingQuantity ? (
-                            <span className="animate-pulse">Loading...</span>
-                          ) : (
-                            `C: ${purchaseQuantityData?.conservative_quantity || "0"}`
-                          )}
-                        </div>
-                      </AntTooltip>
-
-                      <AntTooltip
-                        title="Aggressive recommended quantity based on optimistic market projections and higher risk tolerance."
-                        placement="top"
-                      >
-                        <div className="border border-input rounded-md px-3 py-1 text-sm cursor-help">
-                          {isLoadingQuantity ? (
-                            <span className="animate-pulse">Loading...</span>
-                          ) : (
-                            `A: ${purchaseQuantityData?.aggressive_quantity || "0"}`
-                          )}
-                        </div>
-                      </AntTooltip>
-                    </div>
-                    
-                  
-                    <div className="flex items-center justify-between">
-                      {profitabilityCalc?.costPrice && (
-                        <AntTooltip
-                          title="Refresh analysis and purchase quantity data"
-                          placement="top"
-                        >
-                          <button
-                            onClick={handleReload}
-                            disabled={isAnalyzing || isLoadingQuantity}
-                            className={`p-2 rounded-lg transition-colors duration-200 ${
-                              isAnalyzing || isLoadingQuantity
-                                ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                                : "bg-gray-100 hover:bg-primary hover:text-white text-gray-600"
-                            }`}
-                          >
-                            <svg
-                              className={`w-4 h-4 ${isAnalyzing || isLoadingQuantity ? "animate-spin" : ""}`}
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-                              />
-                            </svg>
-                          </button>
-                        </AntTooltip>
-                      )}
-                    </div>
-                  </div>
-                  */}
                 </>
               )}
             </div>
@@ -752,8 +733,6 @@ Now you can ask me any questions about this product! 💬`
            {activeTab === "analytics" && (
             <SalesAnalytics asin={asin} />
            )}
-
-
         </div>
       </div>
     </>
@@ -763,3 +742,4 @@ Now you can ask me any questions about this product! 💬`
 QuickInfo.displayName = "QuickInfo";
 
 export default QuickInfo;
+                       
