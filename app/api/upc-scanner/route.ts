@@ -6,6 +6,51 @@ export const config = {
   },
 };
 
+export async function GET(req: NextRequest) {
+  try {
+    // Get auth token from cookies
+    const authCookie = req.cookies.get('optisage-token')?.value;
+
+    if (!authCookie) {
+      return NextResponse.json(
+        { error: 'Authentication required' },
+        { status: 401 }
+      );
+    }
+
+    // Forward the request to the backend API
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
+    
+    const response = await fetch(`${baseUrl}/upc-scanner`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${authCookie}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    // Check if response is ok
+    if (!response.ok) {
+      return NextResponse.json(
+        { error: `Server responded with status: ${response.status}` },
+        { status: response.status }
+      );
+    }
+
+    // Get the response data
+    const data = await response.json();
+
+    // Return the API response
+    return NextResponse.json(data, { status: response.status });
+  } catch (error) {
+    console.error('Error fetching UPC scans:', error);
+    return NextResponse.json(
+      { error: 'Failed to fetch UPC scans' },
+      { status: 500 }
+    );
+  }
+}
+
 export async function POST(req: NextRequest) {
   try {
     // Get auth token from cookies
