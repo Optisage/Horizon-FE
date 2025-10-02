@@ -22,7 +22,7 @@ interface OffersAndSellerFeedbackProps {
 
 const OffersAndSellerFeedback = ({ feedbackData, router }: OffersAndSellerFeedbackProps) => {
   return (
-    <div className="mt-5 overflow-x-auto">
+    <div className="mt-5 overflow-x-auto max-h-[300px] overflow-y-scroll show-scrollbar">
       <table className="min-w-full text-left text-sm text-gray-700">
         <thead>
           <tr className="border-b bg-[#F7F7F7] font-medium">

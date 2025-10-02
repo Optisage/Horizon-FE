@@ -12,7 +12,20 @@ img {
   /* Disable right-clicking */
   /* user-drag: none; */
 }
+.show-scrollbar::-webkit-scrollbar {
+  display: block !important;
+  width: 8px;
+}
 
+.show-scrollbar::-webkit-scrollbar-thumb {
+  background-color: rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
+}
+
+.show-scrollbar {
+  scrollbar-width: thin !important;
+  scrollbar-color: rgba(0, 0, 0, 0.2) transparent !important;
+}
 /* Hide Scrollbar */
 * {
   scroll-behavior: smooth;

@@ -5,7 +5,8 @@ import { BiChevronRight } from "react-icons/bi";
 import {  BSRIcon, PriceTagIcon, ProductSalesIcon, MaximumCostIcon, ROIIcon } from "../../icons";
 import Image from "next/image";
 import { Tooltip as AntTooltip, message } from "antd";
-import { useState, forwardRef, useImperativeHandle, useEffect } from "react";
+import { useState, forwardRef, useImperativeHandle, useEffect, useRef } from "react";
+import { debounce } from "lodash";
 import AmazonIcon from "@/public/assets/svg/amazon-icon.svg"
 import { useAnalyzeMutation, useLazyPurchaseQuantityQuery } from "@/redux/api/totanAi"
 import { useAppDispatch } from "@/redux/hooks"
@@ -97,6 +98,25 @@ const QuickInfo = forwardRef<{ handleProfitabilityUpdate: (data: any) => void },
   const extra = buyboxDetails?.extra || product?.extra
   const profitabilityCalc = latestProfitCalc || product?.last_profitability_calculation?.fba
 
+  // Create debounced handlers for triggering calculations
+  const debouncedCostPriceUpdate = useRef(
+    debounce((value: string) => {
+      const numValue = parseFloat(value);
+      if (!isNaN(numValue) && numValue > 0) {
+        onCostPriceChange?.(value);
+      }
+    }, 500)
+  ).current;
+
+  const debouncedSalesPriceUpdate = useRef(
+    debounce((value: string) => {
+      const numValue = parseFloat(value);
+      if (!isNaN(numValue) && numValue > 0) {
+        onSalesPriceChange?.(value);
+      }
+    }, 500)
+  ).current;
+
   // Initialize editable values when profitability calc changes
   useEffect(() => {
     if (profitabilityCalc?.costPrice) {
@@ -118,6 +138,14 @@ const QuickInfo = forwardRef<{ handleProfitabilityUpdate: (data: any) => void },
     setLatestProfitCalc(product?.last_profitability_calculation?.fba)
   }, [product])
 
+  // Cleanup debounced functions on unmount
+  useEffect(() => {
+    return () => {
+      debouncedCostPriceUpdate.cancel();
+      debouncedSalesPriceUpdate.cancel();
+    };
+  }, [debouncedCostPriceUpdate, debouncedSalesPriceUpdate]);
+
   // Expose the update function to the parent component
   useImperativeHandle(ref, () => ({
     handleProfitabilityUpdate: (data: any) => {
@@ -136,37 +164,39 @@ const QuickInfo = forwardRef<{ handleProfitabilityUpdate: (data: any) => void },
     },
   }))
 
-  // Handle cost price change
+  // Handle cost price change with debounced calculation trigger
   const handleCostPriceInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value
-    setEditableCostPrice(value)
+    const value = e.target.value;
+    setEditableCostPrice(value);
+    
+    // Trigger debounced calculation as user types
+    debouncedCostPriceUpdate(value);
   }
 
   const handleCostPriceBlur = () => {
-    const numValue = parseFloat(editableCostPrice)
-    if (!isNaN(numValue) && numValue > 0) {
-      onCostPriceChange?.(editableCostPrice)
-    } else {
-      messageApi.error("Please enter a valid cost price")
+    const numValue = parseFloat(editableCostPrice);
+    if (isNaN(numValue) || numValue <= 0) {
+      messageApi.error("Please enter a valid cost price");
       // Reset to last valid value
-      setEditableCostPrice(profitabilityCalc?.costPrice || "0")
+      setEditableCostPrice(profitabilityCalc?.costPrice || "0");
     }
   }
 
-  // Handle sales price change
+  // Handle sales price change with debounced calculation trigger
   const handleSalesPriceInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value
-    setEditableSalesPrice(value)
+    const value = e.target.value;
+    setEditableSalesPrice(value);
+    
+    // Trigger debounced calculation as user types
+    debouncedSalesPriceUpdate(value);
   }
 
   const handleSalesPriceBlur = () => {
-    const numValue = parseFloat(editableSalesPrice)
-    if (!isNaN(numValue) && numValue > 0) {
-      onSalesPriceChange?.(editableSalesPrice)
-    } else {
-      messageApi.error("Please enter a valid sales price")
+    const numValue = parseFloat(editableSalesPrice);
+    if (isNaN(numValue) || numValue <= 0) {
+      messageApi.error("Please enter a valid sales price");
       // Reset to last valid value
-      setEditableSalesPrice(profitabilityCalc?.salesPrice || extra?.buybox_price || "0")
+      setEditableSalesPrice(profitabilityCalc?.salesPrice || extra?.buybox_price || "0");
     }
   }
 
@@ -553,7 +583,7 @@ Now you can ask me any questions about this product!`
                 </div>
               </div>
 
-              {/* Cost Price and Sales Price inputs - NOW EDITABLE */}
+              {/* Cost Price and Sales Price inputs - NOW WITH AUTO-CALCULATION */}
               <div className="mt-5 text-[#676A75] font-medium text-xs grid grid-cols-2 gap-4">
                 <span className="flex flex-col gap-2">
                   <label htmlFor="cost_price">Cost Price</label>
@@ -742,4 +772,3 @@ Now you can ask me any questions about this product!`
 QuickInfo.displayName = "QuickInfo";
 
 export default QuickInfo;
-                       

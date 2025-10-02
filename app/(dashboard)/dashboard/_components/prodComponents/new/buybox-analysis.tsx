@@ -1,5 +1,5 @@
 "use client";
-
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { useState, useEffect } from "react";
 import { BiChevronDown } from "react-icons/bi";
 import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
@@ -178,7 +178,7 @@ const BuyboxAnalysis = ({ asin, marketplaceId }: BuyboxAnalysisProps) => {
           </div>
 
           {/* Legend */}
-          <div className="mt-6 space-y-2 max-h-40 overflow-y-auto">
+          <div className="mt-6 space-y-2 max-h-32 overflow-y-auto show-scrollbar">
             {pieData.map((entry, index) => (
               <div
                 key={index}

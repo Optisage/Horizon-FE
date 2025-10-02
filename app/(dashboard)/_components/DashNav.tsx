@@ -1,5 +1,5 @@
 "use client";
-
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import Image from "next/image";
 
 import Logo from "@/public/assets/svg/Optisage Logo.svg";

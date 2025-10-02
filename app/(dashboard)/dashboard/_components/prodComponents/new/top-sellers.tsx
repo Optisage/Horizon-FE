@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { useState } from "react";
 import { useGetBuyboxDetailsQuery } from "@/redux/api/productsApi";
 import { useRouter } from "next/navigation";
@@ -35,7 +36,7 @@ interface TopSellersProps {
 
 const TopSellers = ({ asin, marketplaceId }: TopSellersProps) => {
   const [active, setActive] = useState("offers");
-  const [itemsToShow, setItemsToShow] = useState(10);
+  const [itemsToShow, setItemsToShow] = useState(3);
   const [loadingMore, setLoadingMore] = useState(false);
   const router = useRouter();
 
@@ -89,7 +90,7 @@ const TopSellers = ({ asin, marketplaceId }: TopSellersProps) => {
   const handleLoadMore = () => {
     setLoadingMore(true);
     setTimeout(() => {
-      setItemsToShow(itemsToShow + 10);
+      setItemsToShow(itemsToShow + 5);
       setLoadingMore(false);
     }, 1500);
   };
@@ -170,7 +171,7 @@ const TopSellers = ({ asin, marketplaceId }: TopSellersProps) => {
       </div>
 
       {active === "offers" ? (
-        <div className="mt-5 overflow-x-auto">
+        <div  className="mt-5 max-h-[300px] overflow-y-scroll show-scrollbar">
           <table className="min-w-full text-left text-sm text-gray-700">
             <thead>
               <tr className="border-b bg-[#F7F7F7] font-medium">
