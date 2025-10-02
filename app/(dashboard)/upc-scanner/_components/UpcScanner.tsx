@@ -11,7 +11,7 @@ import ExcelUploadForm from "./ExcelUploadForm";
 type Tab = "upc" | "new";
 
 // Interface for scan result data
-interface ScanResult {
+export interface ScanResult {
   id: number;
   product_name: string;
   product_id: string | null;
@@ -20,7 +20,7 @@ interface ScanResult {
   last_seen: string;
   last_uploaded: string;
   status: string;
-  marketplace_id: string | number;
+  marketplace_id: string;
   user_id: number;
 }
 
@@ -56,9 +56,21 @@ const UpcScanner = () => {
         },
       });
       
-      const result: ApiResponse = await response.json();
+      // Check if response is ok before trying to parse JSON
+      if (!response.ok) {
+        throw new Error(`Server responded with status: ${response.status}`);
+      }
       
-      if (response.ok && result.status === 200) {
+      // Check if response has content before parsing
+      const text = await response.text();
+      if (!text || text.trim() === '') {
+        throw new Error('Empty response from server');
+      }
+      
+      // Parse the JSON text
+      const result: ApiResponse = JSON.parse(text);
+      
+      if (result.status === 200) {
         setScanResults(result.data);
         setTotalProducts(result.data.length);
       } else {
@@ -66,7 +78,7 @@ const UpcScanner = () => {
         console.error('Error fetching scan results:', result);
       }
     } catch (error) {
-      setError('An error occurred while fetching scan results');
+      setError(`An error occurred while fetching scan results: ${error instanceof Error ? error.message : 'Unknown error'}`);
       console.error("Error fetching scan results:", error);
     } finally {
       setIsLoading(false);
@@ -80,6 +92,14 @@ const UpcScanner = () => {
     setActiveTab("upc");
     // In a real implementation, you'd refetch the scan history
     // fetchScanResults();
+  };
+  
+  // Handle refreshing a specific scan
+  const handleRefreshScan = (scanId: number, updatedScan: ScanResult) => {
+    // Update the specific scan in the results list
+    setScanResults(prev => 
+      prev.map(scan => scan.id === scanId ? updatedScan : scan)
+    );
   };
 
   return (
@@ -142,7 +162,12 @@ const UpcScanner = () => {
                 <p className="text-[#8C94A3] text-sm font-medium">
                   {isLoading ? "" : `${totalProducts} Products found`}
                 </p>
-                <ScanResultsTable scanResults={scanResults} newScan={scanResults[0]} isLoading={isLoading} />
+                <ScanResultsTable 
+                  scanResults={scanResults} 
+                  newScan={scanResults[0]} 
+                  isLoading={isLoading} 
+                  onRefreshScan={handleRefreshScan} 
+                />
               </>
             )}
           </div>

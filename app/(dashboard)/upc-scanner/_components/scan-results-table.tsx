@@ -5,6 +5,7 @@ import { CustomTable as Table } from "@/lib/AntdComponents";
 import type { ColumnsType } from "antd/es/table";
 import { FC, useEffect, useState } from "react";
 import { HiArrowPath, HiEllipsisVertical, HiPrinter } from "react-icons/hi2";
+import { ScanResult } from "./UpcScanner";
 
 interface ProductData {
   key: string;
@@ -18,28 +19,58 @@ interface ProductData {
   status: "Pending" | "Completed";
 }
 
-// Interface for API scan result
-interface ScanResult {
-  id: number;
-  product_name: string;
-  product_id: string | null;
-  items_count: number;
-  products_found: number;
-  last_seen: string;
-  last_uploaded: string;
-  status: string;
-  marketplace_id: string | number;
-  user_id: number;
-}
+// Example data for testing
+const initialData: ProductData[] = [
+  {
+    key: "1",
+    index: 1,
+    name: "TOSSI",
+    productId: "6525535",
+    items: 50,
+    found: 4,
+    lastSeen: "12/07/25",
+    lastUploaded: "12/07/25",
+    status: "Pending",
+  },
+  {
+    key: "2",
+    index: 2,
+    name: "Peak Health",
+    productId: "69028082",
+    items: 30,
+    found: 26,
+    lastSeen: "12/05/25",
+    lastUploaded: "12/05/25",
+    status: "Pending",
+  },
+  ...Array.from({ length: 7 }, (_, i) => ({
+    key: `${3 + i}`,
+    index: 3,
+    name: "CB Int",
+    productId: "69028082",
+    items: 15,
+    found: 33,
+    lastSeen: "12/05/25",
+    lastUploaded: "12/05/25",
+    status: (i < 1 ? "Pending" : "Completed") as "Pending" | "Completed",
+  })),
+];
 
 interface ScanResultsTableProps {
+  scanResults: ScanResult[];
   newScan?: ScanResult;
-  scanResults?: ScanResult[];
-  isLoading?: boolean;
+  isLoading: boolean;
+  onRefreshScan?: (scanId: number, updatedScan: ScanResult) => void;
 }
 
-const ScanResultsTable: FC<ScanResultsTableProps> = ({ newScan, scanResults = [], isLoading = false }) => {
-  const [data, setData] = useState<ProductData[]>([]);
+const ScanResultsTable: FC<ScanResultsTableProps> = ({ 
+  scanResults, 
+  newScan, 
+  isLoading,
+  onRefreshScan 
+}) => {
+  const [data, setData] = useState<ProductData[]>(initialData);
+  const [refreshingIds, setRefreshingIds] = useState<number[]>([]);
 
   // Format dates from ISO to MM/DD/YY
   const formatDate = (isoDate: string): string => {
@@ -51,40 +82,62 @@ const ScanResultsTable: FC<ScanResultsTableProps> = ({ newScan, scanResults = []
     }
   };
 
-  // Map API scan results to table data format
+  // Convert ScanResult to ProductData format
+  const formatScanResult = (scan: ScanResult): ProductData => {
+    return {
+      key: scan.id.toString(),
+      index: 0, // Will be set by table rendering
+      name: scan.product_name,
+      productId: scan.product_id || 'N/A',
+      items: scan.items_count,
+      found: scan.products_found,
+      lastSeen: formatDate(scan.last_seen),
+      lastUploaded: formatDate(scan.last_uploaded),
+      status: scan.status === "pending" ? "Pending" : "Completed",
+    };
+  };
+
+  // Handle refreshing a scan
+  const handleRefreshScan = async (scanId: number) => {
+    try {
+      setRefreshingIds(prev => [...prev, scanId]);
+      
+      const response = await fetch(`/api/upc-scanner/${scanId}/restart`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      const result = await response.json();
+      
+      if (response.ok && result.status === 200) {
+        // Call the parent component's handler with the updated scan
+        if (onRefreshScan) {
+          onRefreshScan(scanId, result.data);
+        }
+      } else {
+        console.error('Error refreshing scan:', result);
+      }
+    } catch (error) {
+      console.error('Error refreshing scan:', error);
+    } finally {
+      setRefreshingIds(prev => prev.filter(id => id !== scanId));
+    }
+  };
+
+  // Update table data when scanResults change
   useEffect(() => {
     if (scanResults && scanResults.length > 0) {
-      const formattedData: ProductData[] = scanResults.map((scan, index) => ({
-        key: scan.id.toString(),
-        index,
-        name: scan.product_name,
-        productId: scan.product_id || 'N/A',
-        items: scan.items_count,
-        found: scan.products_found,
-        lastSeen: formatDate(scan.last_seen),
-        lastUploaded: formatDate(scan.last_uploaded),
-        status: scan.status === "pending" ? "Pending" : "Completed",
-      }));
-      
+      const formattedData = scanResults.map(formatScanResult);
       setData(formattedData);
     }
   }, [scanResults]);
-        // Add new scan to the table when it arrives
+
   // Add new scan to the table when it arrives
   useEffect(() => {
     if (newScan) {
-      const formattedScan: ProductData = {
-        key: newScan.id.toString(),
-        index: 0,
-        name: newScan.product_name,
-        productId: newScan.product_id || 'N/A',
-        items: newScan.items_count,
-        found: newScan.products_found,
-        lastSeen: formatDate(newScan.last_seen),
-        lastUploaded: formatDate(newScan.last_uploaded),
-        status: newScan.status === "pending" ? "Pending" : "Completed",
-      };
-
+      const formattedScan = formatScanResult(newScan);
       // Add new scan to the top of the list
       setData(prevData => [formattedScan, ...prevData]);
     }
@@ -171,47 +224,50 @@ const ScanResultsTable: FC<ScanResultsTableProps> = ({ newScan, scanResults = []
     {
       title: "Action",
       key: "action",
-      render: () => (
-        <div className="flex gap-2">
-          <Tooltip title="Refresh">
-            <button type="button" aria-label="Refresh">
-              <HiArrowPath
-                size={24}
-                className="text-[#8C94A3] hover:text-black"
-              />
-            </button>
-          </Tooltip>
-          <Tooltip title="Print">
-            <button type="button" aria-label="Print">
-              <HiPrinter
-                size={24}
-                className="text-[#8C94A3] hover:text-black"
-              />
-            </button>
-          </Tooltip>
-          <Tooltip title="More">
-            <button type="button" aria-label="More">
-              <HiEllipsisVertical
-                size={24}
-                className="text-[#8C94A3] hover:text-black"
-              />
-            </button>
-          </Tooltip>
-        </div>
-      ),
+      render: (_, record) => {
+        const scanId = parseInt(record.key);
+        const isRefreshing = refreshingIds.includes(scanId);
+        
+        return (
+          <div className="flex gap-2">
+            <Tooltip title="Refresh">
+              <button 
+                type="button" 
+                aria-label="Refresh" 
+                onClick={() => handleRefreshScan(scanId)}
+                disabled={isRefreshing}
+              >
+                <HiArrowPath
+                  size={24}
+                  className={`${isRefreshing ? 'animate-spin text-primary' : 'text-[#8C94A3] hover:text-black'}`}
+                />
+              </button>
+            </Tooltip>
+            <Tooltip title="Print">
+              <button type="button" aria-label="Print">
+                <HiPrinter
+                  size={24}
+                  className="text-[#8C94A3] hover:text-black"
+                />
+              </button>
+            </Tooltip>
+            <Tooltip title="More">
+              <button type="button" aria-label="More">
+                <HiEllipsisVertical
+                  size={24}
+                  className="text-[#8C94A3] hover:text-black"
+                />
+              </button>
+            </Tooltip>
+          </div>
+        );
+      },
     },
   ];
 
   return (
     <div className="w-full overflow-x-scroll">
-      <Table 
-        columns={columns} 
-        dataSource={data} 
-        loading={isLoading}
-        locale={{
-          emptyText: isLoading ? 'Loading...' : 'No scan results found'
-        }}
-      />
+      <Table columns={columns} dataSource={data} />
     </div>
   );
 };
