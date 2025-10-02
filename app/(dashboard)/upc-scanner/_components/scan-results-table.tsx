@@ -20,42 +20,8 @@ interface ProductData {
   status: "Pending" | "Completed";
 }
 
-// Example data for testing
-const initialData: ProductData[] = [
-  {
-    key: "1",
-    index: 1,
-    name: "TOSSI",
-    productId: "6525535",
-    items: 50,
-    found: 4,
-    lastSeen: "12/07/25",
-    lastUploaded: "12/07/25",
-    status: "Pending",
-  },
-  {
-    key: "2",
-    index: 2,
-    name: "Peak Health",
-    productId: "69028082",
-    items: 30,
-    found: 26,
-    lastSeen: "12/05/25",
-    lastUploaded: "12/05/25",
-    status: "Pending",
-  },
-  ...Array.from({ length: 7 }, (_, i) => ({
-    key: `${3 + i}`,
-    index: 3,
-    name: "CB Int",
-    productId: "69028082",
-    items: 15,
-    found: 33,
-    lastSeen: "12/05/25",
-    lastUploaded: "12/05/25",
-    status: (i < 1 ? "Pending" : "Completed") as "Pending" | "Completed",
-  })),
-];
+// Empty initial data
+const initialData: ProductData[] = [];
 
 interface ScanResultsTableProps {
   scanResults: ScanResult[];
@@ -145,10 +111,9 @@ const ScanResultsTable: FC<ScanResultsTableProps> = ({
 
   // Update table data when scanResults change
   useEffect(() => {
-    if (scanResults && scanResults.length > 0) {
-      const formattedData = scanResults.map(formatScanResult);
-      setData(formattedData);
-    }
+    // Always set data based on scanResults, even if empty
+    const formattedData = scanResults.map(formatScanResult);
+    setData(formattedData);
   }, [scanResults]);
 
   // Add new scan to the table when it arrives
