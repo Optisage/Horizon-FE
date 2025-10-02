@@ -28,53 +28,18 @@ interface ScanResult {
   last_seen: string;
   last_uploaded: string;
   status: string;
-  marketplace_id: string;
+  marketplace_id: string | number;
   user_id: number;
 }
 
-// Example data for testing
-const initialData: ProductData[] = [
-  {
-    key: "1",
-    index: 1,
-    name: "TOSSI",
-    productId: "6525535",
-    items: 50,
-    found: 4,
-    lastSeen: "12/07/25",
-    lastUploaded: "12/07/25",
-    status: "Pending",
-  },
-  {
-    key: "2",
-    index: 2,
-    name: "Peak Health",
-    productId: "69028082",
-    items: 30,
-    found: 26,
-    lastSeen: "12/05/25",
-    lastUploaded: "12/05/25",
-    status: "Pending",
-  },
-  ...Array.from({ length: 7 }, (_, i) => ({
-    key: `${3 + i}`,
-    index: 3,
-    name: "CB Int",
-    productId: "69028082",
-    items: 15,
-    found: 33,
-    lastSeen: "12/05/25",
-    lastUploaded: "12/05/25",
-    status: (i < 1 ? "Pending" : "Completed") as "Pending" | "Completed",
-  })),
-];
-
 interface ScanResultsTableProps {
   newScan?: ScanResult;
+  scanResults?: ScanResult[];
+  isLoading?: boolean;
 }
 
-const ScanResultsTable: FC<ScanResultsTableProps> = ({ newScan }) => {
-  const [data, setData] = useState<ProductData[]>(initialData);
+const ScanResultsTable: FC<ScanResultsTableProps> = ({ newScan, scanResults = [], isLoading = false }) => {
+  const [data, setData] = useState<ProductData[]>([]);
 
   // Format dates from ISO to MM/DD/YY
   const formatDate = (isoDate: string): string => {
@@ -86,12 +51,31 @@ const ScanResultsTable: FC<ScanResultsTableProps> = ({ newScan }) => {
     }
   };
 
+  // Map API scan results to table data format
+  useEffect(() => {
+    if (scanResults && scanResults.length > 0) {
+      const formattedData: ProductData[] = scanResults.map((scan, index) => ({
+        key: scan.id.toString(),
+        index,
+        name: scan.product_name,
+        productId: scan.product_id || 'N/A',
+        items: scan.items_count,
+        found: scan.products_found,
+        lastSeen: formatDate(scan.last_seen),
+        lastUploaded: formatDate(scan.last_uploaded),
+        status: scan.status === "pending" ? "Pending" : "Completed",
+      }));
+      
+      setData(formattedData);
+    }
+  }, [scanResults]);
+        // Add new scan to the table when it arrives
   // Add new scan to the table when it arrives
   useEffect(() => {
     if (newScan) {
       const formattedScan: ProductData = {
         key: newScan.id.toString(),
-        index: 0, // Will be set by table rendering
+        index: 0,
         name: newScan.product_name,
         productId: newScan.product_id || 'N/A',
         items: newScan.items_count,
@@ -220,7 +204,14 @@ const ScanResultsTable: FC<ScanResultsTableProps> = ({ newScan }) => {
 
   return (
     <div className="w-full overflow-x-scroll">
-      <Table columns={columns} dataSource={data} />
+      <Table 
+        columns={columns} 
+        dataSource={data} 
+        loading={isLoading}
+        locale={{
+          emptyText: isLoading ? 'Loading...' : 'No scan results found'
+        }}
+      />
     </div>
   );
 };

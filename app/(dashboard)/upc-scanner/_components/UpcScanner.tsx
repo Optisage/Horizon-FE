@@ -20,14 +20,23 @@ interface ScanResult {
   last_seen: string;
   last_uploaded: string;
   status: string;
-  marketplace_id: string;
+  marketplace_id: string | number;
   user_id: number;
+}
+
+interface ApiResponse {
+  status: number;
+  message: string;
+  data: ScanResult[];
+  meta: any[];
 }
 
 const UpcScanner = () => {
   const [activeTab, setActiveTab] = useState<Tab>("upc");
   const [scanResults, setScanResults] = useState<ScanResult[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
+  const [totalProducts, setTotalProducts] = useState<number>(0);
 
   // Fetch scan results when component mounts
   useEffect(() => {
@@ -37,12 +46,29 @@ const UpcScanner = () => {
   // Function to fetch scan results
   const fetchScanResults = async () => {
     setIsLoading(true);
+    setError(null);
+    
     try {
-      // In a real implementation, you'd make an API call to fetch scan history
-      // For now, we'll keep the existing mock data in the table component
-      setIsLoading(false);
+      const response = await fetch('/api/upc-scanner', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      const result: ApiResponse = await response.json();
+      
+      if (response.ok && result.status === 200) {
+        setScanResults(result.data);
+        setTotalProducts(result.data.length);
+      } else {
+        setError(result.message || 'Failed to fetch scan results');
+        console.error('Error fetching scan results:', result);
+      }
     } catch (error) {
+      setError('An error occurred while fetching scan results');
       console.error("Error fetching scan results:", error);
+    } finally {
       setIsLoading(false);
     }
   };
@@ -107,10 +133,18 @@ const UpcScanner = () => {
         {/* UPC Scanner Tab */}
         {activeTab === "upc" && (
           <div className="flex flex-col gap-4">
-            <p className="text-[#8C94A3] text-sm font-medium">
-              {isLoading ? "Loading..." : "1,203 Products found"}
-            </p>
-            <ScanResultsTable newScan={scanResults[0]} />
+            {error ? (
+              <div className="p-4 bg-red-50 text-red-600 rounded-md">
+                {error}
+              </div>
+            ) : (
+              <>
+                <p className="text-[#8C94A3] text-sm font-medium">
+                  {isLoading ? "" : `${totalProducts} Products found`}
+                </p>
+                <ScanResultsTable scanResults={scanResults} newScan={scanResults[0]} isLoading={isLoading} />
+              </>
+            )}
           </div>
         )}
 
