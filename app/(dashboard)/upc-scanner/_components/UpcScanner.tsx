@@ -109,6 +109,15 @@ const UpcScanner = () => {
     setScanResults(prev => 
       prev.map(scan => scan.id === scanId ? updatedScan : scan)
     );
+    
+    // Show success notification when refresh is completed
+    message.success({
+      content: "Scan refresh completed successfully!",
+      duration: 3,
+      style: {
+        marginTop: '50px',
+      },
+    });
   };
 
   return (
