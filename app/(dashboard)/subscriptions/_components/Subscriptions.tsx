@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { useEffect, useState } from "react";
@@ -9,6 +10,7 @@ import { useAppSelector } from "@/redux/hooks";
 import {
   useLazyGetPricingQuery,
   useLazyGetProfileQuery,
+  useLazyGetUserPricingQuery,
 } from "@/redux/api/auth";
 import { Button, message, Modal } from "antd";
 import { GoAlert } from "react-icons/go";
@@ -30,7 +32,7 @@ interface PricingPlan {
   price: string;
   stripe_price_id: string;
   meta_data?: {
-    features?: string[];
+    features?: any[];
   };
 }
 
@@ -59,7 +61,7 @@ const Subscriptions = () => {
     useAppSelector((state) => state.global) || {};
 
   const [getPricing, { data, isLoading: isLoadingPricing }] =
-    useLazyGetPricingQuery();
+    useLazyGetUserPricingQuery();
   const [changeSubscription, { isLoading: changeLoading }] =
     useChangeSubscriptionMutation();
   const [getProfile] = useLazyGetProfileQuery();
@@ -68,6 +70,15 @@ const Subscriptions = () => {
     useRenewSubscriptionMutation();
 
   const { convertPrice } = useCurrencyConverter(currencyCode);
+
+  // Helper function to safely render features
+  const renderFeature = (feature: any): string => {
+    if (typeof feature === 'string') return feature;
+    if (typeof feature === 'object' && feature !== null) {
+      return feature.name || feature.description || "";
+    }
+    return "";
+  };
 
   useEffect(() => {
     getSubscription({});
@@ -106,35 +117,35 @@ const Subscriptions = () => {
       });
   };
 
-   // Determine expiration date and message
-   let expirationDate;
-   let statusMessage = "";
-   let statusText = "";
- 
-   if (subscription_canceled) {
-     statusText = "Canceled";
-     statusMessage = "Your subscription will fully expire at";
-     expirationDate = subscription_will_end_at;
-   } else {
-     switch (billing_status) {
-       case "trialing":
-         statusText = "";
-         statusMessage = "Your trial ends at";
-         expirationDate = trial_ends_at;
-         break;
-       case "active":
-         statusText = "Active";
-         statusMessage = "Your subscription will renew on";
-         expirationDate = next_billing_date;
-         break;
-       default:
-         statusText = "Inactive";
-         statusMessage = "No active subscription";
-     }
-   }
+  // Determine expiration date and message
+  let expirationDate;
+  let statusMessage = "";
+  let statusText = "";
+
+  if (subscription_canceled) {
+    statusText = "Canceled";
+    statusMessage = "Your subscription will fully expire at";
+    expirationDate = subscription_will_end_at;
+  } else {
+    switch (billing_status) {
+      case "trialing":
+        statusText = "";
+        statusMessage = "Your trial ends at";
+        expirationDate = trial_ends_at;
+        break;
+      case "active":
+        statusText = "Active";
+        statusMessage = "Your subscription will renew on";
+        expirationDate = next_billing_date;
+        break;
+      default:
+        statusText = "Inactive";
+        statusMessage = "No active subscription";
+    }
+  }
 
   return (
-    <section className="flex flex-col gap-8 min-h-[50dvh] md:min-h-[80dvh]">
+    <section className="flex flex-col gap-8 min-h-[50dvh] md:min-h-[80dvh] rounded-xl bg-white p-4 lg:p-5">
       {contextHolder}
       <div className=" flex items-center justify-between">
         <Heading
@@ -176,8 +187,9 @@ const Subscriptions = () => {
           {/* Dynamically render pricing plans */}
           {pricingData.map((plan, index) => {
             const features = plan.meta_data?.features || [];
-            const firstFeature = features[0] || "";
+            const firstFeature = features[0];
             const remainingFeatures = features.slice(1, 4);
+            
             return (
               <div
                 key={plan.id}
@@ -202,15 +214,16 @@ const Subscriptions = () => {
                     >
                       {isMonthly
                         ? convertPrice(plan.price)
-                        : convertPrice(parseFloat(plan.price) * 12)}
+                        : convertPrice((parseFloat(plan.price) * 12).toString())}
                     </span>{" "}
                     &nbsp;
                     <span>/</span> {isMonthly ? "mo" : "yr"}
                   </p>
                 </span>
-                <p className=" truncate">{firstFeature}</p>
+                
+                <p className="truncate">{renderFeature(firstFeature)}</p>
 
-                <ul className=" mt-1 text-left space-y-2 h-fit pt-2">
+                <ul className="mt-1 text-left space-y-2 h-fit pt-2">
                   {remainingFeatures.slice(0, 3).map((feature, idx) => (
                     <li className="flex gap-2 items-center" key={idx}>
                       <FaCheckCircle
@@ -218,7 +231,7 @@ const Subscriptions = () => {
                           index === 2 ? "text-white" : ""
                         }`}
                       />
-                      <span className="truncate w-full">{feature}</span>
+                      <span className="truncate w-full">{renderFeature(feature)}</span>
                     </li>
                   ))}
                 </ul>
@@ -229,12 +242,12 @@ const Subscriptions = () => {
                     plan.name !== "STARTER (PRO)" ||
                     plan.name === subscription_type
                   }
-                  className={`px-6 py-2.5 text-sm  rounded-xl font-medium duration-200 disabled:bg-gray-300 disabled:text-gray-500 ${
+                  className={`px-6 py-2.5 text-sm rounded-xl font-medium duration-200 disabled:bg-gray-300 disabled:text-gray-500 ${
                     plan.name === subscription_type
                       ? "bg-gray-300 text-gray-500 cursor-not-allowed"
                       : plan.name === "STARTER (PRO)"
                       ? "border-transparent text-white bg-primary hover:bg-primary-hover"
-                      : " hover:bg-gray-50 text-white cursor-not-allowed bg-primary hover:bg-primary-hover"
+                      : "hover:bg-gray-50 text-white cursor-not-allowed bg-primary hover:bg-primary-hover"
                   }`}
                   onClick={() => {
                     setIsModalVisible(true);

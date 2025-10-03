@@ -1,37 +1,40 @@
 "use client";
-
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import Image from "next/image";
 
 import Logo from "@/public/assets/svg/Optisage Logo.svg";
 import { CgMenuRightAlt } from "react-icons/cg";
 import CountrySelect from "./CountrySelect";
-import { useRouter } from "next/navigation";
-import Link from "next/link";
-import { useAppSelector } from "@/redux/hooks";
-import { useEffect, useState } from "react";
+// import { useRouter } from "next/navigation";
+// import { useAppSelector } from "@/redux/hooks";
+import { useState } from "react";
+import SearchInput from "./SearchInput";
+import UserProfile from "./UserProfile";
+import { VscBell, VscBellDot } from "react-icons/vsc";
 
 const DashNav = () => {
-  const router = useRouter();
-  const [remainingDays, setRemainingDays] = useState<number | null>(null);
-  const { subscription_type, created_at, billing_status } =
-    useAppSelector((state) => state.api?.user) || {};
+  // const router = useRouter();
+  // const [remainingDays, setRemainingDays] = useState<number | null>(null);
+  const [searchValue, setSearchValue] = useState("");
+  // const { subscription_type, created_at, billing_status } =
+  //   useAppSelector((state) => state.api?.user) || {};
 
-  useEffect(() => {
-    if (created_at) {
-      const verifiedDate = new Date(created_at);
-      const trialEndDate = new Date(verifiedDate);
-      trialEndDate.setDate(trialEndDate.getDate() + 7); // Add 7 days
+  // useEffect(() => {
+  //   if (created_at) {
+  //     const verifiedDate = new Date(created_at);
+  //     const trialEndDate = new Date(verifiedDate);
+  //     trialEndDate.setDate(trialEndDate.getDate() + 7); // Add 7 days
 
-      const today = new Date();
-      const timeDiff = trialEndDate.getTime() - today.getTime();
-      const daysLeft = Math.max(Math.ceil(timeDiff / (1000 * 60 * 60 * 24)), 0);
+  //     const today = new Date();
+  //     const timeDiff = trialEndDate.getTime() - today.getTime();
+  //     const daysLeft = Math.max(Math.ceil(timeDiff / (1000 * 60 * 60 * 24)), 0);
 
-      setRemainingDays(daysLeft);
-    }
-  }, [created_at]);
+  //     setRemainingDays(daysLeft);
+  //   }
+  // }, [created_at]);
 
   return (
-    <nav className="flex items-center justify-between px-5 py-3 md:py-4 lg:px-6 sticky top-0 bg-white lg:shadow-sm lg:border-transparent border-b border-gray-200 z-40">
+    <nav className="flex items-center justify-between px-5 py-3 md:py-4 lg:px-6 sticky top-0 bg-white lg:shadow-sm lg:border-transparent border-b border-gray-200 z-40 rounded-xl">
       <Image
         src={Logo}
         alt="Logo"
@@ -42,7 +45,16 @@ const DashNav = () => {
         priority
       />
 
-      <div className="hidden lg:flex items-center gap-3">
+      <div className="max-w-[484px] w-full hidden lg:block">
+        <SearchInput
+          placeholder="Search for Products on Amazon"
+          // placeholder="Search for Products on Amazon (For best results use specific keywords, UPC code, ASIN or ISBN code)"
+          value={searchValue}
+          onChange={setSearchValue}
+        />
+      </div>
+
+      {/* <div className="hidden lg:flex items-center gap-3">
         {billing_status !== "active" && (
           <p className="text-sm font-medium text-[#090F0D]">
             {remainingDays !== null && remainingDays > 0
@@ -60,27 +72,28 @@ const DashNav = () => {
         >
           Subscribe Now
         </button>
-      </div>
+      </div> */}
 
-      <div className="flex gap-8 md:gap-6 items-center">
-        <div className="flex gap-6 items-center">
-          <span
-         className="hidden xl:block text-sm font-medium text-[#090F0D] "
-          >
+      <div className="flex gap-4 sm:gap-8 md:gap-6 items-center">
+        <div className="flex gap-3 ms:gap-6 items-center">
+          {/* <span className="hidden xl:block text-sm font-medium text-[#090F0D] ">
             For a better experience, please install the{" "}
             <Link
-            href="https://chromewebstore.google.com/detail/optisage/dmdfkdhmbanaldplibbnlgdonafbfaaj?authuser=3&hl=en"
-            className="underline"
+              href="https://chromewebstore.google.com/detail/optisage/dmdfkdhmbanaldplibbnlgdonafbfaaj?authuser=3&hl=en"
+              className="underline"
             >
-            optisage chrome extension
+              optisage chrome extension
             </Link>
-          </span>
+          </span> */}
+
           <CountrySelect />
+          <VscBell size={25} color="#18cb96" />
+          <UserProfile />
         </div>
 
         <label
           htmlFor="my-drawer-2"
-          className="block lg:hidden text-primary-400 md:ml-4"
+          className="block lg:hidden text-primary-400 md:ml-4 "
         >
           <CgMenuRightAlt size="25" />
         </label>
@@ -90,4 +103,3 @@ const DashNav = () => {
 };
 
 export default DashNav;
-

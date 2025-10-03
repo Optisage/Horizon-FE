@@ -9,28 +9,25 @@ export const quickSearchApi = createApi({
     endpoints: (builder) => ({
         getAllCountries: builder.query({
             query: () => ({
-                url: "team-b/reroute?include=stores",
+                url: "/go-compare/countries",
                 method: "GET",
-                meta: { endpointHeader: '/countries', }
             }),
         }),
         quickSearch: builder.query({
-            query: ({ store_names, asin, country_ids, queue }: { store_names: string[]; asin: string; country_ids: string; queue: boolean }) => {
-                const storeNamesParam = store_names
-                    .map(name => encodeURIComponent(name))
-                    .join(',');
-                return {
-                    url: `team-b/reroute?stores=${storeNamesParam}&asin=${asin}&country_id=${country_ids}&queue=${queue}&group_by=flat`,
-                    method: "GET",
-                    meta: { endpointHeader: '/quick-search', }
-                }
-            },
+            query: ({ asin, marketplace_id, queue }: { asin: string; marketplace_id: number; queue: boolean }) => ({
+                url: "/go-compare/quick-search",
+                method: "POST",
+                body: {
+                    asin_upc: asin,
+                    marketplace_id: marketplace_id
+                },
+                meta: { endpointHeader: '/quick-search', }
+            }),
         }),
         searchHistory: builder.query({
             query: ({ page, perPage }) => ({
-                url: `team-b/reroute?include=store,marketplace,country&page=${page}&perPage=${perPage}`,
+                url: `/go-compare/search-history?page=${page}&per_page=${perPage}`,
                 method: "GET",
-                meta: { endpointHeader: '/search-histories', }
             }),
         }),
         getSearchById: builder.query({
@@ -47,6 +44,12 @@ export const quickSearchApi = createApi({
                 meta: { endpointHeader: '/reverse-arbitrage', }
             }),
         }),
+        getProductDetails: builder.query({
+            query: ({ asin, marketplace_id }) => ({
+                url: `team-b/products/details?asin=${asin}&marketplace_id=${marketplace_id}`,
+                method: "GET",
+            }),
+        }),
     }),
 });
 
@@ -55,7 +58,9 @@ export const {
     useQuickSearchQuery,
     useSearchHistoryQuery,
     useGetSearchByIdQuery,
-    useReverseSearchQuery
+    useReverseSearchQuery,
+    useGetProductDetailsQuery,
+    useLazyGetProductDetailsQuery
 } = quickSearchApi;
 
 
