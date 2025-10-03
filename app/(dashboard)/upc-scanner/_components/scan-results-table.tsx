@@ -215,4 +215,3 @@ const ScanResultsTable: FC<ScanResultsTableProps> = ({ onDetailsClick }) => {
 };
 
 export default ScanResultsTable;
-

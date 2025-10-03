@@ -4,12 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import { MdOutlineInsertChartOutlined } from "react-icons/md";
 import Header from "./Header";
 import ScanResultsTable from "./scan-results-table";
-import {
-  HiOutlineCamera,
-  HiOutlineCloudArrowUp,
-  HiOutlineComputerDesktop,
-  HiOutlinePhoto,
-} from "react-icons/hi2";
+import { HiOutlineCloudArrowUp } from "react-icons/hi2";
 import { HiChevronDown } from "react-icons/hi";
 import ConfirmScanModal from "./confirm-scan-modal";
 import ScanDetailsTable from "./scan-details-table";
@@ -18,6 +13,27 @@ import MiniDatePicker from "./date-picker";
 import { IoSearchOutline } from "react-icons/io5";
 
 type Tab = "upc" | "new";
+
+// Interface for scan result data
+export interface ScanResult {
+  id: number;
+  product_name: string;
+  product_id: string | null;
+  items_count: number;
+  products_found: number;
+  last_seen: string;
+  last_uploaded: string;
+  status: string;
+  marketplace_id: string;
+  user_id: number;
+}
+
+interface ApiResponse {
+  status: number;
+  message: string;
+  data: ScanResult[];
+  meta: any[];
+}
 
 const UpcScanner = () => {
   const [activeTab, setActiveTab] = useState<Tab>("upc");
@@ -163,62 +179,3 @@ const UpcScanner = () => {
 };
 
 export default UpcScanner;
-
-// UploadDropdown
-const UploadDropdown = () => {
-  const [open, setOpen] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
-
-  // Close when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (
-        dropdownRef.current &&
-        !dropdownRef.current.contains(event.target as Node)
-      ) {
-        setOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
-
-  return (
-    <div className="relative inline-block mx-auto" ref={dropdownRef}>
-      <button
-        type="button"
-        onClick={() => setOpen((prev) => !prev)}
-        className="flex items-center gap-1.5 bg-primary hover:bg-primary/90 transition-colors rounded-full text-white font-semibold py-2 px-4"
-      >
-        <HiOutlinePhoto className="size-5" />
-        Upload Option
-        <HiChevronDown
-          className={`size-5 transition-transform ${open ? "rotate-180" : ""}`}
-        />
-      </button>
-
-      {open && (
-        <div className="absolute left-0 mt-2 z-10 rounded-lg border border-[#E5E5E5] p-2 min-w-[174px] bg-white shadow-md">
-          <button
-            type="button"
-            className="rounded-md bg-[#F3F4F6] hover:bg-[#e2e4e7] flex items-center justify-between py-1 px-2.5 w-full"
-          >
-            From Device
-            <HiOutlineComputerDesktop className="size-5 text-[#A9ACB2]" />
-          </button>
-
-          <hr className="border-t border-[#E5E5E580] my-3" />
-
-          <button
-            type="button"
-            className="rounded-md hover:bg-gray-100 flex items-center justify-between py-1 px-2.5 w-full"
-          >
-            Take Photo
-            <HiOutlineCamera className="size-5 text-[#A9ACB2]" />
-          </button>
-        </div>
-      )}
-    </div>
-  );
-};
-
