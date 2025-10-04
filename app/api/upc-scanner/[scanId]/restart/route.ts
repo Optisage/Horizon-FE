@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { ScanResult } from '@/app/(dashboard)/upc-scanner/_components/UpcScanner';
 
 export async function POST(
   req: NextRequest,
@@ -16,7 +15,7 @@ export async function POST(
       );
     }
 
-    const { scanId } = params;
+    const { scanId } = await Promise.resolve(params);
     
     // Forward the request to the backend API
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
