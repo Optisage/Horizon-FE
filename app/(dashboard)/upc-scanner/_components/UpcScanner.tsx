@@ -11,6 +11,7 @@ import { CgClose } from "react-icons/cg";
 import MiniDatePicker from "./date-picker";
 import { IoSearchOutline } from "react-icons/io5";
 import { message, Modal } from "antd";
+import dayjs from "dayjs";
 
 type Tab = "upc" | "new";
 
@@ -100,6 +101,8 @@ const UpcScanner = () => {
   const [productName, setProductName] = useState<string>("");
   const [marketplaceId, setMarketplaceId] = useState<string>("6");
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState<string>("");
+  const [filterDate, setFilterDate] = useState<dayjs.Dayjs | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -475,12 +478,17 @@ const UpcScanner = () => {
                     type="text"
                     id="product_name"
                     placeholder="Enter Product Name"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
                     className="w-full py-3 pl-10 pr-4 text-[#596375] border border-border rounded-lg outline-none focus:border-primary"
                   />
                 </div>
               </div>
 
-              <MiniDatePicker />
+              <MiniDatePicker 
+                selectedDate={filterDate || undefined}
+                onChange={(date) => setFilterDate(date)}
+              />
             </div>
           )}
         </div>
@@ -509,7 +517,18 @@ const UpcScanner = () => {
                 onDetailsClick={handleDetailsClick}
                 onRefreshScan={handleRefreshScan}
                 onDeleteScan={handleDeleteScan}
-                scanResults={scanResults}
+                scanResults={scanResults.filter(scan => {
+                  // Apply search term filter
+                  const matchesSearch = searchTerm === "" || 
+                    scan.product_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                    (scan.product_id && scan.product_id.toLowerCase().includes(searchTerm.toLowerCase()));
+                  
+                  // Apply date filter if selected
+                  const matchesDate = !filterDate || 
+                    dayjs(scan.last_seen).format('YYYY-MM-DD') === filterDate.format('YYYY-MM-DD');
+                  
+                  return matchesSearch && matchesDate;
+                })}
                 isLoading={isLoading}
               />
             )}
