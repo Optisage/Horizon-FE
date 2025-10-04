@@ -12,6 +12,7 @@ import {
   HiTrash,
   HiArrowDownTray,
 } from "react-icons/hi2";
+import * as XLSX from 'xlsx';
 
 interface ScanResultsTableProps {
   onDetailsClick?: (productId: string) => void;
@@ -47,6 +48,44 @@ export interface ProductData {
 const ScanResultsTable: FC<ScanResultsTableProps> = ({ onDetailsClick, onRefreshScan, onDeleteScan, scanResults = [], isLoading = false }) => {
   // Track which scan is currently refreshing
   const [refreshingId, setRefreshingId] = useState<number | null>(null);
+  
+  // Function to download scan results as Excel file
+  const handleDownloadExcel = (record: ProductData) => {
+    // Find the original scan result data
+    const scanData = scanResults.find(scan => scan.id.toString() === record.key);
+    
+    if (!scanData) return;
+    
+    // Create worksheet data
+    const wsData = [
+      // Headers
+      ['UPC Scanner Results'],
+      [''],
+      ['Scan Details'],
+      ['Search Name', scanData.product_name],
+      ['UPC / EAN', scanData.product_id || ''],
+      ['Items Count', scanData.items_count.toString()],
+      ['Products Found', scanData.products_found.toString()],
+      ['Last Scan', new Date(scanData.last_seen).toLocaleDateString()],
+      ['Last Uploaded', new Date(scanData.last_uploaded).toLocaleDateString()],
+      ['Status', scanData.status],
+      ['Marketplace ID', scanData.marketplace_id]
+    ];
+    
+    // Create worksheet
+    const ws = XLSX.utils.aoa_to_sheet(wsData);
+    
+    // Create workbook
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Scan Results');
+    
+    // Generate filename
+    const fileName = `UPC_Scan_${scanData.product_name.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.xlsx`;
+    
+    // Write and download
+    XLSX.writeFile(wb, fileName);
+  };
+  
   // Convert API scan results to table format
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -160,6 +199,9 @@ const ScanResultsTable: FC<ScanResultsTableProps> = ({ onDetailsClick, onRefresh
                 <span>Download</span>
               </div>
             ),
+            onClick: () => {
+              handleDownloadExcel(record);
+            },
           },
           {
             key: "delete",
