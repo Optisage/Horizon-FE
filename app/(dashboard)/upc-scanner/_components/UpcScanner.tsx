@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import { MdOutlineInsertChartOutlined } from "react-icons/md";
 import Header from "./Header";
 import ScanResultsTable from "./scan-results-table";
@@ -12,6 +12,7 @@ import MiniDatePicker from "./date-picker";
 import { IoSearchOutline } from "react-icons/io5";
 import { message, Modal } from "antd";
 import dayjs from "dayjs";
+import debounce from "lodash/debounce";
 
 type Tab = "upc" | "new";
 
@@ -102,6 +103,7 @@ const UpcScanner = () => {
   const [marketplaceId, setMarketplaceId] = useState<string>("6");
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState<string>("");
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState<string>("");
   const [filterDate, setFilterDate] = useState<dayjs.Dayjs | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -120,19 +122,54 @@ const UpcScanner = () => {
     };
   }, []);
   
+  // Debounce search input to prevent excessive filtering
+  const debouncedFn = useRef(debounce((value: string) => {
+    setDebouncedSearchTerm(value);
+  }, 300));
+  
+  const debouncedSearch = useCallback((value: string) => {
+    debouncedFn.current(value);
+  }, []);
+  
+  // Update debounced search term when searchTerm changes
+  useEffect(() => {
+    debouncedSearch(searchTerm);
+    // Capture the current value of the ref to avoid stale closures in cleanup
+    const currentDebouncedFn = debouncedFn.current;
+    return () => {
+      currentDebouncedFn.cancel();
+    };
+  }, [searchTerm, debouncedSearch]);
+  
   // Fetch scan results from API
   const [isLoading, setIsLoading] = useState(false);
+  // Using retryCount to trigger refetching when retry is clicked
+  const [retryCount, setRetryCount] = useState(0);
   
   useEffect(() => {
+    const controller = new AbortController();
+    let isMounted = true;
+    
     const fetchScanResults = async () => {
+      if (!isMounted) return;
+      
       setIsLoading(true);
       
       try {
-        const response = await fetch('/api/upc-scanner');
+        const response = await fetch('/api/upc-scanner', {
+          signal: controller.signal,
+          // Add cache control headers to prevent stale data
+          headers: {
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache',
+            'Expires': '0'
+          }
+        });
         
         // Check if response is ok before parsing JSON
         if (!response.ok) {
-          throw new Error(`API responded with status: ${response.status}`);
+          const errorText = await response.text().catch(() => 'Unknown error');
+          throw new Error(`API responded with status: ${response.status}, details: ${errorText}`);
         }
         
         // Check content type to ensure it's JSON
@@ -144,36 +181,78 @@ const UpcScanner = () => {
         const data: ApiResponse = await response.json();
         
         if (data.status === 200) {
-          setScanResults(data.data);
+          if (isMounted) {
+            setScanResults(data.data);
+            setRetryCount(0); // Reset retry count on success
+          }
         } else {
-          message.error(data.message || 'Failed to fetch scan results');
+          throw new Error(data.message || 'Failed to fetch scan results');
         }
-      } catch (err) {
+      } catch (err: unknown) {
+        if (!isMounted) return;
+        
+        let errorMessage = 'An error occurred while fetching scan results';
+        
         if (err instanceof SyntaxError) {
-          message.error('Invalid response format from server');
-        } else {
-          message.error('An error occurred while fetching scan results');
+          errorMessage = 'Invalid response format from server';
+        } else if (err instanceof Error && err.name === 'AbortError') {
+          // Don't show error for aborted requests
+          return;
+        } else if (err instanceof Error && err.message) {
+          errorMessage = err.message;
         }
+        
         console.error('Error fetching scan results:', err);
+        
+        // Show error message with retry option
+        message.error({
+          content: (
+            <div>
+              {errorMessage}
+              <button 
+                onClick={() => setRetryCount(prev => prev + 1)}
+                style={{ marginLeft: '10px', color: '#18CB96', background: 'none', border: 'none', cursor: 'pointer' }}
+              >
+                Retry
+              </button>
+            </div>
+          ),
+          duration: 5
+        });
       } finally {
-        setIsLoading(false);
+        if (isMounted) {
+          setIsLoading(false);
+        }
       }
     };
     
     fetchScanResults();
-  }, []);
+    
+    return () => {
+      isMounted = false;
+      controller.abort();
+    };
+  }, [retryCount]); // Retry when retryCount changes
   
-  // Handle refreshing a scan
-  const handleRefreshScan = async (scanId: number) => {
+  // Handle refreshing a scan with retry mechanism
+  const handleRefreshScan = async (scanId: number, retryAttempt = 0, maxRetries = 3) => {
     try {
-      message.loading({ content: 'Refreshing scan...', key: 'refreshScan' });
+      message.loading({ 
+        content: retryAttempt > 0 ? `Retrying scan refresh (${retryAttempt}/${maxRetries})...` : 'Refreshing scan...', 
+        key: 'refreshScan' 
+      });
       
       const response = await fetch(`/api/upc-scanner/${scanId}/restart`, {
         method: 'POST',
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache'
+        }
       });
       
       if (!response.ok) {
-        throw new Error(`HTTP error! Status: ${response.status}`);
+        const errorText = await response.text().catch(() => 'Unknown error');
+        throw new Error(`HTTP error! Status: ${response.status}, details: ${errorText}`);
       }
       
       const data = await response.json();
@@ -195,11 +274,45 @@ const UpcScanner = () => {
           );
         }
       } else {
-        message.error({ content: data.message || 'Failed to refresh scan', key: 'refreshScan' });
+        throw new Error(data.message || 'Failed to refresh scan');
       }
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('Error refreshing scan:', err);
-      message.error({ content: 'Failed to refresh scan', key: 'refreshScan' });
+      
+      // Implement retry logic
+      if (retryAttempt < maxRetries) {
+        message.warning({ 
+          content: (
+            <div>
+              Refresh failed: {err instanceof Error ? err.message : 'Unknown error'}
+              <button 
+                onClick={() => handleRefreshScan(scanId, retryAttempt + 1, maxRetries)}
+                style={{ marginLeft: '10px', color: '#18CB96', background: 'none', border: 'none', cursor: 'pointer' }}
+              >
+                Retry Now
+              </button>
+            </div>
+          ), 
+          key: 'refreshScan',
+          duration: 5
+        });
+      } else {
+        message.error({ 
+          content: (
+            <div>
+              Failed to refresh scan after {maxRetries} attempts: {err instanceof Error ? err.message : 'Unknown error'}
+              <button 
+                onClick={() => handleRefreshScan(scanId, 0, maxRetries)}
+                style={{ marginLeft: '10px', color: '#18CB96', background: 'none', border: 'none', cursor: 'pointer' }}
+              >
+                Try Again
+              </button>
+            </div>
+          ), 
+          key: 'refreshScan',
+          duration: 7
+        });
+      }
     }
   }
   
@@ -255,7 +368,7 @@ const UpcScanner = () => {
           } else {
             message.error({ content: data.message || 'Failed to delete scan', key: 'deleteScan' });
           }
-        } catch (err) {
+        } catch (err: unknown) {
           console.error('Error deleting scan:', err);
           message.error({ content: 'Failed to delete scan', key: 'deleteScan' });
         }
@@ -263,8 +376,12 @@ const UpcScanner = () => {
     });
   };
 
-  // Fetch scan details when a product is selected
+  // Fetch scan details when a product is selected with lazy loading
   useEffect(() => {
+    // Track if the component is still mounted
+    let isMounted = true;
+    const controller = new AbortController();
+    
     const fetchScanDetails = async () => {
       if (!selectedProductId) {
         setScanDetails(null);
@@ -273,8 +390,10 @@ const UpcScanner = () => {
       
       setIsLoadingDetails(true);
       try {
-        // Use the API endpoint with /api prefix
-        const response = await fetch(`/api/upc-scanner/${selectedProductId}`);
+        // Use the API endpoint with /api prefix and abort signal for cancellation
+        const response = await fetch(`/api/upc-scanner/${selectedProductId}`, {
+          signal: controller.signal
+        });
         
         // Check if response is OK
         if (!response.ok) {
@@ -287,23 +406,80 @@ const UpcScanner = () => {
           throw new Error("Response is not JSON");
         }
         
-        const data: ScanDetailsResponse = await response.json();
-        setScanDetails(data.data);
-      } catch (err) {
+        // Process the response only if component is still mounted
+        if (isMounted) {
+          const data: ScanDetailsResponse = await response.json();
+          
+          // Implement lazy loading by processing data in chunks
+          // First set basic details immediately
+          setScanDetails(prevDetails => ({
+            ...data.data,
+            // Keep existing products if any until we process the new ones
+            products: prevDetails?.products || []
+          }));
+          
+          // Then process products in batches asynchronously
+          if (data.data.products && data.data.products.length > 0) {
+            // Process in batches of 10 products at a time
+            const batchSize = 10;
+            for (let i = 0; i < data.data.products.length; i += batchSize) {
+              if (!isMounted) break; // Stop if component unmounted
+              
+              const batch = data.data.products.slice(i, i + batchSize);
+              
+              // Update state with each batch
+              setScanDetails(prevDetails => {
+                if (!prevDetails) return data.data;
+                
+                const existingProducts = prevDetails.products || [];
+                const newProducts = [...existingProducts];
+                
+                // Add new batch products
+                batch.forEach(product => {
+                  const index = newProducts.findIndex(p => p.asin_upc === product.asin_upc);
+                  if (index >= 0) {
+                    newProducts[index] = product;
+                  } else {
+                    newProducts.push(product);
+                  }
+                });
+                
+                return {
+                  ...prevDetails,
+                  products: newProducts
+                };
+              });
+              
+              // Small delay to prevent UI blocking
+              if (i + batchSize < data.data.products.length) {
+                await new Promise(resolve => setTimeout(resolve, 10));
+              }
+            }
+          }
+        }
+      } catch (err: unknown) {
         if (err instanceof SyntaxError) {
           // JSON parsing error
           message.error("Invalid response format from server");
-        } else {
-          // Other fetch errors
+        } else if (err instanceof Error && err.name !== 'AbortError') {
+          // Other fetch errors (excluding aborts)
           message.error("Failed to fetch scan details");
         }
         console.error("Error fetching scan details:", err);
       } finally {
-        setIsLoadingDetails(false);
+        if (isMounted) {
+          setIsLoadingDetails(false);
+        }
       }
     };
 
     fetchScanDetails();
+    
+    // Cleanup function to handle component unmounting
+    return () => {
+      isMounted = false;
+      controller.abort();
+    };
   }, [selectedProductId]);
 
   // Marketplace options with icons
@@ -341,21 +517,34 @@ const UpcScanner = () => {
   };
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      // Check if file is Excel format
-      const allowedTypes = [
-        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', // .xlsx
-        'application/vnd.ms-excel', // .xls
-      ];
-      
-      if (allowedTypes.includes(file.type)) {
-        setSelectedFile(file);
-        message.success(`File "${file.name}" selected successfully`);
-      } else {
-        message.error('Please select a valid Excel file (.xlsx or .xls)');
-      }
+    const files = event.target.files;
+    if (!files || files.length === 0) {
+      return;
     }
+    
+    const file = files[0];
+    
+    // File type validation is done by extension check below
+    
+    // Validate file size (max 5MB)
+    const maxSize = 5 * 1024 * 1024; // 5MB in bytes
+    if (file.size > maxSize) {
+      message.error('File is too large. Maximum size is 5MB');
+      event.target.value = '';
+      return;
+    }
+    
+    // Validate file extension
+    const fileName = file.name.toLowerCase();
+    if (!fileName.endsWith('.xlsx') && !fileName.endsWith('.xls') && !fileName.endsWith('.ods')) {
+      message.error('Invalid file extension. Please upload an Excel file (.xlsx, .xls, .ods)');
+      event.target.value = '';
+      return;
+    }
+    
+    // Set the file if all validations pass
+    setSelectedFile(file);
+    message.success(`File "${file.name}" selected successfully`);
   };
 
   const handleUpload = async () => {
@@ -368,44 +557,114 @@ const UpcScanner = () => {
       message.error('Please enter a product name');
       return;
     }
+    
+    // Additional validation before upload
+    if (productName.trim().length < 3) {
+      message.error('Product name must be at least 3 characters long');
+      return;
+    }
+    
+    if (productName.trim().length > 100) {
+      message.error('Product name must be less than 100 characters');
+      return;
+    }
 
     setIsUploading(true);
-    try {
-      const formData = new FormData();
-      formData.append('file', selectedFile);
-      formData.append('product_name', productName.trim());
-      formData.append('product_id_type', 'asin,upc'); // Include both ASIN and UPC
-      formData.append('marketplace_id', marketplaceId);
+    let retryCount = 0;
+    const maxRetries = 2;
+    
+    const attemptUpload = async () => {
+      try {
+        const formData = new FormData();
+        formData.append('file', selectedFile);
+        formData.append('product_name', productName.trim());
+        formData.append('product_id_type', 'asin,upc'); // Include both ASIN and UPC
+        formData.append('marketplace_id', marketplaceId);
 
-      const response = await fetch('/api/upc-scanner', {
-        method: 'POST',
-        body: formData,
-      });
+        const response = await fetch('/api/upc-scanner', {
+          method: 'POST',
+          body: formData,
+          headers: {
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache'
+          }
+        });
 
-      if (response.ok) {
-        const result: SingleScanResponse = await response.json();
-        message.success('UPC Scan created successfully!');
-        
-        // Add the new scan result to the existing results
-        setScanResults(prevResults => [result.data, ...prevResults]);
-        
-        // Reset form
-        setSelectedFile(null);
-        setProductName("");
-        setActiveTab('upc'); // Switch back to results tab
-        
-        // Reset file input
-        if (fileInputRef.current) {
-          fileInputRef.current.value = '';
+        if (response.ok) {
+          const result: SingleScanResponse = await response.json();
+          message.success('UPC Scan created successfully!');
+          
+          // Add the new scan result to the existing results
+          setScanResults(prevResults => [result.data, ...prevResults]);
+          
+          // Reset form
+          setSelectedFile(null);
+          setProductName("");
+          setActiveTab('upc'); // Switch back to results tab
+          
+          // Reset file input
+          if (fileInputRef.current) {
+            fileInputRef.current.value = '';
+          }
+        } else {
+          const errorText = await response.text();
+          let errorMessage = 'Upload failed';
+          
+          try {
+            const errorResult = JSON.parse(errorText);
+            errorMessage = errorResult.message || errorMessage;
+          } catch {
+            // If JSON parsing fails, use the raw error text
+            errorMessage = `Upload failed: ${response.status} ${errorText.substring(0, 100)}`;
+          }
+          
+          throw new Error(errorMessage);
         }
-      } else {
-        const errorResult = await response.json();
-        throw new Error(errorResult.message || 'Upload failed');
+      } catch (error) {
+        console.error('Upload error:', error);
+        
+        if (retryCount < maxRetries) {
+          retryCount++;
+          message.warning({
+            content: (
+              <div>
+                Upload failed: {error instanceof Error ? error.message : 'Unknown error'}
+                <button 
+                  onClick={attemptUpload}
+                  style={{ marginLeft: '10px', color: '#18CB96', background: 'none', border: 'none', cursor: 'pointer' }}
+                >
+                  Retry Now ({retryCount}/{maxRetries})
+                </button>
+              </div>
+            ),
+            duration: 5
+          });
+        } else {
+          message.error({
+            content: (
+              <div>
+                Failed to upload after {maxRetries} attempts: {error instanceof Error ? error.message : 'Unknown error'}
+                <button 
+                  onClick={() => { retryCount = 0; attemptUpload(); }}
+                  style={{ marginLeft: '10px', color: '#18CB96', background: 'none', border: 'none', cursor: 'pointer' }}
+                >
+                  Try Again
+                </button>
+              </div>
+            ),
+            duration: 7
+          });
+        }
+        
+        setIsUploading(false);
+        return false;
       }
-    } catch (error) {
-      console.error('Upload error:', error);
-      message.error(error instanceof Error ? error.message : 'Failed to upload file. Please try again.');
-    } finally {
+      
+      return true;
+    };
+    
+    const success = await attemptUpload();
+    if (success) {
       setIsUploading(false);
     }
   };
@@ -518,10 +777,10 @@ const UpcScanner = () => {
                 onRefreshScan={handleRefreshScan}
                 onDeleteScan={handleDeleteScan}
                 scanResults={scanResults.filter(scan => {
-                  // Apply search term filter
-                  const matchesSearch = searchTerm === "" || 
-                    scan.product_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                    (scan.product_id && scan.product_id.toLowerCase().includes(searchTerm.toLowerCase()));
+                  // Apply debounced search term filter
+                  const matchesSearch = debouncedSearchTerm === "" || 
+                    scan.product_name.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
+                    (scan.product_id && scan.product_id.toLowerCase().includes(debouncedSearchTerm.toLowerCase()));
                   
                   // Apply date filter if selected
                   const matchesDate = !filterDate || 
