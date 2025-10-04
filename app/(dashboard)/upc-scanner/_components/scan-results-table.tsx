@@ -4,7 +4,7 @@ import { Tooltip, Dropdown } from "antd";
 import { CustomTable as Table } from "@/lib/AntdComponents";
 import type { ColumnsType } from "antd/es/table";
 import type { MenuProps } from "antd";
-import { FC } from "react";
+import { FC, useState } from "react";
 import {
   HiArrowPath,
   HiPrinter,
@@ -12,9 +12,25 @@ import {
   HiTrash,
   HiArrowDownTray,
 } from "react-icons/hi2";
+import * as XLSX from 'xlsx';
 
 interface ScanResultsTableProps {
   onDetailsClick?: (productId: string) => void;
+  onRefreshScan?: (scanId: number) => void;
+  onDeleteScan?: (scanId: number) => void;
+  scanResults?: Array<{
+    id: number;
+    product_name: string;
+    product_id: string | null;
+    items_count: number;
+    products_found: number;
+    last_seen: string;
+    last_uploaded: string;
+    status: string;
+    marketplace_id: string;
+    user_id: number;
+  }>;
+  isLoading?: boolean;
 }
 
 export interface ProductData {
@@ -29,43 +45,69 @@ export interface ProductData {
   status: "Pending" | "Completed";
 }
 
-const data: ProductData[] = [
-  {
-    key: "1",
-    index: 1,
-    name: "TOSSI",
-    productId: "6525535",
-    items: 50,
-    found: 4,
-    lastScan: "12/07/25",
-    lastUploaded: "12/07/25",
-    status: "Pending",
-  },
-  {
-    key: "2",
-    index: 2,
-    name: "Peak Health",
-    productId: "69028082",
-    items: 30,
-    found: 26,
-    lastScan: "12/05/25",
-    lastUploaded: "12/05/25",
-    status: "Pending",
-  },
-  ...Array.from({ length: 7 }, (_, i) => ({
-    key: `${3 + i}`,
-    index: 3,
-    name: "CB Int",
-    productId: "69028082",
-    items: 15,
-    found: 33,
-    lastScan: "12/05/25",
-    lastUploaded: "12/05/25",
-    status: (i < 1 ? "Pending" : "Completed") as "Pending" | "Completed",
-  })),
-];
+const ScanResultsTable: FC<ScanResultsTableProps> = ({ onDetailsClick, onRefreshScan, onDeleteScan, scanResults = [], isLoading = false }) => {
+  // Track which scan is currently refreshing
+  const [refreshingId, setRefreshingId] = useState<number | null>(null);
+  
+  // Function to download scan results as Excel file
+  const handleDownloadExcel = (record: ProductData) => {
+    // Find the original scan result data
+    const scanData = scanResults.find(scan => scan.id.toString() === record.key);
+    
+    if (!scanData) return;
+    
+    // Create worksheet data
+    const wsData = [
+      // Headers
+      ['UPC Scanner Results'],
+      [''],
+      ['Scan Details'],
+      ['Search Name', scanData.product_name],
+      ['UPC / EAN', scanData.product_id || ''],
+      ['Items Count', scanData.items_count.toString()],
+      ['Products Found', scanData.products_found.toString()],
+      ['Last Scan', new Date(scanData.last_seen).toLocaleDateString()],
+      ['Last Uploaded', new Date(scanData.last_uploaded).toLocaleDateString()],
+      ['Status', scanData.status],
+      ['Marketplace ID', scanData.marketplace_id]
+    ];
+    
+    // Create worksheet
+    const ws = XLSX.utils.aoa_to_sheet(wsData);
+    
+    // Create workbook
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Scan Results');
+    
+    // Generate filename
+    const fileName = `UPC_Scan_${scanData.product_name.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.xlsx`;
+    
+    // Write and download
+    XLSX.writeFile(wb, fileName);
+  };
+  
+  // Convert API scan results to table format
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', { 
+      month: '2-digit', 
+      day: '2-digit', 
+      year: '2-digit' 
+    });
+  };
 
-const ScanResultsTable: FC<ScanResultsTableProps> = ({ onDetailsClick }) => {
+  // Use real data from API, no fallback to sample data
+  const tableData: ProductData[] = scanResults.map((scan, index) => ({
+    key: scan.id.toString(),
+    index: index + 1,
+    name: scan.product_name,
+    productId: scan.product_id || scan.id.toString(),
+    items: scan.items_count,
+    found: scan.products_found,
+    lastScan: formatDate(scan.last_seen),
+    lastUploaded: formatDate(scan.last_uploaded),
+    status: scan.status === 'pending' ? 'Pending' : 'Completed' as "Pending" | "Completed",
+  }));
   const columns: ColumnsType<ProductData> = [
     {
       title: "#",
@@ -79,7 +121,7 @@ const ScanResultsTable: FC<ScanResultsTableProps> = ({ onDetailsClick }) => {
       dataIndex: "name",
       key: "name",
       render: (name, _, index) => {
-        const dotColor = name === "TOSSI" ? "black" : "#009F6D";
+        const dotColor = name === "TOSSI" ? "black" : "#18CB96";
         return (
           <div className="flex items-center gap-2">
             <span
@@ -136,8 +178,8 @@ const ScanResultsTable: FC<ScanResultsTableProps> = ({ onDetailsClick }) => {
         <span
           className={`px-1.5 py-1 rounded-full text-xs font-semibold`}
           style={{
-            backgroundColor: status === "Pending" ? "#FDF5E9" : "#EDF7F5",
-            color: status === "Pending" ? "#FF9B06" : "#009F6D",
+            backgroundColor: status === "Pending" ? "#FDF5E9" : "#18CB9610",
+          color: status === "Pending" ? "#FF9B06" : "#18CB96",
           }}
         >
           {status}
@@ -157,6 +199,9 @@ const ScanResultsTable: FC<ScanResultsTableProps> = ({ onDetailsClick }) => {
                 <span>Download</span>
               </div>
             ),
+            onClick: () => {
+              handleDownloadExcel(record);
+            },
           },
           {
             key: "delete",
@@ -166,16 +211,30 @@ const ScanResultsTable: FC<ScanResultsTableProps> = ({ onDetailsClick }) => {
                 <span>Delete</span>
               </div>
             ),
+            onClick: () => {
+              const scanId = parseInt(record.key);
+              onDeleteScan?.(scanId);
+            },
           },
         ];
 
         return (
           <div className="flex gap-2">
             <Tooltip title="Refresh">
-              <button type="button" aria-label="Refresh">
+              <button 
+                type="button" 
+                aria-label="Refresh" 
+                onClick={() => {
+                  const scanId = parseInt(record.key);
+                  setRefreshingId(scanId);
+                  onRefreshScan?.(scanId);
+                  // Reset the refreshing state after 2 seconds
+                  setTimeout(() => setRefreshingId(null), 2000);
+                }}
+              >
                 <HiArrowPath
                   size={24}
-                  className="text-[#8C94A3] hover:text-black"
+                  className={`${refreshingId === parseInt(record.key) ? 'text-primary animate-spin' : 'text-[#8C94A3] hover:text-black'}`}
                 />
               </button>
             </Tooltip>
@@ -208,11 +267,15 @@ const ScanResultsTable: FC<ScanResultsTableProps> = ({ onDetailsClick }) => {
   ];
 
   return (
-    <div className="w-full overflow-x-scroll">
-      <Table columns={columns} dataSource={data} />
-    </div>
+    <Table
+      columns={columns}
+      dataSource={tableData}
+      pagination={false}
+      scroll={{ x: 800 }}
+      className="custom-table"
+      loading={isLoading}
+    />
   );
 };
 
 export default ScanResultsTable;
-
