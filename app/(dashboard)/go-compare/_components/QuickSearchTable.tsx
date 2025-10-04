@@ -196,9 +196,9 @@ export default function QuickSearchTable({ products, onRowClick }: ProductTableP
                 <th className="px-4 py-3 text-left font-medium text-gray-600">Store</th>
                 <th className="px-4 py-3 text-left font-medium text-gray-600">Profit Margin</th>
                 <th className="px-4 py-3 text-left font-medium text-gray-600">Gross ROI</th>
-                <th className="px-4 py-3 text-left font-medium text-gray-600">Target Fees</th>
+                <th className="px-4 py-3 text-left font-medium text-gray-600">Amazon Price</th>
                 <th className="px-4 py-3 text-left font-medium text-gray-600">Sales Rank</th>
-                <th className="px-4 py-3 text-left font-medium text-gray-600">BuyBox Price</th>
+                <th className="px-4 py-3 text-left font-medium text-gray-600">Cost Price</th>
                 <th className="px-4 py-3 text-left font-medium text-gray-600">No. of Sellers</th>
               </tr>
             </thead>
