@@ -116,7 +116,7 @@ function DraggableRow({
           </td>
           <td className="px-4 py-1.5 text-sm">{quickSearchProduct.profit_margin ? `${quickSearchProduct.profit_margin}%` : 'N/A'}</td>
           <td className="px-4 py-1.5 text-sm">{quickSearchProduct.gross_roi ? `${quickSearchProduct.gross_roi}%` : 'N/A'}</td>
-          <td className="px-4 py-1.5 text-sm">{quickSearchProduct.amazon_price ? `$${quickSearchProduct.amazon_price}` : 'N/A'}</td>
+          <td className="px-4 py-1.5 text-sm">{quickSearchProduct.amazon_price ? `${quickSearchProduct.amazon_price}` : 'N/A'}</td>
           <td className="px-4 py-1.5 text-sm">{quickSearchProduct.sales_rank || 'N/A'}</td>
           <td className="px-4 py-1.5 text-sm">{quickSearchProduct.price || quickSearchProduct.buybox_price || 'N/A'}</td>
           <td className="px-4 py-1.5 text-sm">{quickSearchProduct.number_of_sellers || 'N/A'}</td>
