@@ -88,12 +88,17 @@ const SearchHistory = () => {
                                             </div>
                                         </td>
                                         <td className="px-4 py-3">
-                                            <div className="flex gap-2 items-center justify-center">
-                                                {[...new Map((record.stores || []).filter(store => store.logo).map(store => [store.name || store.id, store])).values()].map((store) => (
-                                                    <img key={store.id} src={store.logo} alt="" className="object-contain w-10 h-10" />
-                                                ))}
+                                            <div className="flex flex-wrap gap-2 items-center justify-center">
+                                                {Array.isArray(record.stores) ? (
+                                                    record.stores.length > 0 ? (
+                                                        <span className="text-sm">{record.stores.join(', ')}</span>
+                                                    ) : (
+                                                        <span className="text-sm text-gray-400">No stores</span>
+                                                    )
+                                                ) : (
+                                                    <span className="text-sm text-gray-400">No stores</span>
+                                                )}
                                             </div>
-
                                         </td>
                                         <td className="px-4 py-3">{record.results}</td>
                                     </tr>

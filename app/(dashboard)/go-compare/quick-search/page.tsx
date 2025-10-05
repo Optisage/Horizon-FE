@@ -47,12 +47,22 @@ export default function QuickSearch() {
     );
 
     type QueryResult = {
-        data: QuickSearchResult[] | QuickSearchData | undefined;
+        data: QuickSearchResult[] | QuickSearchData | { results: QuickSearchResult[] } | undefined;
         isLoading: boolean;
         isError: boolean;
         isFetching: boolean;
         error?: FetchBaseQueryError | SerializedError;
     };
+
+    // Log the raw API response for debugging
+    useEffect(() => {
+        if (quickSearchResult.data) {
+            console.log("Quick Search API Response:", quickSearchResult.data);
+        }
+        if (searchByIdResult.data) {
+            console.log("Search By ID API Response:", searchByIdResult.data);
+        }
+    }, [quickSearchResult.data, searchByIdResult.data]);
 
     const result: QueryResult = searchId ? {
         data: searchByIdResult.data?.data,
@@ -127,6 +137,19 @@ export default function QuickSearch() {
                 setActiveProduct(draggedProduct as any)
             }
         }
+        // Handle new API response format with results array
+        else if (data && 'results' in data) {
+            const idParts = String(active.id).split('-');
+            const productId = idParts.length > 2 ? `${idParts[0]}-${idParts[1]}` : String(active.id);
+            
+            const draggedProduct = data.results.find(
+                (product: any) => `${product.store_name}-${product.asin}` === productId || 
+                                 `${product.store_name}-${product.asin}` === active.id
+            )
+            if (draggedProduct) {
+                setActiveProduct(draggedProduct as any)
+            }
+        }
         // Handle old QuickSearchData structure
         else if (data && 'opportunities' in data) {
             const draggedProduct = data.opportunities.find(
@@ -180,6 +203,20 @@ export default function QuickSearch() {
                 const draggedProduct = (data as QuickSearchResult[]).find(
                     (product) => `${product.store_name}-${product.asin}` === productId || 
                                  `${product.store_name}-${product.asin}` === active.id
+                )
+                if (draggedProduct) {
+                    setSelectedProducts([draggedProduct as any])
+                    setSelectedAsin(draggedProduct.asin);
+                }
+            }
+            // Handle new API response format with results array
+            else if (data && 'results' in data) {
+                const idParts = String(active.id).split('-');
+                const productId = idParts.length > 2 ? `${idParts[0]}-${idParts[1]}` : String(active.id);
+                
+                const draggedProduct = data.results.find(
+                    (product: any) => `${product.store_name}-${product.asin}` === productId || 
+                                     `${product.store_name}-${product.asin}` === active.id
                 )
                 if (draggedProduct) {
                     setSelectedProducts([draggedProduct as any])
@@ -399,8 +436,9 @@ export default function QuickSearch() {
                     <h2 className="font-semibold mb-4">Quick Search Results</h2>
                     <QuickSearchTable
                         products={Array.isArray(data) && data.length > 0 && 'store_name' in data[0]
-                            ? data
-                            : (data && 'opportunities' in data ? data.opportunities : [])}
+                         ? data
+                         : (data && 'results' in data ? data.results as QuickSearchResult[] : 
+                            data && 'opportunities' in data ? data.opportunities : [])}
                         onRowClick={handleRowClick}
                     />
                 </div>

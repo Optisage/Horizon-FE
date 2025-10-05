@@ -3,6 +3,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { useDraggable } from "@dnd-kit/core"
 import { useState } from "react"
+import Image from "next/image"
 import TablePagination from "./TablePagination"
 import placeholder from '../../../../public/assets/images/gocompare/placeholder.png'
 import { ProductObj, QuickSearchResult } from "@/types/goCompare";
@@ -57,17 +58,19 @@ function DraggableRow({
       return (
         <td className="px-4 py-1.5 flex items-center gap-2">
           <div className="w-8 h-8 relative rounded overflow-hidden">
-            <img 
+            <Image 
               src={quickSearchProduct.image_url} 
-              alt={quickSearchProduct.store_name} 
+              alt={quickSearchProduct.store_name || 'Product'} 
               className="object-cover"
+              width={32}
+              height={32}
               onError={(e) => {
                 (e.target as HTMLImageElement).src = "https://via.placeholder.com/32?text=No+Image";
               }}
             />
           </div>
           <span className="text-sm line-clamp-1">
-            {quickSearchProduct.product_name.length > 25
+            {quickSearchProduct.product_name && quickSearchProduct.product_name.length > 25
               ? `${quickSearchProduct.product_name.slice(0, 25)}...`
               : quickSearchProduct.product_name}
           </span>
@@ -78,7 +81,7 @@ function DraggableRow({
       return (
         <td className="px-4 py-1.5 flex items-center gap-2">
           <div className="w-8 h-8 relative rounded overflow-hidden">
-            <img src={productObj.scraped_product?.image_url} alt={productObj.store.name} className="object-cover" />
+            <Image src={productObj.scraped_product?.image_url} alt={productObj.store.name} className="object-cover" width={32} height={32} />
           </div>
           <span className="text-sm line-clamp-1">
             {productObj.scraped_product.product_name.length > 25
@@ -102,7 +105,7 @@ function DraggableRow({
           </td>
           <td className="px-4 py-1.5 text-sm">{quickSearchProduct.profit_margin ? `${quickSearchProduct.profit_margin}%` : 'N/A'}</td>
           <td className="px-4 py-1.5 text-sm">{quickSearchProduct.gross_roi ? `${quickSearchProduct.gross_roi}%` : 'N/A'}</td>
-          <td className="px-4 py-1.5 text-sm">{quickSearchProduct.target_fees || 'N/A'}</td>
+          <td className="px-4 py-1.5 text-sm">{quickSearchProduct.amazon_price || 'N/A'}</td>
           <td className="px-4 py-1.5 text-sm">{quickSearchProduct.sales_rank || 'N/A'}</td>
           <td className="px-4 py-1.5 text-sm">{quickSearchProduct.price || quickSearchProduct.buybox_price || 'N/A'}</td>
           <td className="px-4 py-1.5 text-sm">{quickSearchProduct.number_of_sellers || 'N/A'}</td>
@@ -163,7 +166,7 @@ export default function QuickSearchTable({ products, onRowClick }: ProductTableP
   const [perPage, setPerPage] = useState(10)
 
   // Check if products are QuickSearchResult type
-  const isQuickSearchResult = products.length > 0 && 'store_name' in products[0];
+  const isQuickSearchResult = products.length > 0 && ('store_name' in products[0] || 'product_name' in products[0]);
 
   // Sort products (for ProductObj type only)
   const sortedProducts = isQuickSearchResult
