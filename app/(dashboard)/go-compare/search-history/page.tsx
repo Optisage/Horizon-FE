@@ -44,18 +44,51 @@ const SearchHistory = () => {
         setPage(1)
     }
 
+    // Marketplace mapping based on country names and IDs
+    const getMarketplaceId = (countryName: string, countryId?: number): number => {
+        // Primary mapping by country name
+        const countryToMarketplaceMap: { [key: string]: number } = {
+            'United States': 1,
+            'US': 1,
+            'USA': 1,
+            'United Kingdom': 2,
+            'UK': 2,
+            'France': 3,
+            'FR': 3,
+            'Australia': 4,
+            'AU': 4,
+            'Germany': 5,
+            'DE': 5,
+            'Canada': 6,
+            'CA': 6,
+            'Nigeria': 7,
+            'NG': 7,
+            'India': 8,
+            'IN': 8,
+        };
+
+        // Try to map by country name first
+        const marketplaceByName = countryToMarketplaceMap[countryName];
+        if (marketplaceByName) {
+            return marketplaceByName;
+        }
+
+        // Fallback to countryId if available, otherwise default to US (1)
+        return countryId || 1;
+    };
+
     const handleRouting = (record: SearchRecord) => {
         // For ASIN searches, always go to quick-search
         if (record.searchType === 'quick_search' || record.asinOrUpc.match(/^[A-Z0-9]{10}$/)) {
-            const storeName = record.stores && record.stores.length > 0 ? record.stores[0].name || record.stores[0] : '';
-            // Use marketplace_id instead of country, with default value of 1 if countryId is undefined
-            const marketplaceId = record.countryId || 1;
-            router.push(`/go-compare/quick-search?asin=${record.asinOrUpc}&marketplace_id=${marketplaceId}&stores=${storeName}&queue=false&searchId=${record.id}`)
+            // Get proper marketplace ID based on country information
+            const marketplaceId = getMarketplaceId(record.country, record.countryId);
+            // Clean URL with only essential parameters
+            router.push(`/go-compare/quick-search?asin=${record.asinOrUpc}&marketplace_id=${marketplaceId}`)
         } else {
             // For other searches (like product names), go to reverse-search
             const storeNames = record.stores && record.stores.length > 0 ? 
                 (Array.isArray(record.stores) ? record.stores.map(store => typeof store === 'string' ? store : store.name).join(',') : record.stores) : '';
-            router.push(`/go-compare/reverse-search?queryName=${record.asinOrUpc}&store=${storeNames}&searchId=${record.id}`);
+            router.push(`/go-compare/reverse-search?queryName=${record.asinOrUpc}&store=${storeNames}`);
         }
     }
 
