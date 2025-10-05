@@ -48,7 +48,9 @@ const SearchHistory = () => {
         // For ASIN searches, always go to quick-search
         if (record.searchType === 'quick_search' || record.asinOrUpc.match(/^[A-Z0-9]{10}$/)) {
             const storeName = record.stores && record.stores.length > 0 ? record.stores[0].name || record.stores[0] : '';
-            router.push(`/go-compare/quick-search?asin=${record.asinOrUpc}&country=${record.countryId}&stores=${storeName}&queue=false&searchId=${record.id}`)
+            // Use marketplace_id instead of country, with default value of 1 if countryId is undefined
+            const marketplaceId = record.countryId || 1;
+            router.push(`/go-compare/quick-search?asin=${record.asinOrUpc}&marketplace_id=${marketplaceId}&stores=${storeName}&queue=false&searchId=${record.id}`)
         } else {
             // For other searches (like product names), go to reverse-search
             const storeNames = record.stores && record.stores.length > 0 ? 
