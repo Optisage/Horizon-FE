@@ -89,7 +89,7 @@ export default function ReverseSearch() {
             setIsRouteChanging(true);
             setLastQueryParams(currentParams);
         }
-    }, [query, store, pathname]);
+    }, [query, store, pathname, lastQueryParams.query, lastQueryParams.store]);
 
     useEffect(() => {
         if (!isFetching) {

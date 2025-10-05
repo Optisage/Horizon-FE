@@ -100,12 +100,23 @@ function DraggableRow({
         <>
           <td className="px-4 py-1.5">
             <div className="w-auto h-auto px-2 py-1 flex items-center">
-              <span className="text-sm font-medium">{quickSearchProduct.store_name || 'Unknown Store'}</span>
+              {quickSearchProduct.product_url ? (
+                <a 
+                  href={quickSearchProduct.product_url} 
+                  target="_blank" 
+                  rel="noopener noreferrer" 
+                  className="text-sm font-medium hover:underline"
+                >
+                  {quickSearchProduct.store_name || 'Unknown Store'}
+                </a>
+              ) : (
+                <span className="text-sm font-medium">{quickSearchProduct.store_name || 'Unknown Store'}</span>
+              )}
             </div>
           </td>
           <td className="px-4 py-1.5 text-sm">{quickSearchProduct.profit_margin ? `${quickSearchProduct.profit_margin}%` : 'N/A'}</td>
           <td className="px-4 py-1.5 text-sm">{quickSearchProduct.gross_roi ? `${quickSearchProduct.gross_roi}%` : 'N/A'}</td>
-          <td className="px-4 py-1.5 text-sm">{quickSearchProduct.amazon_price || 'N/A'}</td>
+          <td className="px-4 py-1.5 text-sm">{quickSearchProduct.amazon_price ? `${quickSearchProduct.amazon_price}` : 'N/A'}</td>
           <td className="px-4 py-1.5 text-sm">{quickSearchProduct.sales_rank || 'N/A'}</td>
           <td className="px-4 py-1.5 text-sm">{quickSearchProduct.price || quickSearchProduct.buybox_price || 'N/A'}</td>
           <td className="px-4 py-1.5 text-sm">{quickSearchProduct.number_of_sellers || 'N/A'}</td>
@@ -122,12 +133,23 @@ function DraggableRow({
         <>
           <td className="px-4 py-1.5">
             <div className="w-auto h-auto px-2 py-1 flex items-center">
-              <span className="text-sm font-medium">{productObj.store?.name || 'Unknown Store'}</span>
+              {productObj.scraped_product?.product_url ? (
+                <a 
+                  href={productObj.scraped_product.product_url} 
+                  target="_blank" 
+                  rel="noopener noreferrer" 
+                  className="text-sm font-medium hover:underline"
+                >
+                  {productObj.store?.name || 'Unknown Store'}
+                </a>
+              ) : (
+                <span className="text-sm font-medium">{productObj.store?.name || 'Unknown Store'}</span>
+              )}
             </div>
           </td>
           <td className="px-4 py-1.5 text-sm">{formattedProfitMargin}</td>
           <td className="px-4 py-1.5 text-sm">{formattedROI}</td>
-          <td className="px-4 py-1.5 text-sm">{productObj.target_fees || 'N/A'}</td>
+          <td className="px-4 py-1.5 text-sm">{formattedAmazonPrice}</td>
           <td className="px-4 py-1.5 text-sm">{productObj.sales_rank || 'N/A'}</td>
           <td className="px-4 py-1.5 text-sm">{productObj.scraped_product.price?.formatted || productObj.buybox_price || 'N/A'}</td>
           <td className="px-4 py-1.5 text-sm">{productObj.number_of_sellers || 'N/A'}</td>
@@ -201,7 +223,7 @@ export default function QuickSearchTable({ products, onRowClick }: ProductTableP
                 <th className="px-4 py-3 text-left font-medium text-gray-600">Gross ROI</th>
                 <th className="px-4 py-3 text-left font-medium text-gray-600">Amazon Price</th>
                 <th className="px-4 py-3 text-left font-medium text-gray-600">Sales Rank</th>
-                <th className="px-4 py-3 text-left font-medium text-gray-600">Cost Price</th>
+                <th className="px-4 py-3 text-left font-medium text-gray-600">Store Price</th>
                 <th className="px-4 py-3 text-left font-medium text-gray-600">No. of Sellers</th>
               </tr>
             </thead>
