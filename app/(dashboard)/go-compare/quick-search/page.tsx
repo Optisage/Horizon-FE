@@ -383,7 +383,7 @@ export default function QuickSearch() {
                                     gross_roi: 0,
                                     target_fees: "0",
                                     amazon_price: (productDetailsResult.data.data.current_price || 0).toString(),
-                                    sales_rank: "0",
+                                    sales_rank: productDetailsResult.data.data.sales_rank ? productDetailsResult.data.data.sales_rank.toString() : "N/A",
                                     buybox_price: (productDetailsResult.data.data.current_price || 0).toString(),
                                     number_of_sellers: (productDetailsResult.data.data.number_of_sellers || 0).toString(),
                                     id: productDetailsResult.data.data.asin

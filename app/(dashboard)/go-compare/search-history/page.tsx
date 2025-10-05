@@ -45,12 +45,15 @@ const SearchHistory = () => {
     }
 
     const handleRouting = (record: SearchRecord) => {
-        if (record.searchType === 'quick_search') {
-            const storeName = record.stores && record.stores.length > 0 ? record.stores[0].name : '';
+        // For ASIN searches, always go to quick-search
+        if (record.searchType === 'quick_search' || record.asinOrUpc.match(/^[A-Z0-9]{10}$/)) {
+            const storeName = record.stores && record.stores.length > 0 ? record.stores[0].name || record.stores[0] : '';
             router.push(`/go-compare/quick-search?asin=${record.asinOrUpc}&country=${record.countryId}&stores=${storeName}&queue=false&searchId=${record.id}`)
         } else {
-            const storeNames = record.stores && record.stores.length > 0 ? record.stores.map(store => store.name).join(',') : '';
-            router.push(`/go-compare/reverse-search?queryName=${record.asinOrUpc}&store=${encodeURIComponent(storeNames)}&searchId=${record.id}`);
+            // For other searches (like product names), go to reverse-search
+            const storeNames = record.stores && record.stores.length > 0 ? 
+                (Array.isArray(record.stores) ? record.stores.map(store => typeof store === 'string' ? store : store.name).join(',') : record.stores) : '';
+            router.push(`/go-compare/reverse-search?queryName=${record.asinOrUpc}&store=${storeNames}&searchId=${record.id}`);
         }
     }
 

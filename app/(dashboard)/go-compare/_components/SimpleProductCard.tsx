@@ -34,7 +34,28 @@ const hasPrice = (product: unknown): product is { price: string | number } =>
 const hasStore = (product: unknown): product is { store: string } => 
   product !== null && typeof product === 'object' && 'store' in product && typeof (product as Record<string, unknown>).store === 'string';
 
-const SimpleProductCard: React.FC<SimpleProductCardProps> = ({ product }) => {
+// Function to create a short name from the full product name
+  const createShortName = (fullName: string): string => {
+    if (!fullName) return 'Product Name';
+    
+    // Split by common separators and take first meaningful part
+    const words = fullName.split(/[,\-|]/)[0].trim();
+    
+    // If still too long, take first 3-4 words
+    const wordArray = words.split(' ');
+    if (wordArray.length > 4) {
+      return wordArray.slice(0, 4).join(' ') + '...';
+    }
+    
+    // If single part is too long, truncate at character limit
+    if (words.length > 50) {
+      return words.substring(0, 47) + '...';
+    }
+    
+    return words;
+  };
+
+  const SimpleProductCard: React.FC<SimpleProductCardProps> = ({ product }) => {
   // Extract product details with fallbacks
   let imageUrl = '';
   let productName = '';
@@ -56,13 +77,13 @@ const SimpleProductCard: React.FC<SimpleProductCardProps> = ({ product }) => {
       imageUrl = product.image;
     }
 
-    // Extract product name
+    // Extract product name and create short version
     if (hasProductName(product)) {
-      productName = product.product_name;
+      productName = createShortName(product.product_name);
     } else if (hasTitle(product)) {
-      productName = product.title;
+      productName = createShortName(product.title);
     } else if (hasName(product)) {
-      productName = product.name;
+      productName = createShortName(product.name);
     } else {
       productName = 'Product Name';
     }
