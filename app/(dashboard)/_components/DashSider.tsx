@@ -214,6 +214,23 @@ const DashSider = () => {
           <ul className="space-y-1 px-4">{renderMenu(billingMenu)}</ul>
         </div>
 
+
+          {/* Support */}
+          <div className="p-4 border-t border-gray-200 mt-6">
+            <p className="text-sm font-medium">
+              Need Help? Contact Support
+            </p>
+            <p className="text-xs text-gray-500 mt-1">
+              Get assistance with your account, technical issues, or any questions about optisage.
+            </p>
+            <button
+              onClick={() => window.open("https://crm.optisage.ai/forms/ticket?styled=1", "_blank")}
+              className="bg-primary hover:bg-primary-hover duration-200 text-white text-sm font-medium px-4 py-2 rounded-md w-full mt-3 active:scale-95"
+            >
+              Contact Support
+            </button>
+          </div>
+
         {/* Bottom Section */}
         {!collapsed && (
           <div className="p-4 mt-6">
