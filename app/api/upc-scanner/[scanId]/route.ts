@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { scanId: string } }
+  { params }: { params: Promise<{ scanId: string }> }
 ) {
   try {
     // Get auth token from cookies
@@ -15,7 +15,8 @@ export async function DELETE(
       );
     }
 
-    const { scanId } = await Promise.resolve(params);
+    // Await params since it's a Promise in Next.js 15+
+    const { scanId } = await params;
     
     // Forward the request to the backend API
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
@@ -55,11 +56,11 @@ export async function DELETE(
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { scanId: string } }
+  { params }: { params: Promise<{ scanId: string }> }
 ) {
   try {
-    // Access params in a way that works with Next.js dynamic routes
-    const { scanId } = await Promise.resolve(params);
+    // Await params since it's a Promise in Next.js 15+
+    const { scanId } = await params;
     
     // Get auth token from cookies
     const authCookie = request.cookies.get('optisage-token')?.value;
