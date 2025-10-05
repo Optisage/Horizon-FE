@@ -5,7 +5,7 @@ import { restrictToWindowEdges } from "@dnd-kit/modifiers"
 import { useGetSearchByIdQuery, useQuickSearchQuery, useGetProductDetailsQuery } from '@/redux/api/quickSearchApi';
 import Image from "next/image";
 import { usePathname, useSearchParams } from 'next/navigation';
-import React, { useEffect, useState, useCallback, useRef } from 'react'
+import React, { useEffect, useState, useCallback, useRef, useMemo } from 'react'
 import { TbListSearch } from "react-icons/tb";
 import { Droppable } from "../_components/dnd/Droppable";
 import { ProductCard } from "../_components/ProductCard";
@@ -56,13 +56,15 @@ export default function QuickSearch() {
         error?: FetchBaseQueryError | SerializedError;
     };
 
-    // Log the raw API response for debugging
+    // Log the raw API response for debugging (only in development)
     useEffect(() => {
-        if (quickSearchResult.data) {
-            console.log("Quick Search API Response:", quickSearchResult.data);
-        }
-        if (searchByIdResult.data) {
-            console.log("Search By ID API Response:", searchByIdResult.data);
+        if (process.env.NODE_ENV === 'development') {
+            if (quickSearchResult.data) {
+                console.log("Quick Search API Response:", quickSearchResult.data);
+            }
+            if (searchByIdResult.data) {
+                console.log("Search By ID API Response:", searchByIdResult.data);
+            }
         }
     }, [quickSearchResult.data, searchByIdResult.data]);
 
@@ -85,12 +87,48 @@ export default function QuickSearch() {
     const [selectedProducts, setSelectedProducts] = useState<ProductObj[]>([])
     const [activeProduct, setActiveProduct] = useState<ProductObj | null>(null)
     const [selectedAsin, setSelectedAsin] = useState<string | null>(asin)
+    
+    // Transform products data with memoization to prevent unnecessary recalculations
+    const transformedProducts = useMemo(() => {
+        // Handle QuickSearchResult type
+        let quickSearchResults: QuickSearchResult[] = [];
+        let productObjs: ProductObj[] = [];
+        
+        // Determine which data structure we're working with
+        if (Array.isArray(data) && data.length > 0) {
+            if ('store_name' in data[0]) {
+                // It's a QuickSearchResult array
+                quickSearchResults = data as QuickSearchResult[];
+            } else if ('scraped_product' in data[0]) {
+                // It's a ProductObj array
+                // Use type assertion with unknown as intermediate step
+                productObjs = (data as unknown) as ProductObj[];
+            }
+        } else if (data && 'results' in data) {
+            quickSearchResults = data.results as QuickSearchResult[];
+        } else if (data && 'opportunities' in data) {
+            productObjs = data.opportunities as ProductObj[];
+        }
+        
+        // If amazon_price exists at the top level of data, add it to each QuickSearchResult
+        if (data && 'amazon_price' in data && quickSearchResults.length > 0) {
+            quickSearchResults = quickSearchResults.map(product => ({
+                ...product,
+                amazon_price: String(data.amazon_price) // Ensure it's a string
+            }));
+        }
+        
+        // Return the appropriate array based on which one has data
+        return quickSearchResults.length > 0 ? quickSearchResults : productObjs;
+    }, [data]);
 
 
     // Get ASIN for product details API call
-    // Log the values being sent to the query
-    console.log("Selected ASIN:", selectedAsin);
-    console.log("Marketplace ID:", marketplace_id);
+    // Log the values being sent to the query only in development
+    if (process.env.NODE_ENV === 'development') {
+        console.log("Selected ASIN:", selectedAsin);
+        console.log("Marketplace ID:", marketplace_id);
+    }
 
     const productDetailsResult = useGetProductDetailsQuery(
         { asin: selectedAsin || '', marketplace_id: marketplace_id || 1 },
@@ -99,13 +137,13 @@ export default function QuickSearch() {
     
     // Log the product details response for debugging
     useEffect(() => {
-        if (productDetailsResult.data) {
+        if (productDetailsResult.data && process.env.NODE_ENV === 'development') {
             console.log("Product details response:", productDetailsResult.data);
         }
-        if(productDetailsResult.error){
+        if (productDetailsResult.error) {
             console.error("Product details error:", productDetailsResult.error);
         }
-    }, [productDetailsResult]);
+    }, [productDetailsResult.data, productDetailsResult.error]);
 
     const sensors = useSensors(
         useSensor(PointerSensor, {
@@ -116,7 +154,9 @@ export default function QuickSearch() {
     )
 
     const handleDragStart = useCallback((event: DragStartEvent) => {
-        console.log("Drag started:", event)
+        if (process.env.NODE_ENV === 'development') {
+            console.log("Drag started:", event)
+        }
         const { active } = event
 
         // Extract the product directly from event data if available
@@ -165,7 +205,9 @@ export default function QuickSearch() {
 
     const handleDragEnd = useCallback((event: DragEndEvent) => {
         const { active, over } = event
-        console.log("Drag ended:", { active, over })
+        if (process.env.NODE_ENV === 'development') {
+            console.log("Drag ended:", { active, over })
+        }
         
         // Reset active product
         setActiveProduct(null)
@@ -459,10 +501,7 @@ export default function QuickSearch() {
                 <div>
                     <h2 className="font-semibold mb-4">Quick Search Results</h2>
                     <QuickSearchTable
-                        products={Array.isArray(data) && data.length > 0 && 'store_name' in data[0]
-                         ? data
-                         : (data && 'results' in data ? data.results as QuickSearchResult[] : 
-                            data && 'opportunities' in data ? data.opportunities : [])}
+                        products={transformedProducts}
                         onRowClick={handleRowClick}
                     />
                 </div>
