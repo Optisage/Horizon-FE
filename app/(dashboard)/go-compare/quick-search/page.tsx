@@ -459,10 +459,38 @@ export default function QuickSearch() {
                 <div>
                     <h2 className="font-semibold mb-4">Quick Search Results</h2>
                     <QuickSearchTable
-                        products={Array.isArray(data) && data.length > 0 && 'store_name' in data[0]
-                         ? data
-                         : (data && 'results' in data ? data.results as QuickSearchResult[] : 
-                            data && 'opportunities' in data ? data.opportunities : [])}
+                        products={(() => {
+                            // Handle QuickSearchResult type
+                            let quickSearchResults: QuickSearchResult[] = [];
+                            let productObjs: ProductObj[] = [];
+                            
+                            // Determine which data structure we're working with
+                            if (Array.isArray(data) && data.length > 0) {
+                                if ('store_name' in data[0]) {
+                                    // It's a QuickSearchResult array
+                                    quickSearchResults = data as QuickSearchResult[];
+                                } else if ('scraped_product' in data[0]) {
+                                    // It's a ProductObj array
+                                    // Use type assertion with unknown as intermediate step
+                                    productObjs = (data as unknown) as ProductObj[];
+                                }
+                            } else if (data && 'results' in data) {
+                                quickSearchResults = data.results as QuickSearchResult[];
+                            } else if (data && 'opportunities' in data) {
+                                productObjs = data.opportunities as ProductObj[];
+                            }
+                            
+                            // If amazon_price exists at the top level of data, add it to each QuickSearchResult
+                            if (data && 'amazon_price' in data && quickSearchResults.length > 0) {
+                                quickSearchResults = quickSearchResults.map(product => ({
+                                    ...product,
+                                    amazon_price: String(data.amazon_price) // Ensure it's a string
+                                }));
+                            }
+                            
+                            // Return the appropriate array based on which one has data
+                            return quickSearchResults.length > 0 ? quickSearchResults : productObjs;
+                        })()}
                         onRowClick={handleRowClick}
                     />
                 </div>
