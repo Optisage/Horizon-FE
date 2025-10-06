@@ -18,6 +18,7 @@ import KeepaChart from "./keepa-chart"
 import { debounce } from "@/utils/debounce"
 import FinalLoader from "../../dashboard/_components/loader"
 
+
 // Define the Product interface
 export interface Product {
   basic_details: {
@@ -276,8 +277,9 @@ const handleCategoryClick = (categoryId: number) => {
           <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-4 gap-y-6">
             {/* store details */}
             <div className="rounded-lg border border-border flex flex-col divide-y divide-[#EDEDED] text-[#252525] text-sm">
-              <span className="p-4 border-b border-border mb-2">
+              <span className="p-4 border-b border-border mb-2 flex justify-between items-center">
                 <p className="bg-primary rounded-2xl py-2 px-4 text-white font-semibold w-max">Store Details</p>
+              
               </span>
               <span className="p-4 bg-[#F7F7F7] flex justify-between items-center font-medium">
                 <p>Seller Name</p>
@@ -381,9 +383,9 @@ const handleCategoryClick = (categoryId: number) => {
 
                   return (
                     <div key={index}>
-                      <div className="grid sm:grid-cols-2 lg:grid-cols-[3fr_2fr_2fr] xl:grid-cols-[4fr_2fr_2fr] gap-2 gap-y-4">
+                      <div className="grid sm:grid-cols-2 lg:grid-cols-[3fr_2fr_2fr] xl:grid-cols-[4fr_2fr_2fr] gap-2 gap-y-4 items-stretch">
                         {/* Product Image and Basic Info */}
-                        <div className="flex flex-col divide-y divide-border rounded-xl border border-border">
+                        <div className="flex flex-col divide-y divide-border rounded-xl border border-border h-full">
                           <div className="flex flex-col sm:flex-row items-center gap-4 p-3">
                             <div
                               className="relative w-full max-w-[166px] h-[197px] bg-[#F3F4F6]"
@@ -448,6 +450,7 @@ const handleCategoryClick = (categoryId: number) => {
                                 ASIN: {basicDetails.asin}, UPC: {basicDetails.upc || "N/A"}
                               </p>
                               <p className="text-sm">Category: {basicDetails.category}</p>
+
                               <p className="text-lg font-bold mt-2">
                                 {product.buybox_details.currency}
                                 {product.buybox_details.buybox_price.toFixed(2)}
@@ -513,7 +516,7 @@ const handleCategoryClick = (categoryId: number) => {
                         </div>
 
                         {/* Top 5 Offers */}
-                        <div className="rounded-xl border border-border overflow-hidden">
+                        <div className="rounded-xl border border-border overflow-hidden h-full">
                           <div className="p-4">
                             <p className="bg-primary flex items-center gap-1 rounded-2xl py-2 px-4 text-white font-semibold w-max text-xs">
                               <HiOutlineUsers className="size-4" />
@@ -573,7 +576,26 @@ const handleCategoryClick = (categoryId: number) => {
                         </div>
 
                         {/* Keepa Chart */}
-                        <KeepaChart chartData={product?.chart} currency={product?.buybox_details.currency} />
+                        <div className="relative h-full">
+                          <KeepaChart 
+                            chartData={product?.chart} 
+                            currency={product?.buybox_details.currency} 
+                            asin={basicDetails?.asin}
+                            index={index}
+                          />
+                          
+                          {/* Blur overlay for non-first rows */}
+                          {index > 0 && (
+                            <div className="absolute inset-0 bg-white/15 backdrop-blur-[2px] rounded-xl flex items-center justify-center">
+                              <button
+                                onClick={() => window.open(`/keepa?asin=${basicDetails.asin}`, '_blank', 'noopener,noreferrer')}
+                                className="bg-primary hover:bg-primary/90 text-white rounded-lg px-6 py-3 text-sm font-semibold shadow-lg transition-colors"
+                              >
+                                View Keepa
+                              </button>
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </div>
                   )
