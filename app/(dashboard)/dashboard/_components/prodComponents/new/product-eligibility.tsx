@@ -64,7 +64,7 @@ const ProductEligibility = ({
             placement="top"
           >
             <p className="text-white text-sm font-medium cursor-help">
-              Amazon not connected
+              Amazon seller not connected
             </p>
           </AntTooltip>
         ) : eligibility ? (
