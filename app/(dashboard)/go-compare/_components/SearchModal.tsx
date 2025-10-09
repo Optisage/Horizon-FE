@@ -3,11 +3,13 @@ import { useEffect, useRef, useState } from "react";
 import { GoChevronDown } from "react-icons/go";
 import { IoCloseOutline } from "react-icons/io5";
 import { useLazyGetAllCountriesQuery } from "@/redux/api/quickSearchApi";
+import { useLazyGetProductCategoriesQuery } from "@/redux/api/auth";
 import { useRouter } from "next/navigation";
 import { Country } from "@/types/goCompare";
 import { message } from "antd";
 import { useDispatch } from "react-redux";
 import { setMarketPlaceId } from "@/redux/slice/globalSlice";
+import { CustomSelect as Select } from "@/lib/AntdComponents";
 
 interface SearchModalProps {
     isOpen: boolean;
@@ -25,6 +27,7 @@ export function SearchModal({ isOpen, onClose, title, inputLabel }: SearchModalP
     const router = useRouter();
     const dispatch = useDispatch();
     const [getCountries, { data: countries }] = useLazyGetAllCountriesQuery();
+    const [getProductCategories, { data: categoriesData }] = useLazyGetProductCategoriesQuery();
     const [selectedCountry, setSelectedCountry] = useState<Country | undefined>();
     const [isLoading, setIsLoading] = useState(true);
     const [asinOrUpc, setAsinOrUpc] = useState("");
@@ -33,6 +36,7 @@ export function SearchModal({ isOpen, onClose, title, inputLabel }: SearchModalP
     const [isSearchTypeDropdown, setIsSearchTypeDropdown] = useState(false);
     const [activeTab, setActiveTab] = useState<"manual" | "ai">("manual");
     const [showAINotification, setShowAINotification] = useState(false);
+    const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
     const dropdownRef = useRef<HTMLDivElement>(null);
 
     const isTacticalReverseSearch = title === "Tactical Reverse Search";
@@ -40,7 +44,11 @@ export function SearchModal({ isOpen, onClose, title, inputLabel }: SearchModalP
     useEffect(() => {
         setIsLoading(true);
         getCountries({});
-    }, []);
+        // Fetch categories for Tactical Reverse Search
+        if (isTacticalReverseSearch) {
+            getProductCategories({});
+        }
+    }, [isTacticalReverseSearch]);
 
     useEffect(() => {
         if (countries?.data?.length > 0) {
@@ -68,6 +76,7 @@ export function SearchModal({ isOpen, onClose, title, inputLabel }: SearchModalP
         setSelectedCountry(countries?.data[0]);
         setActiveTab("manual");
         setShowAINotification(false);
+        setSelectedCategories([]);
         onClose();
     };
 
@@ -112,10 +121,16 @@ export function SearchModal({ isOpen, onClose, title, inputLabel }: SearchModalP
                 handleClose();
             }, 100);
         } else {
+            // Build query params for Tactical Reverse Search
+            let queryString = `/go-compare/reverse-search?query=${asinOrUpc}`;
+            
+            // Add categories if selected
+            if (selectedCategories.length > 0) {
+                queryString += `&categories=${selectedCategories.join(',')}`;
+            }
+            
             setTimeout(() => {
-                router.push(
-                    `/go-compare/reverse-search?query=${asinOrUpc}`
-                );
+                router.push(queryString);
                 handleClose();
             }, 100);
         }
@@ -223,6 +238,35 @@ export function SearchModal({ isOpen, onClose, title, inputLabel }: SearchModalP
                                     className="w-full text-[#9F9FA3] text-sm p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#4C3CC6]"
                                 />
                             </div>
+
+                            {/* Categories Selection - Only for Tactical Reverse Search */}
+                            {isTacticalReverseSearch && (
+                                <div>
+                                    <label className="block text-xs text-[#737379] mb-1.5">
+                                        Product Categories 
+                                    </label>
+                                    <Select
+                                        mode="multiple"
+                                        className="w-full"
+                                        style={{ width: "100%" }}
+                                        placeholder="Select categories"
+                                        value={selectedCategories.length > 0 ? selectedCategories : undefined}
+                                        onChange={(value: string[]) => setSelectedCategories(value)}
+                                        options={
+                                            categoriesData?.data?.map((category: any) => ({
+                                                value: category.id.toString(),
+                                                label: category.category_name,
+                                            })) || []
+                                        }
+                                        loading={!categoriesData}
+                                        maxTagCount="responsive"
+                                        showSearch
+                                        filterOption={(input: string, option?: { label: string; value: string }) =>
+                                            (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
+                                        }
+                                    />
+                                </div>
+                            )}
 
                             <div>
                                 <label className="block text-xs text-[#737379] mb-1.5">Search Country</label>
