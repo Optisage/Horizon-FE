@@ -4,7 +4,7 @@ import { Tooltip, Dropdown } from "antd";
 import { CustomTable as Table } from "@/lib/AntdComponents";
 import type { ColumnsType } from "antd/es/table";
 import type { MenuProps } from "antd";
-import { FC, useState } from "react";
+import { FC, useState, useEffect, useRef } from "react";
 import {
   HiArrowPath,
   HiPrinter,
@@ -49,6 +49,34 @@ export interface ProductData {
 const ScanResultsTable: FC<ScanResultsTableProps> = ({ onDetailsClick, onRefreshScan, onDeleteScan, scanResults = [], isLoading = false }) => {
   // Track which scan is currently refreshing
   const [refreshingId, setRefreshingId] = useState<number | null>(null);
+  // Store interval IDs for cleanup
+  const intervalRef = useRef<{[key: number]: NodeJS.Timeout}>({});
+  
+  // Auto-refresh pending scans every minute
+  useEffect(() => {
+    // Clear previous intervals
+    Object.values(intervalRef.current).forEach(interval => clearInterval(interval));
+    intervalRef.current = {};
+    
+    // Set up new intervals for pending scans
+    scanResults.forEach(scan => {
+      if (scan.status === 'pending') {
+        const scanId = scan.id;
+        // Set up interval to refresh every minute (60000ms)
+        const intervalId = setInterval(() => {
+          onRefreshScan?.(scanId);
+        }, 60000);
+        
+        // Store interval ID for cleanup
+        intervalRef.current[scanId] = intervalId;
+      }
+    });
+    
+    // Cleanup function
+    return () => {
+      Object.values(intervalRef.current).forEach(interval => clearInterval(interval));
+    };
+  }, [scanResults, onRefreshScan]);
   
   // Function to download scan results as Excel file
   const handleDownloadExcel = (record: ProductData) => {
