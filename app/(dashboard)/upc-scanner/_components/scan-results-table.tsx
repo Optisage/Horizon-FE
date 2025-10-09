@@ -43,6 +43,7 @@ export interface ProductData {
   lastScan: string;
   lastUploaded: string;
   status: "Pending" | "Completed";
+  last_seen_date: Date; // Added for sorting
 }
 
 const ScanResultsTable: FC<ScanResultsTableProps> = ({ onDetailsClick, onRefreshScan, onDeleteScan, scanResults = [], isLoading = false }) => {
@@ -96,18 +97,22 @@ const ScanResultsTable: FC<ScanResultsTableProps> = ({ onDetailsClick, onRefresh
     });
   };
 
-  // Use real data from API, no fallback to sample data
-  const tableData: ProductData[] = scanResults.map((scan, index) => ({
-    key: scan.id.toString(),
-    index: index + 1,
-    name: scan.product_name,
-    productId: scan.product_id || scan.id.toString(),
-    items: scan.items_count,
-    found: scan.products_found,
-    lastScan: formatDate(scan.last_seen),
-    lastUploaded: formatDate(scan.last_uploaded),
-    status: scan.status === 'pending' ? 'Pending' : 'Completed' as "Pending" | "Completed",
-  }));
+ 
+  const tableData: ProductData[] = scanResults
+    .map((scan, index) => ({
+      key: scan.id.toString(),
+      index: index + 1,
+      name: scan.product_name,
+      productId: scan.product_id || scan.id.toString(),
+      items: scan.items_count,
+      found: scan.products_found,
+      lastScan: formatDate(scan.last_seen),
+      lastUploaded: formatDate(scan.last_uploaded),
+      status: scan.status === 'pending' ? 'Pending' : 'Completed' as "Pending" | "Completed",
+      last_seen_date: new Date(scan.last_seen) // Add original date for sorting
+    }))
+    // Sort by last_seen_date in descending order (most recent first)
+    .sort((a, b) => b.last_seen_date.getTime() - a.last_seen_date.getTime());
   const columns: ColumnsType<ProductData> = [
     {
       title: "#",
@@ -120,15 +125,17 @@ const ScanResultsTable: FC<ScanResultsTableProps> = ({ onDetailsClick, onRefresh
       title: "Search Name",
       dataIndex: "name",
       key: "name",
-      render: (name, _, index) => {
+      render: (name, record) => {
         const dotColor = name === "TOSSI" ? "black" : "#18CB96";
+        // Since we've sorted the table data, the first item (index 0) is the most recent
+        const isMostRecent = record.key === tableData[0]?.key;
         return (
           <div className="flex items-center gap-2">
             <span
               className="inline-block size-2 rounded-full"
               style={{ backgroundColor: dotColor }}
             />
-            <span className={index === 0 ? "font-bold" : ""}>{name}</span>
+            <span className={isMostRecent ? "font-bold" : ""}>{name}</span>
           </div>
         );
       },
@@ -137,17 +144,25 @@ const ScanResultsTable: FC<ScanResultsTableProps> = ({ onDetailsClick, onRefresh
       title: "UPC / EAN",
       dataIndex: "productId",
       key: "productId",
-      render: (text, _, index) => (
-        <span className={index === 0 ? "font-bold" : ""}>{text}</span>
-      ),
+      render: (text, record) => {
+        // Since we've sorted the table data, the first item (index 0) is the most recent
+        const isMostRecent = record.key === tableData[0]?.key;
+        return (
+          <span className={isMostRecent ? "font-bold" : ""}>{text}</span>
+        );
+      },
     },
     {
       title: "No. of items",
       dataIndex: "items",
       key: "items",
-      render: (text, _, index) => (
-        <span className={index === 0 ? "font-bold" : ""}>{text}</span>
-      ),
+      render: (text, record) => {
+        // Since we've sorted the table data, the first item (index 0) is the most recent
+        const isMostRecent = record.key === tableData[0]?.key;
+        return (
+          <span className={isMostRecent ? "font-bold" : ""}>{text}</span>
+        );
+      },
     },
     {
       title: "Product Found",
@@ -158,17 +173,25 @@ const ScanResultsTable: FC<ScanResultsTableProps> = ({ onDetailsClick, onRefresh
       title: "Last Scan",
       dataIndex: "lastScan",
       key: "lastScan",
-      render: (text, _, index) => (
-        <span className={index === 0 ? "font-bold" : ""}>{text}</span>
-      ),
+      render: (text, record) => {
+        // Since we've sorted the table data, the first item (index 0) is the most recent
+        const isMostRecent = record.key === tableData[0]?.key;
+        return (
+          <span className={isMostRecent ? "font-bold" : ""}>{text}</span>
+        );
+      },
     },
     {
       title: "Last uploaded",
       dataIndex: "lastUploaded",
       key: "lastUploaded",
-      render: (text, _, index) => (
-        <span className={index === 0 ? "font-bold" : ""}>{text}</span>
-      ),
+      render: (text, record) => {
+        // Since we've sorted the table data, the first item (index 0) is the most recent
+        const isMostRecent = record.key === tableData[0]?.key;
+        return (
+          <span className={isMostRecent ? "font-bold" : ""}>{text}</span>
+        );
+      },
     },
     {
       title: "Status",
