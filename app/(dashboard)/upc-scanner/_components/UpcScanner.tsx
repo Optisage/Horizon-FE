@@ -104,7 +104,7 @@ const UpcScanner = () => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState<string>("");
-  const [filterDate, setFilterDate] = useState<dayjs.Dayjs | null>(null);
+  const [filterDate, setFilterDate] = useState<dayjs.Dayjs | null>(dayjs());
   const fileInputRef = useRef<HTMLInputElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -671,7 +671,7 @@ const UpcScanner = () => {
 
   return (
     <section className="flex flex-col gap-8 min-h-[50dvh] md:min-h-[80dvh] rounded-xl bg-white p-4 lg:p-5">
-      <Header />
+      <Header onStartScan={() => setActiveTab("new")} />
 
       <div className="p-3 sm:p-4 rounded-xl border border-border flex flex-col gap-6">
         <div className="flex flex-col sm:flex-row gap-3 sm:gap-6 sm:items-center justify-between">
@@ -756,7 +756,24 @@ const UpcScanner = () => {
         {activeTab === "upc" && (
           <div className="flex flex-col gap-4">
             <p className="text-[#8C94A3] text-sm font-medium">
-              {scanResults.length > 0 ? `${scanResults.length} Searches found` : "No searches found"}
+              {selectedProductId 
+                ? `${scanDetails?.products?.length || 0} Products found` 
+                : (() => {
+                    const filteredResults = scanResults.filter(scan => {
+                      // Apply debounced search term filter
+                      const matchesSearch = debouncedSearchTerm === "" || 
+                        scan.product_name.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
+                        (scan.product_id && scan.product_id.toLowerCase().includes(debouncedSearchTerm.toLowerCase()));
+                      
+                      // Apply date filter if selected
+                      const matchesDate = !filterDate || 
+                        dayjs(scan.last_seen).format('YYYY-MM-DD') === filterDate.format('YYYY-MM-DD');
+                      
+                      return matchesSearch && matchesDate;
+                    });
+                    return filteredResults.length > 0 ? `${filteredResults.length} Searches found` : "No searches found";
+                  })()
+              }
             </p>
             {selectedProductId ? (
               <div className="">
