@@ -54,9 +54,10 @@ export default function DashboardLayout({
       <input id="my-drawer-2" type="checkbox" className="drawer-toggle" />
       <div className="drawer-content bg-white max-h-dvh overflow-y-scroll">
         <DashNav />
-        <div className="p-5 lg:p-6">
-          {children}
 
+        <div className="p-5 lg:p-6">
+  
+          {children}
           <Modal
             title="Subscription Alert"
             open={isModalVisible}
