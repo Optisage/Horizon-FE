@@ -1,11 +1,15 @@
 import Image from "next/image";
 import { CustomSelect as Select } from "@/lib/AntdComponents";
-import { HiOutlineDocumentArrowDown, HiOutlinePrinter } from "react-icons/hi2";
+import { HiOutlinePrinter } from "react-icons/hi2";
 import ExcelIcon from "@/public/assets/svg/excel-icon.svg";
 import { useCallback } from "react";
 
+interface HeaderProps {
+  onStartScan?: () => void;
+}
+
 // If the API server serves the template directly
-const Header = () => {
+const Header = ({ onStartScan }: HeaderProps) => {
   const handleDownloadTemplate = useCallback(() => {
     // Access the API endpoint with credentials
     fetch('/api/upc-scanner/download-template', {
@@ -52,7 +56,7 @@ const Header = () => {
           options={[
             {
               value: "buybox_price",
-              label: "Buy box price if no selling promo",
+              label: "Buy box price",
             },
           ]}
         />
@@ -61,17 +65,11 @@ const Header = () => {
       <div className="flex gap-2 flex-wrap sm:flex-nowrap text-sm">
         <button
           type="button"
+          onClick={onStartScan}
           className="flex items-center gap-1.5 bg-primary hover:bg-primary/90 transition-colors rounded-full text-white font-semibold py-2 px-4"
         >
           <HiOutlinePrinter className="size-5" />
           Start Scanner
-        </button>
-        <button
-          type="button"
-          className="flex items-center gap-1.5 hover:bg-gray-50 rounded-full text-[#8C94A2] border border-border font-semibold py-2 px-4"
-        >
-          <HiOutlineDocumentArrowDown className="size-5" />
-          Import
         </button>
         <button
           type="button"
