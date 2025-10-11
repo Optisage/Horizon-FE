@@ -37,6 +37,17 @@ const SESSION_KEYS = {
   REF_CODE: "optisage_ref_code",
 } as const;
 
+export const amazonAuthUrl = `https://sellercentral.amazon.com/apps/authorize/consent?${new URLSearchParams(
+    {
+      application_id: process.env.NEXT_PUBLIC_AMAZON_CLIENT_ID!,
+      state: "ourauth",
+      version: "beta",
+      response_type: "code",
+      scope: "sellingpartnerapi::authorization",
+      redirect_uri: process.env.NEXT_PUBLIC_AMAZON_REDIRECT_URI!,
+    }
+  ).toString()}`;
+
 const Signup = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -126,16 +137,7 @@ const [subscribe, { isLoading }] = useSignupMutation();
     passwordFormik.setFieldValue('confirmPassword', form.confirmPassword);
   }, [form.password, form.confirmPassword]);
 
-  const amazonAuthUrl = `https://sellercentral.amazon.com/apps/authorize/consent?${new URLSearchParams(
-    {
-      application_id: process.env.NEXT_PUBLIC_AMAZON_CLIENT_ID!,
-      state: "ourauth",
-      version: "beta",
-      response_type: "code",
-      scope: "sellingpartnerapi::authorization",
-      redirect_uri: process.env.NEXT_PUBLIC_AMAZON_REDIRECT_URI!,
-    }
-  ).toString()}`;
+  
 
   // Helper functions for session storage
   const saveToSessionStorage = (key: string, value: any) => {
