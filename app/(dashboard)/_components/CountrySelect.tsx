@@ -92,7 +92,7 @@ const CountrySelect = () => {
   };
 
   return (
-    <div className="relative inline-block md:w-52">
+    <div className="relative inline-block md:w-fit">
       <button
         onClick={() => setIsOpen(!isOpen)}
         className="flex items-center gap-1 md:gap-2 w-full p-2"
@@ -120,7 +120,7 @@ const CountrySelect = () => {
       </button>
 
       {isOpen && (
-        <ul className="absolute z-10 w-full mt-1 border rounded-md bg-white shadow-lg max-h-60 overflow-y-auto">
+        <ul className="absolute  z-10 w-52 mt-1 border rounded-md bg-white shadow-lg max-h-60 overflow-y-auto">
           {countries.map((country) => (
             <li
               key={country.code}

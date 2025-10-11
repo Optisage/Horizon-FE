@@ -5,11 +5,14 @@ import { useEffect, useState } from "react";
 import { message, Modal } from "antd";
 //import { useDispatch } from "react-redux";
 //import { setUser } from "@/redux/slice/authSlice";
-
+import opxamazon from "@/public/assets/images/opXama.png"
 import { GoAlert } from "react-icons/go";
 import { useRouter } from "next/navigation";
 import Cookies from "js-cookie";
 import Link from "next/link";
+import Image from "next/image";
+import { HiMiniXMark } from "react-icons/hi2";
+import { amazonAuthUrl } from "../(auth)/signUp/_components/Signup";
 
 export default function DashboardLayout({
   children,
@@ -23,6 +26,7 @@ export default function DashboardLayout({
   // State to manage modal visibility
   const [isModalVisible, setIsModalVisible] = useState(false);
 
+   const [open, setOpen] = useState(true);
   const handleLogout = () => {
     // Clear the token cookie
     Cookies.remove("optisage-token");
@@ -96,10 +100,58 @@ export default function DashboardLayout({
               </div>
             </div>
           </Modal>
+
+
+           <Modal
+      open={open}
+      footer={null}
+      closable={false}
+      width={420}
+      className="!p-0"
+      styles={{body:{padding: 0}, content:{borderRadius:30}}}
+     
+    >
+      <div className="bg-white rounded-3xl pt-10 overflow-hidden ">
+        {/* Header with BG Color instead of image */}
+        <div className=" flex flex-col items-center py-6">
+          <Image src={opxamazon} alt='image' className=" h-[91px]" />
+        </div>
+
+        {/* Body */}
+        <div className="p-6 text-center">
+          <h2 className="text-lg font-semibold mb-3">
+            Your account is not yet connected to your Amazon seller account.
+          </h2>
+
+          <p className="text-gray-600 mb-6 text-sm">
+            Please 
+             <Link href={amazonAuthUrl} target="_blank">
+            <span className="text-primary underline cursor-pointer">{" "}log in{" "}</span>
+            </Link>
+             to connect or{" "}
+            <Link href={'https://sellercentral.amazon.com/'} target="_blank">
+            <span className="text-primary underline cursor-pointer">create an account{" "}</span> 
+            </Link>
+            if you don’t have one, to ensure uninterrupted access to optsage.
+          </p>
+
+          <button className=" py-3 px-8 rounded-xl text-[#009F6D] border border-primary  hover:bg-gray-100 transition">
+            Don’t show this again
+          </button>
+        </div>
+
+        {/* Custom Close Button */}
+        <button
+          onClick={() => setOpen(false)}
+          className="absolute top-3 right-3  transition rounded-full p-1"
+        >
+          <HiMiniXMark size={26} />
+        </button>
+      </div>
+    </Modal>
         </div>
       </div>
       <DashSider />
     </div>
   );
 }
-

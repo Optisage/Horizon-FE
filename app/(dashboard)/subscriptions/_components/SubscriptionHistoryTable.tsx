@@ -53,7 +53,7 @@ const SubscriptionHistoryTable: React.FC<SubscriptionHistoryTableProps> = ({
 
   useEffect(() => {
     if (tableData?.data) {
-      const transformedData = tableData.data.data.map((item) => ({
+      const transformedData = tableData.data.data?.map((item) => ({
         key: item.id.toString(),
         invoice: `Invoice ${String(item.id).padStart(4, "0")}`,
         date: item.date,
