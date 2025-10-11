@@ -1,4 +1,5 @@
 "use client";
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useRef, useState } from "react";
 import { GoChevronDown } from "react-icons/go";
 import { IoCloseOutline } from "react-icons/io5";
