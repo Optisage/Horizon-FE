@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { AmazonProduct, ProductObj, ReverseAmazon, ReverseAmazonScraped, QuickSearchResult } from "@/types/goCompare";
@@ -137,12 +138,16 @@ export function ProductCard({ product }: ProductCardProps) {
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden p-2.5 pb-0 flex flex-col h-full min-h-[250px] max-h-[326px]">
       <div className="relative flex-grow flex items-center justify-center p-2">
-        <img 
-          src={imageUrl} 
-          alt={productName} 
-          className="object-contain w-full max-h-[180px] rounded-md" 
-          onError={(e) => {
-            (e.target as HTMLImageElement).src = "https://via.placeholder.com/150?text=No+Image";
+        <Image 
+          src={imageUrl || "https://via.placeholder.com/150?text=No+Image"}
+          alt={productName || "Product"} 
+          className="object-contain w-full max-h-[180px] rounded-md"
+          width={180}
+          height={180}
+          unoptimized={imageUrl?.startsWith('data:') || !imageUrl}
+          onError={() => {
+            // Handle error in a Next.js compatible way
+            console.error("Image failed to load");
           }}
         />
       </div>

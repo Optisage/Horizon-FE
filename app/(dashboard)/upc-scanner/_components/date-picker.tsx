@@ -6,13 +6,28 @@ import { FiChevronLeft, FiChevronRight } from "react-icons/fi";
 import dayjs, { Dayjs } from "dayjs";
 import { MdOutlineCalendarMonth } from "react-icons/md";
 
-const MiniDatePicker = () => {
-  const [selectedDate, setSelectedDate] = useState<Dayjs>(dayjs());
+interface MiniDatePickerProps {
+  selectedDate?: Dayjs;
+  onChange?: (date: Dayjs) => void;
+}
+
+const MiniDatePicker = ({ selectedDate: propDate, onChange }: MiniDatePickerProps) => {
+  const [selectedDate, setSelectedDate] = useState<Dayjs>(propDate || dayjs());
   const [open, setOpen] = useState(false);
   const pickerRef = useRef(null);
 
-  const handlePrev = () => setSelectedDate((prev) => prev.subtract(1, "day"));
-  const handleNext = () => setSelectedDate((prev) => prev.add(1, "day"));
+  const handlePrev = () => {
+    const newDate = selectedDate.subtract(1, "day");
+    setSelectedDate(newDate);
+    onChange?.(newDate);
+  };
+  
+  const handleNext = () => {
+    const newDate = selectedDate.add(1, "day");
+    setSelectedDate(newDate);
+    onChange?.(newDate);
+  };
+  
   const handleTriggerClick = () => setOpen(true);
 
   return (
@@ -56,7 +71,10 @@ const MiniDatePicker = () => {
           open={open}
           value={selectedDate}
           onChange={(date) => {
-            if (date) setSelectedDate(date);
+            if (date) {
+              setSelectedDate(date);
+              onChange?.(date);
+            }
             setOpen(false);
           }}
           onOpenChange={(nextOpen) => setOpen(nextOpen)}

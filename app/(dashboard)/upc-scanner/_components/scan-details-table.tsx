@@ -1,56 +1,56 @@
 "use client";
 
 import { GoSearch } from "react-icons/go";
+import { Spin } from "antd";
 
-type ProductData = {
-  upc: string;
-  productCost: string;
-  sellingPrice: string;
-  buyBoxPrice: string;
-  fbaFee?: string;
-  referralFee?: string;
-  storageFee?: string;
-  netProfit?: string;
-  netMargin?: string;
-  roi?: string;
-  potentialWinner?: string;
-  rank?: string;
-  amazonInstockRate?: string;
-  numberOfFbaSellers?: string;
-  estimatedMonthlyUnitsSold?: string;
-  buyBoxEquity?: string;
-  outOfStock?: string;
-  dominantSeller?: string;
-  asin?: string;
-  title?: string;
+interface ProductCost {
+  amount: string | null;
+  currency: string;
+}
+
+interface ProductDetails {
+  asin: string | null;
+  title: string | null;
+  fba_fee: string | null;
+  referral_fee: string | null;
+  storage_fee: string | null;
+  net_profit: string | null;
+  net_margin: string | null;
+  roi: string | null;
+  potential_winner: string | null;
+  rank: string | null;
+  amazon_instock_rate: string | null;
+  number_of_fba: string | null;
+  estimated_monthly_sales: string | null;
+  buy_box_equity: string | null;
+  out_of_stock: number | null;
+  dominant_seller: string | null;
+}
+
+interface ScanProduct {
+  asin_upc: string;
+  product_cost: ProductCost;
+  selling_price: ProductCost;
+  buy_box_price: ProductCost;
+  product_details: ProductDetails;
+}
+
+interface ScanDetailsProps {
+  products?: ScanProduct[];
+  isLoading?: boolean;
+}
+
+const formatCurrency = (cost: ProductCost | undefined) => {
+  if (!cost || cost.amount === null) return "-";
+  return `${cost.currency}${cost.amount}`;
 };
 
-const sampleData: ProductData[] = [
-  {
-    upc: "00716622272..",
-    productCost: "-",
-    sellingPrice: "$2.70",
-    buyBoxPrice: "-",
-    fbaFee: "-",
-    referralFee: "-",
-    storageFee: "-",
-    netProfit: "-",
-    netMargin: "-",
-    roi: "-",
-    potentialWinner: "-",
-    rank: "-",
-    amazonInstockRate: "-",
-    numberOfFbaSellers: "-",
-    estimatedMonthlyUnitsSold: "-",
-    buyBoxEquity: "-",
-    outOfStock: "-",
-    dominantSeller: "-",
-    asin: "-",
-    title: "-",
-  },
-];
+const formatValue = (value: string | number | null | undefined) => {
+  if (value === null || value === undefined) return "-";
+  return value.toString();
+};
 
-const ScanDetailsTable = () => {
+const ScanDetailsTable = ({ products = [], isLoading = false }: ScanDetailsProps) => {
   return (
     <div className="w-full overflow-x-auto rounded-b-xl border border-gray-200">
       {/* Mobile View */}
@@ -94,33 +94,49 @@ const ScanDetailsTable = () => {
             </tr>
           </thead>
           <tbody className="text-gray-700">
-            {sampleData.map((item, idx) => (
-              <tr key={idx} className="border-b border-gray-200">
-                <td className="px-4 py-3">
-                  <GoSearch className="size-4 text-gray-500" />
+            {isLoading ? (
+              <tr>
+                <td colSpan={21} className="px-4 py-8 text-center">
+                  <div className="flex justify-center">
+                    <Spin size="large" />
+                  </div>
                 </td>
-                <td className="px-4 py-3">{item.upc}</td>
-                <td className="px-4 py-3">{item.productCost}</td>
-                <td className="px-4 py-3">{item.sellingPrice}</td>
-                <td className="px-4 py-3">{item.buyBoxPrice}</td>
-                <td className="px-4 py-3">{item.fbaFee}</td>
-                <td className="px-4 py-3">{item.referralFee}</td>
-                <td className="px-4 py-3">{item.storageFee}</td>
-                <td className="px-4 py-3">{item.netProfit}</td>
-                <td className="px-4 py-3">{item.netMargin}</td>
-                <td className="px-4 py-3">{item.roi}</td>
-                <td className="px-4 py-3">{item.potentialWinner}</td>
-                <td className="px-4 py-3">{item.rank}</td>
-                <td className="px-4 py-3">{item.amazonInstockRate}</td>
-                <td className="px-4 py-3">{item.numberOfFbaSellers}</td>
-                <td className="px-4 py-3">{item.estimatedMonthlyUnitsSold}</td>
-                <td className="px-4 py-3">{item.buyBoxEquity}</td>
-                <td className="px-4 py-3">{item.outOfStock}</td>
-                <td className="px-4 py-3">{item.dominantSeller}</td>
-                <td className="px-4 py-3">{item.asin}</td>
-                <td className="px-4 py-3">{item.title}</td>
               </tr>
-            ))}
+            ) : products.length === 0 ? (
+              <tr>
+                <td colSpan={21} className="px-4 py-8 text-center">
+                  No products found
+                </td>
+              </tr>
+            ) : (
+              products.map((product, idx) => (
+                <tr key={idx} className="border-b border-gray-200">
+                  <td className="px-4 py-3">
+                    <GoSearch className="size-4 text-gray-500" />
+                  </td>
+                  <td className="px-4 py-3">{product.asin_upc}</td>
+                  <td className="px-4 py-3">{formatCurrency(product.product_cost)}</td>
+                  <td className="px-4 py-3">{formatCurrency(product.selling_price)}</td>
+                  <td className="px-4 py-3">{formatCurrency(product.buy_box_price)}</td>
+                  <td className="px-4 py-3">{formatValue(product.product_details.fba_fee)}</td>
+                  <td className="px-4 py-3">{formatValue(product.product_details.referral_fee)}</td>
+                  <td className="px-4 py-3">{formatValue(product.product_details.storage_fee)}</td>
+                  <td className="px-4 py-3">{formatValue(product.product_details.net_profit)}</td>
+                  <td className="px-4 py-3">{formatValue(product.product_details.net_margin)}</td>
+                  <td className="px-4 py-3">{formatValue(product.product_details.roi)}</td>
+                  <td className="px-4 py-3">{formatValue(product.product_details.potential_winner)}</td>
+                  <td className="px-4 py-3">{formatValue(product.product_details.rank)}</td>
+                  <td className="px-4 py-3">{formatValue(product.product_details.amazon_instock_rate)}</td>
+                  <td className="px-4 py-3">{formatValue(product.product_details.number_of_fba)}</td>
+                  <td className="px-4 py-3">{formatValue(product.product_details.estimated_monthly_sales)}</td>
+                  <td className="px-4 py-3">{formatValue(product.product_details.buy_box_equity)}</td>
+                  <td className="px-4 py-3">{formatValue(product.product_details.out_of_stock)}</td>
+                  <td className="px-4 py-3">{formatValue(product.product_details.dominant_seller)}</td>
+                  <td className="px-4 py-3">{formatValue(product.product_details.asin)}</td>
+                  <td className="px-4 py-3">{formatValue(product.product_details.title)}</td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>
@@ -151,78 +167,114 @@ const ScanDetailsTable = () => {
                 </tr>
               </thead>
               <tbody className="text-gray-700">
-                {sampleData.map((item, idx) => (
-                  <tr key={idx} className="border-b border-gray-200 h-12">
-                    <td className="px-4 py-3">
-                      <GoSearch className="size-4 text-gray-500" />
+                {isLoading ? (
+                  <tr>
+                    <td colSpan={5} className="px-4 py-8 text-center">
+                      <div className="flex justify-center">
+                        <Spin size="large" />
+                      </div>
                     </td>
-                    <td className="px-4 py-3">{item.upc}</td>
-                    <td className="px-4 py-3">{item.productCost}</td>
-                    <td className="px-4 py-3">{item.sellingPrice}</td>
-                    <td className="px-4 py-3">{item.buyBoxPrice}</td>
                   </tr>
-                ))}
+                ) : products.length === 0 ? (
+                  <tr>
+                    <td colSpan={5} className="px-4 py-8 text-center">
+                      No products found
+                    </td>
+                  </tr>
+                ) : (
+                  products.map((product, idx) => (
+                    <tr key={idx} className="border-b border-gray-200 h-12">
+                      <td className="px-4 py-2">
+                        <GoSearch className="size-4 text-gray-500" />
+                      </td>
+                      <td className="px-4 py-2">{product.asin_upc}</td>
+                      <td className="px-4 py-2">{formatCurrency(product.product_cost)}</td>
+                      <td className="px-4 py-2">{formatCurrency(product.selling_price)}</td>
+                      <td className="px-4 py-2">{formatCurrency(product.buy_box_price)}</td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>
 
-          {/* Scrollable Right Table */}
-          <div className="flex-1">
-            <table className="table-fixed w-[2560px] text-sm bg-white border-separate border-spacing-0">
-              <thead className="bg-[#F3F4F6] text-[#596375]">
-                <tr className="border-b border-gray-200 divide-x-2 h-12">
-                  {[
-                    "FBA Fee",
-                    "Referral Fee",
-                    "Storage Fee",
-                    "Net Profit",
-                    "Net Margin",
-                    "ROI",
-                    "Potential Winner",
-                    "Rank",
-                    "Amazon Instock Rate",
-                    "# FBA Sellers",
-                    "Est. Monthly Sold",
-                    "Buy Box Equity",
-                    "Out of Stock",
-                    "Dominant Seller",
-                    "ASIN",
-                    "Title",
-                  ].map((header) => (
-                    <th
-                      key={header}
-                      className="w-44 px-4 py-3 text-left font-medium whitespace-nowrap"
-                    >
-                      {header}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody className="text-gray-700">
-                {sampleData.map((item, idx) => (
-                  <tr key={idx} className="border-b border-gray-200 h-12">
-                    <td className="px-4 py-3">{item.fbaFee}</td>
-                    <td className="px-4 py-3">{item.referralFee}</td>
-                    <td className="px-4 py-3">{item.storageFee}</td>
-                    <td className="px-4 py-3">{item.netProfit}</td>
-                    <td className="px-4 py-3">{item.netMargin}</td>
-                    <td className="px-4 py-3">{item.roi}</td>
-                    <td className="px-4 py-3">{item.potentialWinner}</td>
-                    <td className="px-4 py-3">{item.rank}</td>
-                    <td className="px-4 py-3">{item.amazonInstockRate}</td>
-                    <td className="px-4 py-3">{item.numberOfFbaSellers}</td>
-                    <td className="px-4 py-3">
-                      {item.estimatedMonthlyUnitsSold}
-                    </td>
-                    <td className="px-4 py-3">{item.buyBoxEquity}</td>
-                    <td className="px-4 py-3">{item.outOfStock}</td>
-                    <td className="px-4 py-3">{item.dominantSeller}</td>
-                    <td className="px-4 py-3">{item.asin}</td>
-                    <td className="px-4 py-3">{item.title}</td>
+          {/* Scrollable Right Table - Fees and Profit Section */}
+          <div className="flex-1 overflow-x-auto">
+            <div className="overflow-x-auto">
+              <table className="table-fixed w-[2560px] text-sm bg-white border-separate border-spacing-0">
+                <thead className="bg-[#F3F4F6] text-[#596375]">
+                  <tr className="border-b border-gray-200 divide-x-2 h-12">
+                    {[
+                      "FBA Fee",
+                      "Referral Fee",
+                      "Storage Fee",
+                      "Net Profit",
+                      "Net Margin",
+                      "ROI",
+                      "Potential Winner",
+                      "Rank",
+                      "Amazon Instock Rate",
+                      "# FBA Sellers",
+                      "Est. Monthly Sold",
+                      "Buy Box Equity",
+                      "Out of Stock",
+                      "Dominant Seller",
+                      "ASIN",
+                      "Title",
+                    ].map((header) => (
+                      <th
+                        key={header}
+                        className={`px-4 py-3 text-left font-medium whitespace-nowrap ${
+                          header === "Title" ? "w-[75rem]" : 
+                          header === "Dominant Seller" ? "w-[13.2rem]" : 
+                          header === "Potential Winner" ? "w-[13.2rem]" : "w-44"
+                        }`}
+                      >
+                        {header}
+                      </th>
+                    ))}
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="text-gray-700">
+                  {isLoading ? (
+                    <tr>
+                      <td colSpan={16} className="px-4 py-8 text-center">
+                        <div className="flex justify-center">
+                          <Spin size="large" />
+                        </div>
+                      </td>
+                    </tr>
+                  ) : products.length === 0 ? (
+                    <tr>
+                      <td colSpan={16} className="px-4 py-8 text-center">
+                        No products found
+                      </td>
+                    </tr>
+                  ) : (
+                    products.map((product, idx) => (
+                      <tr key={idx} className="border-b border-gray-200 h-12">
+                        <td className="px-4 py-2">{formatValue(product.product_details.fba_fee)}</td>
+                        <td className="px-4 py-2">{formatValue(product.product_details.referral_fee)}</td>
+                        <td className="px-4 py-2">{formatValue(product.product_details.storage_fee)}</td>
+                        <td className="px-4 py-2">{formatValue(product.product_details.net_profit)}</td>
+                        <td className="px-4 py-2">{formatValue(product.product_details.net_margin)}</td>
+                        <td className="px-4 py-2">{formatValue(product.product_details.roi)}</td>
+                        <td className="px-4 py-2">{formatValue(product.product_details.potential_winner)}</td>
+                        <td className="px-4 py-2">{formatValue(product.product_details.rank)}</td>
+                        <td className="px-4 py-2">{formatValue(product.product_details.amazon_instock_rate)}</td>
+                        <td className="px-4 py-2">{formatValue(product.product_details.number_of_fba)}</td>
+                        <td className="px-4 py-2">{formatValue(product.product_details.estimated_monthly_sales)}</td>
+                        <td className="px-4 py-2">{formatValue(product.product_details.buy_box_equity)}</td>
+                        <td className="px-4 py-2">{formatValue(product.product_details.out_of_stock)}</td>
+                        <td className="px-4 py-2">{formatValue(product.product_details.dominant_seller)}</td>
+                        <td className="px-4 py-2">{formatValue(product.product_details.asin)}</td>
+                        <td className="px-4 py-2">{formatValue(product.product_details.title)}</td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       </div>

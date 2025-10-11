@@ -3,6 +3,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { useDraggable } from "@dnd-kit/core"
 import { useState } from "react"
+import Image from "next/image"
 import TablePagination from "./TablePagination"
 import placeholder from '../../../../public/assets/images/gocompare/placeholder.png'
 import { ProductObj, QuickSearchResult } from "@/types/goCompare";
@@ -57,17 +58,19 @@ function DraggableRow({
       return (
         <td className="px-4 py-1.5 flex items-center gap-2">
           <div className="w-8 h-8 relative rounded overflow-hidden">
-            <img 
+            <Image 
               src={quickSearchProduct.image_url} 
-              alt={quickSearchProduct.store_name} 
+              alt={quickSearchProduct.store_name || 'Product'} 
               className="object-cover"
+              width={32}
+              height={32}
               onError={(e) => {
                 (e.target as HTMLImageElement).src = "https://via.placeholder.com/32?text=No+Image";
               }}
             />
           </div>
           <span className="text-sm line-clamp-1">
-            {quickSearchProduct.product_name.length > 25
+            {quickSearchProduct.product_name && quickSearchProduct.product_name.length > 25
               ? `${quickSearchProduct.product_name.slice(0, 25)}...`
               : quickSearchProduct.product_name}
           </span>
@@ -78,7 +81,7 @@ function DraggableRow({
       return (
         <td className="px-4 py-1.5 flex items-center gap-2">
           <div className="w-8 h-8 relative rounded overflow-hidden">
-            <img src={productObj.scraped_product?.image_url} alt={productObj.store.name} className="object-cover" />
+            <Image src={productObj.scraped_product?.image_url} alt={productObj.store.name} className="object-cover" width={32} height={32} />
           </div>
           <span className="text-sm line-clamp-1">
             {productObj.scraped_product.product_name.length > 25
@@ -97,12 +100,23 @@ function DraggableRow({
         <>
           <td className="px-4 py-1.5">
             <div className="w-auto h-auto px-2 py-1 flex items-center">
-              <span className="text-sm font-medium">{quickSearchProduct.store_name || 'Unknown Store'}</span>
+              {quickSearchProduct.product_url ? (
+                <a 
+                  href={quickSearchProduct.product_url} 
+                  target="_blank" 
+                  rel="noopener noreferrer" 
+                  className="text-sm font-medium hover:underline"
+                >
+                  {quickSearchProduct.store_name || 'Unknown Store'}
+                </a>
+              ) : (
+                <span className="text-sm font-medium">{quickSearchProduct.store_name || 'Unknown Store'}</span>
+              )}
             </div>
           </td>
           <td className="px-4 py-1.5 text-sm">{quickSearchProduct.profit_margin ? `${quickSearchProduct.profit_margin}%` : 'N/A'}</td>
           <td className="px-4 py-1.5 text-sm">{quickSearchProduct.gross_roi ? `${quickSearchProduct.gross_roi}%` : 'N/A'}</td>
-          <td className="px-4 py-1.5 text-sm">{quickSearchProduct.target_fees || 'N/A'}</td>
+          <td className="px-4 py-1.5 text-sm">{quickSearchProduct.amazon_price ? `${quickSearchProduct.amazon_price}` : 'N/A'}</td>
           <td className="px-4 py-1.5 text-sm">{quickSearchProduct.sales_rank || 'N/A'}</td>
           <td className="px-4 py-1.5 text-sm">{quickSearchProduct.price || quickSearchProduct.buybox_price || 'N/A'}</td>
           <td className="px-4 py-1.5 text-sm">{quickSearchProduct.number_of_sellers || 'N/A'}</td>
@@ -119,12 +133,23 @@ function DraggableRow({
         <>
           <td className="px-4 py-1.5">
             <div className="w-auto h-auto px-2 py-1 flex items-center">
-              <span className="text-sm font-medium">{productObj.store?.name || 'Unknown Store'}</span>
+              {productObj.scraped_product?.product_url ? (
+                <a 
+                  href={productObj.scraped_product.product_url} 
+                  target="_blank" 
+                  rel="noopener noreferrer" 
+                  className="text-sm font-medium hover:underline"
+                >
+                  {productObj.store?.name || 'Unknown Store'}
+                </a>
+              ) : (
+                <span className="text-sm font-medium">{productObj.store?.name || 'Unknown Store'}</span>
+              )}
             </div>
           </td>
           <td className="px-4 py-1.5 text-sm">{formattedProfitMargin}</td>
           <td className="px-4 py-1.5 text-sm">{formattedROI}</td>
-          <td className="px-4 py-1.5 text-sm">{productObj.target_fees || 'N/A'}</td>
+          <td className="px-4 py-1.5 text-sm">{formattedAmazonPrice}</td>
           <td className="px-4 py-1.5 text-sm">{productObj.sales_rank || 'N/A'}</td>
           <td className="px-4 py-1.5 text-sm">{productObj.scraped_product.price?.formatted || productObj.buybox_price || 'N/A'}</td>
           <td className="px-4 py-1.5 text-sm">{productObj.number_of_sellers || 'N/A'}</td>
@@ -163,7 +188,7 @@ export default function QuickSearchTable({ products, onRowClick }: ProductTableP
   const [perPage, setPerPage] = useState(10)
 
   // Check if products are QuickSearchResult type
-  const isQuickSearchResult = products.length > 0 && 'store_name' in products[0];
+  const isQuickSearchResult = products.length > 0 && ('store_name' in products[0] || 'product_name' in products[0]);
 
   // Sort products (for ProductObj type only)
   const sortedProducts = isQuickSearchResult
@@ -196,9 +221,9 @@ export default function QuickSearchTable({ products, onRowClick }: ProductTableP
                 <th className="px-4 py-3 text-left font-medium text-gray-600">Store</th>
                 <th className="px-4 py-3 text-left font-medium text-gray-600">Profit Margin</th>
                 <th className="px-4 py-3 text-left font-medium text-gray-600">Gross ROI</th>
-                <th className="px-4 py-3 text-left font-medium text-gray-600">Target Fees</th>
+                <th className="px-4 py-3 text-left font-medium text-gray-600">Amazon Price</th>
                 <th className="px-4 py-3 text-left font-medium text-gray-600">Sales Rank</th>
-                <th className="px-4 py-3 text-left font-medium text-gray-600">BuyBox Price</th>
+                <th className="px-4 py-3 text-left font-medium text-gray-600">Store Price</th>
                 <th className="px-4 py-3 text-left font-medium text-gray-600">No. of Sellers</th>
               </tr>
             </thead>

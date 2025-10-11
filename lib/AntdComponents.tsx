@@ -213,7 +213,7 @@ export const CustomSelect = ({
     <Select
       {...props}
       popupMatchSelectWidth={true}
-      classNames={{ popup: { root: "custom-select-dropdown" } }}
+       popupClassName="custom-select-dropdown"
       virtual={false}
       dropdownStyle={{
         maxHeight: 300,

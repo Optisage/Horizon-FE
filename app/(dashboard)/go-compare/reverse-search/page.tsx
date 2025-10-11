@@ -89,7 +89,7 @@ export default function ReverseSearch() {
             setIsRouteChanging(true);
             setLastQueryParams(currentParams);
         }
-    }, [query, store, pathname]);
+    }, [query, store, pathname, lastQueryParams.query, lastQueryParams.store]);
 
     useEffect(() => {
         if (!isFetching) {
@@ -185,7 +185,7 @@ export default function ReverseSearch() {
                 errorMessage = error.message ?? errorMessage;
             }
         }
-        console.error("Reverse Search failed:", errorMessage);
+        console.error("Tactical Reverse Search failed:", errorMessage);
         return <div style={{ color: 'red' }}>Error: {errorMessage}</div>;
     }
 
@@ -251,7 +251,7 @@ export default function ReverseSearch() {
                 </div>
 
                 <div>
-                    <h2 className="font-semibold mb-4">Reverse Search Results</h2>
+                    <h2 className="font-semibold mb-4">Tactical Reverse Search Results</h2>
                     <ReverseSearchTable
                         products={transformedData || []}
                         onRowClick={handleRowClick}

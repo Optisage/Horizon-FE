@@ -3,11 +3,13 @@
 import { DndContext, type DragEndEvent, DragOverlay, type DragStartEvent, PointerSensor, useSensor, useSensors } from "@dnd-kit/core"
 import { restrictToWindowEdges } from "@dnd-kit/modifiers"
 import { useGetSearchByIdQuery, useQuickSearchQuery, useGetProductDetailsQuery } from '@/redux/api/quickSearchApi';
+import Image from "next/image";
 import { usePathname, useSearchParams } from 'next/navigation';
-import React, { useEffect, useState, useCallback, useRef } from 'react'
+import React, { useEffect, useState, useCallback, useRef, useMemo } from 'react'
 import { TbListSearch } from "react-icons/tb";
 import { Droppable } from "../_components/dnd/Droppable";
 import { ProductCard } from "../_components/ProductCard";
+import SimpleProductCard from "../_components/SimpleProductCard";
 import Overlay from "../_components/dnd/Overlay";
 import ProductInformation from "../_components/ProductInformation";
 import QuickSearchTable from "../_components/QuickSearchTable";
@@ -47,12 +49,24 @@ export default function QuickSearch() {
     );
 
     type QueryResult = {
-        data: QuickSearchResult[] | QuickSearchData | undefined;
+        data: QuickSearchResult[] | QuickSearchData | { results: QuickSearchResult[] } | undefined;
         isLoading: boolean;
         isError: boolean;
         isFetching: boolean;
         error?: FetchBaseQueryError | SerializedError;
     };
+
+    // Log the raw API response for debugging (only in development)
+    useEffect(() => {
+        if (process.env.NODE_ENV === 'development') {
+            if (quickSearchResult.data) {
+                console.log("Quick Search API Response:", quickSearchResult.data);
+            }
+            if (searchByIdResult.data) {
+                console.log("Search By ID API Response:", searchByIdResult.data);
+            }
+        }
+    }, [quickSearchResult.data, searchByIdResult.data]);
 
     const result: QueryResult = searchId ? {
         data: searchByIdResult.data?.data,
@@ -73,12 +87,48 @@ export default function QuickSearch() {
     const [selectedProducts, setSelectedProducts] = useState<ProductObj[]>([])
     const [activeProduct, setActiveProduct] = useState<ProductObj | null>(null)
     const [selectedAsin, setSelectedAsin] = useState<string | null>(asin)
+    
+    // Transform products data with memoization to prevent unnecessary recalculations
+    const transformedProducts = useMemo(() => {
+        // Handle QuickSearchResult type
+        let quickSearchResults: QuickSearchResult[] = [];
+        let productObjs: ProductObj[] = [];
+        
+        // Determine which data structure we're working with
+        if (Array.isArray(data) && data.length > 0) {
+            if ('store_name' in data[0]) {
+                // It's a QuickSearchResult array
+                quickSearchResults = data as QuickSearchResult[];
+            } else if ('scraped_product' in data[0]) {
+                // It's a ProductObj array
+                // Use type assertion with unknown as intermediate step
+                productObjs = (data as unknown) as ProductObj[];
+            }
+        } else if (data && 'results' in data) {
+            quickSearchResults = data.results as QuickSearchResult[];
+        } else if (data && 'opportunities' in data) {
+            productObjs = data.opportunities as ProductObj[];
+        }
+        
+        // If amazon_price exists at the top level of data, add it to each QuickSearchResult
+        if (data && 'amazon_price' in data && quickSearchResults.length > 0) {
+            quickSearchResults = quickSearchResults.map(product => ({
+                ...product,
+                amazon_price: String(data.amazon_price) // Ensure it's a string
+            }));
+        }
+        
+        // Return the appropriate array based on which one has data
+        return quickSearchResults.length > 0 ? quickSearchResults : productObjs;
+    }, [data]);
 
 
     // Get ASIN for product details API call
-    // Log the values being sent to the query
-    console.log("Selected ASIN:", selectedAsin);
-    console.log("Marketplace ID:", marketplace_id);
+    // Log the values being sent to the query only in development
+    if (process.env.NODE_ENV === 'development') {
+        console.log("Selected ASIN:", selectedAsin);
+        console.log("Marketplace ID:", marketplace_id);
+    }
 
     const productDetailsResult = useGetProductDetailsQuery(
         { asin: selectedAsin || '', marketplace_id: marketplace_id || 1 },
@@ -87,13 +137,13 @@ export default function QuickSearch() {
     
     // Log the product details response for debugging
     useEffect(() => {
-        if (productDetailsResult.data) {
+        if (productDetailsResult.data && process.env.NODE_ENV === 'development') {
             console.log("Product details response:", productDetailsResult.data);
         }
-        if(productDetailsResult.error){
+        if (productDetailsResult.error) {
             console.error("Product details error:", productDetailsResult.error);
         }
-    }, [productDetailsResult]);
+    }, [productDetailsResult.data, productDetailsResult.error]);
 
     const sensors = useSensors(
         useSensor(PointerSensor, {
@@ -104,7 +154,9 @@ export default function QuickSearch() {
     )
 
     const handleDragStart = useCallback((event: DragStartEvent) => {
-        console.log("Drag started:", event)
+        if (process.env.NODE_ENV === 'development') {
+            console.log("Drag started:", event)
+        }
         const { active } = event
 
         // Extract the product directly from event data if available
@@ -127,6 +179,19 @@ export default function QuickSearch() {
                 setActiveProduct(draggedProduct as any)
             }
         }
+        // Handle new API response format with results array
+        else if (data && 'results' in data) {
+            const idParts = String(active.id).split('-');
+            const productId = idParts.length > 2 ? `${idParts[0]}-${idParts[1]}` : String(active.id);
+            
+            const draggedProduct = data.results.find(
+                (product: any) => `${product.store_name}-${product.asin}` === productId || 
+                                 `${product.store_name}-${product.asin}` === active.id
+            )
+            if (draggedProduct) {
+                setActiveProduct(draggedProduct as any)
+            }
+        }
         // Handle old QuickSearchData structure
         else if (data && 'opportunities' in data) {
             const draggedProduct = data.opportunities.find(
@@ -140,7 +205,9 @@ export default function QuickSearch() {
 
     const handleDragEnd = useCallback((event: DragEndEvent) => {
         const { active, over } = event
-        console.log("Drag ended:", { active, over })
+        if (process.env.NODE_ENV === 'development') {
+            console.log("Drag ended:", { active, over })
+        }
         
         // Reset active product
         setActiveProduct(null)
@@ -180,6 +247,20 @@ export default function QuickSearch() {
                 const draggedProduct = (data as QuickSearchResult[]).find(
                     (product) => `${product.store_name}-${product.asin}` === productId || 
                                  `${product.store_name}-${product.asin}` === active.id
+                )
+                if (draggedProduct) {
+                    setSelectedProducts([draggedProduct as any])
+                    setSelectedAsin(draggedProduct.asin);
+                }
+            }
+            // Handle new API response format with results array
+            else if (data && 'results' in data) {
+                const idParts = String(active.id).split('-');
+                const productId = idParts.length > 2 ? `${idParts[0]}-${idParts[1]}` : String(active.id);
+                
+                const draggedProduct = data.results.find(
+                    (product: any) => `${product.store_name}-${product.asin}` === productId || 
+                                     `${product.store_name}-${product.asin}` === active.id
                 )
                 if (draggedProduct) {
                     setSelectedProducts([draggedProduct as any])
@@ -274,7 +355,7 @@ export default function QuickSearch() {
             setIsRouteChanging(true);
             setLastQueryParams(currentParams);
         }
-    }, [asin, marketplace_id, queue, pathname]);
+    }, [asin, marketplace_id, queue, pathname, lastQueryParams.asin, lastQueryParams.marketplace_id, lastQueryParams.queue]);
 
     useEffect(() => {
         if (!isFetching) {
@@ -328,11 +409,33 @@ export default function QuickSearch() {
                     <div className="flex-1">
                         <h2 className="text-lg font-semibold mb-4" id="comparison-workspace">Comparison Workspace</h2>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2.5">
-                            {/* First product card */}
-                            {Array.isArray(data) && data.length > 0 && 'store_name' in data[0] ? (
-                                <ProductCard product={data[0]} />
+                            {/* First product card - simplified */}
+                            {productDetailsResult.data?.data ? (
+                                <SimpleProductCard product={{
+                                    asin: productDetailsResult.data.data.asin,
+                                    product_name: productDetailsResult.data.data.product_name,
+                                    image_url: productDetailsResult.data.data.image_url,
+                                    price: productDetailsResult.data.data.current_price.toString(),
+                                    product_url: productDetailsResult.data.data.product_url,
+                                    store_name: "Amazon",
+                                    currency: "USD",
+                                    country: "US",
+                                    created_at: new Date().toISOString(),
+                                    profit_margin: 0,
+                                    gross_roi: 0,
+                                    target_fees: "0",
+                                    amazon_price: (productDetailsResult.data.data.current_price || 0).toString(),
+                                    sales_rank: productDetailsResult.data.data.sales_rank ? productDetailsResult.data.data.sales_rank.toString() : "N/A",
+                                    buybox_price: (productDetailsResult.data.data.current_price || 0).toString(),
+                                    number_of_sellers: (productDetailsResult.data.data.number_of_sellers || 0).toString(),
+                                    id: productDetailsResult.data.data.asin
+                                }} />
+                            ) : selectedProducts.length > 0 ? (
+                                <SimpleProductCard product={selectedProducts[0]} />
+                            ) : Array.isArray(data) && data.length > 0 && 'store_name' in data[0] ? (
+                                <SimpleProductCard product={data[0]} />
                             ) : data && 'amazon_product' in data && data.amazon_product ? (
-                                <ProductCard product={data.amazon_product} />
+                                <SimpleProductCard product={data.amazon_product} />
                             ) : (
                                 <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 h-[326px] flex items-center justify-center">
                                     <p className="text-gray-500">No product data available</p>
@@ -398,9 +501,7 @@ export default function QuickSearch() {
                 <div>
                     <h2 className="font-semibold mb-4">Quick Search Results</h2>
                     <QuickSearchTable
-                        products={Array.isArray(data) && data.length > 0 && 'store_name' in data[0]
-                            ? data
-                            : (data && 'opportunities' in data ? data.opportunities : [])}
+                        products={transformedProducts}
                         onRowClick={handleRowClick}
                     />
                 </div>
@@ -413,13 +514,13 @@ export default function QuickSearch() {
                     <div className="p-4 bg-white border rounded-lg shadow-lg">
                         <div className="flex items-center gap-3">
                             <div className="w-12 h-12 flex-shrink-0 relative overflow-hidden rounded">
-                                <img 
-                                    src={(activeProduct as QuickSearchResult).image_url} 
-                                    alt={(activeProduct as QuickSearchResult).product_name} 
+                                <Image 
+                                    src={(activeProduct as QuickSearchResult).image_url || "https://via.placeholder.com/48?text=No+Image"} 
+                                    alt={(activeProduct as QuickSearchResult).product_name || "Product"} 
                                     className="w-full h-full object-contain"
-                                    onError={(e) => {
-                                        (e.target as HTMLImageElement).src = "https://via.placeholder.com/48?text=No+Image";
-                                    }}
+                                    width={48}
+                                    height={48}
+                                    unoptimized={true}
                                 />
                             </div>
                             <div className="flex-1">
