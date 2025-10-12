@@ -106,6 +106,7 @@ export default function DashboardLayout({
       open={open}
       footer={null}
       closable={false}
+      centered
       width={420}
       className="!p-0"
       styles={{body:{padding: 0}, content:{borderRadius:30}}}
