@@ -17,6 +17,7 @@ import * as XLSX from 'xlsx';
 interface ScanResultsTableProps {
   onDetailsClick?: (productId: string) => void;
   onRefreshScan?: (scanId: number) => void;
+  onRestartScan?: (scanId: number) => void;
   onDeleteScan?: (scanId: number) => void;
   scanResults?: Array<{
     id: number;
@@ -48,7 +49,7 @@ export interface ProductData {
   failedReason?: string; // Reason for failure if scan failed
 }
 
-const ScanResultsTable: FC<ScanResultsTableProps> = ({ onDetailsClick, onRefreshScan, onDeleteScan, scanResults = [], isLoading = false }) => {
+const ScanResultsTable: FC<ScanResultsTableProps> = ({ onDetailsClick, onRefreshScan, onRestartScan, onDeleteScan, scanResults = [], isLoading = false }) => {
   // Track which scan is currently refreshing
   const [refreshingId, setRefreshingId] = useState<number | null>(null);
   // Store interval IDs for cleanup
@@ -288,7 +289,7 @@ const ScanResultsTable: FC<ScanResultsTableProps> = ({ onDetailsClick, onRefresh
                 onClick={() => {
                   const scanId = parseInt(record.key);
                   setRefreshingId(scanId);
-                  onRefreshScan?.(scanId);
+                  onRestartScan?.(scanId);
                   // Reset the refreshing state after 2 seconds
                   setTimeout(() => setRefreshingId(null), 2000);
                 }}
