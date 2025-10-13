@@ -42,6 +42,12 @@ export const userApi = createApi({
         method: "GET",
       }),
     }),
+    getNotifications: builder.query({
+      query: () => ({
+        url: "customer/notifications",
+        method: "GET",
+      }),
+    }),
   }),
 });
 
@@ -49,6 +55,7 @@ export const {
  useLazyGetReferralsQuery,
  useLazyGetSettingsQuery,
  useUpdateSettingsMutation,
- useLazyGetSubscriptionsQuery
+ useLazyGetSubscriptionsQuery,
+ useLazyGetNotificationsQuery
 
 } = userApi;
