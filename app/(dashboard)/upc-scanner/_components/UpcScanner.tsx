@@ -242,8 +242,8 @@ const UpcScanner = () => {
         key: 'refreshScan' 
       });
       
-      const response = await fetch(`/api/upc-scanner/${scanId}/restart`, {
-        method: 'POST',
+      const response = await fetch(`/api/upc-scanner/${scanId}`, {
+        method: 'GET',
         headers: {
           'Cache-Control': 'no-cache, no-store, must-revalidate',
           'Pragma': 'no-cache'

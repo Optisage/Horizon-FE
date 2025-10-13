@@ -29,6 +29,7 @@ interface ScanResultsTableProps {
     status: string;
     marketplace_id: string;
     user_id: number;
+    failed_reason?: string;
   }>;
   isLoading?: boolean;
 }
@@ -42,8 +43,9 @@ export interface ProductData {
   found: number;
   lastScan: string;
   lastUploaded: string;
-  status: "Pending" | "Completed";
+  status: "Pending" | "In Progress" | "Completed";
   last_seen_date: Date; // Added for sorting
+  failedReason?: string; // Reason for failure if scan failed
 }
 
 const ScanResultsTable: FC<ScanResultsTableProps> = ({ onDetailsClick, onRefreshScan, onDeleteScan, scanResults = [], isLoading = false }) => {
@@ -52,20 +54,20 @@ const ScanResultsTable: FC<ScanResultsTableProps> = ({ onDetailsClick, onRefresh
   // Store interval IDs for cleanup
   const intervalRef = useRef<{[key: number]: NodeJS.Timeout}>({});
   
-  // Auto-refresh pending scans every minute
+  // Auto-refresh pending and in-progress scans every minute
   useEffect(() => {
     // Clear previous intervals
     Object.values(intervalRef.current).forEach(interval => clearInterval(interval));
     intervalRef.current = {};
     
-    // Set up new intervals for pending scans
+    // Set up new intervals for pending and in-progress scans
     scanResults.forEach(scan => {
-      if (scan.status === 'pending') {
+      if (scan.status === 'pending' || scan.status === 'in-progress') {
         const scanId = scan.id;
-        // Set up interval to refresh every minute (60000ms)
+        // Set up interval to refresh every 30 seconds (30000ms)
         const intervalId = setInterval(() => {
           onRefreshScan?.(scanId);
-        }, 60000);
+        }, 30000);
         
         // Store interval ID for cleanup
         intervalRef.current[scanId] = intervalId;
@@ -136,7 +138,12 @@ const ScanResultsTable: FC<ScanResultsTableProps> = ({ onDetailsClick, onRefresh
       found: scan.products_found,
       lastScan: formatDate(scan.last_seen),
       lastUploaded: formatDate(scan.last_uploaded),
-      status: scan.status === 'pending' ? 'Pending' : 'Completed' as "Pending" | "Completed",
+      status: scan.status === 'completed' 
+        ? "Completed" 
+        : scan.status === 'in-progress' 
+          ? "In Progress" 
+          : "Pending" as "Pending" | "In Progress" | "Completed",
+      failedReason: scan.failed_reason,
       last_seen_date: new Date(scan.last_seen) // Add original date for sorting
     }))
     // Sort by last_seen_date in descending order (most recent first)
@@ -168,18 +175,7 @@ const ScanResultsTable: FC<ScanResultsTableProps> = ({ onDetailsClick, onRefresh
         );
       },
     },
-    {
-      title: "UPC / EAN",
-      dataIndex: "productId",
-      key: "productId",
-      render: (text, record) => {
-        // Since we've sorted the table data, the first item (index 0) is the most recent
-        const isMostRecent = record.key === tableData[0]?.key;
-        return (
-          <span className={isMostRecent ? "font-bold" : ""}>{text}</span>
-        );
-      },
-    },
+
     {
       title: "No. of items",
       dataIndex: "items",
@@ -225,16 +221,30 @@ const ScanResultsTable: FC<ScanResultsTableProps> = ({ onDetailsClick, onRefresh
       title: "Status",
       dataIndex: "status",
       key: "status",
-      render: (status) => (
-        <span
-          className={`px-1.5 py-1 rounded-full text-xs font-semibold`}
-          style={{
-            backgroundColor: status === "Pending" ? "#FDF5E9" : "#18CB9610",
-          color: status === "Pending" ? "#FF9B06" : "#18CB96",
-          }}
-        >
-          {status}
-        </span>
+      render: (status, record) => (
+        record.failedReason ? (
+          <Tooltip title={record.failedReason}>
+            <span
+              className={`px-1.5 py-1 rounded-full text-xs font-semibold`}
+              style={{
+                backgroundColor: status === "Pending" ? "#FDF5E9" : "#18CB9610",
+                color: status === "Pending" ? "#FF9B06" : "#18CB96",
+              }}
+            >
+              {status}
+            </span>
+          </Tooltip>
+        ) : (
+          <span
+            className={`px-1.5 py-1 rounded-full text-xs font-semibold`}
+            style={{
+              backgroundColor: status === "Pending" ? "#FDF5E9" : "#18CB9610",
+              color: status === "Pending" ? "#FF9B06" : "#18CB96",
+            }}
+          >
+            {status}
+          </span>
+        )
       ),
     },
     {
