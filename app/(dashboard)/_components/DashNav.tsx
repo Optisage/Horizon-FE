@@ -1,5 +1,6 @@
 "use client";
 /* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -12,24 +13,43 @@ import UserProfile from "./UserProfile";
 import { VscBell, VscBellDot } from "react-icons/vsc";
 import { Drawer } from "antd";
 import { HiMiniXMark } from "react-icons/hi2";
+import { useLazyGetNotificationsQuery } from "@/redux/api/user";
 
 const DashNav = () => {
   const router = useRouter();
   const [searchValue, setSearchValue] = useState("");
   const [error, setError] = useState("");
-   const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(false);
+  const [getNotification, { data: notificationsData }] = useLazyGetNotificationsQuery()
+  const [filterStatus, setFilterStatus] = useState<"all" | "unread" | "read">("all");
 
-  const notifications = [
-    { text: 'Add "Maxwell Moore" on your monitor list', time: "10 min ago", unread: true },
-    { text: "Request for password resets", time: "10 min ago", unread: false },
-    { text: 'Add "Maxwell Moore" on your monitor list', time: "10 min ago", unread: false },
-    { text: 'Add "Maxwell Moore" on your monitor list', time: "10 min ago", unread: true },
-    { text: 'Add "Maxwell Moore" on your monitor list', time: "10 min ago", unread: false },
-    { text: 'Add "Maxwell Moore" on your monitor list', time: "10 min ago", unread: true },
-    { text: 'Add "Maxwell Moore" on your monitor list', time: "10 min ago", unread: true },
-    { text: 'Add "Maxwell Moore" on your monitor list', time: "10 min ago", unread: false },
-    { text: 'Add "Maxwell Moore" on your monitor list', time: "10 min ago", unread: true },
-  ];
+  useEffect(()=>{
+    getNotification({})
+  },[])
+
+  // Helper function to format timestamps
+  const formatTimeAgo = (timestamp: string) => {
+    const now = new Date();
+    const notifTime = new Date(timestamp);
+    const diffMs = now.getTime() - notifTime.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+
+    if (diffMins < 60) return `${diffMins} min ago`;
+    if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
+    return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
+  };
+
+  // Filter notifications based on status
+  const notifications = notificationsData?.data || [];
+  const filteredNotifications = notifications.filter((notif: any) => {
+    if (filterStatus === "all") return true;
+    return notif.status === filterStatus;
+  });
+
+  const unreadCount = notifications.filter((n: any) => n.status === "unread").length;
+  const displayCount = unreadCount > 90 ? "90+" : unreadCount;
 
   // Validate ASIN format (10 characters, starts with B followed by alphanumeric)
   const isValidASIN = (value: string): boolean => {
@@ -110,9 +130,16 @@ const DashNav = () => {
         </div>
 
         <div className="flex gap-4 sm:gap-8 md:gap-6 items-center">
-          <div className="flex gap-3 ms:gap-6 items-center">
+          <div className="flex gap-3 ms:gap-6 items-center relative">
             <CountrySelect />
-            <VscBell size={25} className=" cursor-pointer" color="#18cb96" onClick={()=>setOpen(true)}/>
+            <div className="relative">
+              <VscBell size={25} className=" cursor-pointer" color="#18cb96" onClick={()=>setOpen(true)}/>
+              {unreadCount > 0 && (
+                <span className="absolute -top-1 -right-1 h-4 w-4 bg-red-500 text-white text-[8px] rounded-full flex items-center justify-center">
+                  {displayCount}
+                </span>
+              )}
+            </div>
             <UserProfile />
           </div>
 
@@ -145,40 +172,66 @@ const DashNav = () => {
 
       {/* Tabs */}
       <div className="flex gap-3 px-5 py-3 border-b bg-[#F7F7F7]">
-        <button className="px-3 py-1 rounded-full bg-[#18CB96] text-white text-sm">
+        <button 
+          onClick={() => setFilterStatus("all")}
+          className={`px-3 py-1 rounded-full text-sm ${
+            filterStatus === "all" 
+              ? "bg-[#18CB96] text-white" 
+              : "bg-[#E4E6EA] text-gray-600"
+          }`}
+        >
           All
         </button>
-        <button className="px-4 py-1 rounded-full bg-[#E4E6EA] text-gray-600 text-sm flex items-center gap-1">
-          Unread <span className="h-2 w-2 bg-red-500 rounded-full inline-block"></span>
+        <button 
+          onClick={() => setFilterStatus("unread")}
+          className={`px-4 py-1 rounded-full text-sm flex items-center gap-1 ${
+            filterStatus === "unread" 
+              ? "bg-[#18CB96] text-white" 
+              : "bg-[#E4E6EA] text-gray-600"
+          }`}
+        >
+          Unread {unreadCount > 0 && <span className="h-2 w-2 bg-red-500 rounded-full inline-block"></span>}
         </button>
-        <button className="px-4 py-1 rounded-full bg-[#E4E6EA] text-gray-600 text-sm">
+        <button 
+          onClick={() => setFilterStatus("read")}
+          className={`px-4 py-1 rounded-full text-sm ${
+            filterStatus === "read" 
+              ? "bg-[#18CB96] text-white" 
+              : "bg-[#E4E6EA] text-gray-600"
+          }`}
+        >
           Read
         </button>
       </div>
 
       {/* Notification List */}
       <div className=" py-4 space-y-4">
-        {notifications.map((item, index) => (
-          <div key={index} className="w-full even:bg-[#F7F7F7]">
-            <div className="flex gap-3  items-start px-6 py-3">
-            <div
-              className={`h-10 w-10 border-none rounded-full border flex items-center justify-center ${
-                item.unread ? " bg-[#DAF4EC]" : " bg-[#E8E8E8]"
-              }`}
-            >
-
-              <VscBell size={20}  className={` ${
-                  item.unread ? "text-[#009F6D]" : "text-[#444444]"
-                }`}/>
-              
-            </div>
-            <div>
-              <p className="text-sm text-gray-800">{item.text}</p>
-              <span className="text-xs text-gray-400">{item.time}</span>
-            </div>
-            </div>
+        {filteredNotifications.length === 0 ? (
+          <div className="px-6 py-8 text-center text-gray-500">
+            No {filterStatus !== "all" ? filterStatus : ""} notifications
           </div>
-        ))}
+        ) : (
+          filteredNotifications.map((item: any, index: number) => (
+            <div key={item.id} className="w-full even:bg-[#F7F7F7]">
+              <div className="flex gap-3  items-start px-6 py-3">
+                <div
+                  className={`h-10 w-10 border-none rounded-full border flex items-center justify-center ${
+                    item.status === "unread" ? " bg-[#DAF4EC]" : " bg-[#E8E8E8]"
+                  }`}
+                >
+                  <VscBell size={20}  className={` ${
+                    item.status === "unread" ? "text-[#009F6D]" : "text-[#444444]"
+                  }`}/>
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-gray-900 mb-1">{item.title}</p>
+                  <p className="text-sm text-gray-800">{item.message}</p>
+                  <span className="text-xs text-gray-400">{formatTimeAgo(item.created_at)}</span>
+                </div>
+              </div>
+            </div>
+          ))
+        )}
       </div>
     </Drawer>
       </nav>

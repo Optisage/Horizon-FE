@@ -1,5 +1,5 @@
 "use client";
-import { useLazyGetProfileQuery } from "@/redux/api/auth";
+import { useLazyGetProfileQuery, useUpdateConnectAmazonMutation } from "@/redux/api/auth";
 import { DashNav, DashSider } from "./_components";
 import { useEffect, useState } from "react";
 import { message, Modal } from "antd";
@@ -20,17 +20,30 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }>) {
   const [getProfile, {}] = useLazyGetProfileQuery();
+  const [amazonConnect, { isLoading: isAmazonConnectLoading }] = useUpdateConnectAmazonMutation();
   const [messageApi, contextHolder] = message.useMessage();
   //const dispatch = useDispatch();
   const router = useRouter();
   // State to manage modal visibility
   const [isModalVisible, setIsModalVisible] = useState(false);
+  const [open, setOpen] = useState(false);
 
-   const [open, setOpen] = useState(true);
   const handleLogout = () => {
     // Clear the token cookie
     Cookies.remove("optisage-token");
     router.push("/");
+  };
+
+  const handleDontShowAgain = () => {
+    amazonConnect({ notify_to_connect_amazon: false })
+      .unwrap()
+      .then(() => {
+        setOpen(false);
+        messageApi.success("Preference saved successfully");
+      })
+      .catch(() => {
+        messageApi.error("Failed to update preference");
+      });
   };
 
   useEffect(() => {
@@ -43,12 +56,18 @@ export default function DashboardLayout({
         ) {
           setIsModalVisible(true);
         }
+        
+        // Check if notify_to_connect_amazon is true
+        if (res?.data?.notify_to_connect_amazon === true) {
+          setOpen(true);
+        }
       })
       .catch(() => {
         messageApi.error("failed to get Profile");
       });
     /* eslint-disable-next-line react-hooks/exhaustive-deps */
   }, [setIsModalVisible, getProfile]);
+
   return (
     <div className="drawer lg:drawer-open text-black mx-auto max-w-screen-2xl">
       {contextHolder}
@@ -101,55 +120,57 @@ export default function DashboardLayout({
             </div>
           </Modal>
 
+          <Modal
+            open={open}
+            footer={null}
+            closable={false}
+            centered
+            width={420}
+            className="!p-0"
+            styles={{body:{padding: 0}, content:{borderRadius:30}}}
+          >
+            <div className="bg-white rounded-3xl pt-10 overflow-hidden ">
+              {/* Header with BG Color instead of image */}
+              <div className=" flex flex-col items-center py-6">
+                <Image src={opxamazon} alt='image' className=" h-[91px]" />
+              </div>
 
-           <Modal
-      open={open}
-      footer={null}
-      closable={false}
-      centered
-      width={420}
-      className="!p-0"
-      styles={{body:{padding: 0}, content:{borderRadius:30}}}
-     
-    >
-      <div className="bg-white rounded-3xl pt-10 overflow-hidden ">
-        {/* Header with BG Color instead of image */}
-        <div className=" flex flex-col items-center py-6">
-          <Image src={opxamazon} alt='image' className=" h-[91px]" />
-        </div>
+              {/* Body */}
+              <div className="p-6 text-center">
+                <h2 className="text-lg font-semibold mb-3">
+                  Your account is not yet connected to your Amazon seller account.
+                </h2>
 
-        {/* Body */}
-        <div className="p-6 text-center">
-          <h2 className="text-lg font-semibold mb-3">
-            Your account is not yet connected to your Amazon seller account.
-          </h2>
+                <p className="text-gray-600 mb-6 text-sm">
+                  Please 
+                  <Link href={amazonAuthUrl} target="_blank">
+                    <span className="text-primary underline cursor-pointer">{" "}log in{" "}</span>
+                  </Link>
+                  to connect or{" "}
+                  <Link href={'https://sellercentral.amazon.com/'} target="_blank">
+                    <span className="text-primary underline cursor-pointer">create an account{" "}</span> 
+                  </Link>
+                  if you do not have one, to ensure uninterrupted access to optisage.
+                </p>
 
-          <p className="text-gray-600 mb-6 text-sm">
-            Please 
-             <Link href={amazonAuthUrl} target="_blank">
-            <span className="text-primary underline cursor-pointer">{" "}log in{" "}</span>
-            </Link>
-             to connect or{" "}
-            <Link href={'https://sellercentral.amazon.com/'} target="_blank">
-            <span className="text-primary underline cursor-pointer">create an account{" "}</span> 
-            </Link>
-            if you don’t have one, to ensure uninterrupted access to optsage.
-          </p>
+                <button 
+                  onClick={handleDontShowAgain}
+                  disabled={isAmazonConnectLoading}
+                  className=" py-3 px-8 rounded-xl text-[#009F6D] border border-primary  hover:bg-gray-100 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isAmazonConnectLoading ? "Saving..." : "Don't show this again"}
+                </button>
+              </div>
 
-          <button className=" py-3 px-8 rounded-xl text-[#009F6D] border border-primary  hover:bg-gray-100 transition">
-            Don’t show this again
-          </button>
-        </div>
-
-        {/* Custom Close Button */}
-        <button
-          onClick={() => setOpen(false)}
-          className="absolute top-3 right-3  transition rounded-full p-1"
-        >
-          <HiMiniXMark size={26} />
-        </button>
-      </div>
-    </Modal>
+              {/* Custom Close Button */}
+              <button
+                onClick={() => setOpen(false)}
+                className="absolute top-3 right-3  transition rounded-full p-1"
+              >
+                <HiMiniXMark size={26} />
+              </button>
+            </div>
+          </Modal>
         </div>
       </div>
       <DashSider />
