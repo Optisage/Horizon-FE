@@ -242,8 +242,8 @@ const UpcScanner = () => {
         key: 'refreshScan' 
       });
       
-      const response = await fetch(`/api/upc-scanner/${scanId}/restart`, {
-        method: 'POST',
+      const response = await fetch(`/api/upc-scanner/${scanId}`, {
+        method: 'GET',
         headers: {
           'Cache-Control': 'no-cache, no-store, must-revalidate',
           'Pragma': 'no-cache'
@@ -257,20 +257,20 @@ const UpcScanner = () => {
       
       const data = await response.json();
       
-      if (data.status === 200) {
-        message.success({ content: 'Scan refresh started', key: 'refreshScan' });
+      if (response.ok) {
+        message.success({ content: 'Scan status updated', key: 'refreshScan' });
         
         // Update the scan in the results list
         setScanResults(prevResults => 
           prevResults.map(scan => 
-            scan.id === scanId ? { ...scan, status: 'pending' } : scan
+            scan.id === scanId ? { ...scan, ...data.data } : scan
           )
         );
         
         // If this scan is currently selected, update the details too
         if (selectedProductId === scanId.toString()) {
           setScanDetails(prevDetails => 
-            prevDetails ? { ...prevDetails, status: 'pending' } : null
+            prevDetails ? { ...prevDetails, ...data.data } : null
           );
         }
       } else {
@@ -315,6 +315,54 @@ const UpcScanner = () => {
       }
     }
   }
+  
+  // Handle restarting a scan with retry mechanism
+  const handleRestartScan = async (scanId: number, retryAttempt = 0, maxRetries = 3) => {
+    try {
+      message.loading({ 
+        content: retryAttempt > 0 ? `Retrying scan restart (${retryAttempt}/${maxRetries})...` : 'Restarting scan...',
+        key: 'restartScan' 
+      });
+      
+      const response = await fetch(`/api/upc-scanner/${scanId}/restart`, {
+        method: 'POST',
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache'
+        }
+      });
+      
+      if (!response.ok) {
+        const errorText = await response.text().catch(() => 'Unknown error');
+        throw new Error(`HTTP error! Status: ${response.status}, details: ${errorText}`);
+      }
+      
+      const data = await response.json();
+      
+      if (data.status === 200) {
+        message.success({ content: 'Scan restart initiated', key: 'restartScan' });
+        
+        // Update the scan in the results list
+        setScanResults(prevResults => 
+          prevResults.map(scan => 
+            scan.id === scanId ? { ...scan, status: 'pending' } : scan
+          )
+        );
+        
+        // If this scan is currently selected, update the details too
+        if (selectedProductId === scanId.toString()) {
+          setScanDetails(prevDetails => 
+            prevDetails ? { ...prevDetails, status: 'pending' } : null
+          );
+        }
+      } else {
+        throw new Error(data.message || 'Failed to restart scan');
+      }
+    } catch (err: unknown) {
+      console.error('Error restarting scan:', err);
+      message.error({ content: err instanceof Error ? err.message : 'An unexpected error occurred', key: 'restartScan' });
+    }
+  };
   
   // Handle deleting a scan
   const handleDeleteScan = async (scanId: number) => {
@@ -792,6 +840,7 @@ const UpcScanner = () => {
               <ScanResultsTable 
                 onDetailsClick={handleDetailsClick}
                 onRefreshScan={handleRefreshScan}
+                onRestartScan={handleRestartScan}
                 onDeleteScan={handleDeleteScan}
                 scanResults={scanResults.filter(scan => {
                   // Apply debounced search term filter

@@ -98,7 +98,7 @@ const ScanDetailsTable = ({ products = [], isLoading = false }: ScanDetailsProps
               <tr>
                 <td colSpan={21} className="px-4 py-8 text-center">
                   <div className="flex justify-center">
-                    <Spin size="large" />
+                    <Spin size="large" style={{ color: "#18CB96" }} />
                   </div>
                 </td>
               </tr>
@@ -240,7 +240,7 @@ const ScanDetailsTable = ({ products = [], isLoading = false }: ScanDetailsProps
                     <tr>
                       <td colSpan={16} className="px-4 py-8 text-center">
                         <div className="flex justify-center">
-                          <Spin size="large" />
+                          <Spin size="large" style={{ color: "#18CB96" }} />
                         </div>
                       </td>
                     </tr>
