@@ -215,8 +215,8 @@ const ScanResultsTable: FC<ScanResultsTableProps> = ({ onDetailsClick, onRefresh
             <span
               className={`px-1.5 py-1 rounded-full text-xs font-semibold`}
               style={{
-                backgroundColor: status === "Pending" ? "#FDF5E9" : "#18CB9610",
-                color: status === "Pending" ? "#FF9B06" : "#18CB96",
+                backgroundColor: status === "Pending" || status === "In Progress" ? "#FDF5E9" : "#18CB9610",
+                color: status === "Pending" || status === "In Progress" ? "#FF9B06" : "#18CB96",
               }}
             >
               {status}
@@ -226,8 +226,8 @@ const ScanResultsTable: FC<ScanResultsTableProps> = ({ onDetailsClick, onRefresh
           <span
             className={`px-1.5 py-1 rounded-full text-xs font-semibold`}
             style={{
-              backgroundColor: status === "Pending" ? "#FDF5E9" : "#18CB9610",
-              color: status === "Pending" ? "#FF9B06" : "#18CB96",
+              backgroundColor: status === "Pending" || status === "In Progress" ? "#FDF5E9" : "#18CB9610",
+              color: status === "Pending" || status === "In Progress" ? "#FF9B06" : "#18CB96",
             }}
           >
             {status}
