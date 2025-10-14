@@ -185,7 +185,7 @@ function DraggableRow({
 
 export default function QuickSearchTable({ products, onRowClick }: ProductTableProps) {
   const [page, setPage] = useState(1)
-  const [perPage, setPerPage] = useState(10)
+  const perPage = 10 // Fixed number of rows per page
 
   // Check if products are QuickSearchResult type
   const isQuickSearchResult = products.length > 0 && ('store_name' in products[0] || 'product_name' in products[0]);
@@ -200,14 +200,13 @@ export default function QuickSearchTable({ products, onRowClick }: ProductTableP
   const endIndex = startIndex + perPage
   const currentData = sortedProducts.slice(startIndex, endIndex)
 
-
   const handlePageChange = (page: number) => {
     setPage(page)
   }
 
-  const handlePerPageChange = (value: number) => {
-    setPerPage(value)
-    setPage(1)
+  // Dummy function to maintain compatibility with TablePagination
+  const handlePerPageChange = () => {
+    // No longer used
   }
 
   return (
