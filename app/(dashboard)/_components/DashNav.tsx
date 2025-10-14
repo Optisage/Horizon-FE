@@ -1,6 +1,5 @@
 "use client";
 /* eslint-disable @typescript-eslint/no-unused-vars */
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -13,6 +12,7 @@ import UserProfile from "./UserProfile";
 import { VscBell, VscBellDot } from "react-icons/vsc";
 import { Drawer } from "antd";
 import { HiMiniXMark } from "react-icons/hi2";
+import { BiCheck, BiTrash } from "react-icons/bi";
 import { useLazyGetNotificationsQuery } from "@/redux/api/user";
 
 const DashNav = () => {
@@ -20,6 +20,7 @@ const DashNav = () => {
   const [searchValue, setSearchValue] = useState("");
   const [error, setError] = useState("");
   const [open, setOpen] = useState(false);
+  const [hoveredNotification, setHoveredNotification] = useState<string | null>(null);
   const [getNotification, { data: notificationsData }] = useLazyGetNotificationsQuery()
   const [filterStatus, setFilterStatus] = useState<"all" | "unread" | "read">("all");
 
@@ -103,6 +104,20 @@ const DashNav = () => {
     }
   };
 
+  const handleMarkAsRead = (notificationId: string) => {
+    // TODO: Call API to mark notification as read
+    console.log("Mark as read:", notificationId);
+    // After API call, refetch notifications
+    getNotification({});
+  };
+
+  const handleDelete = (notificationId: string) => {
+    // TODO: Call API to delete notification
+    console.log("Delete notification:", notificationId);
+    // After API call, refetch notifications
+    getNotification({});
+  };
+
   return (
     <nav className="flex items-center justify-between px-5 py-3 md:py-4 lg:px-6 sticky top-0 bg-white lg:shadow-sm lg:border-transparent border-b border-gray-200 z-40 rounded-xl">
         <Image
@@ -135,7 +150,7 @@ const DashNav = () => {
             <div className="relative">
               <VscBell size={25} className=" cursor-pointer" color="#18cb96" onClick={()=>setOpen(true)}/>
               {unreadCount > 0 && (
-                <span className="absolute -top-1 -right-1 h-4 w-4 bg-red-500 text-white text-[8px] rounded-full flex items-center justify-center">
+                <span className="absolute -top-1 -right-1 h-5 w-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
                   {displayCount}
                 </span>
               )}
@@ -212,7 +227,12 @@ const DashNav = () => {
           </div>
         ) : (
           filteredNotifications.map((item: any, index: number) => (
-            <div key={item.id} className="w-full even:bg-[#F7F7F7]">
+            <div 
+              key={item.id} 
+              className="w-full even:bg-[#F7F7F7] relative"
+              onMouseEnter={() => setHoveredNotification(item.id)}
+              onMouseLeave={() => setHoveredNotification(null)}
+            >
               <div className="flex gap-3  items-start px-6 py-3">
                 <div
                   className={`h-10 w-10 border-none rounded-full border flex items-center justify-center ${
@@ -228,6 +248,30 @@ const DashNav = () => {
                   <p className="text-sm text-gray-800">{item.message}</p>
                   <span className="text-xs text-gray-400">{formatTimeAgo(item.created_at)}</span>
                 </div>
+
+                {/* Action Buttons - Show on Hover */}
+                {hoveredNotification === item.id && (
+                  <div className="flex gap-2 items-center">
+                    {item.status === "unread" && (
+                      <button
+                        onClick={() => handleMarkAsRead(item.id)}
+                        className="p-2 hover:bg-gray-200 rounded-full transition-colors"
+                        title="Mark as read"
+                      >
+                   Mark as read
+                      </button>
+                    )}
+                    {/** 
+                    <button
+                      onClick={() => handleDelete(item.id)}
+                      className="p-2 hover:bg-gray-200 rounded-full transition-colors"
+                      title="Delete"
+                    >
+                      <BiTrash size={18} className="text-red-600" />
+                    </button>
+                    */}
+                  </div>
+                )}
               </div>
             </div>
           ))

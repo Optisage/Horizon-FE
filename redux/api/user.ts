@@ -48,6 +48,24 @@ export const userApi = createApi({
         method: "GET",
       }),
     }),
+    markRead: builder.mutation({
+      query: (id) => ({
+        url: `customer/notifications/${id}`,
+        method: "PUT",
+      }),
+    }),
+    markAllRead: builder.mutation({
+      query: (id) => ({
+        url: `customer/notifications/mark-all-read`,
+        method: "PUT",
+      }),
+    }),
+    deleteAllNotification: builder.mutation({
+      query: (id) => ({
+        url: `customer/notifications/delete-all`,
+        method: "DELETE",
+      }),
+    }),
   }),
 });
 
@@ -56,6 +74,9 @@ export const {
  useLazyGetSettingsQuery,
  useUpdateSettingsMutation,
  useLazyGetSubscriptionsQuery,
- useLazyGetNotificationsQuery
+ useLazyGetNotificationsQuery,
+ useMarkReadMutation,
+ useMarkAllReadMutation,
+ useDeleteAllNotificationMutation
 
 } = userApi;
