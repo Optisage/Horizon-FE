@@ -381,19 +381,46 @@ export default function QuickSearch() {
     }
     if (isError) {
         let errorMessage = "Unknown error";
+        let errorDetails = "";
+        
         if (error && typeof error === 'object') {
+            console.log("Error object:", error); // Log the full error object for debugging
+            
             if ('status' in error) {
+                const status = error.status;
+                errorDetails = `Status: ${status}`;
+                
                 if (typeof error.data === 'string') {
                     errorMessage = error.data;
                 } else if (typeof error.data === 'object' && error.data !== null) {
-                    errorMessage = (error.data as { error?: string })?.error ?? errorMessage;
+                    const errorData = error.data as any;
+                    errorMessage = errorData.error || errorData.message || errorData.errorMessage || errorMessage;
+                    
+                    // Extract more details if available
+                    if (errorData.details) {
+                        errorDetails += ` - ${JSON.stringify(errorData.details)}`;
+                    }
                 }
             } else if ('message' in error) {
-                errorMessage = error.message ?? errorMessage;
+                errorMessage = error.message || errorMessage;
+            }
+            
+            // Check for network errors
+            if ('name' in error && error.name === 'FetchError') {
+                errorMessage = "Network error: Unable to connect to the server";
             }
         }
-        console.error("Quick Search failed:", errorMessage);
-        return <div style={{ color: 'red' }}>Error: {errorMessage}</div>;
+        
+        console.error("Quick Search failed:", errorMessage, errorDetails ? `(${errorDetails})` : "");
+        
+        return (
+            <div className="p-4 border border-red-300 bg-red-50 rounded-md">
+                <h3 className="text-red-600 font-medium text-lg mb-2">Search Error</h3>
+                <p className="text-red-700 mb-1">{errorMessage}</p>
+                {errorDetails && <p className="text-red-500 text-sm">{errorDetails}</p>}
+                <p className="text-sm mt-3">Please try again or contact support if the issue persists.</p>
+            </div>
+        );
     }
 
 
