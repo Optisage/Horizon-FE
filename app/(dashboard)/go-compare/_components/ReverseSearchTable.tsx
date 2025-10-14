@@ -115,7 +115,7 @@ function SortButton({ column, currentColumn, currentDirection, onSort
 
 export default function ReverseSearchTable({ products, onRowClick }: ProductTableProps) {
     const [page, setPage] = useState(1)
-    const [perPage, setPerPage] = useState(10)
+    const perPage = 10 // Fixed number of rows per page
     const [sortColumn, setSortColumn] = useState<SortColumn>(null)
     const [sortDirection, setSortDirection] = useState<SortDirection>('desc')
 
@@ -165,9 +165,9 @@ export default function ReverseSearchTable({ products, onRowClick }: ProductTabl
         setPage(page)
     }
 
-    const handlePerPageChange = (value: number) => {
-        setPerPage(value)
-        setPage(1)
+    // Dummy function to maintain compatibility with TablePagination
+    const handlePerPageChange = () => {
+        // No longer used
     }
 
     return (

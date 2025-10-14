@@ -21,6 +21,11 @@ const nextConfig: NextConfig = {
       hostname: "m.media-amazon.com",
       port: "",
       pathname: "/**"
+    }, {
+      protocol: "https",
+      hostname: "encrypted-tbn2.gstatic.com",
+      port: "",
+      pathname: "/**"
     }]
   },
 };

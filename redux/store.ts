@@ -34,7 +34,7 @@ const rootReducer = combineReducers({
 const persistConfig = {
   key: "root",
   storage,
-  whitelist: ["api", "global", "chat"], // Add "chat" to persist chat history
+  whitelist: ["api", "global"], // Only persist necessary reducers
 };
 const persistedReducer = persistReducer(persistConfig, rootReducer);
 
