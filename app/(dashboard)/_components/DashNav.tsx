@@ -1,5 +1,6 @@
 "use client";
 /* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -13,7 +14,8 @@ import { VscBell, VscBellDot } from "react-icons/vsc";
 import { Drawer } from "antd";
 import { HiMiniXMark } from "react-icons/hi2";
 import { BiCheck, BiTrash } from "react-icons/bi";
-import { useLazyGetNotificationsQuery } from "@/redux/api/user";
+import { useLazyGetNotificationsQuery, useMarkReadMutation } from "@/redux/api/user";
+import { AiOutlineLoading3Quarters } from "react-icons/ai";
 
 const DashNav = () => {
   const router = useRouter();
@@ -21,12 +23,14 @@ const DashNav = () => {
   const [error, setError] = useState("");
   const [open, setOpen] = useState(false);
   const [hoveredNotification, setHoveredNotification] = useState<string | null>(null);
-  const [getNotification, { data: notificationsData }] = useLazyGetNotificationsQuery()
+  const [loadingNotificationId, setLoadingNotificationId] = useState<string | null>(null);
+  const [getNotification, { data: notificationsData }] = useLazyGetNotificationsQuery();
+  const [markRead, { isLoading: isMarkingRead }] = useMarkReadMutation();
   const [filterStatus, setFilterStatus] = useState<"all" | "unread" | "read">("all");
 
-  useEffect(()=>{
-    getNotification({})
-  },[])
+  useEffect(() => {
+    getNotification({});
+  }, []);
 
   // Helper function to format timestamps
   const formatTimeAgo = (timestamp: string) => {
@@ -104,11 +108,18 @@ const DashNav = () => {
     }
   };
 
-  const handleMarkAsRead = (notificationId: string) => {
-    // TODO: Call API to mark notification as read
-    console.log("Mark as read:", notificationId);
-    // After API call, refetch notifications
-    getNotification({});
+  const handleMarkAsRead = async (notificationId: string) => {
+    try {
+      setLoadingNotificationId(notificationId);
+      await markRead(notificationId).unwrap();
+      // Refetch notifications after successful mark as read
+      await getNotification({});
+    } catch (error) {
+      console.error("Failed to mark notification as read:", error);
+      // Optionally show error toast/notification to user
+    } finally {
+      setLoadingNotificationId(null);
+    }
   };
 
   const handleDelete = (notificationId: string) => {
@@ -150,7 +161,7 @@ const DashNav = () => {
             <div className="relative">
               <VscBell size={25} className=" cursor-pointer" color="#18cb96" onClick={()=>setOpen(true)}/>
               {unreadCount > 0 && (
-                <span className="absolute -top-1 -right-1 h-5 w-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
+              <span className="absolute -top-1 -right-1 h-4 w-4 bg-red-500 text-white text-[8px] rounded-full flex items-center justify-center">
                   {displayCount}
                 </span>
               )}
@@ -251,14 +262,24 @@ const DashNav = () => {
 
                 {/* Action Buttons - Show on Hover */}
                 {hoveredNotification === item.id && (
-                  <div className="flex gap-2 items-center">
+                  <div className="flex gap-2 items-center absolute right-3 top-0">
                     {item.status === "unread" && (
                       <button
                         onClick={() => handleMarkAsRead(item.id)}
-                        className="p-2 hover:bg-gray-200 rounded-full transition-colors"
+                        disabled={loadingNotificationId === item.id}
+                        className={`px-2 py-1 bg-gray-100 hover:bg-gray-200 text-[11px] rounded-full transition-colors flex items-center gap-1 ${
+                          loadingNotificationId === item.id ? 'opacity-60 cursor-not-allowed' : ''
+                        }`}
                         title="Mark as read"
                       >
-                   Mark as read
+                        {loadingNotificationId === item.id ? (
+                          <>
+                            <AiOutlineLoading3Quarters className="animate-spin" size={12} />
+                            <span>Loading...</span>
+                          </>
+                        ) : (
+                          'Mark as read'
+                        )}
                       </button>
                     )}
                     {/** 
