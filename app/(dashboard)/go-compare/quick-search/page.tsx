@@ -2,7 +2,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { DndContext, type DragEndEvent, DragOverlay, type DragStartEvent, PointerSensor, useSensor, useSensors } from "@dnd-kit/core"
 import { restrictToWindowEdges } from "@dnd-kit/modifiers"
-import { useGetSearchByIdQuery, useQuickSearchQuery, useGetProductDetailsQuery } from '@/redux/api/quickSearchApi';
+import { useGetSearchByIdQuery, useQuickSearchQuery, useGetComparisonProductDetailsQuery } from '@/redux/api/quickSearchApi';
 import Image from "next/image";
 import { usePathname, useSearchParams } from 'next/navigation';
 import React, { useEffect, useState, useCallback, useRef, useMemo } from 'react'
@@ -130,7 +130,7 @@ export default function QuickSearch() {
         console.log("Marketplace ID:", marketplace_id);
     }
 
-    const productDetailsResult = useGetProductDetailsQuery(
+    const productDetailsResult = useGetComparisonProductDetailsQuery(
         { asin: selectedAsin || '', marketplace_id: marketplace_id || 1 },
         { skip: !selectedAsin || !marketplace_id }
     );
