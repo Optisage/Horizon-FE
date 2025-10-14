@@ -4,7 +4,6 @@
 import { useDraggable } from "@dnd-kit/core"
 import { useState } from "react"
 import Image from "next/image"
-import TablePagination from "./TablePagination"
 import placeholder from '../../../../public/assets/images/gocompare/placeholder.png'
 import { ProductObj, QuickSearchResult } from "@/types/goCompare";
 
@@ -184,9 +183,6 @@ function DraggableRow({
 }
 
 export default function QuickSearchTable({ products, onRowClick }: ProductTableProps) {
-  const [page, setPage] = useState(1)
-  const perPage = 10 // Fixed number of rows per page
-
   // Check if products are QuickSearchResult type
   const isQuickSearchResult = products.length > 0 && ('store_name' in products[0] || 'product_name' in products[0]);
 
@@ -195,19 +191,8 @@ export default function QuickSearchTable({ products, onRowClick }: ProductTableP
     ? products
     : [...(products as ProductObj[])].sort((a, b) => b.roi_percentage - a.roi_percentage)
 
-  const totalPages = Math.ceil(sortedProducts.length / perPage)
-  const startIndex = (page - 1) * perPage
-  const endIndex = startIndex + perPage
-  const currentData = sortedProducts.slice(startIndex, endIndex)
-
-  const handlePageChange = (page: number) => {
-    setPage(page)
-  }
-
-  // Dummy function to maintain compatibility with TablePagination
-  const handlePerPageChange = () => {
-    // No longer used
-  }
+  // Display all products without pagination
+  const currentData = sortedProducts
 
   return (
     <div className="border border-gray-200 rounded-lg">
@@ -240,14 +225,6 @@ export default function QuickSearchTable({ products, onRowClick }: ProductTableP
           </table>
         </div>
       </div>
-
-      <TablePagination
-        page={page}
-        perPage={perPage}
-        totalPages={totalPages}
-        handlePageChange={handlePageChange}
-        handlePerPageChange={handlePerPageChange}
-      />
     </div>
   )
 }
