@@ -40,7 +40,6 @@ export interface ProductData {
   index: number;
   name: string;
   productId: string;
-  items: number;
   found: number;
   lastScan: string;
   lastUploaded: string;
@@ -135,7 +134,6 @@ const ScanResultsTable: FC<ScanResultsTableProps> = ({ onDetailsClick, onRefresh
       index: index + 1,
       name: scan.product_name,
       productId: scan.product_id || scan.id.toString(),
-      items: scan.items_count,
       found: scan.products_found,
       lastScan: formatDate(scan.last_seen),
       lastUploaded: formatDate(scan.last_uploaded),
@@ -177,18 +175,7 @@ const ScanResultsTable: FC<ScanResultsTableProps> = ({ onDetailsClick, onRefresh
       },
     },
 
-    {
-      title: "No. of items",
-      dataIndex: "items",
-      key: "items",
-      render: (text, record) => {
-        // Since we've sorted the table data, the first item (index 0) is the most recent
-        const isMostRecent = record.key === tableData[0]?.key;
-        return (
-          <span className={isMostRecent ? "font-bold" : ""}>{text}</span>
-        );
-      },
-    },
+
     {
       title: "Product Found",
       dataIndex: "found",

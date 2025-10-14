@@ -50,7 +50,66 @@ const formatValue = (value: string | number | null | undefined) => {
   return value.toString();
 };
 
+import { useEffect, useRef } from "react";
+
 const ScanDetailsTable = ({ products = [], isLoading = false }: ScanDetailsProps) => {
+  const tableContainerRef = useRef<HTMLDivElement>(null);
+  const scrollbarRef = useRef<HTMLDivElement>(null);
+  const scrollbarThumbRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const tableContainer = tableContainerRef.current;
+    const scrollbar = scrollbarRef.current;
+    const scrollbarThumb = scrollbarThumbRef.current;
+
+    if (!tableContainer || !scrollbar || !scrollbarThumb) return;
+
+    const handleScroll = () => {
+      if (!scrollbarThumb) return; // Add guard clause
+      const scrollPercentage = tableContainer.scrollLeft / (tableContainer.scrollWidth - tableContainer.clientWidth);
+      const thumbX = scrollPercentage * (scrollbar.clientWidth - scrollbarThumb.clientWidth);
+      scrollbarThumb.style.transform = `translateX(${thumbX}px)`;
+    };
+
+    tableContainer.addEventListener('scroll', handleScroll);
+
+    let isDragging = false;
+    let startX = 0;
+    let scrollLeft = 0;
+
+    const handleMouseDown = (e: MouseEvent) => {
+      isDragging = true;
+      startX = e.pageX;
+      scrollLeft = tableContainer.scrollLeft;
+      scrollbar.classList.add('cursor-grabbing');
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+    };
+
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!isDragging) return;
+      e.preventDefault();
+      const x = e.pageX;
+      const walk = (x - startX) * 3; //scroll-fast
+      tableContainer.scrollLeft = scrollLeft + walk;
+    };
+
+    const handleMouseUp = () => {
+      isDragging = false;
+      scrollbar.classList.remove('cursor-grabbing');
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+
+    scrollbar.addEventListener('mousedown', handleMouseDown);
+
+    return () => {
+      tableContainer.removeEventListener('scroll', handleScroll);
+      scrollbar.removeEventListener('mousedown', handleMouseDown);
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, []);
   return (
     <div className="w-full overflow-x-auto rounded-b-xl border border-gray-200">
       {/* Mobile View */}
@@ -199,8 +258,8 @@ const ScanDetailsTable = ({ products = [], isLoading = false }: ScanDetailsProps
           </div>
 
           {/* Scrollable Right Table - Fees and Profit Section */}
-          <div className="flex-1 overflow-x-auto">
-            <div className="overflow-x-auto">
+          <div className="flex-1 overflow-hidden">
+            <div ref={tableContainerRef} className="overflow-x-auto">
               <table className="table-fixed w-[2560px] text-sm bg-white border-separate border-spacing-0">
                 <thead className="bg-[#F3F4F6] text-[#596375]">
                   <tr className="border-b border-gray-200 divide-x-2 h-12">
@@ -274,6 +333,9 @@ const ScanDetailsTable = ({ products = [], isLoading = false }: ScanDetailsProps
                   )}
                 </tbody>
               </table>
+            </div>
+            <div ref={scrollbarRef} className="custom-scrollbar">
+              <div ref={scrollbarThumbRef} className="custom-scrollbar-thumb"></div>
             </div>
           </div>
         </div>
