@@ -63,6 +63,8 @@ interface ProductDetails {
   rank: string | null;
   amazon_instock_rate: string | null;
   number_of_fba: string | null;
+  number_of_fbm: string | null;
+  number_of_amz: string | null;
   estimated_monthly_sales: string | null;
   buy_box_equity: string | null;
   out_of_stock: number | null;
@@ -145,6 +147,64 @@ const UpcScanner = () => {
   const [isLoading, setIsLoading] = useState(false);
   // Using retryCount to trigger refetching when retry is clicked
   const [retryCount, setRetryCount] = useState(0);
+  const [restartingScanId, setRestartingScanId] = useState<number | null>(null);
+  
+  // Function to fetch all scan results
+  const fetchScanResults = async () => {
+    setIsLoading(true);
+    
+    try {
+      const response = await fetch('/api/upc-scanner', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache'
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        throw new Error(`Expected JSON response but got ${contentType}`);
+      }
+      
+      const data: ApiResponse = await response.json();
+      
+      if (data.status === 200) {
+        setScanResults(data.data);
+        setRetryCount(0); // Reset retry count on success
+      } else {
+        throw new Error(data.message || 'Failed to fetch scan results');
+      }
+    } catch (err: unknown) {
+      let errorMessage = 'An error occurred while fetching scan results';
+      
+      if (err instanceof SyntaxError) {
+        errorMessage = 'Invalid response format from server';
+      } else if (err instanceof Error && err.name === 'AbortError') {
+        errorMessage = 'Request timed out. Please try again.';
+      } else if (err instanceof Error) {
+        errorMessage = err.message;
+      }
+      
+      message.error({ content: errorMessage, key: 'fetchError' });
+      
+      if (retryCount < 3) {
+        setTimeout(() => setRetryCount(retryCount + 1), 3000 * (retryCount + 1));
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Fetch scan results on component mount and when retryCount changes
+  useEffect(() => {
+    fetchScanResults();
+  }, [retryCount]);
   
   useEffect(() => {
     const controller = new AbortController();
@@ -317,50 +377,39 @@ const UpcScanner = () => {
   }
   
   // Handle restarting a scan with retry mechanism
-  const handleRestartScan = async (scanId: number, retryAttempt = 0, maxRetries = 3) => {
+  const handleRestartScan = async (scanId: number) => {
+    setRestartingScanId(scanId);
     try {
-      message.loading({ 
-        content: retryAttempt > 0 ? `Retrying scan restart (${retryAttempt}/${maxRetries})...` : 'Restarting scan...',
-        key: 'restartScan' 
-      });
-      
       const response = await fetch(`/api/upc-scanner/${scanId}/restart`, {
         method: 'POST',
         headers: {
-          'Cache-Control': 'no-cache, no-store, must-revalidate',
-          'Pragma': 'no-cache'
-        }
+          'Content-Type': 'application/json',
+        },
       });
-      
+
       if (!response.ok) {
-        const errorText = await response.text().catch(() => 'Unknown error');
-        throw new Error(`HTTP error! Status: ${response.status}, details: ${errorText}`);
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
-      
-      const data = await response.json();
-      
-      if (data.status === 200) {
-        message.success({ content: 'Scan restart initiated', key: 'restartScan' });
-        
-        // Update the scan in the results list
-        setScanResults(prevResults => 
-          prevResults.map(scan => 
-            scan.id === scanId ? { ...scan, status: 'pending' } : scan
-          )
-        );
-        
-        // If this scan is currently selected, update the details too
-        if (selectedProductId === scanId.toString()) {
-          setScanDetails(prevDetails => 
-            prevDetails ? { ...prevDetails, status: 'pending' } : null
-          );
-        }
+
+      const result = await response.json();
+
+      if (result.status === 200) {
+        await fetchScanResults();
+        message.success({
+          content: 'Scan Restarted',
+          key: 'restartScan'
+        });
       } else {
-        throw new Error(data.message || 'Failed to restart scan');
+        throw new Error(result.message || 'Failed to restart scan');
       }
-    } catch (err: unknown) {
-      console.error('Error restarting scan:', err);
-      message.error({ content: err instanceof Error ? err.message : 'An unexpected error occurred', key: 'restartScan' });
+    } catch (error) {
+      console.error('Failed to restart scan:', error);
+      message.error({
+        content: 'Failed to restart scan. Please try again.',
+        key: 'restartScan'
+      });
+    } finally {
+      setRestartingScanId(null);
     }
   };
   
@@ -629,13 +678,15 @@ const UpcScanner = () => {
         formData.append('product_id_type', 'asin,upc'); // Include both ASIN and UPC
         formData.append('marketplace_id', marketplaceId);
 
+        const headers = new Headers();
+        headers.append('Accept', 'application/json');
+        headers.append('Cache-Control', 'no-cache, no-store, must-revalidate');
+        headers.append('Pragma', 'no-cache');
+
         const response = await fetch('/api/upc-scanner', {
           method: 'POST',
           body: formData,
-          headers: {
-            'Cache-Control': 'no-cache, no-store, must-revalidate',
-            'Pragma': 'no-cache'
-          }
+          headers: headers
         });
 
         if (response.ok) {
@@ -670,39 +721,10 @@ const UpcScanner = () => {
         }
       } catch (error) {
         console.error('Upload error:', error);
-        
-        if (retryCount < maxRetries) {
-          retryCount++;
-          message.warning({
-            content: (
-              <div>
-                Upload failed: {error instanceof Error ? error.message : 'Unknown error'}
-                <button 
-                  onClick={attemptUpload}
-                  style={{ marginLeft: '10px', color: '#18CB96', background: 'none', border: 'none', cursor: 'pointer' }}
-                >
-                  Retry Now ({retryCount}/{maxRetries})
-                </button>
-              </div>
-            ),
-            duration: 5
-          });
-        } else {
-          message.error({
-            content: (
-              <div>
-                Failed to upload after {maxRetries} attempts: {error instanceof Error ? error.message : 'Unknown error'}
-                <button 
-                  onClick={() => { retryCount = 0; attemptUpload(); }}
-                  style={{ marginLeft: '10px', color: '#18CB96', background: 'none', border: 'none', cursor: 'pointer' }}
-                >
-                  Try Again
-                </button>
-              </div>
-            ),
-            duration: 7
-          });
-        }
+        message.error({
+          content: `Upload failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+          duration: 5
+        });
         
         setIsUploading(false);
         return false;
