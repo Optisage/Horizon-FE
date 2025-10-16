@@ -784,7 +784,7 @@ const UpcScanner = () => {
                   <input
                     type="text"
                     id="product_name"
-                    placeholder="Enter Product Name"
+                    placeholder="Enter Search Name"
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="w-full py-3 pl-10 pr-4 text-[#596375] border border-border rounded-lg outline-none focus:border-primary"
