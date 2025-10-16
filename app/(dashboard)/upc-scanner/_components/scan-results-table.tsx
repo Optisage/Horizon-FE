@@ -40,6 +40,7 @@ export interface ProductData {
   index: number;
   name: string;
   productId: string;
+  itemsCount: number;
   found: number;
   lastScan: string;
   lastUploaded: string;
@@ -134,6 +135,7 @@ const ScanResultsTable: FC<ScanResultsTableProps> = ({ onDetailsClick, onRefresh
       index: index + 1,
       name: scan.product_name,
       productId: scan.product_id || scan.id.toString(),
+      itemsCount: scan.items_count,
       found: scan.products_found,
       lastScan: formatDate(scan.last_seen),
       lastUploaded: formatDate(scan.last_uploaded),
@@ -174,8 +176,11 @@ const ScanResultsTable: FC<ScanResultsTableProps> = ({ onDetailsClick, onRefresh
         );
       },
     },
-
-
+    {
+      title: "No of items",
+      dataIndex: "itemsCount",
+      key: "itemsCount",
+    },
     {
       title: "Product Found",
       dataIndex: "found",
