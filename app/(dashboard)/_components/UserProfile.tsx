@@ -32,6 +32,10 @@ const UserProfile = () => {
 
   const items: MenuProps["items"] = [
     {
+      label: "Monitor List",
+      key: "monitor-list",
+    },
+    {
       label: "Settings",
       key: "settings",
     },
