@@ -2,7 +2,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { DndContext, type DragEndEvent, DragOverlay, type DragStartEvent, PointerSensor, useSensor, useSensors } from "@dnd-kit/core"
 import { restrictToWindowEdges } from "@dnd-kit/modifiers"
-import { useGetSearchByIdQuery, useQuickSearchQuery, useGetComparisonProductDetailsQuery } from '@/redux/api/quickSearchApi';
+import { useGetSearchByIdQuery, useQuickSearchQuery, useGetComparisonProductDetailsQuery, useGetProductDetailsQuery } from '@/redux/api/quickSearchApi';
 import Image from "next/image";
 import { usePathname, useSearchParams } from 'next/navigation';
 import React, { useEffect, useState, useCallback, useRef, useMemo } from 'react'
@@ -132,20 +132,33 @@ export default function QuickSearch() {
         console.log("Selected Sales Price:", selectedSalesPrice);
     }
 
-    const productDetailsResult = useGetComparisonProductDetailsQuery(
-        { asin: selectedAsin || asin || '', marketplace_id: marketplace_id || 1, sales_price: selectedSalesPrice || undefined },
+    // Left Container API - Amazon Product Details
+    const amazonProductDetailsResult = useGetProductDetailsQuery(
+        { asin: selectedAsin || asin || '', marketplace_id: marketplace_id || 1 },
         { skip: (!selectedAsin && !asin) || !marketplace_id }
+    );
+
+    // Right Container API - Comparison Product Details (when needed)
+    const comparisonProductDetailsResult = useGetComparisonProductDetailsQuery(
+        { asin: selectedAsin || asin || '', marketplace_id: marketplace_id || 1, sales_price: selectedSalesPrice || undefined },
+        { skip: (!selectedAsin && !asin) || !marketplace_id || !selectedSalesPrice }
     );
     
     // Log the product details response for debugging
     useEffect(() => {
-        if (productDetailsResult.data && process.env.NODE_ENV === 'development') {
-            console.log("Product details response:", productDetailsResult.data);
+        if (amazonProductDetailsResult.data && process.env.NODE_ENV === 'development') {
+            console.log("Amazon Product details response:", amazonProductDetailsResult.data);
         }
-        if (productDetailsResult.error) {
-            console.error("Product details error:", productDetailsResult.error);
+        if (amazonProductDetailsResult.error) {
+            console.error("Amazon Product details error:", amazonProductDetailsResult.error);
         }
-    }, [productDetailsResult.data, productDetailsResult.error]);
+        if (comparisonProductDetailsResult.data && process.env.NODE_ENV === 'development') {
+            console.log("Comparison Product details response:", comparisonProductDetailsResult.data);
+        }
+        if (comparisonProductDetailsResult.error) {
+            console.error("Comparison Product details error:", comparisonProductDetailsResult.error);
+        }
+    }, [amazonProductDetailsResult.data, amazonProductDetailsResult.error, comparisonProductDetailsResult.data, comparisonProductDetailsResult.error]);
 
     const sensors = useSensors(
         useSensor(PointerSensor, {
@@ -334,38 +347,38 @@ export default function QuickSearch() {
         }))
     }
 
-    const productDetails = productDetailsResult.data?.data || productDetailsResult.data;
+    const amazonProductDetails = amazonProductDetailsResult.data?.data || amazonProductDetailsResult.data;
     
     // Create product data object from API response
     const productData = {
-        "Avg. Amazon 90 day price": productDetails?.avg_amazon_90_day_price != null
-            ? `$${Number(productDetails.avg_amazon_90_day_price).toFixed(2)}`
+        "Avg. Amazon 90 day price": amazonProductDetails?.avg_amazon_90_day_price != null
+            ? `$${Number(amazonProductDetails.avg_amazon_90_day_price).toFixed(2)}`
             : 'N/A',
-        
-        "Gross ROI": productDetails?.gross_roi != null
-            ? `${Number(productDetails.gross_roi).toFixed(1)}%`
+
+        "Gross ROI": amazonProductDetails?.gross_roi != null
+            ? `${Number(amazonProductDetails.gross_roi).toFixed(1)}%`
             : 'N/A',
-        
-        "Sales rank": productDetails?.sales_rank != null
-            ? String(productDetails.sales_rank)
+
+        "Sales rank": amazonProductDetails?.sales_rank != null
+            ? String(amazonProductDetails.sales_rank)
             : 'N/A',
-        
-        "Avg. 3 month sales rank": productDetails?.avg_3_month_sales_rank != null
-            ? String(productDetails.avg_3_month_sales_rank)
+
+        "Avg. 3 month sales rank": amazonProductDetails?.avg_3_month_sales_rank != null
+            ? String(amazonProductDetails.avg_3_month_sales_rank)
             : 'N/A',
-        
-        "ASIN": productDetails?.asin || asin || 'N/A',
-        
-        "Number of Sellers": productDetails?.number_of_sellers != null
-            ? String(productDetails.number_of_sellers)
+
+        "ASIN": amazonProductDetails?.asin || asin || 'N/A',
+
+        "Number of Sellers": amazonProductDetails?.number_of_sellers != null
+            ? String(amazonProductDetails.number_of_sellers)
             : 'N/A',
-        
-        "Monthly Sellers": productDetails?.monthly_sellers != null
-            ? String(productDetails.monthly_sellers)
+
+        "Monthly Sellers": amazonProductDetails?.monthly_sellers != null
+            ? String(amazonProductDetails.monthly_sellers)
             : 'N/A',
-        
-        "Amazon on listing": productDetails?.amazon_on_listing != null
-            ? (productDetails.amazon_on_listing ? 'YES' : 'NO')
+
+        "Amazon on listing": amazonProductDetails?.amazon_on_listing != null
+            ? (amazonProductDetails.amazon_on_listing ? 'YES' : 'NO')
             : 'N/A'
     }
 
@@ -462,14 +475,14 @@ export default function QuickSearch() {
                     <div className="flex-1">
                         <h2 className="text-lg font-semibold mb-4" id="comparison-workspace">Comparison Workspace</h2>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2.5">
-                            {/* First product card - simplified */}
-                            {productDetailsResult.data?.data ? (
+                            {/* First product card - Amazon product using team-b API */}
+                            {amazonProductDetailsResult.data?.data ? (
                                 <SimpleProductCard product={{
-                                    asin: productDetailsResult.data.data.asin,
-                                    product_name: productDetailsResult.data.data.product_name,
-                                    image_url: productDetailsResult.data.data.image_url,
-                                    price: productDetailsResult.data.data.current_price.toString(),
-                                    product_url: productDetailsResult.data.data.product_url,
+                                    asin: amazonProductDetailsResult.data.data.asin,
+                                    product_name: amazonProductDetailsResult.data.data.product_name,
+                                    image_url: amazonProductDetailsResult.data.data.image_url,
+                                    price: amazonProductDetailsResult.data.data.current_price.toString(),
+                                    product_url: amazonProductDetailsResult.data.data.product_url,
                                     store_name: "Amazon",
                                     currency: "USD",
                                     country: "US",
@@ -477,11 +490,11 @@ export default function QuickSearch() {
                                     profit_margin: 0,
                                     gross_roi: 0,
                                     target_fees: "0",
-                                    amazon_price: (productDetailsResult.data.data.current_price || 0).toString(),
-                                    sales_rank: productDetailsResult.data.data.sales_rank ? productDetailsResult.data.data.sales_rank.toString() : "N/A",
-                                    buybox_price: (productDetailsResult.data.data.current_price || 0).toString(),
-                                    number_of_sellers: (productDetailsResult.data.data.number_of_sellers || 0).toString(),
-                                    id: productDetailsResult.data.data.asin
+                                    amazon_price: (amazonProductDetailsResult.data.data.current_price || 0).toString(),
+                                    sales_rank: amazonProductDetailsResult.data.data.sales_rank ? amazonProductDetailsResult.data.data.sales_rank.toString() : "N/A",
+                                    buybox_price: (amazonProductDetailsResult.data.data.current_price || 0).toString(),
+                                    number_of_sellers: (amazonProductDetailsResult.data.data.number_of_sellers || 0).toString(),
+                                    id: amazonProductDetailsResult.data.data.asin
                                 }} />
                             ) : selectedProducts.length > 0 ? (
                                 <SimpleProductCard product={selectedProducts[0]} />

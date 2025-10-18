@@ -6,6 +6,7 @@ const nextConfig: NextConfig = {
   productionBrowserSourceMaps: true,
   output: "standalone",
   images: {
+    unoptimized: true,
     remotePatterns: [{
       protocol: "https",
       hostname: "avatar.iran.liara.run",
