@@ -148,6 +148,8 @@ export default function QuickSearch() {
     useEffect(() => {
         if (amazonProductDetailsResult.data && process.env.NODE_ENV === 'development') {
             console.log("Amazon Product details response:", amazonProductDetailsResult.data);
+            console.log("Amazon Product current_price:", amazonProductDetailsResult.data.data?.current_price);
+            console.log("Amazon Product data structure:", amazonProductDetailsResult.data.data);
         }
         if (amazonProductDetailsResult.error) {
             console.error("Amazon Product details error:", amazonProductDetailsResult.error);
