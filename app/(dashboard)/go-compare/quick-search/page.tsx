@@ -86,7 +86,8 @@ export default function QuickSearch() {
 
     const [selectedProducts, setSelectedProducts] = useState<ProductObj[]>([])
     const [activeProduct, setActiveProduct] = useState<ProductObj | null>(null)
-    const [selectedAsin, setSelectedAsin] = useState<string | null>(asin)
+    const [selectedAsin, setSelectedAsin] = useState<string | null>(null)
+    const [selectedSalesPrice, setSelectedSalesPrice] = useState<string | null>(null)
     
     // Transform products data with memoization to prevent unnecessary recalculations
     const transformedProducts = useMemo(() => {
@@ -128,10 +129,11 @@ export default function QuickSearch() {
     if (process.env.NODE_ENV === 'development') {
         console.log("Selected ASIN:", selectedAsin);
         console.log("Marketplace ID:", marketplace_id);
+        console.log("Selected Sales Price:", selectedSalesPrice);
     }
 
     const productDetailsResult = useGetComparisonProductDetailsQuery(
-        { asin: selectedAsin || '', marketplace_id: marketplace_id || 1 },
+        { asin: selectedAsin || '', marketplace_id: marketplace_id || 1, sales_price: selectedSalesPrice || undefined },
         { skip: !selectedAsin || !marketplace_id }
     );
     
@@ -215,28 +217,30 @@ export default function QuickSearch() {
         // Only process if dropping in the droppable area
         if (over && over.id === "droppable-area") {
                 // Handle direct product data from the drag event
-                if (active.data.current?.product) {
-                    const draggedProduct = active.data.current.product;
-                    // Set product for comparison
-                    setSelectedProducts([draggedProduct])
-                    
-                    // Update selected ASIN for product details
-                    if ('asin' in draggedProduct) {
-                        setSelectedAsin(draggedProduct.asin);
-                    } else if ('scraped_product' in draggedProduct) {
-                        setSelectedAsin(draggedProduct.scraped_product.id);
+                    if (active.data.current?.product) {
+                        const draggedProduct = active.data.current.product;
+                        // Set product for comparison
+                        setSelectedProducts([draggedProduct])
+   
+                        // Update selected ASIN for product details
+                        if ('asin' in draggedProduct) {
+                            setSelectedAsin(draggedProduct.asin);
+                            setSelectedSalesPrice(draggedProduct.price);
+                        } else if ('scraped_product' in draggedProduct) {
+                            setSelectedAsin(draggedProduct.scraped_product.id);
+                            setSelectedSalesPrice(draggedProduct.scraped_product.price.formatted);
+                        }
+   
+                        // Scroll to Comparison Workspace section
+                        setTimeout(() => {
+                            comparisonWorkspaceRef.current?.scrollIntoView({
+                                behavior: 'smooth',
+                                block: 'start'
+                            });
+                        }, 100);
+   
+                        return;
                     }
-                    
-                    // Scroll to Comparison Workspace section
-                    setTimeout(() => {
-                        comparisonWorkspaceRef.current?.scrollIntoView({ 
-                            behavior: 'smooth', 
-                            block: 'start'
-                        });
-                    }, 100);
-                    
-                    return;
-                }
             
             // Fallback to handle QuickSearchResult[] data structure if no direct data
             if (Array.isArray(data) && data.length > 0 && 'store_name' in data[0]) {
@@ -251,6 +255,7 @@ export default function QuickSearch() {
                 if (draggedProduct) {
                     setSelectedProducts([draggedProduct as any])
                     setSelectedAsin(draggedProduct.asin);
+                    setSelectedSalesPrice(draggedProduct.price);
                 }
             }
             // Handle new API response format with results array
@@ -265,6 +270,7 @@ export default function QuickSearch() {
                 if (draggedProduct) {
                     setSelectedProducts([draggedProduct as any])
                     setSelectedAsin(draggedProduct.asin);
+                    setSelectedSalesPrice(draggedProduct.price);
                 }
             }
             // Handle old QuickSearchData structure
@@ -284,14 +290,16 @@ export default function QuickSearch() {
         setSelectedProducts([product as any])
         if ('asin' in product) {
             setSelectedAsin(product.asin);
+            setSelectedSalesPrice(product.price);
         } else if ('scraped_product' in product) {
             setSelectedAsin(product.scraped_product.id);
+            setSelectedSalesPrice(product.scraped_product.price.formatted);
         }
-        
+
         // Scroll to Comparison Workspace section with smooth behavior
         setTimeout(() => {
-            comparisonWorkspaceRef.current?.scrollIntoView({ 
-                behavior: 'smooth', 
+            comparisonWorkspaceRef.current?.scrollIntoView({
+                behavior: 'smooth',
                 block: 'start'
             });
         }, 100); // Small delay to ensure state updates complete
