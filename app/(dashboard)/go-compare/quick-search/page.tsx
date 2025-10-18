@@ -133,8 +133,8 @@ export default function QuickSearch() {
     }
 
     const productDetailsResult = useGetComparisonProductDetailsQuery(
-        { asin: selectedAsin || '', marketplace_id: marketplace_id || 1, sales_price: selectedSalesPrice || undefined },
-        { skip: !selectedAsin || !marketplace_id }
+        { asin: selectedAsin || asin || '', marketplace_id: marketplace_id || 1, sales_price: selectedSalesPrice || undefined },
+        { skip: (!selectedAsin && !asin) || !marketplace_id }
     );
     
     // Log the product details response for debugging
@@ -224,9 +224,11 @@ export default function QuickSearch() {
    
                         // Update selected ASIN for product details
                         if ('asin' in draggedProduct) {
+                            console.log("Drag setting ASIN:", draggedProduct.asin, "Price:", draggedProduct.price);
                             setSelectedAsin(draggedProduct.asin);
                             setSelectedSalesPrice(draggedProduct.price);
                         } else if ('scraped_product' in draggedProduct) {
+                            console.log("Drag setting ASIN:", draggedProduct.scraped_product.id, "Price:", draggedProduct.scraped_product.price.formatted);
                             setSelectedAsin(draggedProduct.scraped_product.id);
                             setSelectedSalesPrice(draggedProduct.scraped_product.price.formatted);
                         }
@@ -253,6 +255,7 @@ export default function QuickSearch() {
                                  `${product.store_name}-${product.asin}` === active.id
                 )
                 if (draggedProduct) {
+                    console.log("Results array drag setting ASIN:", draggedProduct.asin, "Price:", draggedProduct.price);
                     setSelectedProducts([draggedProduct as any])
                     setSelectedAsin(draggedProduct.asin);
                     setSelectedSalesPrice(draggedProduct.price);
@@ -268,6 +271,7 @@ export default function QuickSearch() {
                                      `${product.store_name}-${product.asin}` === active.id
                 )
                 if (draggedProduct) {
+                    console.log("Fallback drag setting ASIN:", draggedProduct.asin, "Price:", draggedProduct.price);
                     setSelectedProducts([draggedProduct as any])
                     setSelectedAsin(draggedProduct.asin);
                     setSelectedSalesPrice(draggedProduct.price);
@@ -287,13 +291,27 @@ export default function QuickSearch() {
     }, [data])
 
     const handleRowClick = (product: ProductObj | QuickSearchResult) => {
+        console.log("Row clicked - Product:", product);
+        console.log("Product keys:", Object.keys(product));
+        console.log("Product has 'asin' property:", 'asin' in product);
+        console.log("Product has 'scraped_product' property:", 'scraped_product' in product);
+        console.log("Product has 'store_name' property:", 'store_name' in product);
         setSelectedProducts([product as any])
         if ('asin' in product) {
+            console.log("Setting ASIN:", product.asin, "Price:", product.price);
             setSelectedAsin(product.asin);
             setSelectedSalesPrice(product.price);
         } else if ('scraped_product' in product) {
+            console.log("Setting ASIN:", product.scraped_product.id, "Price:", product.scraped_product.price.formatted);
             setSelectedAsin(product.scraped_product.id);
             setSelectedSalesPrice(product.scraped_product.price.formatted);
+        } else if ('store_name' in product) {
+            // This is a QuickSearchResult - use the original search ASIN and the product's price
+            console.log("QuickSearchResult detected - using original ASIN:", asin, "Price:", (product as any).price);
+            setSelectedAsin(asin); // Use the ASIN from the original search
+            setSelectedSalesPrice((product as any).price);
+        } else {
+            console.log("Product doesn't match expected structure");
         }
 
         // Scroll to Comparison Workspace section with smooth behavior
