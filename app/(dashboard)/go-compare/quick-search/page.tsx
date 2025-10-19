@@ -582,13 +582,17 @@ export default function QuickSearch() {
                     <div className="p-4 bg-white border rounded-lg shadow-lg">
                         <div className="flex items-center gap-3">
                             <div className="w-12 h-12 flex-shrink-0 relative overflow-hidden rounded">
-                                <Image 
-                                    src={(activeProduct as QuickSearchResult).image_url || "https://via.placeholder.com/48?text=No+Image"} 
-                                    alt={(activeProduct as QuickSearchResult).product_name || "Product"} 
+                                <Image
+                                    src={(activeProduct as QuickSearchResult).image_url || "https://via.placeholder.com/48?text=No+Image"}
+                                    alt={(activeProduct as QuickSearchResult).product_name || "Product"}
                                     className="w-full h-full object-contain"
                                     width={48}
                                     height={48}
                                     unoptimized={true}
+                                    onError={(e) => {
+                                        const target = e.target as HTMLImageElement;
+                                        target.src = "https://via.placeholder.com/48?text=No+Image";
+                                    }}
                                 />
                             </div>
                             <div className="flex-1">
