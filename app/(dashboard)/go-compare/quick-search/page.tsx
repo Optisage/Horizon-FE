@@ -130,18 +130,26 @@ export default function QuickSearch() {
         console.log("Selected ASIN:", selectedAsin);
         console.log("Marketplace ID:", marketplace_id);
         console.log("Selected Sales Price:", selectedSalesPrice);
+        console.log("Final ASIN for API:", selectedAsin || asin || '');
+        console.log("Final Sales Price for API:", selectedSalesPrice || undefined);
     }
 
     // Left Container API - Amazon Product Details
     const amazonProductDetailsResult = useGetProductDetailsQuery(
         { asin: selectedAsin || asin || '', marketplace_id: marketplace_id || 1 },
-        { skip: (!selectedAsin && !asin) || !marketplace_id }
+        {
+            skip: (!selectedAsin && !asin) || !marketplace_id,
+            refetchOnMountOrArgChange: true
+        }
     );
 
     // Right Container API - Comparison Product Details (when needed)
     const comparisonProductDetailsResult = useGetComparisonProductDetailsQuery(
         { asin: selectedAsin || asin || '', marketplace_id: marketplace_id || 1, sales_price: selectedSalesPrice || undefined },
-        { skip: (!selectedAsin && !asin) || !marketplace_id || !selectedSalesPrice }
+        {
+            skip: (!selectedAsin && !asin) || !marketplace_id || !selectedSalesPrice,
+            refetchOnMountOrArgChange: true
+        }
     );
     
     // Log the product details response for debugging
@@ -150,6 +158,8 @@ export default function QuickSearch() {
             console.log("Amazon Product details response:", amazonProductDetailsResult.data);
             console.log("Amazon Product current_price:", amazonProductDetailsResult.data.data?.current_price);
             console.log("Amazon Product data structure:", amazonProductDetailsResult.data.data);
+            console.log("Amazon Product isLoading:", amazonProductDetailsResult.isLoading);
+            console.log("Amazon Product isFetching:", amazonProductDetailsResult.isFetching);
         }
         if (amazonProductDetailsResult.error) {
             console.error("Amazon Product details error:", amazonProductDetailsResult.error);
@@ -160,7 +170,7 @@ export default function QuickSearch() {
         if (comparisonProductDetailsResult.error) {
             console.error("Comparison Product details error:", comparisonProductDetailsResult.error);
         }
-    }, [amazonProductDetailsResult.data, amazonProductDetailsResult.error, comparisonProductDetailsResult.data, comparisonProductDetailsResult.error]);
+    }, [amazonProductDetailsResult.data, amazonProductDetailsResult.error, amazonProductDetailsResult.isLoading, amazonProductDetailsResult.isFetching, comparisonProductDetailsResult.data, comparisonProductDetailsResult.error]);
 
     const sensors = useSensors(
         useSensor(PointerSensor, {
@@ -311,6 +321,12 @@ export default function QuickSearch() {
         console.log("Product has 'asin' property:", 'asin' in product);
         console.log("Product has 'scraped_product' property:", 'scraped_product' in product);
         console.log("Product has 'store_name' property:", 'store_name' in product);
+
+        // Clear previous selection first to ensure clean state
+        setSelectedProducts([]);
+        setSelectedAsin(null);
+        setSelectedSalesPrice(null);
+
         setSelectedProducts([product as any])
         if ('asin' in product) {
             console.log("Setting ASIN:", product.asin, "Price:", product.price);
@@ -349,39 +365,47 @@ export default function QuickSearch() {
         }))
     }
 
-    const amazonProductDetails = amazonProductDetailsResult.data?.data || amazonProductDetailsResult.data;
+    // Use comparison API data for product information when available, fallback to amazon API
+    const productDetailsForInfo = comparisonProductDetailsResult.data?.data || amazonProductDetailsResult.data?.data || amazonProductDetailsResult.data;
     
     // Create product data object from API response
     const productData = {
-        "Avg. Amazon 90 day price": amazonProductDetails?.avg_amazon_90_day_price != null
-            ? `$${Number(amazonProductDetails.avg_amazon_90_day_price).toFixed(2)}`
+        "Avg. Amazon 90 day price": productDetailsForInfo?.avg_amazon_90_day_price != null
+            ? `$${Number(productDetailsForInfo.avg_amazon_90_day_price).toFixed(2)}`
             : 'N/A',
 
-        "Gross ROI": amazonProductDetails?.gross_roi != null
-            ? `${Number(amazonProductDetails.gross_roi).toFixed(1)}%`
+        "Gross ROI": productDetailsForInfo?.gross_roi != null
+            ? `${Number(productDetailsForInfo.gross_roi).toFixed(1)}%`
+            : '0.0%',
+
+        "Sales rank": productDetailsForInfo?.sales_rank != null
+            ? String(productDetailsForInfo.sales_rank)
             : 'N/A',
 
-        "Sales rank": amazonProductDetails?.sales_rank != null
-            ? String(amazonProductDetails.sales_rank)
+        "Avg. 3 month sales rank": productDetailsForInfo?.avg_3_month_sales_rank != null
+            ? String(productDetailsForInfo.avg_3_month_sales_rank)
             : 'N/A',
 
-        "Avg. 3 month sales rank": amazonProductDetails?.avg_3_month_sales_rank != null
-            ? String(amazonProductDetails.avg_3_month_sales_rank)
+        "ASIN": productDetailsForInfo?.asin || asin || 'N/A',
+
+        "Number of Sellers": productDetailsForInfo?.number_of_sellers != null
+            ? String(productDetailsForInfo.number_of_sellers)
             : 'N/A',
 
-        "ASIN": amazonProductDetails?.asin || asin || 'N/A',
-
-        "Number of Sellers": amazonProductDetails?.number_of_sellers != null
-            ? String(amazonProductDetails.number_of_sellers)
+        "Monthly Sellers": productDetailsForInfo?.monthly_sellers != null
+            ? String(productDetailsForInfo.monthly_sellers)
             : 'N/A',
 
-        "Monthly Sellers": amazonProductDetails?.monthly_sellers != null
-            ? String(amazonProductDetails.monthly_sellers)
-            : 'N/A',
-
-        "Amazon on listing": amazonProductDetails?.amazon_on_listing != null
-            ? (amazonProductDetails.amazon_on_listing ? 'YES' : 'NO')
+        "Amazon on listing": productDetailsForInfo?.amazon_on_listing != null
+            ? (productDetailsForInfo.amazon_on_listing ? 'YES' : 'NO')
             : 'N/A'
+    }
+
+    // Debug logging for product data
+    if (process.env.NODE_ENV === 'development') {
+        console.log("Product Data object:", productData);
+        console.log("Using comparison API data:", !!comparisonProductDetailsResult.data?.data);
+        console.log("Gross ROI value:", productDetailsForInfo?.gross_roi);
     }
 
     useEffect(() => {
@@ -406,6 +430,8 @@ export default function QuickSearch() {
 
     useEffect(() => {
         setSelectedProducts([]);
+        setSelectedAsin(null);
+        setSelectedSalesPrice(null);
     }, [data]);
 
     // Always show a loader when loading or route changing
@@ -563,6 +589,7 @@ export default function QuickSearch() {
                     <ProductInformation
                         productData={productData}
                         isSelected={selectedProducts.length > 0}
+                        isLoading={amazonProductDetailsResult.isLoading || comparisonProductDetailsResult.isLoading}
                     />
                 </div>
 

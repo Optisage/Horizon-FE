@@ -17,7 +17,7 @@ const tableColumns = [
 ]
 
 const SearchHistory = () => {
-    const [perPage, setPerPage] = useState(10);
+    const [perPage, setPerPage] = useState(6);
     const [page, setPage] = useState(1);
     const router = useRouter();
 

@@ -6,11 +6,13 @@ import { useState } from "react"
 import Image from "next/image"
 import placeholder from '../../../../public/assets/images/gocompare/placeholder.png'
 import { ProductObj, QuickSearchResult } from "@/types/goCompare";
+import TablePagination from "./TablePagination";
 
 interface ProductTableProps {
   products: ProductObj[] | QuickSearchResult[]
   onRowClick: (product: ProductObj | QuickSearchResult) => void
 }
+
 
 function DraggableRow({
   product,
@@ -183,6 +185,10 @@ function DraggableRow({
 }
 
 export default function QuickSearchTable({ products, onRowClick }: ProductTableProps) {
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+  const maxPages = 2;
+
   // Check if products are QuickSearchResult type
   const isQuickSearchResult = products.length > 0 && ('store_name' in products[0] || 'product_name' in products[0]);
 
@@ -191,8 +197,16 @@ export default function QuickSearchTable({ products, onRowClick }: ProductTableP
     ? products
     : [...(products as ProductObj[])].sort((a, b) => b.roi_percentage - a.roi_percentage)
 
-  // Display all products without pagination
-  const currentData = sortedProducts
+  // Calculate pagination
+  const totalItems = sortedProducts.length;
+  const totalPages = Math.min(Math.ceil(totalItems / itemsPerPage), maxPages);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = Math.min(startIndex + itemsPerPage, totalItems);
+  const currentData = sortedProducts.slice(startIndex, endIndex);
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
 
   return (
     <div className="border border-gray-200 rounded-lg">
@@ -214,16 +228,21 @@ export default function QuickSearchTable({ products, onRowClick }: ProductTableP
             <tbody>
               {currentData.map((product, index) => (
                 <DraggableRow
-                  key={`${isQuickSearchResult ? `${(product as any).store_name}-${(product as any).asin}` : (product as any).scraped_product.id}-${index}`}
+                  key={`${isQuickSearchResult ? `${(product as any).store_name}-${(product as any).asin}` : (product as any).scraped_product.id}-${startIndex + index}`}
                   product={product}
                   onRowClick={onRowClick}
                   isQuickSearchResult={isQuickSearchResult}
-                  rowIndex={index}
+                  rowIndex={startIndex + index}
                 />
               ))}
             </tbody>
           </table>
         </div>
+        <TablePagination
+          page={currentPage}
+          totalPages={totalPages}
+          handlePageChange={handlePageChange}
+        />
       </div>
     </div>
   )
