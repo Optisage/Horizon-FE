@@ -2,6 +2,8 @@
 import React, { useState } from "react";
 import { Search, X } from "lucide-react";
 import { MdOutlineInsertChartOutlined } from "react-icons/md";
+import { useGetMonitoredSellersQuery } from "@/redux/api/monitorApi";
+import { useAppSelector } from "@/redux/hooks";
 
 // Dummy data for monitored sellers
 const sellersData = [
@@ -88,6 +90,8 @@ const sellersData = [
 const MonitorSellersList = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [sellers, setSellers] = useState(sellersData);
+   const { marketplaceId } = useAppSelector((state) => state?.global);
+const { data: monitoredSellers, isLoading: isLoadingMonitored } = useGetMonitoredSellersQuery({});
 
   const handleRemove = (id: any) => {
     setSellers(sellers.filter((seller) => seller.id !== id));

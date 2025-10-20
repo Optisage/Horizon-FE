@@ -51,10 +51,10 @@ export const monitorApi = createApi({
           total: number;
         };
       },
-      { page?: number; per_page?: number }
+      { page?: number; per_page?: number, id?: number }
     >({
-      query: ({ page = 1, per_page = 20 } = {}) => ({
-        url: `sellers/monitored?page=${page}&per_page=${per_page}`,
+      query: ({id, page = 1, per_page = 20 } = {}) => ({
+        url: `sellers/monitored?marketplace_id=${id}&page=${page}&per_page=${per_page}`,
         method: "GET",
       }),
       providesTags: ["MonitoredSellers"],

@@ -27,17 +27,20 @@ const UserProfile = () => {
       router.push("/settings");
     } else if (key === "logout") {
       setOpenModal(true);
+    } else if (key === "monitor-list") {
+     router.push("/monitor-list");
     }
   };
 
   const items: MenuProps["items"] = [
-    {
-      label: "Monitor List",
-      key: "monitor-list",
-    },
+   
     {
       label: "Settings",
       key: "settings",
+    },
+     {
+      label: "Monitor List",
+      key: "monitor-list",
     },
     {
       label: "Logout",
