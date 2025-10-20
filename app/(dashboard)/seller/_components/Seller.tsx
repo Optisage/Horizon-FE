@@ -245,7 +245,7 @@ const handleCategoryClick = (categoryId: number) => {
   }, [detailsLoading, productLoading, isLoading])
 
   return (
-    <section className="flex flex-col gap-8 min-h-[50dvh] md:min-h-[80dvh]">
+    <section className="flex flex-col gap-8 min-h-[50dvh] md:min-h-[80dvh] bg-white p-2 rounded-lg">
       {contextHolder}
 
       {isLoading ? (

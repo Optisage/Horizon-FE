@@ -1,4 +1,5 @@
-import { GoChevronLeft, GoChevronRight } from "react-icons/go";
+/* eslint-disable @typescript-eslint/no-unused-vars */
+import { GoChevronDown, GoChevronLeft, GoChevronRight } from "react-icons/go";
 
 interface PaginationProps {
     page: number

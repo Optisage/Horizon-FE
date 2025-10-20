@@ -93,7 +93,7 @@ export function CreateDropdown() {
 
             {showModal === "reverseSearch" && <SearchModal
                 isOpen={true} onClose={() => toggleModal(null)}
-                title="Tactical Reverse Search" inputLabel="Query Name"
+                title="Tactical Reverse Search" inputLabel="Seller Id's"
             />}
         </>
     )

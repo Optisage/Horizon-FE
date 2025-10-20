@@ -1,7 +1,7 @@
 import { combineReducers, configureStore } from "@reduxjs/toolkit";
 import authReducer from "./slice/authSlice";
 import globalReducer from "./slice/globalSlice";
-
+import chatReducer from "./slice/chatSlice"; // Add this import
 import { authApi } from "./api/auth";
 import { subscriptionApi } from "./api/subscriptionApi";
 import { productsApi } from "./api/productsApi";
@@ -12,13 +12,13 @@ import { sellerApi } from "./api/sellerApi";
 import { quickSearchApi } from "./api/quickSearchApi";
 import { keepaApi } from "./api/keepa";
 import { monitorApi } from "./api/monitorApi";
-
+import { totanApi } from "./api/totanAi";
 
 
 const rootReducer = combineReducers({
   api: authReducer,
   global: globalReducer,
-
+  chat: chatReducer, // Add the chat reducer
   [authApi.reducerPath]: authApi.reducer,
   [userApi.reducerPath]: userApi.reducer,
   [subscriptionApi.reducerPath]: subscriptionApi.reducer,
@@ -27,7 +27,7 @@ const rootReducer = combineReducers({
   [quickSearchApi.reducerPath]: quickSearchApi.reducer,
   [keepaApi.reducerPath]: keepaApi.reducer,
   [monitorApi.reducerPath]: monitorApi.reducer,
-
+  [totanApi.reducerPath]: totanApi.reducer
 
 });
 
@@ -53,7 +53,7 @@ export const store = configureStore({
       quickSearchApi.middleware,
       keepaApi.middleware,
       monitorApi.middleware,
-    
+      totanApi.middleware
     ]),
 });
 
