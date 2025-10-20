@@ -4,12 +4,12 @@ import { GoChevronDown, GoChevronLeft, GoChevronRight } from "react-icons/go";
 interface PaginationProps {
     page: number
     totalPages: number
-    perPage: number
+    perPage?: number
     handlePageChange: (page: number) => void
-    handlePerPageChange: (value: number) => void
+    handlePerPageChange?: (value: number) => void
 }
 
-const TablePagination = ({ page, totalPages, perPage, handlePageChange, handlePerPageChange }: PaginationProps) => {
+const TablePagination = ({ page, totalPages, handlePageChange }: PaginationProps) => {
     const pagesToShow = 5;
     const startPage = Math.max(1, page - Math.floor(pagesToShow / 2));
     const endPage = Math.min(totalPages, startPage + pagesToShow - 1);

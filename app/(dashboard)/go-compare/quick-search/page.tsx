@@ -2,7 +2,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { DndContext, type DragEndEvent, DragOverlay, type DragStartEvent, PointerSensor, useSensor, useSensors } from "@dnd-kit/core"
 import { restrictToWindowEdges } from "@dnd-kit/modifiers"
-import { useGetSearchByIdQuery, useQuickSearchQuery, useGetComparisonProductDetailsQuery } from '@/redux/api/quickSearchApi';
+import { useGetSearchByIdQuery, useQuickSearchQuery, useGetComparisonProductDetailsQuery, useGetProductDetailsQuery } from '@/redux/api/quickSearchApi';
 import Image from "next/image";
 import { usePathname, useSearchParams } from 'next/navigation';
 import React, { useEffect, useState, useCallback, useRef, useMemo } from 'react'
@@ -86,7 +86,8 @@ export default function QuickSearch() {
 
     const [selectedProducts, setSelectedProducts] = useState<ProductObj[]>([])
     const [activeProduct, setActiveProduct] = useState<ProductObj | null>(null)
-    const [selectedAsin, setSelectedAsin] = useState<string | null>(asin)
+    const [selectedAsin, setSelectedAsin] = useState<string | null>(null)
+    const [selectedSalesPrice, setSelectedSalesPrice] = useState<string | null>(null)
     
     // Transform products data with memoization to prevent unnecessary recalculations
     const transformedProducts = useMemo(() => {
@@ -128,22 +129,48 @@ export default function QuickSearch() {
     if (process.env.NODE_ENV === 'development') {
         console.log("Selected ASIN:", selectedAsin);
         console.log("Marketplace ID:", marketplace_id);
+        console.log("Selected Sales Price:", selectedSalesPrice);
+        console.log("Final ASIN for API:", selectedAsin || asin || '');
+        console.log("Final Sales Price for API:", selectedSalesPrice || undefined);
     }
 
-    const productDetailsResult = useGetComparisonProductDetailsQuery(
-        { asin: selectedAsin || '', marketplace_id: marketplace_id || 1 },
-        { skip: !selectedAsin || !marketplace_id }
+    // Left Container API - Amazon Product Details
+    const amazonProductDetailsResult = useGetProductDetailsQuery(
+        { asin: selectedAsin || asin || '', marketplace_id: marketplace_id || 1 },
+        {
+            skip: (!selectedAsin && !asin) || !marketplace_id,
+            refetchOnMountOrArgChange: true
+        }
+    );
+
+    // Right Container API - Comparison Product Details (when needed)
+    const comparisonProductDetailsResult = useGetComparisonProductDetailsQuery(
+        { asin: selectedAsin || asin || '', marketplace_id: marketplace_id || 1, sales_price: selectedSalesPrice || undefined },
+        {
+            skip: (!selectedAsin && !asin) || !marketplace_id || !selectedSalesPrice,
+            refetchOnMountOrArgChange: true
+        }
     );
     
     // Log the product details response for debugging
     useEffect(() => {
-        if (productDetailsResult.data && process.env.NODE_ENV === 'development') {
-            console.log("Product details response:", productDetailsResult.data);
+        if (amazonProductDetailsResult.data && process.env.NODE_ENV === 'development') {
+            console.log("Amazon Product details response:", amazonProductDetailsResult.data);
+            console.log("Amazon Product current_price:", amazonProductDetailsResult.data.data?.current_price);
+            console.log("Amazon Product data structure:", amazonProductDetailsResult.data.data);
+            console.log("Amazon Product isLoading:", amazonProductDetailsResult.isLoading);
+            console.log("Amazon Product isFetching:", amazonProductDetailsResult.isFetching);
         }
-        if (productDetailsResult.error) {
-            console.error("Product details error:", productDetailsResult.error);
+        if (amazonProductDetailsResult.error) {
+            console.error("Amazon Product details error:", amazonProductDetailsResult.error);
         }
-    }, [productDetailsResult.data, productDetailsResult.error]);
+        if (comparisonProductDetailsResult.data && process.env.NODE_ENV === 'development') {
+            console.log("Comparison Product details response:", comparisonProductDetailsResult.data);
+        }
+        if (comparisonProductDetailsResult.error) {
+            console.error("Comparison Product details error:", comparisonProductDetailsResult.error);
+        }
+    }, [amazonProductDetailsResult.data, amazonProductDetailsResult.error, amazonProductDetailsResult.isLoading, amazonProductDetailsResult.isFetching, comparisonProductDetailsResult.data, comparisonProductDetailsResult.error]);
 
     const sensors = useSensors(
         useSensor(PointerSensor, {
@@ -215,28 +242,32 @@ export default function QuickSearch() {
         // Only process if dropping in the droppable area
         if (over && over.id === "droppable-area") {
                 // Handle direct product data from the drag event
-                if (active.data.current?.product) {
-                    const draggedProduct = active.data.current.product;
-                    // Set product for comparison
-                    setSelectedProducts([draggedProduct])
-                    
-                    // Update selected ASIN for product details
-                    if ('asin' in draggedProduct) {
-                        setSelectedAsin(draggedProduct.asin);
-                    } else if ('scraped_product' in draggedProduct) {
-                        setSelectedAsin(draggedProduct.scraped_product.id);
+                    if (active.data.current?.product) {
+                        const draggedProduct = active.data.current.product;
+                        // Set product for comparison
+                        setSelectedProducts([draggedProduct])
+   
+                        // Update selected ASIN for product details
+                        if ('asin' in draggedProduct) {
+                            console.log("Drag setting ASIN:", draggedProduct.asin, "Price:", draggedProduct.price);
+                            setSelectedAsin(draggedProduct.asin);
+                            setSelectedSalesPrice(draggedProduct.price);
+                        } else if ('scraped_product' in draggedProduct) {
+                            console.log("Drag setting ASIN:", draggedProduct.scraped_product.id, "Price:", draggedProduct.scraped_product.price.formatted);
+                            setSelectedAsin(draggedProduct.scraped_product.id);
+                            setSelectedSalesPrice(draggedProduct.scraped_product.price.formatted);
+                        }
+   
+                        // Scroll to Comparison Workspace section
+                        setTimeout(() => {
+                            comparisonWorkspaceRef.current?.scrollIntoView({
+                                behavior: 'smooth',
+                                block: 'start'
+                            });
+                        }, 100);
+   
+                        return;
                     }
-                    
-                    // Scroll to Comparison Workspace section
-                    setTimeout(() => {
-                        comparisonWorkspaceRef.current?.scrollIntoView({ 
-                            behavior: 'smooth', 
-                            block: 'start'
-                        });
-                    }, 100);
-                    
-                    return;
-                }
             
             // Fallback to handle QuickSearchResult[] data structure if no direct data
             if (Array.isArray(data) && data.length > 0 && 'store_name' in data[0]) {
@@ -249,8 +280,10 @@ export default function QuickSearch() {
                                  `${product.store_name}-${product.asin}` === active.id
                 )
                 if (draggedProduct) {
+                    console.log("Results array drag setting ASIN:", draggedProduct.asin, "Price:", draggedProduct.price);
                     setSelectedProducts([draggedProduct as any])
                     setSelectedAsin(draggedProduct.asin);
+                    setSelectedSalesPrice(draggedProduct.price);
                 }
             }
             // Handle new API response format with results array
@@ -263,8 +296,10 @@ export default function QuickSearch() {
                                      `${product.store_name}-${product.asin}` === active.id
                 )
                 if (draggedProduct) {
+                    console.log("Fallback drag setting ASIN:", draggedProduct.asin, "Price:", draggedProduct.price);
                     setSelectedProducts([draggedProduct as any])
                     setSelectedAsin(draggedProduct.asin);
+                    setSelectedSalesPrice(draggedProduct.price);
                 }
             }
             // Handle old QuickSearchData structure
@@ -281,17 +316,39 @@ export default function QuickSearch() {
     }, [data])
 
     const handleRowClick = (product: ProductObj | QuickSearchResult) => {
+        console.log("Row clicked - Product:", product);
+        console.log("Product keys:", Object.keys(product));
+        console.log("Product has 'asin' property:", 'asin' in product);
+        console.log("Product has 'scraped_product' property:", 'scraped_product' in product);
+        console.log("Product has 'store_name' property:", 'store_name' in product);
+
+        // Clear previous selection first to ensure clean state
+        setSelectedProducts([]);
+        setSelectedAsin(null);
+        setSelectedSalesPrice(null);
+
         setSelectedProducts([product as any])
         if ('asin' in product) {
+            console.log("Setting ASIN:", product.asin, "Price:", product.price);
             setSelectedAsin(product.asin);
+            setSelectedSalesPrice(product.price);
         } else if ('scraped_product' in product) {
+            console.log("Setting ASIN:", product.scraped_product.id, "Price:", product.scraped_product.price.formatted);
             setSelectedAsin(product.scraped_product.id);
+            setSelectedSalesPrice(product.scraped_product.price.formatted);
+        } else if ('store_name' in product) {
+            // This is a QuickSearchResult - use the original search ASIN and the product's price
+            console.log("QuickSearchResult detected - using original ASIN:", asin, "Price:", (product as any).price);
+            setSelectedAsin(asin); // Use the ASIN from the original search
+            setSelectedSalesPrice((product as any).price);
+        } else {
+            console.log("Product doesn't match expected structure");
         }
-        
+
         // Scroll to Comparison Workspace section with smooth behavior
         setTimeout(() => {
-            comparisonWorkspaceRef.current?.scrollIntoView({ 
-                behavior: 'smooth', 
+            comparisonWorkspaceRef.current?.scrollIntoView({
+                behavior: 'smooth',
                 block: 'start'
             });
         }, 100); // Small delay to ensure state updates complete
@@ -308,39 +365,47 @@ export default function QuickSearch() {
         }))
     }
 
-    const productDetails = productDetailsResult.data?.data || productDetailsResult.data;
+    // Use comparison API data for product information when available, fallback to amazon API
+    const productDetailsForInfo = comparisonProductDetailsResult.data?.data || amazonProductDetailsResult.data?.data || amazonProductDetailsResult.data;
     
     // Create product data object from API response
     const productData = {
-        "Avg. Amazon 90 day price": productDetails?.avg_amazon_90_day_price != null
-            ? `$${Number(productDetails.avg_amazon_90_day_price).toFixed(2)}`
+        "Avg. Amazon 90 day price": productDetailsForInfo?.avg_amazon_90_day_price != null
+            ? `$${Number(productDetailsForInfo.avg_amazon_90_day_price).toFixed(2)}`
             : 'N/A',
-        
-        "Gross ROI": productDetails?.gross_roi != null
-            ? `${Number(productDetails.gross_roi).toFixed(1)}%`
+
+        "Gross ROI": productDetailsForInfo?.gross_roi != null
+            ? `${Number(productDetailsForInfo.gross_roi).toFixed(1)}%`
+            : '0.0%',
+
+        "Sales rank": productDetailsForInfo?.sales_rank != null
+            ? String(productDetailsForInfo.sales_rank)
             : 'N/A',
-        
-        "Sales rank": productDetails?.sales_rank != null
-            ? String(productDetails.sales_rank)
+
+        "Avg. 3 month sales rank": productDetailsForInfo?.avg_3_month_sales_rank != null
+            ? String(productDetailsForInfo.avg_3_month_sales_rank)
             : 'N/A',
-        
-        "Avg. 3 month sales rank": productDetails?.avg_3_month_sales_rank != null
-            ? String(productDetails.avg_3_month_sales_rank)
+
+        "ASIN": productDetailsForInfo?.asin || asin || 'N/A',
+
+        "Number of Sellers": productDetailsForInfo?.number_of_sellers != null
+            ? String(productDetailsForInfo.number_of_sellers)
             : 'N/A',
-        
-        "ASIN": productDetails?.asin || asin || 'N/A',
-        
-        "Number of Sellers": productDetails?.number_of_sellers != null
-            ? String(productDetails.number_of_sellers)
+
+        "Monthly Sellers": productDetailsForInfo?.monthly_sellers != null
+            ? String(productDetailsForInfo.monthly_sellers)
             : 'N/A',
-        
-        "Monthly Sellers": productDetails?.monthly_sellers != null
-            ? String(productDetails.monthly_sellers)
-            : 'N/A',
-        
-        "Amazon on listing": productDetails?.amazon_on_listing != null
-            ? (productDetails.amazon_on_listing ? 'YES' : 'NO')
+
+        "Amazon on listing": productDetailsForInfo?.amazon_on_listing != null
+            ? (productDetailsForInfo.amazon_on_listing ? 'YES' : 'NO')
             : 'N/A'
+    }
+
+    // Debug logging for product data
+    if (process.env.NODE_ENV === 'development') {
+        console.log("Product Data object:", productData);
+        console.log("Using comparison API data:", !!comparisonProductDetailsResult.data?.data);
+        console.log("Gross ROI value:", productDetailsForInfo?.gross_roi);
     }
 
     useEffect(() => {
@@ -365,6 +430,8 @@ export default function QuickSearch() {
 
     useEffect(() => {
         setSelectedProducts([]);
+        setSelectedAsin(null);
+        setSelectedSalesPrice(null);
     }, [data]);
 
     // Always show a loader when loading or route changing
@@ -436,14 +503,14 @@ export default function QuickSearch() {
                     <div className="flex-1">
                         <h2 className="text-lg font-semibold mb-4" id="comparison-workspace">Comparison Workspace</h2>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2.5">
-                            {/* First product card - simplified */}
-                            {productDetailsResult.data?.data ? (
+                            {/* First product card - Amazon product using team-b API */}
+                            {amazonProductDetailsResult.data?.data ? (
                                 <SimpleProductCard product={{
-                                    asin: productDetailsResult.data.data.asin,
-                                    product_name: productDetailsResult.data.data.product_name,
-                                    image_url: productDetailsResult.data.data.image_url,
-                                    price: productDetailsResult.data.data.current_price.toString(),
-                                    product_url: productDetailsResult.data.data.product_url,
+                                    asin: amazonProductDetailsResult.data.data.asin,
+                                    product_name: amazonProductDetailsResult.data.data.product_name,
+                                    image_url: amazonProductDetailsResult.data.data.image_url,
+                                    price: amazonProductDetailsResult.data.data.current_price.toString(),
+                                    product_url: amazonProductDetailsResult.data.data.product_url,
                                     store_name: "Amazon",
                                     currency: "USD",
                                     country: "US",
@@ -451,11 +518,11 @@ export default function QuickSearch() {
                                     profit_margin: 0,
                                     gross_roi: 0,
                                     target_fees: "0",
-                                    amazon_price: (productDetailsResult.data.data.current_price || 0).toString(),
-                                    sales_rank: productDetailsResult.data.data.sales_rank ? productDetailsResult.data.data.sales_rank.toString() : "N/A",
-                                    buybox_price: (productDetailsResult.data.data.current_price || 0).toString(),
-                                    number_of_sellers: (productDetailsResult.data.data.number_of_sellers || 0).toString(),
-                                    id: productDetailsResult.data.data.asin
+                                    amazon_price: (amazonProductDetailsResult.data.data.current_price || 0).toString(),
+                                    sales_rank: amazonProductDetailsResult.data.data.sales_rank ? amazonProductDetailsResult.data.data.sales_rank.toString() : "N/A",
+                                    buybox_price: (amazonProductDetailsResult.data.data.current_price || 0).toString(),
+                                    number_of_sellers: (amazonProductDetailsResult.data.data.number_of_sellers || 0).toString(),
+                                    id: amazonProductDetailsResult.data.data.asin
                                 }} />
                             ) : selectedProducts.length > 0 ? (
                                 <SimpleProductCard product={selectedProducts[0]} />
@@ -522,6 +589,7 @@ export default function QuickSearch() {
                     <ProductInformation
                         productData={productData}
                         isSelected={selectedProducts.length > 0}
+                        isLoading={amazonProductDetailsResult.isLoading || comparisonProductDetailsResult.isLoading}
                     />
                 </div>
 
@@ -541,13 +609,17 @@ export default function QuickSearch() {
                     <div className="p-4 bg-white border rounded-lg shadow-lg">
                         <div className="flex items-center gap-3">
                             <div className="w-12 h-12 flex-shrink-0 relative overflow-hidden rounded">
-                                <Image 
-                                    src={(activeProduct as QuickSearchResult).image_url || "https://via.placeholder.com/48?text=No+Image"} 
-                                    alt={(activeProduct as QuickSearchResult).product_name || "Product"} 
+                                <Image
+                                    src={(activeProduct as QuickSearchResult).image_url || "https://via.placeholder.com/48?text=No+Image"}
+                                    alt={(activeProduct as QuickSearchResult).product_name || "Product"}
                                     className="w-full h-full object-contain"
                                     width={48}
                                     height={48}
                                     unoptimized={true}
+                                    onError={(e) => {
+                                        const target = e.target as HTMLImageElement;
+                                        target.src = "https://via.placeholder.com/48?text=No+Image";
+                                    }}
                                 />
                             </div>
                             <div className="flex-1">
