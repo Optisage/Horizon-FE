@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import { BiChevronDown } from "react-icons/bi";
 import { Dropdown, MenuProps } from "antd";
@@ -15,8 +15,13 @@ const UserProfile = () => {
   const [openModal, setOpenModal] = useState(false);
   const dispatch = useDispatch();
 
+  
+  useEffect(() => {
+    router.prefetch("/settings");
+    router.prefetch("/monitor-list");
+  }, [router]);
+
   const handleLogout = () => {
-    // Clear the token cookie
     Cookies.remove("optisage-token");
     router.push("/");
     dispatch(logout());
@@ -28,17 +33,16 @@ const UserProfile = () => {
     } else if (key === "logout") {
       setOpenModal(true);
     } else if (key === "monitor-list") {
-     router.push("/monitor-list");
+      router.push("/monitor-list");
     }
   };
 
   const items: MenuProps["items"] = [
-   
     {
       label: "Settings",
       key: "settings",
     },
-     {
+    {
       label: "Monitor List",
       key: "monitor-list",
     },
@@ -87,4 +91,3 @@ const UserProfile = () => {
 };
 
 export default UserProfile;
-
