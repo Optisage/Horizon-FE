@@ -21,6 +21,8 @@ interface ProductDetails {
   rank: string | null;
   amazon_instock_rate: string | null;
   number_of_fba: string | null;
+  number_of_fbm: string | null;
+  number_of_amz: string | null;
   estimated_monthly_sales: string | null;
   buy_box_equity: string | null;
   out_of_stock: number | null;
@@ -138,6 +140,8 @@ const ScanDetailsTable = ({ products = [], isLoading = false }: ScanDetailsProps
                 Amazon Instock Rate
               </th>
               <th className="px-4 py-3 text-left font-medium"># FBA Sellers</th>
+               <th className="px-4 py-3 text-left font-medium"># FBM Sellers</th>
+               <th className="px-4 py-3 text-left font-medium"># AMZ Sellers</th>
               <th className="px-4 py-3 text-left font-medium">
                 Est. Monthly Sold
               </th>
@@ -187,6 +191,8 @@ const ScanDetailsTable = ({ products = [], isLoading = false }: ScanDetailsProps
                   <td className="px-4 py-3">{formatValue(product.product_details.rank)}</td>
                   <td className="px-4 py-3">{formatValue(product.product_details.amazon_instock_rate)}</td>
                   <td className="px-4 py-3">{formatValue(product.product_details.number_of_fba)}</td>
+                 <td className="px-4 py-3">{formatValue(product.product_details.number_of_fbm)}</td>
+                 <td className="px-4 py-3">{formatValue(product.product_details.number_of_amz)}</td>
                   <td className="px-4 py-3">{formatValue(product.product_details.estimated_monthly_sales)}</td>
                   <td className="px-4 py-3">{formatValue(product.product_details.buy_box_equity)}</td>
                   <td className="px-4 py-3">{formatValue(product.product_details.out_of_stock)}</td>
@@ -274,6 +280,8 @@ const ScanDetailsTable = ({ products = [], isLoading = false }: ScanDetailsProps
                       "Rank",
                       "Amazon Instock Rate",
                       "# FBA Sellers",
+               "# FBM Sellers",
+               "# AMZ Sellers",
                       "Est. Monthly Sold",
                       "Buy Box Equity",
                       "Out of Stock",
@@ -322,6 +330,8 @@ const ScanDetailsTable = ({ products = [], isLoading = false }: ScanDetailsProps
                         <td className="px-4 py-2">{formatValue(product.product_details.rank)}</td>
                         <td className="px-4 py-2">{formatValue(product.product_details.amazon_instock_rate)}</td>
                         <td className="px-4 py-2">{formatValue(product.product_details.number_of_fba)}</td>
+                 <td className="px-4 py-2">{formatValue(product.product_details.number_of_fbm)}</td>
+                 <td className="px-4 py-2">{formatValue(product.product_details.number_of_amz)}</td>
                         <td className="px-4 py-2">{formatValue(product.product_details.estimated_monthly_sales)}</td>
                         <td className="px-4 py-2">{formatValue(product.product_details.buy_box_equity)}</td>
                         <td className="px-4 py-2">{formatValue(product.product_details.out_of_stock)}</td>

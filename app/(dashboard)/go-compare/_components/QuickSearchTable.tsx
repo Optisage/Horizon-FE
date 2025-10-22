@@ -4,14 +4,34 @@
 import { useDraggable } from "@dnd-kit/core"
 import { useState } from "react"
 import Image from "next/image"
-import TablePagination from "./TablePagination"
 import placeholder from '../../../../public/assets/images/gocompare/placeholder.png'
 import { ProductObj, QuickSearchResult } from "@/types/goCompare";
+import TablePagination from "./TablePagination";
+
+// Three-dot loading component
+const ThreeDotLoader = () => (
+  <div className="three-dot-loader">
+    <div className="dot"></div>
+    <div className="dot"></div>
+    <div className="dot"></div>
+  </div>
+);
+
+// Helper function to determine if data should show loading animation
+const shouldShowLoading = (value: any): boolean => {
+  return value === null || 
+         value === undefined || 
+         value === 'N/A' || 
+         value === '' || 
+         value === 0 ||
+         (typeof value === 'string' && value.trim() === '');
+};
 
 interface ProductTableProps {
   products: ProductObj[] | QuickSearchResult[]
   onRowClick: (product: ProductObj | QuickSearchResult) => void
 }
+
 
 function DraggableRow({
   product,
@@ -114,11 +134,29 @@ function DraggableRow({
               )}
             </div>
           </td>
-          <td className="px-4 py-1.5 text-sm">{quickSearchProduct.profit_margin ? `${quickSearchProduct.profit_margin}%` : 'N/A'}</td>
-          <td className="px-4 py-1.5 text-sm">{quickSearchProduct.gross_roi ? `${quickSearchProduct.gross_roi}%` : 'N/A'}</td>
-          <td className="px-4 py-1.5 text-sm">{quickSearchProduct.amazon_price ? `${quickSearchProduct.amazon_price}` : 'N/A'}</td>
-          <td className="px-4 py-1.5 text-sm">{quickSearchProduct.sales_rank || 'N/A'}</td>
           <td className="px-4 py-1.5 text-sm">{quickSearchProduct.price || quickSearchProduct.buybox_price || 'N/A'}</td>
+          <td className="px-4 py-1.5 text-sm">
+            {shouldShowLoading(quickSearchProduct.amazon_price) ? (
+              <ThreeDotLoader />
+            ) : (
+              `${quickSearchProduct.amazon_price}`
+            )}
+          </td>
+          <td className="px-4 py-1.5 text-sm">
+            {shouldShowLoading(quickSearchProduct.profit_margin) ? (
+              <ThreeDotLoader />
+            ) : (
+              `${quickSearchProduct.profit_margin}%`
+            )}
+          </td>
+          <td className="px-4 py-1.5 text-sm">
+            {shouldShowLoading(quickSearchProduct.gross_roi) ? (
+              <ThreeDotLoader />
+            ) : (
+              `${quickSearchProduct.gross_roi}%`
+            )}
+          </td>
+          <td className="px-4 py-1.5 text-sm">{quickSearchProduct.sales_rank || 'N/A'}</td>
           <td className="px-4 py-1.5 text-sm">{quickSearchProduct.number_of_sellers || 'N/A'}</td>
         </>
       );
@@ -147,11 +185,29 @@ function DraggableRow({
               )}
             </div>
           </td>
-          <td className="px-4 py-1.5 text-sm">{formattedProfitMargin}</td>
-          <td className="px-4 py-1.5 text-sm">{formattedROI}</td>
-          <td className="px-4 py-1.5 text-sm">{formattedAmazonPrice}</td>
-          <td className="px-4 py-1.5 text-sm">{productObj.sales_rank || 'N/A'}</td>
           <td className="px-4 py-1.5 text-sm">{productObj.scraped_product.price?.formatted || productObj.buybox_price || 'N/A'}</td>
+          <td className="px-4 py-1.5 text-sm">
+            {shouldShowLoading(productObj.scraped_product.price.amount + productObj.price_difference) ? (
+              <ThreeDotLoader />
+            ) : (
+              formattedAmazonPrice
+            )}
+          </td>
+          <td className="px-4 py-1.5 text-sm">
+            {shouldShowLoading(productObj.profit_margin) ? (
+              <ThreeDotLoader />
+            ) : (
+              formattedProfitMargin
+            )}
+          </td>
+          <td className="px-4 py-1.5 text-sm">
+            {shouldShowLoading(productObj.roi_percentage) ? (
+              <ThreeDotLoader />
+            ) : (
+              formattedROI
+            )}
+          </td>
+          <td className="px-4 py-1.5 text-sm">{productObj.sales_rank || 'N/A'}</td>
           <td className="px-4 py-1.5 text-sm">{productObj.number_of_sellers || 'N/A'}</td>
         </>
       );
@@ -184,8 +240,9 @@ function DraggableRow({
 }
 
 export default function QuickSearchTable({ products, onRowClick }: ProductTableProps) {
-  const [page, setPage] = useState(1)
-  const perPage = 10 // Fixed number of rows per page
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+  const maxPages = 2;
 
   // Check if products are QuickSearchResult type
   const isQuickSearchResult = products.length > 0 && ('store_name' in products[0] || 'product_name' in products[0]);
@@ -195,19 +252,16 @@ export default function QuickSearchTable({ products, onRowClick }: ProductTableP
     ? products
     : [...(products as ProductObj[])].sort((a, b) => b.roi_percentage - a.roi_percentage)
 
-  const totalPages = Math.ceil(sortedProducts.length / perPage)
-  const startIndex = (page - 1) * perPage
-  const endIndex = startIndex + perPage
-  const currentData = sortedProducts.slice(startIndex, endIndex)
+  // Calculate pagination
+  const totalItems = sortedProducts.length;
+  const totalPages = Math.min(Math.ceil(totalItems / itemsPerPage), maxPages);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = Math.min(startIndex + itemsPerPage, totalItems);
+  const currentData = sortedProducts.slice(startIndex, endIndex);
 
   const handlePageChange = (page: number) => {
-    setPage(page)
-  }
-
-  // Dummy function to maintain compatibility with TablePagination
-  const handlePerPageChange = () => {
-    // No longer used
-  }
+    setCurrentPage(page);
+  };
 
   return (
     <div className="border border-gray-200 rounded-lg">
@@ -218,36 +272,33 @@ export default function QuickSearchTable({ products, onRowClick }: ProductTableP
               <tr className="bg-gray-50 border-b">
                 <th className="px-4 py-3 text-left font-medium text-gray-600">Product name</th>
                 <th className="px-4 py-3 text-left font-medium text-gray-600">Store</th>
+                <th className="px-4 py-3 text-left font-medium text-gray-600">Store Price</th>
+                <th className="px-4 py-3 text-left font-medium text-gray-600">Amazon Price</th>
                 <th className="px-4 py-3 text-left font-medium text-gray-600">Profit Margin</th>
                 <th className="px-4 py-3 text-left font-medium text-gray-600">Gross ROI</th>
-                <th className="px-4 py-3 text-left font-medium text-gray-600">Amazon Price</th>
                 <th className="px-4 py-3 text-left font-medium text-gray-600">Sales Rank</th>
-                <th className="px-4 py-3 text-left font-medium text-gray-600">Store Price</th>
                 <th className="px-4 py-3 text-left font-medium text-gray-600">No. of Sellers</th>
               </tr>
             </thead>
             <tbody>
               {currentData.map((product, index) => (
                 <DraggableRow
-                  key={`${isQuickSearchResult ? `${(product as any).store_name}-${(product as any).asin}` : (product as any).scraped_product.id}-${index}`}
+                  key={`${isQuickSearchResult ? `${(product as any).store_name}-${(product as any).asin}` : (product as any).scraped_product.id}-${startIndex + index}`}
                   product={product}
                   onRowClick={onRowClick}
                   isQuickSearchResult={isQuickSearchResult}
-                  rowIndex={index}
+                  rowIndex={startIndex + index}
                 />
               ))}
             </tbody>
           </table>
         </div>
+        <TablePagination
+          page={currentPage}
+          totalPages={totalPages}
+          handlePageChange={handlePageChange}
+        />
       </div>
-
-      <TablePagination
-        page={page}
-        perPage={perPage}
-        totalPages={totalPages}
-        handlePageChange={handlePageChange}
-        handlePerPageChange={handlePerPageChange}
-      />
     </div>
   )
 }

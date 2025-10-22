@@ -1,7 +1,7 @@
 "use client";
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useRef, useState } from "react";
-import { GoChevronDown } from "react-icons/go";
+import { GoChevronDown, GoChevronUp } from "react-icons/go";
 import { IoCloseOutline } from "react-icons/io5";
 import { useLazyGetAllCountriesQuery } from "@/redux/api/quickSearchApi";
 import { useLazyGetProductCategoriesQuery } from "@/redux/api/auth";
@@ -365,11 +365,11 @@ export function SearchModal({ isOpen, onClose, title, inputLabel }: SearchModalP
                                         className="w-full text-[#9F9FA3] text-sm p-3 border border-gray-300 rounded-md bg-white flex items-center justify-between focus:outline-none focus:ring-2 focus:ring-[#4C3CC6]"
                                     >
                                         <span>{selectedSearchType?.type}</span>
-                                        <GoChevronDown size={18} color="black" />
+                                        <GoChevronUp size={18} color="black" />
                                     </button>
 
                                     {isSearchTypeDropdown && (
-                                        <div className="absolute z-10 mt-1 px-2 w-full text-sm bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-auto">
+                                        <div className="absolute z-10 bottom-full mb-1 px-2 w-full text-sm bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-auto">
                                             {searchTypes.map((searchType) => (
                                                 <button
                                                     key={searchType.id}
