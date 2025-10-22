@@ -89,6 +89,38 @@ export default function QuickSearch() {
     const [selectedAsin, setSelectedAsin] = useState<string | null>(null)
     const [selectedSalesPrice, setSelectedSalesPrice] = useState<string | null>(null)
     
+    // Helper function to check if any product has incomplete data for the specified columns
+    const hasIncompleteData = useCallback((products: (ProductObj | QuickSearchResult)[]): boolean => {
+        return products.some(product => {
+            if ('store_name' in product) {
+                // QuickSearchResult type
+                const qsProduct = product as QuickSearchResult;
+                return qsProduct.profit_margin === null || 
+                       qsProduct.profit_margin === undefined || 
+                       qsProduct.profit_margin === 0 ||
+                       qsProduct.gross_roi === null || 
+                       qsProduct.gross_roi === undefined || 
+                       qsProduct.gross_roi === 0 ||
+                       qsProduct.amazon_price === null || 
+                       qsProduct.amazon_price === undefined || 
+                       qsProduct.amazon_price === '' ||
+                       qsProduct.amazon_price === 'N/A';
+            } else {
+                // ProductObj type
+                const pProduct = product as ProductObj;
+                return pProduct.profit_margin === null || 
+                       pProduct.profit_margin === undefined || 
+                       pProduct.profit_margin === 0 ||
+                       pProduct.roi_percentage === null || 
+                       pProduct.roi_percentage === undefined || 
+                       pProduct.roi_percentage === 0 ||
+                       (pProduct.scraped_product.price.amount + pProduct.price_difference) === null ||
+                       (pProduct.scraped_product.price.amount + pProduct.price_difference) === undefined ||
+                       (pProduct.scraped_product.price.amount + pProduct.price_difference) === 0;
+            }
+        });
+    }, []);
+
     // Transform products data with memoization to prevent unnecessary recalculations
     const transformedProducts = useMemo(() => {
         // Handle QuickSearchResult type
@@ -171,6 +203,30 @@ export default function QuickSearch() {
             console.error("Comparison Product details error:", comparisonProductDetailsResult.error);
         }
     }, [amazonProductDetailsResult.data, amazonProductDetailsResult.error, amazonProductDetailsResult.isLoading, amazonProductDetailsResult.isFetching, comparisonProductDetailsResult.data, comparisonProductDetailsResult.error]);
+
+    // Background refetch logic for incomplete data
+    useEffect(() => {
+        let refetchInterval: NodeJS.Timeout | null = null;
+
+        // Check if we have data and if any products have incomplete data
+        if (transformedProducts.length > 0 && hasIncompleteData(transformedProducts)) {
+            refetchInterval = setInterval(() => {
+                // Refetch the appropriate query based on which one is active
+                if (searchId) {
+                    searchByIdResult.refetch();
+                } else {
+                    quickSearchResult.refetch();
+                }
+            }, 20000); // 20 seconds
+        }
+
+        // Cleanup interval on component unmount or when data becomes complete
+        return () => {
+            if (refetchInterval) {
+                clearInterval(refetchInterval);
+            }
+        };
+    }, [transformedProducts, hasIncompleteData, searchId, searchByIdResult, quickSearchResult]);
 
     const sensors = useSensors(
         useSensor(PointerSensor, {
