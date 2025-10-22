@@ -247,7 +247,6 @@ export default function ReverseSearch() {
                     <ProductInformation
                         productData={productData}
                         isSelected={selectedProducts ? true : false}
-                        isLoading={isLoading || isFetching}
                     />
                 </div>
 
