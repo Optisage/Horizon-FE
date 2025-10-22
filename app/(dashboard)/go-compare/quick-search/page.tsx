@@ -488,7 +488,7 @@ export default function QuickSearch() {
         setSelectedProducts([]);
         setSelectedAsin(null);
         setSelectedSalesPrice(null);
-    }, [data]);
+    }, [asin, marketplace_id, queue, searchId]);
 
     // Always show a loader when loading or route changing
     if (isLoading || isRouteChanging) {
