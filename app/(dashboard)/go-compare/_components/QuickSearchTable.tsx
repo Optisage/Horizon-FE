@@ -8,6 +8,25 @@ import placeholder from '../../../../public/assets/images/gocompare/placeholder.
 import { ProductObj, QuickSearchResult } from "@/types/goCompare";
 import TablePagination from "./TablePagination";
 
+// Three-dot loading component
+const ThreeDotLoader = () => (
+  <div className="three-dot-loader">
+    <div className="dot"></div>
+    <div className="dot"></div>
+    <div className="dot"></div>
+  </div>
+);
+
+// Helper function to determine if data should show loading animation
+const shouldShowLoading = (value: any): boolean => {
+  return value === null || 
+         value === undefined || 
+         value === 'N/A' || 
+         value === '' || 
+         value === 0 ||
+         (typeof value === 'string' && value.trim() === '');
+};
+
 interface ProductTableProps {
   products: ProductObj[] | QuickSearchResult[]
   onRowClick: (product: ProductObj | QuickSearchResult) => void
@@ -115,9 +134,27 @@ function DraggableRow({
               )}
             </div>
           </td>
-          <td className="px-4 py-1.5 text-sm">{quickSearchProduct.profit_margin ? `${quickSearchProduct.profit_margin}%` : 'N/A'}</td>
-          <td className="px-4 py-1.5 text-sm">{quickSearchProduct.gross_roi ? `${quickSearchProduct.gross_roi}%` : 'N/A'}</td>
-          <td className="px-4 py-1.5 text-sm">{quickSearchProduct.amazon_price ? `${quickSearchProduct.amazon_price}` : 'N/A'}</td>
+          <td className="px-4 py-1.5 text-sm">
+            {shouldShowLoading(quickSearchProduct.profit_margin) ? (
+              <ThreeDotLoader />
+            ) : (
+              `${quickSearchProduct.profit_margin}%`
+            )}
+          </td>
+          <td className="px-4 py-1.5 text-sm">
+            {shouldShowLoading(quickSearchProduct.gross_roi) ? (
+              <ThreeDotLoader />
+            ) : (
+              `${quickSearchProduct.gross_roi}%`
+            )}
+          </td>
+          <td className="px-4 py-1.5 text-sm">
+            {shouldShowLoading(quickSearchProduct.amazon_price) ? (
+              <ThreeDotLoader />
+            ) : (
+              `${quickSearchProduct.amazon_price}`
+            )}
+          </td>
           <td className="px-4 py-1.5 text-sm">{quickSearchProduct.sales_rank || 'N/A'}</td>
           <td className="px-4 py-1.5 text-sm">{quickSearchProduct.price || quickSearchProduct.buybox_price || 'N/A'}</td>
           <td className="px-4 py-1.5 text-sm">{quickSearchProduct.number_of_sellers || 'N/A'}</td>
@@ -148,9 +185,27 @@ function DraggableRow({
               )}
             </div>
           </td>
-          <td className="px-4 py-1.5 text-sm">{formattedProfitMargin}</td>
-          <td className="px-4 py-1.5 text-sm">{formattedROI}</td>
-          <td className="px-4 py-1.5 text-sm">{formattedAmazonPrice}</td>
+          <td className="px-4 py-1.5 text-sm">
+            {shouldShowLoading(productObj.profit_margin) ? (
+              <ThreeDotLoader />
+            ) : (
+              formattedProfitMargin
+            )}
+          </td>
+          <td className="px-4 py-1.5 text-sm">
+            {shouldShowLoading(productObj.roi_percentage) ? (
+              <ThreeDotLoader />
+            ) : (
+              formattedROI
+            )}
+          </td>
+          <td className="px-4 py-1.5 text-sm">
+            {shouldShowLoading(productObj.scraped_product.price.amount + productObj.price_difference) ? (
+              <ThreeDotLoader />
+            ) : (
+              formattedAmazonPrice
+            )}
+          </td>
           <td className="px-4 py-1.5 text-sm">{productObj.sales_rank || 'N/A'}</td>
           <td className="px-4 py-1.5 text-sm">{productObj.scraped_product.price?.formatted || productObj.buybox_price || 'N/A'}</td>
           <td className="px-4 py-1.5 text-sm">{productObj.number_of_sellers || 'N/A'}</td>
