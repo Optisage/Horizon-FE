@@ -134,6 +134,14 @@ function DraggableRow({
               )}
             </div>
           </td>
+          <td className="px-4 py-1.5 text-sm">{quickSearchProduct.price || quickSearchProduct.buybox_price || 'N/A'}</td>
+          <td className="px-4 py-1.5 text-sm">
+            {shouldShowLoading(quickSearchProduct.amazon_price) ? (
+              <ThreeDotLoader />
+            ) : (
+              `${quickSearchProduct.amazon_price}`
+            )}
+          </td>
           <td className="px-4 py-1.5 text-sm">
             {shouldShowLoading(quickSearchProduct.profit_margin) ? (
               <ThreeDotLoader />
@@ -148,15 +156,7 @@ function DraggableRow({
               `${quickSearchProduct.gross_roi}%`
             )}
           </td>
-          <td className="px-4 py-1.5 text-sm">
-            {shouldShowLoading(quickSearchProduct.amazon_price) ? (
-              <ThreeDotLoader />
-            ) : (
-              `${quickSearchProduct.amazon_price}`
-            )}
-          </td>
           <td className="px-4 py-1.5 text-sm">{quickSearchProduct.sales_rank || 'N/A'}</td>
-          <td className="px-4 py-1.5 text-sm">{quickSearchProduct.price || quickSearchProduct.buybox_price || 'N/A'}</td>
           <td className="px-4 py-1.5 text-sm">{quickSearchProduct.number_of_sellers || 'N/A'}</td>
         </>
       );
@@ -185,6 +185,14 @@ function DraggableRow({
               )}
             </div>
           </td>
+          <td className="px-4 py-1.5 text-sm">{productObj.scraped_product.price?.formatted || productObj.buybox_price || 'N/A'}</td>
+          <td className="px-4 py-1.5 text-sm">
+            {shouldShowLoading(productObj.scraped_product.price.amount + productObj.price_difference) ? (
+              <ThreeDotLoader />
+            ) : (
+              formattedAmazonPrice
+            )}
+          </td>
           <td className="px-4 py-1.5 text-sm">
             {shouldShowLoading(productObj.profit_margin) ? (
               <ThreeDotLoader />
@@ -199,15 +207,7 @@ function DraggableRow({
               formattedROI
             )}
           </td>
-          <td className="px-4 py-1.5 text-sm">
-            {shouldShowLoading(productObj.scraped_product.price.amount + productObj.price_difference) ? (
-              <ThreeDotLoader />
-            ) : (
-              formattedAmazonPrice
-            )}
-          </td>
           <td className="px-4 py-1.5 text-sm">{productObj.sales_rank || 'N/A'}</td>
-          <td className="px-4 py-1.5 text-sm">{productObj.scraped_product.price?.formatted || productObj.buybox_price || 'N/A'}</td>
           <td className="px-4 py-1.5 text-sm">{productObj.number_of_sellers || 'N/A'}</td>
         </>
       );
@@ -272,11 +272,11 @@ export default function QuickSearchTable({ products, onRowClick }: ProductTableP
               <tr className="bg-gray-50 border-b">
                 <th className="px-4 py-3 text-left font-medium text-gray-600">Product name</th>
                 <th className="px-4 py-3 text-left font-medium text-gray-600">Store</th>
+                <th className="px-4 py-3 text-left font-medium text-gray-600">Store Price</th>
+                <th className="px-4 py-3 text-left font-medium text-gray-600">Amazon Price</th>
                 <th className="px-4 py-3 text-left font-medium text-gray-600">Profit Margin</th>
                 <th className="px-4 py-3 text-left font-medium text-gray-600">Gross ROI</th>
-                <th className="px-4 py-3 text-left font-medium text-gray-600">Amazon Price</th>
                 <th className="px-4 py-3 text-left font-medium text-gray-600">Sales Rank</th>
-                <th className="px-4 py-3 text-left font-medium text-gray-600">Store Price</th>
                 <th className="px-4 py-3 text-left font-medium text-gray-600">No. of Sellers</th>
               </tr>
             </thead>

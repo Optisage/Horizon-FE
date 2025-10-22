@@ -217,7 +217,7 @@ export default function QuickSearch() {
                 } else {
                     quickSearchResult.refetch();
                 }
-            }, 20000); // 20 seconds
+            }, 10000); // 10 seconds
         }
 
         // Cleanup interval on component unmount or when data becomes complete
