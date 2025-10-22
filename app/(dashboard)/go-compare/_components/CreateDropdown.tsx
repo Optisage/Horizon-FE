@@ -88,7 +88,7 @@ export function CreateDropdown() {
             {/* {showModal === "reverseSearch" && <ReverseSearchModal isOpen={true} onClose={() => toggleModal(null)} />} */}
             {showModal === "quickSearch" && <SearchModal
                 isOpen={true} onClose={() => toggleModal(null)}
-                title="Quick Search" inputLabel="Enter ASIN, UPC or Product Name"
+                title="Quick Search" inputLabel="Enter ASIN or UPC"
             />}
 
             {showModal === "reverseSearch" && <SearchModal
