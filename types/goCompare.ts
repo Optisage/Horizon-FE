@@ -125,7 +125,18 @@ export interface QuickSearchResult {
 export interface QuickSearchResponse {
     status: number;
     message: string;
-    data: QuickSearchResult[];
+    data: {
+        id: number;
+        user_id: number;
+        marketplace_id: number;
+        asin_upc: string;
+        search_type: string;
+        amazon_price: string;
+        stores: string[];
+        status: string;
+        results_count: number;
+        results: QuickSearchResult[];
+    };
     meta: Record<string, unknown>[];
 }
 
