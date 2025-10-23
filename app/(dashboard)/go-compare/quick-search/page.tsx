@@ -2,7 +2,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { DndContext, type DragEndEvent, DragOverlay, type DragStartEvent, PointerSensor, useSensor, useSensors } from "@dnd-kit/core"
 import { restrictToWindowEdges } from "@dnd-kit/modifiers"
-import { useGetSearchByIdQuery, useQuickSearchQuery, useGetComparisonProductDetailsQuery, useGetProductDetailsQuery } from '@/redux/api/quickSearchApi';
+import { useGetSearchByIdQuery, useQuickSearchQuery, useGetComparisonProductDetailsQuery, useGetProductDetailsQuery, useLazyRefreshQuickSearchQuery } from '@/redux/api/quickSearchApi';
 import Image from "next/image";
 import { usePathname, useSearchParams } from 'next/navigation';
 import React, { useEffect, useState, useCallback, useRef, useMemo } from 'react'
@@ -48,6 +48,12 @@ export default function QuickSearch() {
         { skip: !!searchId || !marketplace_id, refetchOnMountOrArgChange: true }
     );
 
+    // State for storing searchId from initial response
+    const [currentSearchId, setCurrentSearchId] = useState<string | number | null>(searchId);
+    
+    // Lazy query for refresh functionality
+    const [triggerRefreshSearch, refreshSearchResult] = useLazyRefreshQuickSearchQuery();
+
     type QueryResult = {
         data: QuickSearchResult[] | QuickSearchData | { results: QuickSearchResult[] } | undefined;
         isLoading: boolean;
@@ -55,6 +61,39 @@ export default function QuickSearch() {
         isFetching: boolean;
         error?: FetchBaseQueryError | SerializedError;
     };
+
+    // Capture searchId from initial quick search response
+    useEffect(() => {
+        console.log('🔍 useEffect triggered - quickSearchResult.data:', !!quickSearchResult.data, 'searchId:', searchId, 'currentSearchId:', currentSearchId);
+        console.log('🔍 quickSearchResult.isLoading:', quickSearchResult.isLoading);
+        console.log('🔍 quickSearchResult.isError:', quickSearchResult.isError);
+        console.log('🔍 quickSearchResult.error:', quickSearchResult.error);
+        
+        if (quickSearchResult.data && !searchId && !currentSearchId) {
+            console.log('🔍 Full quickSearchResult.data structure:', quickSearchResult.data);
+            console.log('🔍 quickSearchResult.data type:', typeof quickSearchResult.data);
+            console.log('🔍 quickSearchResult.data keys:', Object.keys(quickSearchResult.data));
+            
+            // Try different possible paths for the ID
+            const responseSearchId1 = quickSearchResult.data?.data?.id;
+            const responseSearchId2 = quickSearchResult.data?.id;
+            const responseSearchId3 = (quickSearchResult.data as any)?.id;
+            
+            console.log('🔍 Trying data.data.id:', responseSearchId1);
+            console.log('🔍 Trying data.id:', responseSearchId2);
+            console.log('🔍 Trying direct id:', responseSearchId3);
+            
+            const responseSearchId = responseSearchId1 || responseSearchId2 || responseSearchId3;
+            
+            if (responseSearchId) {
+                console.log('📝 Captured searchId from initial response:', responseSearchId);
+                setCurrentSearchId(responseSearchId);
+            } else {
+                console.log('❌ No searchId found in initial response');
+                console.log('❌ Available data structure:', JSON.stringify(quickSearchResult.data, null, 2));
+            }
+        }
+    }, [quickSearchResult.data, searchId, currentSearchId]);
 
     // Log the raw API response for debugging (only in development)
     useEffect(() => {
@@ -68,19 +107,38 @@ export default function QuickSearch() {
         }
     }, [quickSearchResult.data, searchByIdResult.data]);
 
-    const result: QueryResult = searchId ? {
-        data: searchByIdResult.data?.data,
-        isLoading: searchByIdResult.isLoading,
-        isError: searchByIdResult.isError,
-        isFetching: searchByIdResult.isFetching,
-        error: searchByIdResult.error,
-    } : {
-        data: quickSearchResult.data?.data,
-        isLoading: quickSearchResult.isLoading,
-        isError: quickSearchResult.isError,
-        isFetching: quickSearchResult.isFetching,
-        error: quickSearchResult.error,
-    };
+    const result: QueryResult = (() => {
+        // Prioritize refresh search result if available and has data
+        if (refreshSearchResult.data) {
+            console.log('🔍 Refresh search result:', refreshSearchResult);
+            return {
+                data: refreshSearchResult.data?.data || refreshSearchResult.data,
+                isLoading: refreshSearchResult.isLoading,
+                isError: refreshSearchResult.isError,
+                isFetching: refreshSearchResult.isFetching,
+                error: refreshSearchResult.error,
+            };
+        }
+        
+        // Fallback to existing logic
+        if (searchId) {
+            return {
+                data: searchByIdResult.data?.data,
+                isLoading: searchByIdResult.isLoading,
+                isError: searchByIdResult.isError,
+                isFetching: searchByIdResult.isFetching,
+                error: searchByIdResult.error,
+            };
+        }
+        
+        return {
+            data: quickSearchResult.data?.data,
+            isLoading: quickSearchResult.isLoading,
+            isError: quickSearchResult.isError,
+            isFetching: quickSearchResult.isFetching,
+            error: quickSearchResult.error,
+        };
+    })();
 
     const { data, isLoading, isError, isFetching, error } = result;
 
@@ -211,11 +269,15 @@ export default function QuickSearch() {
         // Check if we have data and if any products have incomplete data
         if (transformedProducts.length > 0 && hasIncompleteData(transformedProducts)) {
             refetchInterval = setInterval(() => {
-                // Refetch the appropriate query based on which one is active
-                if (searchId) {
-                    searchByIdResult.refetch();
+                // Use the new refresh endpoint only when searchId is available
+                const activeSearchId = searchId || currentSearchId;
+                
+                if (activeSearchId) {
+                    // Use the new refresh endpoint for better performance
+                    console.log('🔄 Using new refresh endpoint with searchId:', activeSearchId);
+                    triggerRefreshSearch({ searchId: activeSearchId, perPage: 10 });
                 } else {
-                    quickSearchResult.refetch();
+                    console.log('⚠️ No searchId available, skipping auto-refresh');
                 }
             }, 10000); // 10 seconds
         }
@@ -226,7 +288,7 @@ export default function QuickSearch() {
                 clearInterval(refetchInterval);
             }
         };
-    }, [transformedProducts, hasIncompleteData, searchId, searchByIdResult, quickSearchResult]);
+    }, [transformedProducts, hasIncompleteData, searchId, currentSearchId, searchByIdResult, quickSearchResult, triggerRefreshSearch]);
 
     const sensors = useSensors(
         useSensor(PointerSensor, {
