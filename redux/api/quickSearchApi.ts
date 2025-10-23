@@ -56,6 +56,12 @@ export const quickSearchApi = createApi({
                 method: "GET",
             }),
         }),
+        refreshQuickSearch: builder.query({
+            query: ({ searchId, perPage = 10 }: { searchId: string | number; perPage?: number }) => ({
+                url: `/go-compare/quick-search/${searchId}?perPage=${perPage}`,
+                method: "GET",
+            }),
+        }),
     }),
 });
 
@@ -68,7 +74,9 @@ export const {
     useGetProductDetailsQuery,
     useLazyGetProductDetailsQuery,
     useGetComparisonProductDetailsQuery,
-    useLazyGetComparisonProductDetailsQuery
+    useLazyGetComparisonProductDetailsQuery,
+    useRefreshQuickSearchQuery,
+    useLazyRefreshQuickSearchQuery
 } = quickSearchApi;
 
 
