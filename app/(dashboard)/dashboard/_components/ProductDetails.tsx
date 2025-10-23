@@ -59,6 +59,7 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
   const [getIpAlert] = useLazyGetIpAlertQuery();
   const [ipData, setIpData] = useState<IpAlertData | null>(null);
   const [isLoadingIpData, setIsLoadingIpData] = useState(false);
+  const [ipDataError, setIpDataError] = useState(false);
   const previousMarketplaceId = useRef(marketplaceId);
   const [profitabilityData, setProfitabilityData] = useState<any>(null);
   const [isCalculating, setIsCalculating] = useState(false);
@@ -66,6 +67,7 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
   // Add loader state
   const [currentStep, setCurrentStep] = useState(0);
   const [showLoader, setShowLoader] = useState(true);
+  const [hasError, setHasError] = useState(false);
 
   // Refs for triggering recalculation
   const profitCalculatorRef = useRef<{
@@ -97,11 +99,14 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
   );
 
   // RTK Query hooks for fetching product data
-  const { data: buyboxDetailsData, isLoading: isLoadingBuybox } =
-    useGetBuyboxDetailsQuery({
-      marketplaceId,
-      itemAsin: asin,
-    });
+  const { 
+    data: buyboxDetailsData, 
+    isLoading: isLoadingBuybox,
+    error: buyboxError 
+  } = useGetBuyboxDetailsQuery({
+    marketplaceId,
+    itemAsin: asin,
+  });
 
   const {
     data,
@@ -135,8 +140,19 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
   const monthlySales =
     data?.data?.sales_statistics?.estimated_sales_per_month?.amount;
 
+  // Check for errors and stop loader
+  useEffect(() => {
+    if (error || buyboxError || ipDataError) {
+      setHasError(true);
+      setShowLoader(false);
+    }
+  }, [error, buyboxError, ipDataError]);
+
   // Track loading progress and update steps
   useEffect(() => {
+    // Don't update steps if there's an error
+    if (hasError) return;
+
     let step = 0;
     
     if (asin && marketplaceId) {
@@ -165,7 +181,7 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
     }
 
     setCurrentStep(step);
-  }, [isLoadingItem, isLoadingBuybox, isLoadingIpData, data, buyboxDetailsData, ipData, asin, marketplaceId]);
+  }, [isLoadingItem, isLoadingBuybox, isLoadingIpData, data, buyboxDetailsData, ipData, asin, marketplaceId, hasError]);
 
   // Track marketplace changes
   useEffect(() => {
@@ -175,6 +191,8 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
       setIpData(null);
       setShowLoader(true);
       setCurrentStep(0);
+      setHasError(false);
+      setIpDataError(false);
       dispatch(
         setIpAlert({
           setIpIssue: 0,
@@ -190,6 +208,8 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
     setIpData(null);
     setShowLoader(true);
     setCurrentStep(0);
+    setHasError(false);
+    setIpDataError(false);
     dispatch(
       setIpAlert({
         setIpIssue: 0,
@@ -204,6 +224,7 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
   useEffect(() => {
     const fetchIpData = async () => {
       setIsLoadingIpData(true);
+      setIpDataError(false);
       try {
         const response = await getIpAlert({
           itemAsin: asin,
@@ -222,6 +243,7 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
         setIpData(response.data as IpAlertData);
       } catch (error) {
         console.error("Error fetching IP alert:", error);
+        setIpDataError(true);
         setIpData({});
       } finally {
         setIsLoadingIpData(false);
@@ -265,12 +287,22 @@ const ProductDetails = ({ asin, marketplaceId }: ProductDetailsProps) => {
     }
   };
 
-  if (error) {
+  // Show error message if any API fails
+  if (hasError || error || buyboxError || ipDataError) {
     return (
       <div className="h-[400px] flex flex-col items-center justify-center">
-        <h2 className="font-semibold">Error loading product details</h2>
-        <p className="text-sm">
-          Product might not be available in the selected country
+        <h2 className="font-semibold text-red-600">An error occurred</h2>
+        <p className="text-sm text-gray-600">
+          {error 
+            ? "Failed to load product details" 
+            : buyboxError 
+            ? "Failed to load buybox information"
+            : ipDataError
+            ? "Failed to load IP alert data"
+            : "An error occurred while loading data, confirm you are on the correct marketplace"}
+        </p>
+        <p className="text-xs text-gray-500 mt-2">
+          Please try again or select a different product
         </p>
       </div>
     );
