@@ -266,7 +266,7 @@ const DashSider = () => {
                 <HiMiniArrowTopRightOnSquare size={20} />
               </Link>
               <p className="text-white font-medium text-sm mt-1">
-                Plans $45 upwards
+                Plans $35 upwards
               </p>
             </div>
 
