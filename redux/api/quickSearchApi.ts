@@ -50,6 +50,18 @@ export const quickSearchApi = createApi({
                 method: "GET",
             }),
         }),
+        getComparisonProductDetails: builder.query({
+            query: ({ asin, marketplace_id, sales_price }) => ({
+                url: `/go-compare/product-details?asin=${asin}&marketplace_id=${marketplace_id}${sales_price ? `&sales_price=${sales_price}` : ''}`,
+                method: "GET",
+            }),
+        }),
+        refreshQuickSearch: builder.query({
+            query: ({ searchId, perPage = 10 }: { searchId: string | number; perPage?: number }) => ({
+                url: `/go-compare/quick-search/${searchId}?perPage=${perPage}`,
+                method: "GET",
+            }),
+        }),
     }),
 });
 
@@ -60,7 +72,11 @@ export const {
     useGetSearchByIdQuery,
     useReverseSearchQuery,
     useGetProductDetailsQuery,
-    useLazyGetProductDetailsQuery
+    useLazyGetProductDetailsQuery,
+    useGetComparisonProductDetailsQuery,
+    useLazyGetComparisonProductDetailsQuery,
+    useRefreshQuickSearchQuery,
+    useLazyRefreshQuickSearchQuery
 } = quickSearchApi;
 
 
