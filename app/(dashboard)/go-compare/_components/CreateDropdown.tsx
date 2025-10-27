@@ -58,7 +58,7 @@ export function CreateDropdown() {
 
                         <div className="p-2 pt-0">
                             <DropdownItem onClick={() => toggleModal("quickSearch")} icon={CiSearch} label="Quick Search" />
-                            <DropdownItem onClick={() => toggleModal("reverseSearch")} icon={CiSearch} label="Reverse Search" />
+                            <DropdownItem onClick={() => toggleModal("reverseSearch")} icon={CiSearch} label="Tactical Reverse Search" />
                             <DropdownItem onClick={() => { }} icon={LuScanSearch} label="Search with Filter" disabled />
                             <DropdownItem onClick={() => { }} icon={ScanBrandsIcon} label="Scan Brands" disabled />
                             <DropdownItem onClick={() => { }} icon={WantedIcon} label="Scan Most Wanted" disabled />
@@ -88,12 +88,12 @@ export function CreateDropdown() {
             {/* {showModal === "reverseSearch" && <ReverseSearchModal isOpen={true} onClose={() => toggleModal(null)} />} */}
             {showModal === "quickSearch" && <SearchModal
                 isOpen={true} onClose={() => toggleModal(null)}
-                title="Quick Search" inputLabel="Enter ASIN, UPC or Product Name"
+                title="Quick Search" inputLabel="Enter ASIN or UPC"
             />}
 
             {showModal === "reverseSearch" && <SearchModal
                 isOpen={true} onClose={() => toggleModal(null)}
-                title="Reverse Search" inputLabel="Query Name"
+                title="Tactical Reverse Search" inputLabel="Seller Id's"
             />}
         </>
     )

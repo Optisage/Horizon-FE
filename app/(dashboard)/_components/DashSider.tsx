@@ -4,220 +4,217 @@ import React, { useState, useLayoutEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
-import Cookies from "js-cookie";
 import Logo from "@/public/assets/svg/Optisage Logo.svg";
-import {
-  DashboardIcon,
-  SettingsIcon,
-  KeepaIcon,
-  SubscriptionsIcon,
-  CreditIcon,
-  HistoryIcon,
-  GoCompareIcon,
-  UPCScannerIcon,
-} from "@/public/assets/svg/icons";
-import LogoutModal from "./LogoutModal";
-import { BiChevronRight } from "react-icons/bi";
-import { RiVerifiedBadgeFill } from "react-icons/ri";
-//import { MdSupport } from "react-icons/md";
+import { UPCScannerIcon, TotanAIIcon } from "@/public/assets/svg/icons";
 import { useAppSelector } from "@/redux/hooks";
-import { useDispatch } from "react-redux";
-import { logout } from "@/redux/slice/authSlice";
-import { BsStars } from "react-icons/bs";
-
-// Types for menu items
-type BaseMenuItem = {
-  id: string;
-  label: string;
-  icon: any;
-};
-
-type LinkMenuItem = BaseMenuItem & {
-  path: string;
-  comingSoon?: boolean;
-  beta?: boolean;
-};
-
-type ExternalMenuItem = BaseMenuItem & {
-  path: string;
-  external: true;
-};
-
-type ButtonMenuItem = BaseMenuItem & {
-  isButton: true;
-  onClick: () => void;
-  comingSoon?: boolean;
-};
-
-type MenuItem = LinkMenuItem | ExternalMenuItem | ButtonMenuItem;
+// import { BsStars } from "react-icons/bs";
+import {
+  HiArrowPathRoundedSquare,
+  HiOutlineChartBar,
+  HiOutlineCog6Tooth,
+  HiOutlineComputerDesktop,
+  HiOutlineCreditCard,
+  HiOutlineDocumentText,
+  HiOutlineHome,
+  HiOutlineChevronRight,
+  HiMiniArrowTopRightOnSquare,
+} from "react-icons/hi2";
+import { TbLayoutSidebar } from "react-icons/tb";
+import { Tooltip } from "antd";
 
 // Sidebar data
-const menuData: LinkMenuItem[] = [
-  { id: "1", path: "/dashboard", label: "Dashboard", icon: DashboardIcon },
-  { id: "2", path: "/history", label: "History", icon: HistoryIcon },
-  { id: "3", path: "/go-compare", label: "Go Compare", icon: GoCompareIcon },
-  { id: "5", path: "/keepa", label: "Keepa", icon: KeepaIcon, comingSoon: false },
+const menuData = [
+  { id: "1", path: "/dashboard", label: "Product Search", icon: HiOutlineHome },
+  {
+    id: "2",
+    path: "/history",
+    label: "History",
+    icon: HiArrowPathRoundedSquare,
+  },
+  {
+    id: "3",
+    path: "/go-compare",
+    label: "Go Compare",
+    icon: HiOutlineComputerDesktop,
+  },
+  {
+    id: "4",
+    path: "",
+    label: "Keepa",
+    icon: HiOutlineChartBar,
+    comingSoon: true,
+  },
   {
     id: "5",
     path: "/totan",
     label: "Totan (AI)",
-    icon: BsStars,
+    icon: TotanAIIcon,
     comingSoon: false,
     beta: true,
   },
   { id: "6", path: "/upc-scanner", label: "UPC Scanner", icon: UPCScannerIcon },
 ];
 
-const secondaryMenu: MenuItem[] = [
-  { id: "8", path: "/settings", label: "Settings", icon: SettingsIcon },
-  { id: "9", path: "", label: "Credit", icon: CreditIcon, comingSoon: true },
+const secondaryMenu = [
+  { id: "7", path: "/settings", label: "Settings", icon: HiOutlineCog6Tooth },
+  {
+    id: "8",
+    path: "",
+    label: "Credit",
+    icon: HiOutlineDocumentText,
+    comingSoon: true,
+  },
 ];
 
-const billingMenu: LinkMenuItem[] = [
+const billingMenu = [
   {
     id: "9",
     path: "/subscriptions",
     label: "Subscriptions",
-    icon: SubscriptionsIcon,
+    icon: HiOutlineCreditCard,
   },
 ];
 
 const DashSider = () => {
   const pathName = usePathname();
-  const dispatch = useDispatch();
+  const [collapsed, setCollapsed] = useState(false);
   const [activePath, setActivePath] = useState("");
-  const [openModal, setOpenModal] = useState(false);
   const router = useRouter();
   const { first_name, email } =
     useAppSelector((state) => state.api?.user) || {};
-  const handleLogout = () => {
-    // Clear the token cookie
-    Cookies.remove("optisage-token");
-    router.push("/");
-    dispatch(logout());
-  };
 
   useLayoutEffect(() => {
     setActivePath(pathName);
   }, [pathName]);
 
-  const renderMenu = (menu: MenuItem[]) =>
+  const renderMenu = (menu: typeof menuData) =>
     menu.map((item) => {
-      const commonContent = (
-        <>
+      const isActive = activePath === item.path;
+
+      const content = (
+        <Link
+          href={item.path}
+          key={item.id}
+          className={`flex items-center rounded-md text-base cursor-pointer relative ${
+            isActive
+              ? "bg-[#18CB960A] text-[#18CB96]"
+              : "text-[#0F172A] hover:bg-[#F7F7F7]"
+          } ${collapsed ? "justify-center px-2 py-3" : "px-4 py-3"}`}
+        >
           <item.icon
-            className={`size-5 mr-3 text-inherit ${
-              item.id === "4" ? "rotate-90" : ""
+            className={`size-6 ${
+              isActive ? "text-[#18CB96]" : "text-inherit"
+            } ${collapsed ? "mr-0" : "mr-3"} ${
+              item.id === "6" ? "size-5" : ""
             }`}
           />
-          <span>{item.label}</span>
-          {"comingSoon" in item && item.comingSoon && (
-            <span className="ml-auto bg-primary text-white text-xs px-1.5 py-0.5 rounded-md">
-              Coming Soon
-            </span>
+
+          {!collapsed && (
+            <>
+              <span className={isActive ? "text-[#18CB96]" : "text-[#787891]"}>
+                {item.label}
+              </span>
+
+              {item.comingSoon && (
+                <span className="ml-auto bg-primary text-white text-xs px-1.5 py-0.5 rounded-md">
+                  Coming Soon
+                </span>
+              )}
+
+              {item.beta && !item.comingSoon && (
+                <span className="ml-auto bg-primary text-white text-xs px-1.5 py-0.5 rounded-md">
+                  Beta
+                </span>
+              )}
+            </>
           )}
-          {"beta" in item && item.beta && (
-            <span className="ml-5 bg-primary text-white text-xs px-1.5 py-0.5 rounded-md">
-              Beta
-            </span>
+
+          {isActive && !collapsed && (
+            <HiOutlineChevronRight className="absolute right-4 text-[#18CB96] size-4" />
           )}
-        </>
+        </Link>
       );
 
-      const commonClassName = `flex items-center px-4 py-3 rounded-md text-sm cursor-pointer ${
-        "path" in item && activePath === item.path
-          ? "bg-[#EDEDEE] text-[#01011D] font-semibold"
-          : "text-[#787891] hover:bg-white"
-      }`;
-
-      // Type guard for button items
-      if ("isButton" in item && item.isButton) {
-        return (
-          <button
-            key={item.id}
-            className={commonClassName}
-            onClick={item.onClick}
-            type="button"
-          >
-            {commonContent}
-          </button>
-        );
-      }
-
-      // Type guard for external items
-      if ("external" in item && item.external) {
-        return (
-          <a
-            href={item.path}
-            key={item.id}
-            className={commonClassName}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            {commonContent}
-          </a>
-        );
-      }
-
-      // Regular link items (LinkMenuItem or ExternalMenuItem)
-      if ("path" in item) {
-        return (
-          <Link
-            href={item.path}
-            key={item.id}
-            className={commonClassName}
-          >
-            {commonContent}
-          </Link>
-        );
-      }
-      return null;
+      return collapsed ? (
+        <Tooltip title={item.label} placement="right" key={item.id}>
+          {content}
+        </Tooltip>
+      ) : (
+        content
+      );
     });
 
   return (
-    <div className="drawer-side z-50">
+    <div className="drawer-side z-50 lg:p-2 lg:bg-[#E7EBEE]">
       <label htmlFor="my-drawer-2" className="drawer-overlay" />
-      <aside className="flex flex-col justify-between w-[270px] h-dvh overflow-hidden shadow-xl bg-[#F7F7F7] border-r border-r-neutral-200 overflow-y-scroll">
-        <div className="">
-          {/* Logo */}
-          <div className="flex justify-center p-6 border-b">
-            <Link href="/dashboard">
-              <Image
-                src={Logo}
-                alt="Logo"
-                className="w-2/3 sm:w-[187px] sm:h-[49px] mx-auto"
-                width={187}
-                height={49}
-                quality={90}
-                priority
-              />
-            </Link>
+      <aside
+        className={`flex flex-col justify-between h-dvh overflow-y-scroll rounded-xl bg-white transition-[width] duration-300 ease-in-out ${
+          collapsed ? "w-[80px]" : "w-[270px]"
+        }`}
+      >
+        <div>
+          {/* Logo + Collapse Button */}
+          <div
+            className={`flex items-center justify-between py-6 mx-auto ${
+              collapsed ? "px-2" : "max-w-[231px]"
+            }`}
+          >
+            {!collapsed && (
+              <Link href="/dashboard">
+                <Image
+                  src={Logo}
+                  alt="Logo"
+                  className="w-[143px] h-[37px]"
+                  width={187}
+                  height={49}
+                  quality={90}
+                  priority
+                />
+              </Link>
+            )}
+            <button
+              type="button"
+              aria-label="Collapse Sidebar"
+              // className="p-2 hover:bg-gray-100 rounded-full"
+              className={`p-2 hover:bg-gray-100 rounded-full ${
+                collapsed ? "mx-auto" : "mx-0"
+              }`}
+              onClick={() => setCollapsed((prev) => !prev)}
+            >
+              <TbLayoutSidebar className="size-6 text-[#0F172A]" />
+            </button>
           </div>
 
-          {/* Dashboard Section */}
-          <div className="px-4 pb-3 pt-5 text-xs text-[#4B4B62] uppercase">
+          {/* Menu Sections */}
+          <div
+            className={`px-4 pb-2 pt-4 text-sm text-[#4B4B62] ${
+              collapsed ? "text-transparent h-0 p-0 overflow-hidden" : ""
+            }`}
+          >
             Dashboard
           </div>
-          <ul className="space-y-1 px-4">{renderMenu(menuData)}</ul>
+          <ul className="space-y-1 px-4 !text-[#787891]">{renderMenu(menuData)}</ul>
 
-          <div className="border-t border-[#EBEBEB] my-3" />
-
-          {/* Preferences Section */}
-          <div className="px-4 pb-3 text-xs text-[#4B4B62] uppercase">
+          <div
+            className={`px-4 pb-2 pt-4 text-sm text-[#4B4B62] ${
+              collapsed ? "text-transparent h-0 p-0 overflow-hidden" : ""
+            }`}
+          >
             Preferences
           </div>
           <ul className="space-y-1 px-4">{renderMenu(secondaryMenu)}</ul>
 
-          <div className="border-t border-[#EBEBEB] my-3" />
-
-          {/* Billing Section */}
-          <div className="px-4 pb-3 text-xs text-[#4B4B62] uppercase">
+          <div
+            className={`px-4 pb-2 pt-4 text-sm text-[#4B4B62] ${
+              collapsed ? "text-transparent h-0 p-0 overflow-hidden" : ""
+            }`}
+          >
             Billing
           </div>
           <ul className="space-y-1 px-4">{renderMenu(billingMenu)}</ul>
         </div>
 
-        <div>
+
           {/* Support */}
           <div className="p-4 border-t border-gray-200 mt-6">
             <p className="text-sm font-medium">
@@ -234,26 +231,47 @@ const DashSider = () => {
             </button>
           </div>
 
-          {/* Invite & Earn */}
-          <div className="p-4 border-t border-gray-200 mt-6">
-            <p className="text-sm font-medium">
-              Invite & Earn: Share optisage!
-            </p>
-            <p className="text-xs text-gray-500 mt-1">
-              Invite other sellers to optisage & help them succeed and unlock
-              exclusive perks too!
-            </p>
-            <button
-              onClick={() => router.push("/referral")}
-              className="bg-primary hover:bg-primary-hover duration-200 text-white text-sm font-medium px-4 py-2 rounded-md w-full mt-3 active:scale-95"
-            >
-              Refer and Earn
-            </button>
-          </div>
+        {/* Bottom Section */}
+        {!collapsed && (
+          <div className="p-4 mt-6">
+            {/* Invite */}
+            <div className="p-4 rounded-3xl border border-border h-[286px] flex flex-col justify-between">
+              <span>
+                <p className="bg-[#FF855126] text-[#F86425] text-xs font-semibold rounded-full px-3 py-1.5 w-max">
+                  Invite & Earn
+                </p>
+                <h4 className="text-xl md:text-2xl font-semibold text-black mt-2">
+                  Share optisage!
+                </h4>
+                <p className="text-sm text-[#767676] mt-6">
+                  Invite other sellers to optisage & help them succeed and
+                  unlock exclusive perks too!
+                </p>
+              </span>
+              <button
+                onClick={() => router.push("/referral")}
+                className="bg-primary hover:bg-primary-hover duration-200 text-white text-sm font-medium px-4 py-2 rounded-xl w-full mt-3 active:scale-95"
+              >
+                Refer and Earn
+              </button>
+            </div>
 
-          {/* Profile Section */}
-          <div className="flex gap-3 items-center p-4 mt-auto">
-            <div className="flex gap-3 items-center flex-1">
+            {/* Upgrade */}
+            <div className="mt-10 flex flex-col justify-end bg-[#48D9AE] bg-[url(/assets/images/upgrade-bg-group-pattern.png)] bg-cover bg-no-repeat bg-center rounded-lg h-[277px] p-4">
+              <Link
+                href="/subscriptions"
+                className="text-[#0F172A] text-lg md:text-xl xl:text-[22px] font-bold flex items-center gap-2"
+              >
+                Upgrade Plans
+                <HiMiniArrowTopRightOnSquare size={20} />
+              </Link>
+              <p className="text-white font-medium text-sm mt-1">
+                Plans $35 upwards
+              </p>
+            </div>
+
+            {/* Profile */}
+            <div className="mt-6 bg-[#E7EBEE4A] rounded-3xl flex gap-3 items-center px-4 h-[68px]">
               <div className="size-10 rounded-full overflow-hidden">
                 <Image
                   src="https://avatar.iran.liara.run/public/38"
@@ -267,36 +285,18 @@ const DashSider = () => {
                 />
               </div>
 
-              <div className="text-sm">
-                <p className="font-medium flex items-center gap-1">
-                  {first_name}{" "}
-                  <RiVerifiedBadgeFill className="text-primary size-4" />
+              <div>
+                <p className="text-sm font-medium text-[#0D0D0D]">
+                  {first_name}
                 </p>
-                <p className="text-[#787891] text-xs">{email}</p>
+                <p className="text-[#595959] text-xs">{email}</p>
               </div>
             </div>
-
-            <button
-              type="button"
-              aria-label="Logout"
-              onClick={() => setOpenModal(true)}
-              className="p-2 rounded-full hover:bg-white text-[#787891]"
-            >
-              <BiChevronRight className="size-6" />
-            </button>
           </div>
-        </div>
+        )}
       </aside>
-
-      {/* Logout Modal */}
-      <LogoutModal
-        openModal={openModal}
-        setOpenModal={setOpenModal}
-        handleLogout={handleLogout}
-      />
     </div>
   );
 };
 
 export default DashSider;
-

@@ -25,7 +25,7 @@ import { LuDot } from "react-icons/lu";
 import { FaCheckCircle, FaChevronDown, FaChevronUp } from "react-icons/fa";
 import { formatDate } from "@/utils/dateFormat";
 import RenewSubscriptionModal from "../../_components/renewSubModal";
-
+import { IoWarning } from "react-icons/io5";
 interface Feature {
   name: string;
   description: string;
@@ -235,7 +235,7 @@ const Subscriptions = () => {
   }
 
   return (
-    <section className="flex flex-col gap-8 min-h-[50dvh] md:min-h-[80dvh]">
+    <section className="flex flex-col gap-8 min-h-[50dvh] md:min-h-[80dvh] bg-white rounded-2xl p-5">
       {contextHolder}
       <div className=" flex items-center justify-between">
         <Heading
@@ -467,31 +467,35 @@ const Subscriptions = () => {
       </div>
 
       <Modal
-        title="Change Subscription"
+        title=""
         open={isModalVisible}
         footer={null}
         maskClosable={false}
         closable={false}
         centered={true}
+        styles={{body:{padding: 0}, content:{borderRadius:30}}}
+        width={453}
       >
-        <div className=" space-y-5">
+        <div className=" space-y-3">
           <div className=" flex justify-center">
-            <GoAlert size={60} color="orange" />
+            <IoWarning size={60} color="white" fill="#FF8934" />
           </div>
+          <h1 className=" text-2xl text-[#3F3F3F] font-semibold text-center">Change Subscription</h1>
 
           <div className=" text-center">
-            <h1 className=" font-semibold">
+            <h1 className=" text-base text-[#676A75]">
               Please be informed that you are about to switch your subscription
               to{" "}
               <span className=" font-bold">
                 {selectedPlan ? selectedPlan.name : ""} Plan
               </span>
             </h1>
-            <p className=" text-xs text-gray-600 font-semibold">When your active subscription expires your card will be charged</p>
+            <p className=" text-xs text-gray-600 text-center mt-4">When your active subscription expires your card will be charged</p>
           </div>
-          <div className=" grid grid-cols-2 gap-10">
+
+          <div className="flex items-center justify-center gap-5  pt-6">
             <button
-              className="px-4 py-2 bg-gray-300 rounded-lg font-bold !h-[40px]"
+              className="px-4 py-2 bg-[#F2F2F2] rounded-lg  !h-[40px]"
               onClick={() => setIsModalVisible(false)}
             >
               Cancel
@@ -500,7 +504,7 @@ const Subscriptions = () => {
             <Button
               loading={changeLoading}
               disabled={changeLoading}
-              className="px-4 py-2 !bg-green-500 !text-white !rounded-lg !font-bold !h-[40px] border-none"
+              className="px-4 py-2 !bg-[#009F6D] !text-white !rounded-lg  !h-[40px] !border-none"
               onClick={() =>
                 handleSubscriptionChange(selectedPlan ? selectedPlan.id : 0)
               }
