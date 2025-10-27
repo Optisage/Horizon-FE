@@ -1,4 +1,4 @@
-"use client"
+"use client";
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { useState, useEffect, useRef } from "react"
@@ -6,6 +6,7 @@ import { SearchInput } from "@/app/(dashboard)/_components"
 import { useRouter } from "next/navigation"
 import Image from "next/image"
 import { GoArrowUpRight } from "react-icons/go"
+import { FiCopy, FiCheck } from "react-icons/fi"
 import UFO from "@/public/assets/svg/ufo.svg"
 import { useGetSearchHistoryQuery, useSearchProductsHistoryQuery } from "@/redux/api/productsApi"
 import { useAppSelector } from "@/redux/hooks"
@@ -14,48 +15,48 @@ import SalesStats from "../../dashboard/_components/SalesStats"
 import PaginationComponent from "@/utils/paginationNumber"
 
 export interface HistoryProduct {
-  asin: string
-  upc?: string
-  image?: string
-  title: string
-  rating?: number
-  reviews?: number
-  category?: string
-  timestamp?: string
-  searchTerm?: string
-  vendor?: string
+  asin: string;
+  upc?: string;
+  image?: string;
+  title: string;
+  rating?: number;
+  reviews?: number;
+  category?: string;
+  timestamp?: string;
+  searchTerm?: string;
+  vendor?: string;
 }
 
 function escapeRegExp(string: string) {
-  return string.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+  return string.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
 const groupByDate = (items: HistoryProduct[]) => {
-  const grouped: Record<string, HistoryProduct[]> = {}
+  const grouped: Record<string, HistoryProduct[]> = {};
 
   items.forEach((item) => {
-    const date = item.timestamp ? new Date(item.timestamp) : new Date()
-    const today = new Date()
-    const yesterday = new Date(today)
-    yesterday.setDate(yesterday.getDate() - 1)
+    const date = item.timestamp ? new Date(item.timestamp) : new Date();
+    const today = new Date();
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
 
-    let dateKey
+    let dateKey;
     if (date.toDateString() === today.toDateString()) {
-      dateKey = "Today"
+      dateKey = "Today";
     } else if (date.toDateString() === yesterday.toDateString()) {
-      dateKey = "Yesterday"
+      dateKey = "Yesterday";
     } else {
-      dateKey = date.toLocaleDateString()
+      dateKey = date.toLocaleDateString();
     }
 
     if (!grouped[dateKey]) {
-      grouped[dateKey] = []
+      grouped[dateKey] = [];
     }
-    grouped[dateKey].push(item)
-  })
+    grouped[dateKey].push(item);
+  });
 
-  return grouped
-}
+  return grouped;
+};
 
 const History = () => {
   const [searchValue, setSearchValue] = useState("")
@@ -66,16 +67,17 @@ const History = () => {
   const [totalItems, setTotalItems] = useState(0)
   const [itemsPerPage, setItemsPerPage] = useState(10)
   const [isMarketplaceLoading, setIsMarketplaceLoading] = useState(false)
+  const [copiedAsin, setCopiedAsin] = useState<string | null>(null)
   const prevMarketplaceRef = useRef<string | number | null>(null)
 
-  const router = useRouter()
-  const { marketplaceId } = useAppSelector((state) => state?.global)
+  const router = useRouter();
+  const { marketplaceId } = useAppSelector((state) => state?.global);
 
   const highlightText = (text: string, search: string) => {
-    if (!search.trim()) return text
+    if (!search.trim()) return text;
 
-    const regex = new RegExp(`(${escapeRegExp(search)})`, "gi")
-    const parts = text.split(regex)
+    const regex = new RegExp(`(${escapeRegExp(search)})`, "gi");
+    const parts = text.split(regex);
 
     return parts.map((part, index) => {
       if (index % 2 === 1) {
@@ -83,26 +85,52 @@ const History = () => {
           <span key={index} className="bg-green-200">
             {part}
           </span>
-        )
+        );
       } else {
-        return part
+        return part;
       }
     })
   }
 
-  useEffect(() => {
-    const handler = setTimeout(() => {
-      setDebouncedSearch(searchValue.trim() || "")
-    }, 500)
-    return () => clearTimeout(handler)
-  }, [searchValue])
+  const copyToClipboard = async (asin: string) => {
+    try {
+      await navigator.clipboard.writeText(asin)
+      setCopiedAsin(asin)
+      setTimeout(() => setCopiedAsin(null), 2000) // Reset after 2 seconds
+    } catch (err) {
+      console.error('Failed to copy ASIN:', err)
+      // Fallback for older browsers
+      const textArea = document.createElement('textarea')
+      textArea.value = asin
+      document.body.appendChild(textArea)
+      textArea.select()
+      try {
+        document.execCommand('copy')
+        setCopiedAsin(asin)
+        setTimeout(() => setCopiedAsin(null), 2000)
+      } catch (fallbackErr) {
+        console.error('Fallback copy failed:', fallbackErr)
+      }
+      document.body.removeChild(textArea)
+    }
+  }
 
   useEffect(() => {
-    if (prevMarketplaceRef.current !== null && prevMarketplaceRef.current !== marketplaceId) {
-      setIsMarketplaceLoading(true)
+    const handler = setTimeout(() => {
+      setDebouncedSearch(searchValue.trim() || "");
+    }, 500);
+    return () => clearTimeout(handler);
+  }, [searchValue]);
+
+  useEffect(() => {
+    if (
+      prevMarketplaceRef.current !== null &&
+      prevMarketplaceRef.current !== marketplaceId
+    ) {
+      setIsMarketplaceLoading(true);
     }
-    prevMarketplaceRef.current = marketplaceId
-  }, [marketplaceId])
+    prevMarketplaceRef.current = marketplaceId;
+  }, [marketplaceId]);
 
   const {
     data: historyData,
@@ -115,8 +143,8 @@ const History = () => {
       page: currentPage,
       pageSize: itemsPerPage,
     },
-    { skip: false },
-  )
+    { skip: false }
+  );
 
   const {
     data: productsData,
@@ -130,42 +158,42 @@ const History = () => {
       page: currentPage,
       perPage: itemsPerPage,
     },
-    { skip: !debouncedSearch },
-  )
+    { skip: !debouncedSearch }
+  );
 
   useEffect(() => {
     if (isMarketplaceLoading && !historyFetching && !productsFetching) {
-      setIsMarketplaceLoading(false)
+      setIsMarketplaceLoading(false);
     }
-  }, [historyFetching, productsFetching, isMarketplaceLoading])
+  }, [historyFetching, productsFetching, isMarketplaceLoading]);
 
   useEffect(() => {
-    const data = debouncedSearch ? productsData : historyData
+    const data = debouncedSearch ? productsData : historyData;
 
     if (data) {
       if (data.meta) {
-        setCurrentPage(data.meta.current_page || 1)
-        setTotalPages(data.meta.last_page || 1)
-        setTotalItems(data.meta.total || 0)
-        setItemsPerPage(data.meta.per_page || 10)
+        setCurrentPage(data.meta.current_page || 1);
+        setTotalPages(data.meta.last_page || 1);
+        setTotalItems(data.meta.total || 0);
+        setItemsPerPage(data.meta.per_page || 10);
       }
     }
-  }, [historyData, productsData, debouncedSearch, itemsPerPage])
+  }, [historyData, productsData, debouncedSearch, itemsPerPage]);
 
   useEffect(() => {
     if (historyData || productsData || historyError || productsError) {
-      setIsPaginationLoading(false)
+      setIsPaginationLoading(false);
     }
-  }, [historyData, productsData, historyError, productsError])
+  }, [historyData, productsData, historyError, productsError]);
 
-  const isLoading = historyLoading || productsLoading || isMarketplaceLoading
-  const error = historyError || productsError
+  const isLoading = historyLoading || productsLoading || isMarketplaceLoading;
+  const error = historyError || productsError;
 
   const handlePageNumberChange = (page: number) => {
-    if (page === currentPage) return
-    setIsPaginationLoading(true)
-    setCurrentPage(page)
-  }
+    if (page === currentPage) return;
+    setIsPaginationLoading(true);
+    setCurrentPage(page);
+  };
 
   const historyItems: HistoryProduct[] = historyData?.data
     ? historyData.data.map((item: any) => ({
@@ -179,7 +207,7 @@ const History = () => {
         timestamp: item.timestamp || new Date().toISOString(),
         vendor: item.vendor,
       }))
-    : []
+    : [];
 
   const productItems: HistoryProduct[] = productsData?.data
     ? productsData.data.map((item: any) => ({
@@ -193,33 +221,46 @@ const History = () => {
         timestamp: item.timestamp || new Date().toISOString(),
         vendor: item.vendor,
       }))
-    : []
+    : [];
 
-  const displayItems = debouncedSearch ? productItems : historyItems
-  const groupedItems = groupByDate(displayItems)
+  const displayItems = debouncedSearch ? productItems : historyItems;
+  const groupedItems = groupByDate(displayItems);
 
   const marketplaceMap: Record<string, { name: string; flag: string }> = {
     "1": { name: "US", flag: "us" },
     "6": { name: "Canada", flag: "ca" },
     "11": { name: "Mexico", flag: "mx" },
-  }
+  };
 
-  
   return (
-    <section className="flex flex-col gap-8 min-h-[50dvh] md:min-h-[80dvh]">
+    <section className="flex flex-col gap-8 min-h-[50dvh] md:min-h-[80dvh] rounded-xl bg-white p-4 lg:p-5">
       <div className="flex flex-col gap-4">
-        <h1 className="text-[#171717] font-medium text-xl md:text-2xl">Search History</h1>
-        <SearchInput placeholder="Search your history..." value={searchValue} onChange={setSearchValue} />
+        <h1 className="text-[#171717] font-medium text-xl md:text-2xl">
+          Search History
+        </h1>
+        <SearchInput
+          placeholder="Search your history..."
+          value={searchValue}
+          onChange={setSearchValue}
+        />
       </div>
 
-     {isLoading && !isPaginationLoading && (
-  <div className="fixed inset-0 pl-20 flex justify-center items-center bg-white z-50">
-    <CircularLoader duration={1000} color="#18CB96" size={64} strokeWidth={4} />
-  </div>
-)}
+      {isLoading && !isPaginationLoading && (
+        <div className="fixed inset-0 pl-20 flex justify-center items-center bg-white z-50">
+          <CircularLoader
+            duration={1000}
+            color="#18CB96"
+            size={64}
+            strokeWidth={4}
+          />
+        </div>
+      )}
 
-
-      {error && <div className="text-center text-red-500 mt-4">Failed to load search history.</div>}
+      {error && (
+        <div className="text-center text-red-500 mt-4">
+          Failed to load search history.
+        </div>
+      )}
 
       {displayItems.length === 0 && !isLoading && !error && (
         <div className="flex flex-col gap-6 justify-center items-center my-auto">
@@ -231,8 +272,12 @@ const History = () => {
             height={200}
           />
           <span className="text-center space-y-1">
-            <h4 className="text-neutral-900 font-bold text-xl md:text-2xl">No search history found</h4>
-            <p className="text-[#52525B] text-sm">Your search history will appear here.</p>
+            <h4 className="text-neutral-900 font-bold text-xl md:text-2xl">
+              No search history found
+            </h4>
+            <p className="text-[#52525B] text-sm">
+              Your search history will appear here.
+            </p>
           </span>
         </div>
       )}
@@ -241,7 +286,12 @@ const History = () => {
         <main className="flex flex-col gap-10 justify-between h-full">
           {isPaginationLoading && (
             <div className="flex justify-center items-center py-16 bg-white rounded-lg border border-border">
-              <CircularLoader duration={2000} color="#18CB96" size={64} strokeWidth={4} />
+              <CircularLoader
+                duration={2000}
+                color="#18CB96"
+                size={64}
+                strokeWidth={4}
+              />
             </div>
           )}
 
@@ -276,7 +326,9 @@ const History = () => {
                       )}
                       <div className="flex flex-col gap-1 text-[#09090B]">
                         <p
-                          onClick={() => router.push(`/dashboard/product/${item.asin}`)}
+                          onClick={() =>
+                            router.push(`/dashboard/product/${item.asin}`)
+                          }
                           className="font-bold hover:underline duration-100"
                         >
                           {highlightText(item.title, debouncedSearch)}
@@ -284,36 +336,62 @@ const History = () => {
                         {item.rating !== undefined && item.rating > 0 && (
                           <p>
                             {"⭐".repeat(Math.min(item.rating, 5))}{" "}
-                            <span className="font-bold">({item.reviews || 0})</span>
+                            <span className="font-bold">
+                              ({item.reviews || 0})
+                            </span>
                           </p>
                         )}
-                        <p className="text-sm">
-                          By ASIN: {highlightText(item.asin, debouncedSearch)}, UPC:{" "}
-                          {highlightText(item.upc || "N/A", debouncedSearch)}
-                        </p>
+                        <div className="flex items-center gap-2 text-sm">
+                          <span>By ASIN: {highlightText(item.asin, debouncedSearch)}</span>
+                          {item.asin !== "N/A" && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                copyToClipboard(item.asin)
+                              }}
+                              className="inline-flex items-center justify-center p-1 rounded hover:bg-gray-200 transition-colors duration-200"
+                              title="Copy ASIN"
+                            >
+                              {copiedAsin === item.asin ? (
+                                <FiCheck className="size-3 text-green-600" />
+                              ) : (
+                                <FiCopy className="size-3 text-gray-600 hover:text-gray-800" />
+                              )}
+                            </button>
+                          )}
+                          <span>, UPC: {highlightText(item.upc || "N/A", debouncedSearch)}</span>
+                        </div>
                         {item.category && (
                           <p className="text-sm">
-                            {item.category === "NaN" ? "N/A" : item.category} | <SalesStats product={item} />
+                            {item.category === "NaN" ? "N/A" : item.category} |{" "}
+                            <SalesStats product={item} />
                           </p>
                         )}
-                        {item.vendor && <p className="text-sm">Store: {item.vendor}</p>}
+                        {item.vendor && (
+                          <p className="text-sm">Store: {item.vendor}</p>
+                        )}
 
                         <div className="flex gap-2 items-center">
-                          {marketplaceId && marketplaceMap[String(marketplaceId)] && (
-                            <p className="text-sm flex items-center gap-2">
-                              <Image
-                                src={`https://flagcdn.com/w40/${marketplaceMap[String(marketplaceId)].flag}.png`}
-                                alt={marketplaceMap[String(marketplaceId)].name}
-                                className="w-5 h-auto object-cover"
-                                width={20}
-                                height={24}
-                                quality={90}
-                                priority
-                                unoptimized
-                              />
-                              {marketplaceMap[String(marketplaceId)].name}
-                            </p>
-                          )}
+                          {marketplaceId &&
+                            marketplaceMap[String(marketplaceId)] && (
+                              <p className="text-sm flex items-center gap-2">
+                                <Image
+                                  src={`https://flagcdn.com/w40/${
+                                    marketplaceMap[String(marketplaceId)].flag
+                                  }.png`}
+                                  alt={
+                                    marketplaceMap[String(marketplaceId)].name
+                                  }
+                                  className="w-5 h-auto object-cover"
+                                  width={20}
+                                  height={24}
+                                  quality={90}
+                                  priority
+                                  unoptimized
+                                />
+                                {marketplaceMap[String(marketplaceId)].name}
+                              </p>
+                            )}
 
                           <span className="size-2 bg-black rounded-full" />
 
@@ -354,7 +432,7 @@ const History = () => {
         </main>
       )}
     </section>
-  )
-}
+  );
+};
 
-export default History
+export default History;

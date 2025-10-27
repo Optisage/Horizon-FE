@@ -5,6 +5,7 @@ import { Tooltip as AntTooltip, message } from "antd"
 //import { Copy, Check } from "lucide-react"
 import { BsCopy } from "react-icons/bs";
 import { LuCheck } from "react-icons/lu";
+//import { Copy, Check } from "lucide-react"
 import { useState } from "react"
 import ProductThumbnail from "@/public/assets/images/women-shoes.png"
 import Illustration from "@/public/assets/svg/illustration.svg"

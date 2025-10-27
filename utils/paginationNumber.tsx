@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { LeftOutlined, RightOutlined } from "@ant-design/icons"
 
-interface PaginationComponentProps {
+interface PaginationComponentProps { 
   currentPage: number
   totalPages: number
   onPageChange: (page: number) => void

@@ -105,7 +105,7 @@ const Dashboard = () => {
   // Reset pagination loading when data changes
 
   return (
-    <section className="flex flex-col gap-8 min-h-[50dvh] md:min-h-[80dvh]">
+    <section className="flex flex-col gap-8 min-h-[50dvh] md:min-h-[80dvh] rounded-xl bg-white p-4 lg:p-5">
       <SearchInput value={searchValue} onChange={setSearchValue} />
       {/* <h2>Selected Marketplace ID: {marketplaceId || "N/A"}</h2> */}
 

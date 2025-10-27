@@ -44,8 +44,6 @@ export default function Pricing() {
   const [showModal, setShowModal] = useState(false);
   const [pricings, { data: apiResponse, isLoading }] = useLazyGetPricingQuery();
 
- 
-
   useEffect(() => {
     pricings({});
   }, [pricings]);
@@ -115,35 +113,11 @@ export default function Pricing() {
         }
       }
 
-      // Get notes and billing information
+      // Get notes
       const notes = plan.meta_data.notes || [];
-      const billingNote =
-        plan.meta_data.billing_note ||
-        (plan.interval === "year" ? `Annual billing` : "Monthly billing");
-
-      // For monthly plans, prioritize upgrade notes and avoid annual billing notes
-      // For annual plans, use billing notes or upgrade notes
-      let upgradeNote;
-      if (plan.interval === "month") {
-        // For monthly plans, find upgrade note or support note, avoid annual billing mentions
-        upgradeNote =
-          notes.find(
-            (note) =>
-              note.includes("upgrade") && !note.toLowerCase().includes("annual")
-          ) ||
-          notes.find((note) => note.includes("Support")) ||
-          "Monthly subscription";
-      } else {
-        // For annual plans, use billing note or any relevant note
-        upgradeNote =
-          billingNote ||
-          notes.find((note) => note.includes("upgrade")) ||
-          notes.find((note) => note.includes("Support")) ||
-          "Annual subscription";
-      }
+      const displayNotes = notes.length > 0 ? notes : [plan.interval === "year" ? "Annual billing" : "Monthly billing"];
 
       // Check if plan should be disabled (only STARTER (PRO) is available)
-      //const isDisabled = plan.name.toUpperCase() !== 'STARTER (PRO)';
       const isDisabled = plan.name.toUpperCase() == "SAGE";
 
       return {
@@ -154,12 +128,12 @@ export default function Pricing() {
         priceLabel,
         description,
         features,
-        note: upgradeNote,
+        notes: displayNotes,
         buttonText: isDisabled
           ? "Unavailable"
           : plan.trial > 0
           ? "Start Free Trial"
-          : billingNote,
+          : "Get Started",
         isDefaultHighlighted,
         stripePriceId: plan.stripe_price_id,
         interval: plan.interval,
@@ -384,13 +358,16 @@ export default function Pricing() {
                     </ul>
                   </div>
                   <div className="mt-6">
-                    <p
-                      className={`text-sm text-[#006D4B] w-full py-3 px-5 font-medium rounded-md bg-[#E0F4EE] text-center ${
-                        isHighlighted ? "" : ""
-                      }`}
-                    >
-                      {plan.note}
-                    </p>
+                    <div className="space-y-2 mb-3">
+                      {plan.notes.map((note, noteIdx) => (
+                        <p
+                          key={noteIdx}
+                          className={`text-sm text-[#006D4B] w-full py-2 px-5 font-medium rounded-md bg-[#E0F4EE] text-center`}
+                        >
+                          {note}
+                        </p>
+                      ))}
+                    </div>
                     <button
                       onClick={(e) => {
                         e.stopPropagation(); // Prevent card selection when clicking button
@@ -421,21 +398,6 @@ export default function Pricing() {
             })}
           </div>
         </div>
-
-        {/* Stats Section */}
-        {/**
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mt-6 text-center">
-          {stats.map((stat, idx) => (
-            <div key={idx} className="bg-white space-y-4 rounded-xl p-5 px-7">
-              <p className="font-bold text-[#009F6D] text-4xl">{stat.value}</p>
-              <p className="font-semibold text-[#3F3F3F] text-xl">
-                {stat.title}
-              </p>
-              <p className="text-xs text-[#676A75]">{stat.subtitle}</p>
-            </div>
-          ))}
-        </div>
- */}
       </div>
 
       {/* Free Trial Modal */}
