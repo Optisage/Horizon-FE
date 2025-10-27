@@ -2,12 +2,13 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useState } from "react";
 import { message } from "antd";
-import { HiOutlineEye, HiOutlineEyeSlash } from "react-icons/hi2";
+//import { HiOutlineEye, HiOutlineEyeSlash } from "react-icons/hi2";
 import { 
   useMonitorSellerMutation, 
   useUnmonitorSellerMutation, 
   useGetMonitoredSellersQuery 
 } from "@/redux/api/monitorApi";
+import MonitorIcon from "@/public/assets/svg/icons/monitor";
 
 interface MonitorButtonProps {
   sellerId: string;
@@ -68,26 +69,26 @@ const MonitorButton: React.FC<MonitorButtonProps> = ({ sellerId, marketplaceId }
         className={`
           flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200
           ${isMonitored 
-            ? 'bg-red-50 text-red-600 border border-red-200 hover:bg-red-100' 
-            : 'bg-primary text-white hover:bg-primary/90'
+            ? ' text-red-600 border border-red-200 hover:bg-red-100' 
+            : ' text-white border-primary border'
           }
           ${isLoading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
         `}
       >
         {isLoading ? (
-          <>
-            <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+          <div className=" text-primary flex items-center gap-4">
+            <div className="w-4 h-4 border-2 text-primary border-current border-t-transparent rounded-full animate-spin" />
             Loading...
-          </>
+          </div>
         ) : isMonitored ? (
           <>
-            <HiOutlineEyeSlash className="w-4 h-4" />
-            Unmonitor
+            <MonitorIcon className="w-6 h-6" stroke="#DC2626" />
+            
           </>
         ) : (
           <>
-            <HiOutlineEye className="w-4 h-4" />
-            Monitor
+            <MonitorIcon className="w-6 h-6" stroke="#292D32" />
+            
           </>
         )}
       </button>
@@ -95,4 +96,4 @@ const MonitorButton: React.FC<MonitorButtonProps> = ({ sellerId, marketplaceId }
   );
 };
 
-export default MonitorButton; 
+export default MonitorButton;

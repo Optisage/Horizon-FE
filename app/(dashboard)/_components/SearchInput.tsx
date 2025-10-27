@@ -4,6 +4,7 @@ interface SearchInputProps {
   placeholder?: string;
   value: string;
   onChange: (value: string) => void;
+  onKeyPress?: (e: React.KeyboardEvent<HTMLInputElement>) => void;
   className?: string;
 }
 
@@ -11,6 +12,7 @@ const SearchInput: React.FC<SearchInputProps> = ({
   placeholder = "Search for products on Amazon (For best results use specific keywords, UPC Code, ASIN or ISBN code)",
   value,
   onChange,
+  onKeyPress,
   className = "",
 }) => {
   return (
@@ -24,6 +26,7 @@ const SearchInput: React.FC<SearchInputProps> = ({
           type="text"
           value={value}
           onChange={(e) => onChange(e.target.value)}
+          onKeyPress={onKeyPress}
           placeholder={placeholder}
           className="w-full py-2 pl-10 pr-4 text-[#52525B] text-sm border border-transparent rounded-[10px] outline-none bg-[#F4F4F5] focus:bg-white focus:border-primary-focused duration-200"
         />

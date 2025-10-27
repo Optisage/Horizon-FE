@@ -1,5 +1,6 @@
 import { ProductObj, ReverseAmazonScraped } from '@/types/goCompare';
 import React from 'react';
+import Image from 'next/image';
 
 interface ActiveProductProp {
     activeProduct: ProductObj | ReverseAmazonScraped | null | undefined;
@@ -19,12 +20,23 @@ const Overlay = ({ activeProduct }: ActiveProductProp) => {
         <div className="bg-white rounded-lg shadow-lg border border-gray-200 p-3 w-64 cursor-pointer">
             <div className="flex items-center gap-2">
                 <div className="w-10 h-10 relative rounded overflow-hidden flex-shrink-0 flex items-center justify-center">
-                    <img 
+                    <Image 
                         src={imageSrc?.startsWith('data:') ? imageSrc : imageSrc?.includes(',') ? imageSrc : `data:image/png;base64,${imageSrc}`} 
-                        alt={altText} 
-                        className="object-contain w-10 h-10" 
-                        onError={(e) => {
-                            (e.target as HTMLImageElement).src = "https://via.placeholder.com/40?text=Image";
+                        alt={altText || "Product image"} 
+                        width={40}
+                        height={40}
+                        className="object-contain" 
+                        onError={() => {
+                            // Handle error with placeholder
+                            const imgElement = document.createElement('img');
+                            imgElement.src = "https://via.placeholder.com/40?text=Image";
+                            imgElement.alt = "Placeholder";
+                            imgElement.className = "object-contain w-10 h-10";
+                            const parent = document.querySelector('.w-10.h-10.relative');
+                            if (parent) {
+                                parent.innerHTML = '';
+                                parent.appendChild(imgElement);
+                            }
                         }}
                     />
                 </div>

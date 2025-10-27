@@ -3,7 +3,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { InfoCard } from "../info-card"
 import { BSRIcon, PriceTagIcon, ProductSalesIcon, MaximumCostIcon, ROIIcon } from "../icons"
-import { Skeleton, Tooltip as AntTooltip, message } from "antd"
+import { Skeleton, Tooltip as AntTooltip } from "antd"
 import type { Product } from "./types"
 import { useState, forwardRef, useImperativeHandle, useEffect } from "react"
 import Image from "next/image"
@@ -67,14 +67,14 @@ const ProductStats = forwardRef(({
   const [activeTab, setActiveTab] = useState<Tab>("info")
   const [latestProfitCalc, setLatestProfitCalc] = useState<any>(product?.last_profitability_calculation?.fba)
   const [analysisData, setAnalysisData] = useState<AnalysisData | null>(null)
-  const [purchaseQuantityData, setPurchaseQuantityData] = useState<PurchaseQuantityData | null>(null)
+  // const [purchaseQuantityData, setPurchaseQuantityData] = useState<PurchaseQuantityData | null>(null)
   const [isAnalyzing, setIsAnalyzing] = useState(false)
-  const [isLoadingQuantity, setIsLoadingQuantity] = useState(false)
-  const [messageApi, contextHolder] = message.useMessage();
+  // const [isLoadingQuantity, setIsLoadingQuantity] = useState(false)
+  const [analysisError, setAnalysisError] = useState<string | null>(null)
 
   // RTK Query hooks
   const [analyzeMutation] = useAnalyzeMutation()
-  const [getPurchaseQuantity] = useLazyPurchaseQuantityQuery()
+  // const [getPurchaseQuantity] = useLazyPurchaseQuantityQuery()
 
   // Get the data from the correct sources
   const extra = buyboxDetails?.extra || product?.extra
@@ -82,9 +82,10 @@ const ProductStats = forwardRef(({
 
   // Reset states when ASIN changes
   useEffect(() => {
-    
+    console.log('ASIN changed, resetting states:', asin)
     setAnalysisData(null)
-    setPurchaseQuantityData(null)
+    // setPurchaseQuantityData(null)
+    setAnalysisError(null)
   }, [asin])
 
   // Reset states when product changes
@@ -95,7 +96,7 @@ const ProductStats = forwardRef(({
   // Expose the update function to the parent component
   useImperativeHandle(ref, () => ({
     handleProfitabilityUpdate: (data: any) => {
-     
+      console.log('Profitability updated:', data)
       setLatestProfitCalc(data)
       // Trigger analysis when profitability is updated with the new data
       if (data && activeTab === "totan") {
@@ -107,7 +108,7 @@ const ProductStats = forwardRef(({
   // Handle navigation to Totan with prefilled data
   const handleNavigateToTotanWithData = async () => {
     if (!profitabilityCalc?.costPrice || !asin || !marketplaceId) {
-     messageApi.warning('Missing required data for navigation')
+      console.log('Missing required data for navigation')
       return
     }
 
@@ -163,19 +164,6 @@ const ProductStats = forwardRef(({
         const analysisMessage = `🎉 **Analysis Complete!**
 
 📊 **Overall Score**: ${analysis.score} (${analysis.category})
-💰 **ROI**: ${analysis.roi}%
-📈 **Profit Margin**: ${analysis.profit_margin}%
-📦 **Monthly Sales**: ${analysis.monthly_sales.toLocaleString()} units
-
-**Detailed Breakdown:**
-• Amazon on Listing: ${analysis.breakdown.amazon_on_listing}
-• FBA Sellers: ${analysis.breakdown.fba_sellers}
-• Buy Box Eligible: ${analysis.breakdown.buy_box_eligible}
-• Variation Listing: ${analysis.breakdown.variation_listing}
-• Sales Rank Impact: ${analysis.breakdown.sales_rank_impact}
-• Estimated Demand: ${analysis.breakdown.estimated_demand}
-• Offer Count: ${analysis.breakdown.offer_count}
-• Profitability: ${analysis.breakdown.profitability}
 
 Now you can ask me any questions about this product! 💬`
 
@@ -186,6 +174,7 @@ Now you can ask me any questions about this product! 💬`
         }))
 
         // Try to get purchase quantity as well
+        /* 
         try {
           const quantityResult = await getPurchaseQuantity(asin).unwrap()
           const quantityData = quantityResult.data
@@ -201,6 +190,7 @@ Now you can ask me any questions about this product! 💬`
         } catch (error) {
           console.error("Failed to get purchase quantity:", error)
         }
+        */
 
         // Navigate to Totan component
         if (onNavigateToTotan) {
@@ -212,7 +202,7 @@ Now you can ask me any questions about this product! 💬`
       // Handle error - could add error message to chat
       dispatch(addMessage({
         sender: "ai",
-        text: "❌ Sorry, I couldn't analyze this product. Please try again.",
+        text: "⚠️ Sorry, I couldn't analyze this product. Please try again.",
         type: "error"
       }))
       
@@ -224,10 +214,10 @@ Now you can ask me any questions about this product! 💬`
 
   // Perform analysis
   const performAnalysis = async (updatedProfitData?: any) => {
-   
+    console.log('performAnalysis called:', { asin, marketplaceId, hasUpdatedData: !!updatedProfitData })
     
     if (!asin || !marketplaceId) {
-      messageApi.warning('Missing asin or marketplaceId, skipping analysis')
+      console.log('Missing asin or marketplaceId, skipping analysis')
       return
     }
 
@@ -238,11 +228,13 @@ Now you can ask me any questions about this product! 💬`
     const fulfillmentType = currentProfitData?.fulfillmentType || "FBA"
     
     if (!costPrice) {
-      messageApi.warning('No cost price available, skipping analysis')
+      console.log('No cost price available, skipping analysis')
       return
     }
 
     setIsAnalyzing(true)
+    setAnalysisError(null) // Clear any previous errors
+    
     try {
       const payload = {
         asin,
@@ -251,97 +243,95 @@ Now you can ask me any questions about this product! 💬`
         isAmazonFulfilled: fulfillmentType === "FBA"
       }
 
-      
+      console.log('Sending analysis payload:', payload)
       const response = await analyzeMutation(payload).unwrap()
+      console.log('Analysis response:', response)
       
       if (response.success) {
         setAnalysisData(response.data)
-        messageApi.success('Analysis completed successfully!')
+        setAnalysisError(null)
+      } else {
+        setAnalysisError(response.message || "Analysis failed. Please try again.")
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Analysis error:", error)
-      messageApi.error('Failed to analyze product. Please try again.')
+      const errorMessage = error?.data?.message || error?.message || "Failed to analyze product. Please check your connection and try again."
+      setAnalysisError(errorMessage)
     } finally {
       setIsAnalyzing(false)
     }
   }
 
   // Fetch purchase quantity
+  /* 
   const fetchPurchaseQuantity = async () => {
-   
+    console.log('fetchPurchaseQuantity called:', { asin, isLoadingQuantity })
     
     if (!asin) {
-      messageApi.warning('No ASIN provided, skipping purchase quantity fetch')
+      console.log('No ASIN provided, skipping purchase quantity fetch')
       return
     }
 
     if (isLoadingQuantity) {
-      messageApi.warning('Already loading purchase quantity, skipping')
+      console.log('Already loading purchase quantity, skipping')
       return
     }
 
     setIsLoadingQuantity(true)
     try {
-      
+      console.log('Making purchase quantity API call for ASIN:', asin)
       const response = await getPurchaseQuantity(asin).unwrap()
-      
+      console.log('Purchase quantity response:', response)
       
       if (response.success) {
         setPurchaseQuantityData(response.data)
-        messageApi.success('Purchase quantity data loaded successfully!')
       } else {
-        messageApi.error('Purchase quantity  unsuccessful response:', response)
+        console.warn('Purchase quantity API returned unsuccessful response:', response)
       }
     } catch (error) {
-      messageApi.error(`Purchase quantity error`)
+      console.error("Purchase quantity error:", error)
     } finally {
       setIsLoadingQuantity(false)
     }
   }
-
-  // Manual reload function for both analysis and purchase quantity
-  const handleReload = async () => {
-    if (!profitabilityCalc?.costPrice || !asin || !marketplaceId) {
-      messageApi.warning('Missing required data for reload. Please ensure profitability calculation is completed.')
-      return
-    }
-
-    messageApi.info('Refreshing analysis and purchase quantity data...')
-    
-    // Clear existing data first
-    setAnalysisData(null)
-    setPurchaseQuantityData(null)
-    
-    // Trigger both operations
-    await Promise.all([
-      performAnalysis(),
-      fetchPurchaseQuantity()
-    ])
-  }
+  */
 
   // Trigger analysis and purchase quantity fetch when switching to totan tab
   useEffect(() => {
-   
+    console.log('Tab/ASIN/MarketplaceId effect triggered:', {
+      activeTab,
+      asin,
+      marketplaceId,
+      hasProfitCalc: !!profitabilityCalc?.costPrice,
+      hasAnalysisData: !!analysisData,
+      // hasPurchaseData: !!purchaseQuantityData
+    })
 
     if (activeTab === "totan" && asin && marketplaceId) {
       // Trigger analysis if profitability calculation exists
       if (profitabilityCalc?.costPrice) {
-       
+        console.log('Triggering analysis for tab switch')
         performAnalysis()
       }
       
       // Always fetch purchase quantity when switching to totan tab (if not already loading)
-     
+      /* 
+      console.log('Triggering purchase quantity fetch for tab switch')
       fetchPurchaseQuantity()
+      */
     }
   }, [activeTab, asin, marketplaceId])
 
   // Re-run analysis when profitability calculation changes and totan tab is active
   useEffect(() => {
-   
+    console.log('Profit calc effect triggered:', {
+      activeTab,
+      hasLatestProfitCalc: !!latestProfitCalc?.costPrice,
+      costPrice: latestProfitCalc?.costPrice
+    })
 
     if (activeTab === "totan" && latestProfitCalc?.costPrice) {
-     
+      console.log('Re-running analysis due to profit calc change')
       performAnalysis(latestProfitCalc)
     }
   }, [latestProfitCalc, activeTab])
@@ -401,7 +391,7 @@ Now you can ask me any questions about this product! 💬`
     if (profitabilityCalc?.buying_criteria?.roiIsOk === true) {
       return `✅ Excellent ROI! This product's ${roi}% return exceeds your minimum requirement of ${minRoi}%, making it a profitable investment that meets your buying criteria.`
     } else if (profitabilityCalc?.buying_criteria?.roiIsOk === false) {
-      return `❌ ROI Below Target: This product's ${roi}% return is below your minimum requirement of ${minRoi}%. Consider finding a lower cost price or look for other products that meet your ROI criteria.`
+      return `⚠️ ROI Below Target: This product's ${roi}% return is below your minimum requirement of ${minRoi}%. Consider finding a lower cost price or look for other products that meet your ROI criteria.`
     }
     return "Return on Investment - The percentage return you'll earn on your initial investment in this product."
   }
@@ -415,7 +405,7 @@ Now you can ask me any questions about this product! 💬`
     if (profitabilityCalc?.buying_criteria?.profitIsOk === true) {
       return `✅ Great Profit! This product generates $${profitAmount.toFixed(2)} (${profitMargin.toFixed(0)}%) which exceeds your minimum profit requirement of $${minProfit.toFixed(2)}, making it a solid choice for your business.`
     } else if (profitabilityCalc?.buying_criteria?.profitIsOk === false) {
-      return `❌ Profit Below Target: This product's profit of $${profitAmount.toFixed(2)} (${profitMargin.toFixed(0)}%) is below your minimum requirement of $${minProfit.toFixed(2)}. Consider negotiating a better cost price or look for higher-margin products.`
+      return `⚠️ Profit Below Target: This product's profit of $${profitAmount.toFixed(2)} (${profitMargin.toFixed(0)}%) is below your minimum requirement of $${minProfit.toFixed(2)}. Consider negotiating a better cost price or look for higher-margin products.`
     }
     return "The total profit amount in dollars and profit margin percentage you can expect from selling this product."
   }
@@ -435,11 +425,9 @@ Now you can ask me any questions about this product! 💬`
   const scoreProperties = analysisData ? getScoreProperties(analysisData.score, analysisData.category) : null
 
   return (
-    <>
-      {contextHolder}
-      <div className="flex flex-col gap-4">
-        {/* tabs */}
-        <div className="flex gap-4 items-center text-sm font-semibold">
+    <div className="flex flex-col gap-4">
+      {/* tabs */}
+      <div className="flex gap-4 items-center text-sm font-semibold">
         <button
           type="button"
           onClick={() => setActiveTab("info")}
@@ -464,9 +452,6 @@ Now you can ask me any questions about this product! 💬`
       {/* Totan */}
       {activeTab === "totan" && (
         <div className="border border-border rounded-xl shadow-sm p-4 flex flex-col gap-3">
-          {/* Header with reload button */}
-         
-
           {!profitabilityCalc?.costPrice ? (
             // Show nudge message when no profitability calculation exists
             <div className="flex flex-col items-center justify-center py-8 text-center">
@@ -494,6 +479,29 @@ Now you can ask me any questions about this product! 💬`
             <div className="flex items-center justify-center py-8">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
               <span className="ml-2 text-sm text-gray-600">Analyzing product...</span>
+            </div>
+          ) : analysisError ? (
+            // Show error message when analysis fails
+            <div className="flex flex-col items-center justify-center py-8 text-center">
+              <div className="rounded-lg p-6 max-w-md">
+                <div className="text-red-500 mb-3">
+                  <svg className="w-12 h-12 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                  Analysis Failed
+                </h3>
+                <p className="text-sm text-gray-600 mb-4">
+                  {analysisError}
+                </p>
+                <button
+                  onClick={() => performAnalysis()}
+                  className="bg-primary text-white px-4 py-2 rounded-lg text-sm hover:bg-primary/90 transition-colors"
+                >
+                  Try Again
+                </button>
+              </div>
             </div>
           ) : (
             <>
@@ -526,7 +534,7 @@ Now you can ask me any questions about this product! 💬`
                     <span className="text-[10px] text-[#676A75] font-medium uppercase text-center">
                       <p>{analysisData?.category.toUpperCase() || "ANALYZING"}</p>
                     </span>
-                    <span className="text-lg font-semibold text-[#060606]">
+                    <span className={`text-lg font-semibold  ${analysisData?.category.toLocaleLowerCase() === 'poor' ? "text-red-500" : "text-[#060606]"}`}>
                       {analysisData?.score?.toFixed(1) || "0.0"}
                     </span>
                   </div>
@@ -534,22 +542,20 @@ Now you can ask me any questions about this product! 💬`
 
                 {/* Analysis Box */}
                 <div className="flex flex-col gap-2">
-                  <Link
-                    href={`/totan`}>
-                  <div 
-                    className="bg-[#F3F4F6] rounded-lg p-3 text-[#676A75] text-sm hover:bg-primary hover:text-white cursor-pointer transition-colors duration-200"
-                    onClick={handleNavigateToTotanWithData}
-                    title="Click to open detailed analysis in Totan chat"
-                  >
-                    <p className="font-semibold">Analysis</p>
-                    <p>
-                      {analysisData ? 
-                        `Average Return On...` :
-                        "Calculating metrics..."
-                      }
-                    </p>
-                    
-                  </div>
+                  <Link href={`/totan`}>
+                    <div 
+                      className="bg-[#F3F4F6] rounded-lg p-3 text-[#676A75] text-sm hover:bg-primary hover:text-white cursor-pointer transition-colors duration-200"
+                      onClick={handleNavigateToTotanWithData}
+                      title="Click to open detailed analysis in Totan chat"
+                    >
+                      <p className="font-semibold">Analysis</p>
+                      <p>
+                        {analysisData ? 
+                          `Average Return On...` :
+                          "Calculating metrics..."
+                        }
+                      </p>
+                    </div>
                   </Link>
 
                   <div className="flex items-center gap-2 bg-muted rounded-md px-3 py-1 text-sm text-muted-foreground">
@@ -566,7 +572,7 @@ Now you can ask me any questions about this product! 💬`
                 </div>
               </div>
 
-              {/* Quantity Selector */}
+              {/* Quantity Selector - COMMENTED OUT
               <div className="flex items-center gap-4">
                 <span className="text-sm text-[#676A75] font-medium">
                   Suggested Purchase Quantity
@@ -599,40 +605,8 @@ Now you can ask me any questions about this product! 💬`
                     </div>
                   </AntTooltip>
                 </div>
-                 <div className="flex items-center justify-between mb-2">
-          
-            {profitabilityCalc?.costPrice && (
-              <AntTooltip
-                title="Refresh analysis and purchase quantity data"
-                placement="top"
-              >
-                <button
-                  onClick={handleReload}
-                  disabled={isAnalyzing || isLoadingQuantity}
-                  className={`p-2 rounded-lg transition-colors duration-200 ${
-                    isAnalyzing || isLoadingQuantity
-                      ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                      : "bg-gray-100 hover:bg-primary hover:text-white text-gray-600"
-                  }`}
-                >
-                  <svg
-                    className={`w-4 h-4 ${isAnalyzing || isLoadingQuantity ? "animate-spin" : ""}`}
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-                    />
-                  </svg>
-                </button>
-              </AntTooltip>
-            )}
-          </div>
               </div>
+              */}
             </>
           )}
         </div>
@@ -735,7 +709,6 @@ Now you can ask me any questions about this product! 💬`
         </div>
       )}
     </div>
-    </>
   )
 })
 

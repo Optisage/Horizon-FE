@@ -22,7 +22,7 @@ interface PieChartData {
   color: string
 }
 
-const BuyBoxAnalysis = ({
+const OldBuyBoxAnalysis = ({
   asin,
   marketplaceId,
   statStartDate,
@@ -123,4 +123,4 @@ const BuyBoxAnalysis = ({
   )
 }
 
-export default BuyBoxAnalysis
+export default OldBuyBoxAnalysis

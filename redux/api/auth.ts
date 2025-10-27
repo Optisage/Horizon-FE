@@ -165,6 +165,13 @@ export const authApi = createApi({
         body: data,
       }),
     }),
+    updateConnectAmazon: builder.mutation({
+      query: (data) => ({
+        url: "customer/settings/update-amazon-connect-notification",
+        method: "PUT",
+        body: data,
+      }),
+    }),
     getPricing: builder.query<any, {}>({
       query: () => ({
         url: "pricing/new",
@@ -218,5 +225,6 @@ export const {
   useLazyGetCountriesQuery,
   useLazyGetExperinceLevelQuery,
   useLazyGetProductCategoriesQuery,
-  useUpdateUserMutation
+  useUpdateUserMutation,
+  useUpdateConnectAmazonMutation
 } = authApi;
