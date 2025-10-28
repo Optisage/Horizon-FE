@@ -245,7 +245,7 @@ const handleCategoryClick = (categoryId: number) => {
   }, [detailsLoading, productLoading, isLoading])
 
   return (
-    <section className="flex flex-col gap-8 min-h-[50dvh] md:min-h-[80dvh]">
+    <section className="flex flex-col gap-8 min-h-[50dvh] md:min-h-[80dvh] bg-white p-2 rounded-lg">
       {contextHolder}
 
       {isLoading ? (
@@ -279,7 +279,7 @@ const handleCategoryClick = (categoryId: number) => {
             <div className="rounded-lg border border-border flex flex-col divide-y divide-[#EDEDED] text-[#252525] text-sm">
               <span className="p-4 border-b border-border mb-2 flex justify-between items-center">
                 <p className="bg-primary rounded-2xl py-2 px-4 text-white font-semibold w-max">Store Details</p>
-              
+               
               </span>
               <span className="p-4 bg-[#F7F7F7] flex justify-between items-center font-medium">
                 <p>Seller Name</p>

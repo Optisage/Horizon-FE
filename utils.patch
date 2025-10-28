@@ -1,0 +1,64 @@
+diff --git a/utils/exportGoogle.tsx b/utils/exportGoogle.tsx
+index eb7a877..50cbd62 100644
+--- a/utils/exportGoogle.tsx
++++ b/utils/exportGoogle.tsx
+@@ -4,6 +4,7 @@ import { useGoogleLogin } from "@react-oauth/google";
+ import { message } from "antd";
+ import { RxArrowTopRight } from "react-icons/rx";
+ import { SiGooglesheets } from "react-icons/si";
++import { TbCalculatorFilled } from "react-icons/tb";
+ 
+ interface ExportButtonProps {
+   productData: {
+@@ -98,11 +99,7 @@ const ExportToSheetsButton = ({
+         const exportData = prepareExportData();
+ 
+         // Add this console log to verify the data structure
+-        console.log("Export Data Preview:", {
+-          headers: exportData[0],
+-          rowData: exportData[1],
+-          fullData: exportData,
+-        });
++      
+ 
+         const response = await fetch("/api/create-sheet", {
+           method: "POST",
+@@ -180,11 +177,11 @@ const ExportToSheetsButton = ({
+ 
+       <button
+         type="button"
+-        className="border border-border text-primary px-3 py-2 rounded-xl hidden md:flex gap-1 items-center font-semibold hover:bg-gray-50 active:scale-95 duration-200 text-sm md:text-base"
++        className=""
+         onClick={() => handleExport()}
+       >
+-        Export to Google Sheets
+-        <RxArrowTopRight className="size-5" />
++       <TbCalculatorFilled className="size-6 text-[#0F172A]" />
++      
+       </button>
+     </>
+   );
+diff --git a/utils/paginationNumber.tsx b/utils/paginationNumber.tsx
+index e813b46..2857093 100644
+--- a/utils/paginationNumber.tsx
++++ b/utils/paginationNumber.tsx
+@@ -3,7 +3,7 @@
+ import { useState, useEffect } from "react"
+ import { LeftOutlined, RightOutlined } from "@ant-design/icons"
+ 
+-interface PaginationComponentProps {
++interface PaginationComponentProps { 
+   currentPage: number
+   totalPages: number
+   onPageChange: (page: number) => void
+diff --git a/utils/string-utils.tsx b/utils/string-utils.tsx
+index 84a65aa..bd2e6f3 100644
+--- a/utils/string-utils.tsx
++++ b/utils/string-utils.tsx
+@@ -26,4 +26,5 @@ export function escapeRegExp(string: string) {
+       }
+     })
+   }
++  
+   
+\ No newline at end of file

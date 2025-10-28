@@ -1,6 +1,7 @@
 import { combineReducers, configureStore } from "@reduxjs/toolkit";
 import authReducer from "./slice/authSlice";
 import globalReducer from "./slice/globalSlice";
+import chatReducer from "./slice/chatSlice"; // Add this import
 import { authApi } from "./api/auth";
 import { subscriptionApi } from "./api/subscriptionApi";
 import { productsApi } from "./api/productsApi";
@@ -10,11 +11,14 @@ import { userApi } from "./api/user";
 import { sellerApi } from "./api/sellerApi";
 import { quickSearchApi } from "./api/quickSearchApi";
 import { keepaApi } from "./api/keepa";
+import { monitorApi } from "./api/monitorApi";
+import { totanApi } from "./api/totanAi";
 
 
 const rootReducer = combineReducers({
   api: authReducer,
   global: globalReducer,
+  chat: chatReducer, // Add the chat reducer
   [authApi.reducerPath]: authApi.reducer,
   [userApi.reducerPath]: userApi.reducer,
   [subscriptionApi.reducerPath]: subscriptionApi.reducer,
@@ -22,13 +26,15 @@ const rootReducer = combineReducers({
   [sellerApi.reducerPath]: sellerApi.reducer,
   [quickSearchApi.reducerPath]: quickSearchApi.reducer,
   [keepaApi.reducerPath]: keepaApi.reducer,
+  [monitorApi.reducerPath]: monitorApi.reducer,
+  [totanApi.reducerPath]: totanApi.reducer
 
 });
 
 const persistConfig = {
   key: "root",
   storage,
-  whitelist: ["api", "global"], // Whitelist the reducers you want to persist
+  whitelist: ["api", "global"], // Only persist necessary reducers
 };
 const persistedReducer = persistReducer(persistConfig, rootReducer);
 
@@ -46,6 +52,8 @@ export const store = configureStore({
       sellerApi.middleware,
       quickSearchApi.middleware,
       keepaApi.middleware,
+      monitorApi.middleware,
+      totanApi.middleware
     ]),
 });
 
