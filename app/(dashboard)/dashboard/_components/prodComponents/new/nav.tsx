@@ -309,6 +309,7 @@ Now you can ask me any questions about this product! 💬`;
               }
               placement="top"
             >
+              {/** 
               <Link href={profitabilityData?.costPrice ? "/totan" : "#"}>
                 <div
                   onClick={profitabilityData?.costPrice ? handleNavigateToTotanWithData : undefined}
@@ -332,6 +333,7 @@ Now you can ask me any questions about this product! 💬`;
                   />
                 </div>
               </Link>
+              */}
                
             </AntTooltip>
              <AntTooltip title="Duplicate page in new tab" placement="top">

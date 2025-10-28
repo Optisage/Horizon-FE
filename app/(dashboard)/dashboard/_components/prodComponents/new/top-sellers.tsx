@@ -163,11 +163,7 @@ const TopSellers = ({ asin, marketplaceId }: TopSellersProps) => {
             Seller Feedback
           </button>
         </div>
-        {/* FILTERS */}
-        <div className="flex items-center gap-3">
-        
-          <ProductDatePicker />
-        </div>
+       
       </div>
 
       {active === "offers" ? (
