@@ -749,7 +749,10 @@ const UpcScanner = () => {
           <div className="flex gap-2 flex-wrap sm:flex-nowrap text-sm">
             <button
               type="button"
-              onClick={() => setActiveTab("upc")}
+              onClick={() => {
+                setActiveTab("upc");
+                setSelectedProductId(null);
+              }}
               className={`flex items-center gap-1.5 rounded-full font-semibold py-2 px-4 transition-colors ${
                 selectedProductId
                   ? "bg-[#F3F4F6] text-[#858587] hover:bg-[#F3F4F6]/90"
