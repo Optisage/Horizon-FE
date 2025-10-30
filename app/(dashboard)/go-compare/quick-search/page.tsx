@@ -64,33 +64,33 @@ export default function QuickSearch() {
 
     // Capture searchId from initial quick search response
     useEffect(() => {
-        console.log('🔍 useEffect triggered - quickSearchResult.data:', !!quickSearchResult.data, 'searchId:', searchId, 'currentSearchId:', currentSearchId);
-        console.log('🔍 quickSearchResult.isLoading:', quickSearchResult.isLoading);
-        console.log('🔍 quickSearchResult.isError:', quickSearchResult.isError);
-        console.log('🔍 quickSearchResult.error:', quickSearchResult.error);
+        console.log('useEffect triggered - quickSearchResult.data:', !!quickSearchResult.data, 'searchId:', searchId, 'currentSearchId:', currentSearchId);
+        console.log('quickSearchResult.isLoading:', quickSearchResult.isLoading);
+        console.log('quickSearchResult.isError:', quickSearchResult.isError);
+        console.log('quickSearchResult.error:', quickSearchResult.error);
         
         if (quickSearchResult.data && !searchId && !currentSearchId) {
-            console.log('🔍 Full quickSearchResult.data structure:', quickSearchResult.data);
-            console.log('🔍 quickSearchResult.data type:', typeof quickSearchResult.data);
-            console.log('🔍 quickSearchResult.data keys:', Object.keys(quickSearchResult.data));
+            console.log('Full quickSearchResult.data structure:', quickSearchResult.data);
+            console.log('quickSearchResult.data type:', typeof quickSearchResult.data);
+            console.log('quickSearchResult.data keys:', Object.keys(quickSearchResult.data));
             
             // Try different possible paths for the ID
             const responseSearchId1 = quickSearchResult.data?.data?.id;
             const responseSearchId2 = quickSearchResult.data?.id;
             const responseSearchId3 = (quickSearchResult.data as any)?.id;
             
-            console.log('🔍 Trying data.data.id:', responseSearchId1);
-            console.log('🔍 Trying data.id:', responseSearchId2);
-            console.log('🔍 Trying direct id:', responseSearchId3);
+            console.log('Trying data.data.id:', responseSearchId1);
+            console.log('Trying data.id:', responseSearchId2);
+            console.log('Trying direct id:', responseSearchId3);
             
             const responseSearchId = responseSearchId1 || responseSearchId2 || responseSearchId3;
             
             if (responseSearchId) {
-                console.log('📝 Captured searchId from initial response:', responseSearchId);
+                console.log('Captured searchId from initial response:', responseSearchId);
                 setCurrentSearchId(responseSearchId);
             } else {
-                console.log('❌ No searchId found in initial response');
-                console.log('❌ Available data structure:', JSON.stringify(quickSearchResult.data, null, 2));
+                console.log('No searchId found in initial response');
+                console.log('Available data structure:', JSON.stringify(quickSearchResult.data, null, 2));
             }
         }
     }, [quickSearchResult.data, searchId, currentSearchId]);
@@ -110,7 +110,7 @@ export default function QuickSearch() {
     const result: QueryResult = (() => {
         // Prioritize refresh search result if available and has data
         if (refreshSearchResult.data) {
-            console.log('🔍 Refresh search result:', refreshSearchResult);
+            console.log('Refresh search result:', refreshSearchResult);
             return {
                 data: refreshSearchResult.data?.data || refreshSearchResult.data,
                 isLoading: refreshSearchResult.isLoading,
@@ -274,10 +274,10 @@ export default function QuickSearch() {
                 
                 if (activeSearchId) {
                     // Use the new refresh endpoint for better performance
-                    console.log('🔄 Using new refresh endpoint with searchId:', activeSearchId);
+                    console.log('Using refresh endpoint with searchId:', activeSearchId);
                     triggerRefreshSearch({ searchId: activeSearchId, perPage: 10 });
                 } else {
-                    console.log('⚠️ No searchId available, skipping auto-refresh');
+                    console.log('No searchId available, skipping auto-refresh');
                 }
             }, 10000); // 10 seconds
         }
