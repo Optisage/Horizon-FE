@@ -21,7 +21,8 @@ interface SearchModalProps {
 
 const searchTypes = [
     { id: 1, type: "Normal Search - (No Images, Less wait time)", value: false },
-    { id: 2, type: "Deep Search - (Longer wait time)", value: true },
+    // Deep search option temporarily disabled
+    // { id: 2, type: "Deep Search - (Longer wait time)", value: true },
 ];
 
 export function SearchModal({ isOpen, onClose, title, inputLabel }: SearchModalProps) {
