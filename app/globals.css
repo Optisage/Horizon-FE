@@ -25,7 +25,7 @@
   cursor: grabbing;
 }
 
-* {
+html {
   scroll-behavior: smooth;
 }
 
@@ -35,9 +35,11 @@ img {
   /* Disable right-clicking */
   /* user-drag: none; */
 }
+
 .show-scrollbar::-webkit-scrollbar {
   display: block !important;
   width: 8px;
+  height: 8px;
 }
 
 .show-scrollbar::-webkit-scrollbar-thumb {
@@ -45,19 +47,29 @@ img {
   border-radius: 4px;
 }
 
-.show-scrollbar {
-  scrollbar-width: thin !important;
-  scrollbar-color: rgba(0, 0, 0, 0.2) transparent !important;
-}
-/* Hide Scrollbar */
-* {
-  scroll-behavior: smooth;
-  -ms-overflow-style: none; /* Internet Explorer 10+ */
-  scrollbar-width: none; /* Firefox */
+.show-scrollbar::-webkit-scrollbar-track {
+  background-color: #f1f1f1;
+  border-radius: 4px;
 }
 
-*::-webkit-scrollbar {
-  display: none; /* Safari and Chrome */
+.show-scrollbar {
+  scrollbar-width: thin !important;
+  scrollbar-color: rgba(0, 0, 0, 0.2) #f1f1f1 !important;
+}
+
+/* Hide Scrollbar - only on body/html to allow horizontal scrollbars on other elements */
+body,
+html {
+  -ms-overflow-style: none;
+  /* Internet Explorer 10+ */
+  scrollbar-width: none;
+  /* Firefox */
+}
+
+body::-webkit-scrollbar,
+html::-webkit-scrollbar {
+  display: none;
+  /* Safari and Chrome */
 }
 
 .morope-font {
@@ -66,10 +78,12 @@ img {
 
 /* chatAnimations */
 @keyframes bounceY {
+
   0%,
   100% {
     transform: translateY(0);
   }
+
   50% {
     transform: translateY(-6px);
   }
@@ -84,12 +98,15 @@ img {
 .animation-delay-0 {
   animation-delay: 0s;
 }
+
 .animation-delay-200 {
   animation-delay: 0.2s;
 }
+
 .animation-delay-200 {
   animation-delay: 0.3s;
 }
+
 .animation-delay-400 {
   animation-delay: 0.4s;
 }
@@ -106,4 +123,14 @@ img {
 .custom-select-dropdown {
   scrollbar-width: thin;
   scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
+}
+
+/* Hide scrollbar utility class */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
 }
