@@ -39,7 +39,7 @@ const menuData = [
   },
   {
     id: "4",
-    path: "",
+    path: "/keepa",
     label: "Keepa",
     icon: HiOutlineChartBar,
     comingSoon: true,
@@ -52,7 +52,7 @@ const menuData = [
     comingSoon: false,
     beta: true,
   },
-  { id: "6", path: "", label: "UPC Scanner", icon: UPCScannerIcon },
+  { id: "6", path: "/upc-scanner", label: "UPC Scanner", icon: UPCScannerIcon },
 ];
 
 const secondaryMenu = [
