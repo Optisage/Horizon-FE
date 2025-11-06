@@ -24,9 +24,11 @@ export default function ReverseSearch() {
     const query = params.get('query') ?? '';
     const store = params.get('store') ?? '';
     const searchId = params.get('searchId');
+    const marketplaceId = params.get('marketplace_id') ? parseInt(params.get('marketplace_id')!) : 1;
+    const category = params.get('category') ?? '';
 
     const [lastQueryParams, setLastQueryParams] = useState({
-        query, store
+        query, store, marketplaceId, category
     });
 
     const [isRouteChanging, setIsRouteChanging] = useState(false);
@@ -41,7 +43,7 @@ export default function ReverseSearch() {
     );
 
     const reverseSearchResult = useReverseSearchQuery(
-        { store, queryName: query, perPage, sortBy, sortOrder },
+        { store, queryName: query, perPage, sortBy, sortOrder, marketplaceId, category },
         { skip: !!searchId, refetchOnMountOrArgChange: true }
     );
 
@@ -80,16 +82,18 @@ export default function ReverseSearch() {
     )
 
     useEffect(() => {
-        const currentParams = { query, store };
+        const currentParams = { query, store, marketplaceId, category };
         const hasParamsChanged =
             lastQueryParams.query !== currentParams.query ||
-            lastQueryParams.store !== currentParams.store
+            lastQueryParams.store !== currentParams.store ||
+            lastQueryParams.marketplaceId !== currentParams.marketplaceId ||
+            lastQueryParams.category !== currentParams.category;
 
         if (hasParamsChanged) {
             setIsRouteChanging(true);
             setLastQueryParams(currentParams);
         }
-    }, [query, store, pathname, lastQueryParams.query, lastQueryParams.store]);
+    }, [query, store, marketplaceId, category, pathname, lastQueryParams.query, lastQueryParams.store, lastQueryParams.marketplaceId, lastQueryParams.category]);
 
     useEffect(() => {
         if (!isFetching) {

@@ -3,8 +3,8 @@
 import { useEffect, useRef, useState } from "react";
 import { GoChevronDown, GoChevronUp } from "react-icons/go";
 import { IoCloseOutline } from "react-icons/io5";
-import { useLazyGetAllCountriesQuery } from "@/redux/api/quickSearchApi";
-import { useLazyGetProductCategoriesQuery } from "@/redux/api/auth";
+import Image from "next/image";
+import { useLazyGetAllCountriesQuery, useLazyGetReverseSearchCategoriesQuery, useTacticalSearchMutation } from "@/redux/api/quickSearchApi";
 import { useRouter } from "next/navigation";
 import { Country } from "@/types/goCompare";
 import { message } from "antd";
@@ -29,7 +29,8 @@ export function SearchModal({ isOpen, onClose, title, inputLabel }: SearchModalP
     const router = useRouter();
     const dispatch = useDispatch();
     const [getCountries, { data: countries }] = useLazyGetAllCountriesQuery();
-    const [getProductCategories, { data: categoriesData }] = useLazyGetProductCategoriesQuery();
+    const [getReverseSearchCategories, { data: categoriesData }] = useLazyGetReverseSearchCategoriesQuery();
+    const [tacticalSearch] = useTacticalSearchMutation();
     const [selectedCountry, setSelectedCountry] = useState<Country | undefined>();
     const [isLoading, setIsLoading] = useState(true);
     const [asinOrUpc, setAsinOrUpc] = useState("");
@@ -38,7 +39,9 @@ export function SearchModal({ isOpen, onClose, title, inputLabel }: SearchModalP
     const [isSearchTypeDropdown, setIsSearchTypeDropdown] = useState(false);
     const [activeTab, setActiveTab] = useState<"manual" | "ai">("manual");
     const [showAINotification, setShowAINotification] = useState(false);
-    const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+    const [tacticalSearchMessage, setTacticalSearchMessage] = useState("");
+    const [isError, setIsError] = useState(false);
+    const [selectedCategory, setSelectedCategory] = useState<string | undefined>();
     const dropdownRef = useRef<HTMLDivElement>(null);
 
     const isTacticalReverseSearch = title === "Tactical Reverse Search";
@@ -48,9 +51,9 @@ export function SearchModal({ isOpen, onClose, title, inputLabel }: SearchModalP
         getCountries({});
         // Fetch categories for Tactical Reverse Search
         if (isTacticalReverseSearch) {
-            getProductCategories({});
+            getReverseSearchCategories({});
         }
-    }, [isTacticalReverseSearch]);
+    }, [isTacticalReverseSearch, getCountries, getReverseSearchCategories]);
 
     useEffect(() => {
         if (countries?.data?.length > 0) {
@@ -78,11 +81,13 @@ export function SearchModal({ isOpen, onClose, title, inputLabel }: SearchModalP
         setSelectedCountry(countries?.data[0]);
         setActiveTab("manual");
         setShowAINotification(false);
-        setSelectedCategories([]);
+        setSelectedCategory(undefined);
+        setTacticalSearchMessage("");
+        setIsError(false);
         onClose();
     };
 
-    const handleSearch = () => {
+    const handleSearch = async () => {
         if (isTacticalReverseSearch && activeTab === "ai") {
             if (!asinOrUpc) {
                 message.error("Please enter a query");
@@ -92,8 +97,54 @@ export function SearchModal({ isOpen, onClose, title, inputLabel }: SearchModalP
             return;
         }
 
-        if (!asinOrUpc || !selectedCountry) {
-            message.error("Missing required fields");
+        if (!selectedCountry) {
+            message.error("Please select a country");
+            return;
+        }
+        
+        const marketplaceMapping: { [key: string]: number } = {
+            'US': 1,
+            'UK': 2,
+            'CA': 6,
+            'AU': 4,
+            'DE': 5,
+            'FR': 3,
+            'NG': 7,
+            'IN': 8
+        };
+        const marketplaceId = marketplaceMapping[selectedCountry.short_code] || 1;
+
+        // For Tactical Reverse Search Manual mode, call the tactical search API
+        if (isTacticalReverseSearch && activeTab === "manual") {
+            try {
+                message.loading({
+                    content: "Initiating tactical search...",
+                    key: "tacticalSearchLoading",
+                    duration: 0
+                });
+                
+                const response = await tacticalSearch({
+                    seller_id: asinOrUpc || undefined,
+                    marketplace_id: marketplaceId,
+                    category_id: selectedCategory ? parseInt(selectedCategory) : undefined
+                }).unwrap();
+                
+                message.destroy("tacticalSearchLoading");
+                setTacticalSearchMessage(response.message || "Tactical search completed and response sent to your email address!");
+                setIsError(false);
+                setShowAINotification(true);
+            } catch (error: any) {
+                message.destroy("tacticalSearchLoading");
+                setTacticalSearchMessage(error?.data?.message || "Failed to initiate tactical search. Please try again.");
+                setIsError(true);
+                setShowAINotification(true);
+            }
+            return;
+        }
+        
+        // For Quick Search, validate ASIN/UPC is required
+        if (title === "Quick Search" && !asinOrUpc) {
+            message.error("Please enter ASIN/UPC");
             return;
         }
         
@@ -104,17 +155,6 @@ export function SearchModal({ isOpen, onClose, title, inputLabel }: SearchModalP
         });
         
         if (title === "Quick Search") {
-            const marketplaceMapping: { [key: string]: number } = {
-                'US': 1,
-                'UK': 2,
-                'CA': 6,
-                'AU': 4,
-                'DE': 5,
-                'FR': 3,
-                'NG': 7,
-                'IN': 8
-            };
-            const marketplaceId = marketplaceMapping[selectedCountry.short_code] || 1;
             
             setTimeout(() => {
                 router.push(
@@ -126,9 +166,9 @@ export function SearchModal({ isOpen, onClose, title, inputLabel }: SearchModalP
             // Build query params for Tactical Reverse Search
             let queryString = `/go-compare/reverse-search?query=${asinOrUpc}`;
             
-            // Add categories if selected
-            if (selectedCategories.length > 0) {
-                queryString += `&categories=${selectedCategories.join(',')}`;
+            // Add category if selected
+            if (selectedCategory) {
+                queryString += `&category=${selectedCategory}`;
             }
             
             setTimeout(() => {
@@ -140,7 +180,18 @@ export function SearchModal({ isOpen, onClose, title, inputLabel }: SearchModalP
 
     const handleAINotificationClose = () => {
         setShowAINotification(false);
+        setTacticalSearchMessage("");
+        setIsError(false);
         handleClose();
+    };
+    
+    const handleSearchAgain = () => {
+        setShowAINotification(false);
+        setTacticalSearchMessage("");
+        setIsError(false);
+        setAsinOrUpc("");
+        setSelectedCategory(undefined);
+        // Keep modal open for another search
     };
 
     if (!isOpen) return null;
@@ -152,18 +203,44 @@ export function SearchModal({ isOpen, onClose, title, inputLabel }: SearchModalP
                 <div className="bg-white rounded-lg w-full max-w-md mx-4 overflow-hidden shadow-xl">
                     <div className="p-6 text-center">
                         <div className="mb-4">
-                            <svg className="mx-auto h-12 w-12 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
+                            {isError ? (
+                                <svg className="mx-auto h-12 w-12 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                                </svg>
+                            ) : (
+                                <svg className="mx-auto h-12 w-12 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                            )}
                         </div>
-                        <h3 className="text-lg font-medium text-gray-900 mb-2">Thank You!</h3>
-                        <p className="text-gray-600">We will notify you when a report is ready.</p>
-                        <button
-                            onClick={handleAINotificationClose}
-                            className="mt-6 px-6 py-2 bg-[#18cb96] text-white rounded-md hover:bg-[#15b588]"
-                        >
-                            OK
-                        </button>
+                        <h3 className="text-lg font-medium text-gray-900 mb-2">
+                            {isError ? "Error" : "Success!"}
+                        </h3>
+                        <p className={`px-4 ${isError ? "text-red-600" : "text-gray-600"}`}>
+                            {tacticalSearchMessage || (isError ? "Failed to initiate tactical search. Please try again." : "Tactical search completed and response sent to your email address!")}
+                        </p>
+                        <div className="mt-6 flex gap-3 justify-center">
+                            <button
+                                onClick={handleSearchAgain}
+                                className={`px-6 py-2 border rounded-md transition-colors ${
+                                    isError 
+                                        ? "border-red-500 text-red-500 hover:bg-red-500 hover:text-white" 
+                                        : "border-[#18cb96] text-[#18cb96] hover:bg-[#18cb96] hover:text-white"
+                                }`}
+                            >
+                                {isError ? "Try Again" : "Search Again"}
+                            </button>
+                            <button
+                                onClick={handleAINotificationClose}
+                                className={`px-6 py-2 text-white rounded-md transition-colors ${
+                                    isError 
+                                        ? "bg-red-500 hover:bg-red-600" 
+                                        : "bg-[#18cb96] hover:bg-[#15b588]"
+                                }`}
+                            >
+                                OK
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -241,28 +318,27 @@ export function SearchModal({ isOpen, onClose, title, inputLabel }: SearchModalP
                                 />
                             </div>
 
-                            {/* Categories Selection - Only for Tactical Reverse Search */}
+                            {/* Category Selection - Only for Tactical Reverse Search */}
                             {isTacticalReverseSearch && (
                                 <div>
                                     <label className="block text-xs text-[#737379] mb-1.5">
-                                        Product Categories 
+                                        Product Category (Optional)
                                     </label>
                                     <Select
-                                        mode="multiple"
                                         className="w-full"
                                         style={{ width: "100%" }}
-                                        placeholder="Select categories"
-                                        value={selectedCategories.length > 0 ? selectedCategories : undefined}
-                                        onChange={(value: string[]) => setSelectedCategories(value)}
+                                        placeholder="Select a category"
+                                        value={selectedCategory}
+                                        onChange={(value: string) => setSelectedCategory(value)}
                                         options={
                                             categoriesData?.data?.map((category: any) => ({
                                                 value: category.id.toString(),
-                                                label: category.category_name,
+                                                label: category.name,
                                             })) || []
                                         }
                                         loading={!categoriesData}
-                                        maxTagCount="responsive"
                                         showSearch
+                                        allowClear
                                         filterOption={(input: string, option?: { label: string; value: string }) =>
                                             (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
                                         }
@@ -283,16 +359,19 @@ export function SearchModal({ isOpen, onClose, title, inputLabel }: SearchModalP
                                                     <span className="text-xs">🌍</span>
                                                 </div>
                                             ) : selectedCountry?.flag ? (
-                                                <img
-                                                    src={selectedCountry.flag}
-                                                    alt={`${selectedCountry.name} flag`}
-                                                    className="inline-block w-4 h-4 mr-2 mt-2 rounded-sm"
-                                                    onError={(e) => {
-                                                        (e.target as HTMLImageElement).style.display = 'none';
-                                                        const nextElement = (e.target as HTMLImageElement).nextElementSibling as HTMLElement;
-                                                        if (nextElement) nextElement.style.display = 'flex';
-                                                    }}
-                                                />
+                                                <div className="inline-block w-4 h-4 mr-2 mt-2 rounded-sm overflow-hidden">
+                                                    <Image
+                                                        src={selectedCountry.flag}
+                                                        alt={`${selectedCountry.name} flag`}
+                                                        width={16}
+                                                        height={16}
+                                                        className="object-cover"
+                                                        unoptimized={true}
+                                                        onError={() => {
+                                                            // Handle error by hiding the image
+                                                        }}
+                                                    />
+                                                </div>
                                             ) : (
                                                 <div className="inline-block w-4 h-4 mr-2 mt-2 rounded-sm bg-gray-200 flex items-center justify-center">
                                                     <span className="text-xs">🌍</span>
@@ -327,24 +406,19 @@ export function SearchModal({ isOpen, onClose, title, inputLabel }: SearchModalP
                                                     className="w-full text-left px-4 py-2 hover:bg-gray-100 flex items-center border-b"
                                                 >
                                                     {country.flag ? (
-                                                        <>
-                                                            <img
+                                                        <div className="inline-block w-4 h-4 mr-2 mt-2 rounded-sm overflow-hidden">
+                                                            <Image
                                                                 src={country.flag}
                                                                 alt={`${country.name} flag`}
-                                                                className="inline-block w-4 h-4 mr-2 mt-2 rounded-sm"
-                                                                onError={(e) => {
-                                                                    (e.target as HTMLImageElement).style.display = 'none';
-                                                                    const parentElement = (e.target as HTMLImageElement).parentElement;
-                                                                    if (parentElement) {
-                                                                        const nextElement = parentElement.nextElementSibling as HTMLElement;
-                                                                        if (nextElement) nextElement.style.display = 'flex';
-                                                                    }
+                                                                width={16}
+                                                                height={16}
+                                                                className="object-cover"
+                                                                unoptimized={true}
+                                                                onError={() => {
+                                                                    // Handle error silently
                                                                 }}
                                                             />
-                                                            <div className="hidden inline-block w-4 h-4 mr-2 mt-2 rounded-sm bg-gray-200 items-center justify-center">
-                                                                <span className="text-xs">🌍</span>
-                                                            </div>
-                                                        </>
+                                                        </div>
                                                     ) : (
                                                         <div className="inline-block w-4 h-4 mr-2 mt-2 rounded-sm bg-gray-200 flex items-center justify-center">
                                                             <span className="text-xs">🌍</span>
