@@ -261,7 +261,7 @@ const TotanChat = () => {
   const [pendingMessages, setPendingMessages] = useState<Message[]>([]);
   const [currentTypingIndex, setCurrentTypingIndex] = useState(-1);
 
-  const { marketplaceId } = useAppSelector((state) => state?.global);
+  const { marketplaceId, currencyCode, currencySymbol } = useAppSelector((state) => state?.global);
   const { first_name, last_name } =
     useAppSelector((state) => state.api?.user) || {};
 
@@ -289,7 +289,9 @@ const TotanChat = () => {
   };
 
   const validateCostPrice = (price: string): number | null => {
-    const numPrice = Number.parseFloat(price);
+    // Remove currency symbols and common formatting characters
+    const cleanedPrice = price.replace(/[^0-9.]/g, '');
+    const numPrice = Number.parseFloat(cleanedPrice);
     return !isNaN(numPrice) && numPrice > 0 ? numPrice : null;
   };
 
@@ -418,7 +420,7 @@ You can now ask me any questions about this product's score and what it means fo
             { sender: "ai", text: `Great! I've got the ASIN: ${asin}` },
             {
               sender: "ai",
-              text: "Now, what will be the cost price of this product? (Enter the amount in USD, e.g., 125)",
+              text: `Now, what will be the cost price of this product? (Enter the amount in ${currencyCode}, e.g., ${currencySymbol}125)`,
             },
           ]);
           dispatch(updateConversationState("waiting_for_cost_price"));
@@ -437,7 +439,7 @@ You can now ask me any questions about this product's score and what it means fo
         if (price !== null) {
           dispatch(updateCollectedData({ costPrice: price }));
           addAIMessagesWithTyping([
-            { sender: "ai", text: `Perfect! Cost price set to $${price}` },
+            { sender: "ai", text: `Perfect! Cost price set to ${currencySymbol}${price.toFixed(2)}` },
             {
               sender: "ai",
               text: "Last question: Will this product be Amazon Fulfilled (FBA)? Please answer 'yes' or 'no'.",
@@ -448,7 +450,7 @@ You can now ask me any questions about this product's score and what it means fo
           addAIMessagesWithTyping([
             {
               sender: "ai",
-              text: "❌ Please enter a valid price (numbers only, greater than 0). For example: 125 or 99.99",
+              text: `⚠️ Please enter a valid price (numbers only, greater than 0). For example: ${currencySymbol}125 or ${currencySymbol}99.99`,
             },
           ]);
         }
@@ -525,7 +527,7 @@ You can now ask me any questions about this product's score and what it means fo
       case "waiting_for_asin":
         return "Enter ASIN (e.g., B0D9YZJ3V7)...";
       case "waiting_for_cost_price":
-        return "Enter cost price (e.g., 125)...";
+        return `Enter cost price in ${currencyCode} (e.g., ${currencySymbol}125)...`;
       case "waiting_for_fulfillment":
         return "Type 'yes' or 'no'...";
       case "analyzing":
@@ -664,7 +666,6 @@ You can now ask me any questions about this product's score and what it means fo
 
       {/* Input field */}
       <div className="relative">
-       
         <input
           className="flex-1 outline-none bg-transparent border border-[#D1D1D1] p-4 pr-32 rounded-2xl w-full focus:border-primary"
           placeholder={getPlaceholderText()}
@@ -678,7 +679,7 @@ You can now ask me any questions about this product's score and what it means fo
             currentTypingIndex >= 0
           }
         />
-        
+
         {/* Send button */}
         <button
           type="button"
@@ -695,7 +696,7 @@ You can now ask me any questions about this product's score and what it means fo
           <span className="hidden sm:block">Send</span>
           <IoSend className="size-10 sm:size-5" />
         </button>
-        
+
         {/* Voice icon button - positioned on the right side */}
         <button
           type="button"
