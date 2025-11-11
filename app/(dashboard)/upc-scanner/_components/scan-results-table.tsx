@@ -88,34 +88,41 @@ const ScanResultsTable: FC<ScanResultsTableProps> = ({ onDetailsClick, onRefresh
   const [refreshingId, setRefreshingId] = useState<number | null>(null);
   // Store interval IDs for cleanup
   const intervalRef = useRef<{[key: number]: NodeJS.Timeout}>({});
+  // Cache for downloaded scan details
+  const downloadCache = useRef<Map<number, { data: { products: ScanProduct[] } }>>(new Map());
   
-  // Auto-refresh pending and in-progress scans every minute
+  // Auto-refresh pending and in-progress scans (optimized - max 5 concurrent)
   useEffect(() => {
     // Clear previous intervals
     Object.values(intervalRef.current).forEach(interval => clearInterval(interval));
     intervalRef.current = {};
     
-    // Set up new intervals for pending and in-progress scans
-    scanResults.forEach(scan => {
-      if (scan.status === 'pending' || scan.status === 'in-progress') {
-        const scanId = scan.id;
-        // Set up interval to refresh every 30 seconds (30000ms)
-        const intervalId = setInterval(() => {
-          onRefreshScan?.(scanId);
-        }, 30000);
-        
-        // Store interval ID for cleanup
-        intervalRef.current[scanId] = intervalId;
-      }
+    // Get pending/in-progress scans, limit to 5 most recent
+    const pendingScans = scanResults
+      .filter(scan => scan.status === 'pending' || scan.status === 'in-progress')
+      .sort((a, b) => new Date(b.last_seen).getTime() - new Date(a.last_seen).getTime())
+      .slice(0, 5);
+    
+    // Set up intervals only for limited scans
+    pendingScans.forEach(scan => {
+      const scanId = scan.id;
+      // Set up interval to refresh every 30 seconds (30000ms)
+      const intervalId = setInterval(() => {
+        onRefreshScan?.(scanId);
+      }, 30000);
+      
+      // Store interval ID for cleanup
+      intervalRef.current[scanId] = intervalId;
     });
     
     // Cleanup function
     return () => {
       Object.values(intervalRef.current).forEach(interval => clearInterval(interval));
+      intervalRef.current = {};
     };
   }, [scanResults, onRefreshScan]);
   
-  // Function to download scan results as Excel file with full product details
+  // Function to download scan results as Excel file with full product details (optimized with caching)
   const handleDownloadExcel = async (record: ProductData) => {
     // Find the original scan result data
     const scanData = scanResults.find(scan => scan.id.toString() === record.key);
@@ -127,15 +134,29 @@ const ScanResultsTable: FC<ScanResultsTableProps> = ({ onDetailsClick, onRefresh
       const { message } = await import('antd');
       message.loading({ content: 'Preparing download...', key: 'downloadExcel' });
       
-      // Fetch full scan details with product data
-      const response = await fetch(`/api/upc-scanner/${scanData.id}`);
+      let data;
+      let products;
       
-      if (!response.ok) {
-        throw new Error('Failed to fetch scan details');
+      // Check cache first
+      const cached = downloadCache.current.get(scanData.id);
+      if (cached) {
+        data = cached;
+        products = cached.data.products || [];
+      } else {
+        // Fetch full scan details with product data
+        const response = await fetch(`/api/upc-scanner/${scanData.id}`);
+        
+        if (!response.ok) {
+          throw new Error('Failed to fetch scan details');
+        }
+        
+        data = await response.json();
+        products = data.data.products || [];
+        
+        // Cache the result for 5 minutes
+        downloadCache.current.set(scanData.id, data);
+        setTimeout(() => downloadCache.current.delete(scanData.id), 5 * 60 * 1000);
       }
-      
-      const data = await response.json();
-      const products = data.data.products || [];
       
       // Create workbook
       const wb = XLSX.utils.book_new();

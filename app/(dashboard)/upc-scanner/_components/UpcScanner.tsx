@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useEffect, useCallback } from "react";
+import React, { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { MdOutlineInsertChartOutlined } from "react-icons/md";
 import Header from "./Header";
 import ScanResultsTable from "./scan-results-table";
@@ -109,6 +109,8 @@ const UpcScanner = () => {
   const [filterDate, setFilterDate] = useState<dayjs.Dayjs | null>(dayjs());
   const fileInputRef = useRef<HTMLInputElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const scanDetailsCache = useRef<Map<number, ScanDetailsData>>(new Map());
+  const pendingRequests = useRef<Set<number>>(new Set());
 
   // Handle clicking outside dropdown to close it
   useEffect(() => {
@@ -136,12 +138,21 @@ const UpcScanner = () => {
   // Update debounced search term when searchTerm changes
   useEffect(() => {
     debouncedSearch(searchTerm);
-    // Capture the current value of the ref to avoid stale closures in cleanup
     const currentDebouncedFn = debouncedFn.current;
     return () => {
       currentDebouncedFn.cancel();
     };
   }, [searchTerm, debouncedSearch]);
+  
+  // Memoize filtered scan results to avoid redundant filtering
+  const filteredScanResults = useMemo(() => {
+    return scanResults.filter(scan => {
+      const matchesSearch = debouncedSearchTerm === "" || 
+        scan.product_name.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
+        (scan.product_id && scan.product_id.toLowerCase().includes(debouncedSearchTerm.toLowerCase()));
+      return matchesSearch;
+    });
+  }, [scanResults, debouncedSearchTerm]);
   
   // Fetch scan results from API
   const [isLoading, setIsLoading] = useState(false);
@@ -280,6 +291,9 @@ const UpcScanner = () => {
           )
         );
         
+        // Invalidate cache for this scan
+        scanDetailsCache.current.delete(scanId);
+        
         // If this scan is currently selected, update the details too
         if (selectedProductId === scanId.toString()) {
           setScanDetails(prevDetails => 
@@ -409,6 +423,9 @@ const UpcScanner = () => {
               prevResults.filter(scan => scan.id !== scanId)
             );
             
+            // Invalidate cache for this scan
+            scanDetailsCache.current.delete(scanId);
+            
             // If this scan is currently selected, clear the details
             if (selectedProductId === scanId.toString()) {
               setSelectedProductId(null);
@@ -425,7 +442,7 @@ const UpcScanner = () => {
     });
   };
 
-  // Fetch scan details when a product is selected with lazy loading
+  // Fetch scan details when a product is selected (optimized with caching)
   useEffect(() => {
     // Track if the component is still mounted
     let isMounted = true;
@@ -437,85 +454,55 @@ const UpcScanner = () => {
         return;
       }
       
+      const scanId = parseInt(selectedProductId);
+      
+      // Check cache first
+      const cached = scanDetailsCache.current.get(scanId);
+      if (cached) {
+        setScanDetails(cached);
+        return;
+      }
+      
+      // Prevent duplicate requests
+      if (pendingRequests.current.has(scanId)) {
+        return;
+      }
+      
+      pendingRequests.current.add(scanId);
       setIsLoadingDetails(true);
+      
       try {
-        // Use the API endpoint with /api prefix and abort signal for cancellation
         const response = await fetch(`/api/upc-scanner/${selectedProductId}`, {
           signal: controller.signal
         });
         
-        // Check if response is OK
         if (!response.ok) {
           throw new Error(`HTTP error! Status: ${response.status}`);
         }
         
-        // Check if response is JSON
         const contentType = response.headers.get("content-type");
         if (!contentType || !contentType.includes("application/json")) {
           throw new Error("Response is not JSON");
         }
         
-        // Process the response only if component is still mounted
         if (isMounted) {
           const data: ScanDetailsResponse = await response.json();
           
-          // Implement lazy loading by processing data in chunks
-          // First set basic details immediately
-          setScanDetails(prevDetails => ({
-            ...data.data,
-            // Keep existing products if any until we process the new ones
-            products: prevDetails?.products || []
-          }));
+          // Cache the result
+          scanDetailsCache.current.set(scanId, data.data);
           
-          // Then process products in batches asynchronously
-          if (data.data.products && data.data.products.length > 0) {
-            // Process in batches of 10 products at a time
-            const batchSize = 10;
-            for (let i = 0; i < data.data.products.length; i += batchSize) {
-              if (!isMounted) break; // Stop if component unmounted
-              
-              const batch = data.data.products.slice(i, i + batchSize);
-              
-              // Update state with each batch
-              setScanDetails(prevDetails => {
-                if (!prevDetails) return data.data;
-                
-                const existingProducts = prevDetails.products || [];
-                const newProducts = [...existingProducts];
-                
-                // Add new batch products
-                batch.forEach(product => {
-                  const index = newProducts.findIndex(p => p.asin_upc === product.asin_upc);
-                  if (index >= 0) {
-                    newProducts[index] = product;
-                  } else {
-                    newProducts.push(product);
-                  }
-                });
-                
-                return {
-                  ...prevDetails,
-                  products: newProducts
-                };
-              });
-              
-              // Small delay to prevent UI blocking
-              if (i + batchSize < data.data.products.length) {
-                await new Promise(resolve => setTimeout(resolve, 10));
-              }
-            }
-          }
+          // Set data directly (no batching needed)
+          setScanDetails(data.data);
         }
       } catch (err: unknown) {
         if (err instanceof SyntaxError) {
-          // JSON parsing error
           message.error("Invalid response format from server");
         } else if (err instanceof Error && err.name !== 'AbortError') {
-          // Other fetch errors (excluding aborts)
           message.error("Failed to fetch scan details");
         }
         console.error("Error fetching scan details:", err);
       } finally {
+        pendingRequests.current.delete(scanId);
         if (isMounted) {
           setIsLoadingDetails(false);
         }
@@ -524,7 +511,6 @@ const UpcScanner = () => {
 
     fetchScanDetails();
     
-    // Cleanup function to handle component unmounting
     return () => {
       isMounted = false;
       controller.abort();
@@ -781,17 +767,9 @@ const UpcScanner = () => {
             <p className="text-[#8C94A3] text-sm font-medium">
               {selectedProductId 
                 ? `${scanDetails?.products?.length || 0} Products found` 
-                : (() => {
-                    const filteredResults = scanResults.filter(scan => {
-                      // Apply debounced search term filter
-                      const matchesSearch = debouncedSearchTerm === "" || 
-                        scan.product_name.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
-                        (scan.product_id && scan.product_id.toLowerCase().includes(debouncedSearchTerm.toLowerCase()));
-                      
-                      return matchesSearch;
-                    });
-                    return filteredResults.length > 0 ? `${filteredResults.length} Searches found` : "No searches found";
-                  })()
+                : filteredScanResults.length > 0 
+                  ? `${filteredScanResults.length} Searches found` 
+                  : "No searches found"
               }
             </p>
             {selectedProductId ? (
@@ -813,14 +791,7 @@ const UpcScanner = () => {
                 onRefreshScan={handleRefreshScan}
                 onRestartScan={handleRestartScan}
                 onDeleteScan={handleDeleteScan}
-                scanResults={scanResults.filter(scan => {
-                  // Apply debounced search term filter
-                  const matchesSearch = debouncedSearchTerm === "" || 
-                    scan.product_name.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
-                    (scan.product_id && scan.product_id.toLowerCase().includes(debouncedSearchTerm.toLowerCase()));
-                  
-                  return matchesSearch;
-                })}
+                scanResults={filteredScanResults}
                 isLoading={isLoading}
               />
             )}
