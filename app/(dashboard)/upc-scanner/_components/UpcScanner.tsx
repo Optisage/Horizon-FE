@@ -147,64 +147,6 @@ const UpcScanner = () => {
   const [isLoading, setIsLoading] = useState(false);
   // Using retryCount to trigger refetching when retry is clicked
   const [retryCount, setRetryCount] = useState(0);
-  const [restartingScanId, setRestartingScanId] = useState<number | null>(null);
-  
-  // Function to fetch all scan results
-  const fetchScanResults = async () => {
-    setIsLoading(true);
-    
-    try {
-      const response = await fetch('/api/upc-scanner', {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'Cache-Control': 'no-cache, no-store, must-revalidate',
-          'Pragma': 'no-cache'
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const contentType = response.headers.get('content-type');
-      if (!contentType || !contentType.includes('application/json')) {
-        throw new Error(`Expected JSON response but got ${contentType}`);
-      }
-      
-      const data: ApiResponse = await response.json();
-      
-      if (data.status === 200) {
-        setScanResults(data.data);
-        setRetryCount(0); // Reset retry count on success
-      } else {
-        throw new Error(data.message || 'Failed to fetch scan results');
-      }
-    } catch (err: unknown) {
-      let errorMessage = 'An error occurred while fetching scan results';
-      
-      if (err instanceof SyntaxError) {
-        errorMessage = 'Invalid response format from server';
-      } else if (err instanceof Error && err.name === 'AbortError') {
-        errorMessage = 'Request timed out. Please try again.';
-      } else if (err instanceof Error) {
-        errorMessage = err.message;
-      }
-      
-      message.error({ content: errorMessage, key: 'fetchError' });
-      
-      if (retryCount < 3) {
-        setTimeout(() => setRetryCount(retryCount + 1), 3000 * (retryCount + 1));
-      }
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  // Fetch scan results on component mount and when retryCount changes
-  useEffect(() => {
-    fetchScanResults();
-  }, [retryCount]);
   
   useEffect(() => {
     const controller = new AbortController();
@@ -378,8 +320,9 @@ const UpcScanner = () => {
   
   // Handle restarting a scan with retry mechanism
   const handleRestartScan = async (scanId: number) => {
-    setRestartingScanId(scanId);
     try {
+      message.loading({ content: 'Restarting scan...', key: 'restartScan' });
+      
       const response = await fetch(`/api/upc-scanner/${scanId}/restart`, {
         method: 'POST',
         headers: {
@@ -394,7 +337,7 @@ const UpcScanner = () => {
       const result = await response.json();
 
       if (result.status === 200) {
-        await fetchScanResults();
+        setRetryCount(prev => prev + 1); // Trigger refetch
         message.success({
           content: 'Scan Restarted',
           key: 'restartScan'
@@ -408,8 +351,6 @@ const UpcScanner = () => {
         content: 'Failed to restart scan. Please try again.',
         key: 'restartScan'
       });
-    } finally {
-      setRestartingScanId(null);
     }
   };
   
@@ -667,8 +608,6 @@ const UpcScanner = () => {
     }
 
     setIsUploading(true);
-    let retryCount = 0;
-    const maxRetries = 2;
     
     const attemptUpload = async () => {
       try {
@@ -850,7 +789,7 @@ const UpcScanner = () => {
             </p>
             {selectedProductId ? (
               <div className="">
-                <div className="bg-[#F3F4F6] rounded-t-xl grid lg:grid-cols-[639px_1fr] lg:divide-x-2 divide-gray-200 border border-b-0 border-gray-200">
+                <div className="bg-[#F3F4F6] rounded-t-xl grid lg:grid-cols-[511px_1fr] lg:divide-x-2 divide-gray-200 border border-b-0 border-gray-200">
                   <div className="hidden lg:block p-8" />
                   <div className="p-6 lg:p-8 text-[#596375] text-sm font-semibold text-center lg:text-start">
                     Fees and Profit

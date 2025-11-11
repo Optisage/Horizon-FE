@@ -124,7 +124,6 @@ const ScanDetailsTable = ({ products = [], isLoading = false }: ScanDetailsProps
               </th>
               <th className="px-4 py-3 text-left font-medium">UPC / EAN</th>
               <th className="px-4 py-3 text-left font-medium">Product Cost</th>
-              <th className="px-4 py-3 text-left font-medium">Selling Price</th>
               <th className="px-4 py-3 text-left font-medium">Buy Box Price</th>
               <th className="px-4 py-3 text-left font-medium">FBA Fee</th>
               <th className="px-4 py-3 text-left font-medium">Referral Fee</th>
@@ -159,7 +158,7 @@ const ScanDetailsTable = ({ products = [], isLoading = false }: ScanDetailsProps
           <tbody className="text-gray-700">
             {isLoading ? (
               <tr>
-                <td colSpan={21} className="px-4 py-8 text-center">
+                <td colSpan={20} className="px-4 py-8 text-center">
                   <div className="flex justify-center">
                     <Spin size="large" style={{ color: "#18CB96" }} />
                   </div>
@@ -167,7 +166,7 @@ const ScanDetailsTable = ({ products = [], isLoading = false }: ScanDetailsProps
               </tr>
             ) : products.length === 0 ? (
               <tr>
-                <td colSpan={21} className="px-4 py-8 text-center">
+                <td colSpan={20} className="px-4 py-8 text-center">
                   No products found
                 </td>
               </tr>
@@ -179,7 +178,6 @@ const ScanDetailsTable = ({ products = [], isLoading = false }: ScanDetailsProps
                   </td>
                   <td className="px-4 py-3">{product.asin_upc}</td>
                   <td className="px-4 py-3">{formatCurrency(product.product_cost)}</td>
-                  <td className="px-4 py-3">{formatCurrency(product.selling_price)}</td>
                   <td className="px-4 py-3">{formatCurrency(product.buy_box_price)}</td>
                   <td className="px-4 py-3">{formatValue(product.product_details.fba_fee)}</td>
                   <td className="px-4 py-3">{formatValue(product.product_details.referral_fee)}</td>
@@ -210,7 +208,7 @@ const ScanDetailsTable = ({ products = [], isLoading = false }: ScanDetailsProps
       <div className="relative hidden sm:block w-full">
         <div className="flex">
           {/* Left Table */}
-          <div className="sticky left-0 z-10 w-[640px] border-r border-gray-300 bg-white">
+          <div className="sticky left-0 z-10 w-[512px] border-r border-gray-300 bg-white">
             <table className="table-fixed w-full text-sm border-separate border-spacing-0">
               <thead className="bg-[#F3F4F6] text-[#596375]">
                 <tr className="border-b border-gray-200 h-12">
@@ -223,9 +221,6 @@ const ScanDetailsTable = ({ products = [], isLoading = false }: ScanDetailsProps
                   <th className="w-32 px-4 py-3 text-left font-medium border-r-2 whitespace-nowrap">
                     Product Cost
                   </th>
-                  <th className="w-32 px-4 py-3 text-left font-medium border-r-2 whitespace-nowrap">
-                    Selling Price
-                  </th>
                   <th className="w-32 px-4 py-3 text-left font-medium whitespace-nowrap">
                     Buy Box Price
                   </th>
@@ -234,7 +229,7 @@ const ScanDetailsTable = ({ products = [], isLoading = false }: ScanDetailsProps
               <tbody className="text-gray-700">
                 {isLoading ? (
                   <tr>
-                    <td colSpan={5} className="px-4 py-8 text-center">
+                    <td colSpan={4} className="px-4 py-8 text-center">
                       <div className="flex justify-center">
                         <Spin size="large" />
                       </div>
@@ -242,7 +237,7 @@ const ScanDetailsTable = ({ products = [], isLoading = false }: ScanDetailsProps
                   </tr>
                 ) : products.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="px-4 py-8 text-center">
+                    <td colSpan={4} className="px-4 py-8 text-center">
                       No products found
                     </td>
                   </tr>
@@ -254,7 +249,6 @@ const ScanDetailsTable = ({ products = [], isLoading = false }: ScanDetailsProps
                       </td>
                       <td className="px-4 py-2">{product.asin_upc}</td>
                       <td className="px-4 py-2">{formatCurrency(product.product_cost)}</td>
-                      <td className="px-4 py-2">{formatCurrency(product.selling_price)}</td>
                       <td className="px-4 py-2">{formatCurrency(product.buy_box_price)}</td>
                     </tr>
                   ))
