@@ -1,7 +1,7 @@
 "use client";
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useRef, useState } from "react";
-import { GoChevronDown, GoChevronUp } from "react-icons/go";
+import { GoChevronDown } from "react-icons/go";
 import { IoCloseOutline } from "react-icons/io5";
 import Image from "next/image";
 import { useLazyGetAllCountriesQuery, useLazyGetReverseSearchCategoriesQuery } from "@/redux/api/quickSearchApi";
@@ -19,11 +19,7 @@ interface SearchModalProps {
     inputLabel: string;
 }
 
-const searchTypes = [
-    { id: 1, type: "Normal Search - (No Images, Less wait time)", value: false },
-    // Deep search option temporarily disabled
-    // { id: 2, type: "Deep Search - (Longer wait time)", value: true },
-];
+
 
 export function SearchModal({ isOpen, onClose, title, inputLabel }: SearchModalProps) {
     const router = useRouter();
@@ -33,9 +29,7 @@ export function SearchModal({ isOpen, onClose, title, inputLabel }: SearchModalP
     const [selectedCountry, setSelectedCountry] = useState<Country | undefined>();
     const [isLoading, setIsLoading] = useState(true);
     const [asinOrUpc, setAsinOrUpc] = useState("");
-    const [selectedSearchType, setSelectedSearchType] = useState(searchTypes[0]);
     const [isCountryDropdownOpen, setIsCountryDropdownOpen] = useState(false);
-    const [isSearchTypeDropdown, setIsSearchTypeDropdown] = useState(false);
     const [activeTab, setActiveTab] = useState<"manual" | "ai">("manual");
     const [showAINotification, setShowAINotification] = useState(false);
     const [tacticalSearchMessage, setTacticalSearchMessage] = useState("");
@@ -76,7 +70,6 @@ export function SearchModal({ isOpen, onClose, title, inputLabel }: SearchModalP
 
     const handleClose = () => {
         setAsinOrUpc("");
-        setSelectedSearchType(searchTypes[0]);
         setSelectedCountry(countries?.data[0]);
         setActiveTab("manual");
         setShowAINotification(false);
@@ -144,7 +137,7 @@ export function SearchModal({ isOpen, onClose, title, inputLabel }: SearchModalP
             
             setTimeout(() => {
                 router.push(
-                    `/go-compare/quick-search?asin=${asinOrUpc}&marketplace_id=${marketplaceId}&queue=${selectedSearchType.value}`
+                    `/go-compare/quick-search?asin=${asinOrUpc}&marketplace_id=${marketplaceId}`
                 );
                 handleClose();
             }, 100);
@@ -398,36 +391,6 @@ export function SearchModal({ isOpen, onClose, title, inputLabel }: SearchModalP
                                                         </div>
                                                     )}
                                                     <span>{country.name}</span>
-                                                </button>
-                                            ))}
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-
-                            <div>
-                                <label className="block text-xs text-[#737379] mb-1.5">Select Search Type</label>
-                                <div className="relative" ref={dropdownRef}>
-                                    <button
-                                        onClick={() => setIsSearchTypeDropdown(!isSearchTypeDropdown)}
-                                        className="w-full text-[#9F9FA3] text-sm p-3 border border-gray-300 rounded-md bg-white flex items-center justify-between focus:outline-none focus:ring-2 focus:ring-[#4C3CC6]"
-                                    >
-                                        <span>{selectedSearchType?.type}</span>
-                                        <GoChevronUp size={18} color="black" />
-                                    </button>
-
-                                    {isSearchTypeDropdown && (
-                                        <div className="absolute z-10 bottom-full mb-1 px-2 w-full text-sm bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-auto">
-                                            {searchTypes.map((searchType) => (
-                                                <button
-                                                    key={searchType.id}
-                                                    onClick={() => {
-                                                        setSelectedSearchType(searchType);
-                                                        setIsSearchTypeDropdown(false);
-                                                    }}
-                                                    className="w-full text-left px-4 py-2 hover:bg-gray-100 border-b"
-                                                >
-                                                    <span>{searchType.type}</span>
                                                 </button>
                                             ))}
                                         </div>
