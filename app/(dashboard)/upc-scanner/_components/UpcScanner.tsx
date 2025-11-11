@@ -158,7 +158,18 @@ const UpcScanner = () => {
       setIsLoading(true);
       
       try {
-        const response = await fetch('/api/upc-scanner', {
+        // Build query parameters with date range
+        const params = new URLSearchParams();
+        if (filterDate) {
+          const startDate = filterDate.startOf('month').format('YYYY-MM-DD');
+          const endDate = filterDate.endOf('month').format('YYYY-MM-DD');
+          params.append('start_date', startDate);
+          params.append('end_date', endDate);
+        }
+        
+        const url = `/api/upc-scanner${params.toString() ? `?${params.toString()}` : ''}`;
+        
+        const response = await fetch(url, {
           signal: controller.signal,
           // Add cache control headers to prevent stale data
           headers: {
@@ -234,7 +245,7 @@ const UpcScanner = () => {
       isMounted = false;
       controller.abort();
     };
-  }, [retryCount]); // Retry when retryCount changes
+  }, [retryCount, filterDate]); // Retry when retryCount or filterDate changes
   
   // Handle refreshing a scan with retry mechanism
   const handleRefreshScan = async (scanId: number, retryAttempt = 0, maxRetries = 3) => {
@@ -777,11 +788,7 @@ const UpcScanner = () => {
                         scan.product_name.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
                         (scan.product_id && scan.product_id.toLowerCase().includes(debouncedSearchTerm.toLowerCase()));
                       
-                      // Apply date filter if selected
-                      const matchesDate = !filterDate || 
-                        dayjs(scan.last_seen).format('YYYY-MM-DD') === filterDate.format('YYYY-MM-DD');
-                      
-                      return matchesSearch && matchesDate;
+                      return matchesSearch;
                     });
                     return filteredResults.length > 0 ? `${filteredResults.length} Searches found` : "No searches found";
                   })()
@@ -812,11 +819,7 @@ const UpcScanner = () => {
                     scan.product_name.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
                     (scan.product_id && scan.product_id.toLowerCase().includes(debouncedSearchTerm.toLowerCase()));
                   
-                  // Apply date filter if selected
-                  const matchesDate = !filterDate || 
-                    dayjs(scan.last_seen).format('YYYY-MM-DD') === filterDate.format('YYYY-MM-DD');
-                  
-                  return matchesSearch && matchesDate;
+                  return matchesSearch;
                 })}
                 isLoading={isLoading}
               />
