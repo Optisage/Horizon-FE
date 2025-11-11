@@ -43,9 +43,9 @@ export const quickSearchApi = createApi({
                 meta: { endpointHeader: 'search-history/results' }
             }),
         }),
-        reverseSearch: builder.query({
-            query: ({ seller_id, marketplaceId, category_id, perPage = 300 }) => {
-                let url = `/go-compare/reverse-search?result_format=json&limit=${perPage}`;
+        reverseSearch: builder.mutation({
+            query: ({ seller_id, marketplaceId, category_id }) => {
+                let url = `/go-compare/reverse-search?result_format=json`;
                 
                 // Add seller_id if provided
                 if (seller_id) {
@@ -96,7 +96,7 @@ export const {
     useQuickSearchQuery,
     useSearchHistoryQuery,
     useGetSearchByIdQuery,
-    useReverseSearchQuery,
+    useReverseSearchMutation,
     useGetProductDetailsQuery,
     useLazyGetProductDetailsQuery,
     useGetComparisonProductDetailsQuery,

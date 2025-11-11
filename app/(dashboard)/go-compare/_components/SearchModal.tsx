@@ -32,8 +32,6 @@ export function SearchModal({ isOpen, onClose, title, inputLabel }: SearchModalP
     const [isCountryDropdownOpen, setIsCountryDropdownOpen] = useState(false);
     const [activeTab, setActiveTab] = useState<"manual" | "ai">("manual");
     const [showAINotification, setShowAINotification] = useState(false);
-    const [tacticalSearchMessage, setTacticalSearchMessage] = useState("");
-    const [isError, setIsError] = useState(false);
     const [selectedCategory, setSelectedCategory] = useState<string | undefined>();
     const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -74,17 +72,12 @@ export function SearchModal({ isOpen, onClose, title, inputLabel }: SearchModalP
         setActiveTab("manual");
         setShowAINotification(false);
         setSelectedCategory(undefined);
-        setTacticalSearchMessage("");
-        setIsError(false);
         onClose();
     };
 
     const handleSearch = async () => {
+        // For Tactical Reverse Search AI mode
         if (isTacticalReverseSearch && activeTab === "ai") {
-            if (!asinOrUpc) {
-                message.error("Please enter a query");
-                return;
-            }
             setShowAINotification(true);
             return;
         }
@@ -108,16 +101,19 @@ export function SearchModal({ isOpen, onClose, title, inputLabel }: SearchModalP
 
         // For Tactical Reverse Search Manual mode, navigate to reverse search page
         if (isTacticalReverseSearch && activeTab === "manual") {
+            if (!asinOrUpc) {
+                message.error("Please enter a seller ID");
+                return;
+            }
+
             let queryString = `/go-compare/reverse-search?seller_id=${encodeURIComponent(asinOrUpc)}&marketplace_id=${marketplaceId}`;
             
             if (selectedCategory) {
                 queryString += `&category_id=${selectedCategory}`;
             }
             
-            setTimeout(() => {
-                router.push(queryString);
-                handleClose();
-            }, 100);
+            router.push(queryString);
+            handleClose();
             return;
         }
         
@@ -127,37 +123,17 @@ export function SearchModal({ isOpen, onClose, title, inputLabel }: SearchModalP
             return;
         }
         
-        message.loading({
-            content: "Initiating search...",
-            key: "searchLoading",
-            duration: 1
-        });
-        
         if (title === "Quick Search") {
-            
-            setTimeout(() => {
-                router.push(
-                    `/go-compare/quick-search?asin=${asinOrUpc}&marketplace_id=${marketplaceId}`
-                );
-                handleClose();
-            }, 100);
+            router.push(
+                `/go-compare/quick-search?asin=${asinOrUpc}&marketplace_id=${marketplaceId}`
+            );
+            handleClose();
         }
     };
 
     const handleAINotificationClose = () => {
         setShowAINotification(false);
-        setTacticalSearchMessage("");
-        setIsError(false);
         handleClose();
-    };
-    
-    const handleSearchAgain = () => {
-        setShowAINotification(false);
-        setTacticalSearchMessage("");
-        setIsError(false);
-        setAsinOrUpc("");
-        setSelectedCategory(undefined);
-        // Keep modal open for another search
     };
 
     if (!isOpen) return null;
@@ -169,40 +145,20 @@ export function SearchModal({ isOpen, onClose, title, inputLabel }: SearchModalP
                 <div className="bg-white rounded-lg w-full max-w-md mx-4 overflow-hidden shadow-xl">
                     <div className="p-6 text-center">
                         <div className="mb-4">
-                            {isError ? (
-                                <svg className="mx-auto h-12 w-12 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
-                                </svg>
-                            ) : (
-                                <svg className="mx-auto h-12 w-12 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                </svg>
-                            )}
+                            <svg className="mx-auto h-12 w-12 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
                         </div>
                         <h3 className="text-lg font-medium text-gray-900 mb-2">
-                            {isError ? "Error" : "Success!"}
+                            Success!
                         </h3>
-                        <p className={`px-4 ${isError ? "text-red-600" : "text-gray-600"}`}>
-                            {tacticalSearchMessage || (isError ? "Failed to initiate tactical search. Please try again." : "Tactical search completed and response sent to your email address!")}
+                        <p className="px-4 text-gray-600">
+                            AI search initiated! Results will be sent to your email address.
                         </p>
                         <div className="mt-6 flex gap-3 justify-center">
                             <button
-                                onClick={handleSearchAgain}
-                                className={`px-6 py-2 border rounded-md transition-colors ${
-                                    isError 
-                                        ? "border-red-500 text-red-500 hover:bg-red-500 hover:text-white" 
-                                        : "border-[#18cb96] text-[#18cb96] hover:bg-[#18cb96] hover:text-white"
-                                }`}
-                            >
-                                {isError ? "Try Again" : "Search Again"}
-                            </button>
-                            <button
                                 onClick={handleAINotificationClose}
-                                className={`px-6 py-2 text-white rounded-md transition-colors ${
-                                    isError 
-                                        ? "bg-red-500 hover:bg-red-600" 
-                                        : "bg-[#18cb96] hover:bg-[#15b588]"
-                                }`}
+                                className="px-6 py-2 bg-[#18cb96] text-white rounded-md hover:bg-[#15b588] transition-colors"
                             >
                                 OK
                             </button>
@@ -223,53 +179,7 @@ export function SearchModal({ isOpen, onClose, title, inputLabel }: SearchModalP
                     </button>
                 </div>
 
-                {/* Tabs - Only show for Tactical Reverse Search */}
-                {isTacticalReverseSearch && (
-                    <div className="px-5 border-b border-gray-200">
-                        <div className="flex gap-4">
-                            <button
-                                onClick={() => setActiveTab("manual")}
-                                className={`pb-3 px-1 text-sm font-medium border-b-2 transition-colors ${
-                                    activeTab === "manual"
-                                        ? "border-primary text-primary"
-                                        : "border-transparent text-gray-500 hover:text-gray-700"
-                                }`}
-                            >
-                                Manual Search
-                            </button>
-                            <button
-                                onClick={() => setActiveTab("ai")}
-                                className={`pb-3 px-1 text-sm font-medium border-b-2 transition-colors ${
-                                    activeTab === "ai"
-                                        ? "border-primary text-primary"
-                                        : "border-transparent text-gray-500 hover:text-gray-700"
-                                }`}
-                            >
-                                AI Search
-                            </button>
-                        </div>
-                    </div>
-                )}
-
                 <div className="p-5 pt-4 max-h-[70vh] overflow-y-auto space-y-4 font-normal">
-                    {/* AI Search Tab Content */}
-                    {isTacticalReverseSearch && activeTab === "ai" ? (
-                        <div className="py-6">
-                            <div className="text-center">
-                                <div className="mb-4">
-                                    <svg className="mx-auto h-16 w-16 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-                                    </svg>
-                                </div>
-                                <h3 className="text-lg font-medium text-gray-900 mb-2">AI-Powered Search</h3>
-                                <p className="text-sm text-gray-600 leading-relaxed">
-                                    Our AI will automatically search and analyze the best possible products for you based on intelligent market analysis and trends.
-                                </p>
-                            </div>
-                        </div>
-                    ) : (
-                        /* Manual Search / Default Content */
-                        <>
                             <div>
                                 <label htmlFor="asin-upc" className="block text-xs text-[#737379] mb-1.5">
                                     {inputLabel}
@@ -397,8 +307,6 @@ export function SearchModal({ isOpen, onClose, title, inputLabel }: SearchModalP
                                     )}
                                 </div>
                             </div>
-                        </>
-                    )}
                 </div>
 
                 <div className="p-5 text-sm font-medium flex justify-end space-x-3">
