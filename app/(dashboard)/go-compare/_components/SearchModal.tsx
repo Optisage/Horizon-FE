@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { GoChevronDown, GoChevronUp } from "react-icons/go";
 import { IoCloseOutline } from "react-icons/io5";
 import Image from "next/image";
-import { useLazyGetAllCountriesQuery, useLazyGetReverseSearchCategoriesQuery, useTacticalSearchMutation } from "@/redux/api/quickSearchApi";
+import { useLazyGetAllCountriesQuery, useLazyGetReverseSearchCategoriesQuery } from "@/redux/api/quickSearchApi";
 import { useRouter } from "next/navigation";
 import { Country } from "@/types/goCompare";
 import { message } from "antd";
@@ -30,7 +30,6 @@ export function SearchModal({ isOpen, onClose, title, inputLabel }: SearchModalP
     const dispatch = useDispatch();
     const [getCountries, { data: countries }] = useLazyGetAllCountriesQuery();
     const [getReverseSearchCategories, { data: categoriesData }] = useLazyGetReverseSearchCategoriesQuery();
-    const [tacticalSearch] = useTacticalSearchMutation();
     const [selectedCountry, setSelectedCountry] = useState<Country | undefined>();
     const [isLoading, setIsLoading] = useState(true);
     const [asinOrUpc, setAsinOrUpc] = useState("");
@@ -114,31 +113,18 @@ export function SearchModal({ isOpen, onClose, title, inputLabel }: SearchModalP
         };
         const marketplaceId = marketplaceMapping[selectedCountry.short_code] || 1;
 
-        // For Tactical Reverse Search Manual mode, call the tactical search API
+        // For Tactical Reverse Search Manual mode, navigate to reverse search page
         if (isTacticalReverseSearch && activeTab === "manual") {
-            try {
-                message.loading({
-                    content: "Initiating tactical search...",
-                    key: "tacticalSearchLoading",
-                    duration: 0
-                });
-                
-                const response = await tacticalSearch({
-                    seller_id: asinOrUpc || undefined,
-                    marketplace_id: marketplaceId,
-                    category_id: selectedCategory ? parseInt(selectedCategory) : undefined
-                }).unwrap();
-                
-                message.destroy("tacticalSearchLoading");
-                setTacticalSearchMessage(response.message || "Tactical search completed and response sent to your email address!");
-                setIsError(false);
-                setShowAINotification(true);
-            } catch (error: any) {
-                message.destroy("tacticalSearchLoading");
-                setTacticalSearchMessage(error?.data?.message || "Failed to initiate tactical search. Please try again.");
-                setIsError(true);
-                setShowAINotification(true);
+            let queryString = `/go-compare/reverse-search?seller_id=${encodeURIComponent(asinOrUpc)}&marketplace_id=${marketplaceId}`;
+            
+            if (selectedCategory) {
+                queryString += `&category_id=${selectedCategory}`;
             }
+            
+            setTimeout(() => {
+                router.push(queryString);
+                handleClose();
+            }, 100);
             return;
         }
         
@@ -160,19 +146,6 @@ export function SearchModal({ isOpen, onClose, title, inputLabel }: SearchModalP
                 router.push(
                     `/go-compare/quick-search?asin=${asinOrUpc}&marketplace_id=${marketplaceId}&queue=${selectedSearchType.value}`
                 );
-                handleClose();
-            }, 100);
-        } else {
-            // Build query params for Tactical Reverse Search
-            let queryString = `/go-compare/reverse-search?query=${asinOrUpc}`;
-            
-            // Add category if selected
-            if (selectedCategory) {
-                queryString += `&category=${selectedCategory}`;
-            }
-            
-            setTimeout(() => {
-                router.push(queryString);
                 handleClose();
             }, 100);
         }

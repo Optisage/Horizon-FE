@@ -21,21 +21,18 @@ import Loader from '@/utils/loader';
 export default function ReverseSearch() {
     const params = useSearchParams();
     const pathname = usePathname();
-    const query = params.get('query') ?? '';
-    const store = params.get('store') ?? '';
+    const seller_id = params.get('seller_id') ?? '';
     const searchId = params.get('searchId');
     const marketplaceId = params.get('marketplace_id') ? parseInt(params.get('marketplace_id')!) : 1;
-    const category = params.get('category') ?? '';
+    const category_id = params.get('category_id') ? parseInt(params.get('category_id')!) : undefined;
 
     const [lastQueryParams, setLastQueryParams] = useState({
-        query, store, marketplaceId, category
+        seller_id, marketplaceId, category_id
     });
 
     const [isRouteChanging, setIsRouteChanging] = useState(false);
     const [page, setPage] = useState(1);
     const [perPage, setPerPage] = useState(300);
-    const [sortBy, setSortBy] = useState("roi");
-    const [sortOrder, setSortOrder] = useState("desc");
 
     const searchByIdResult = useGetSearchByIdQuery(
         { id: searchId ?? '' },
@@ -43,8 +40,8 @@ export default function ReverseSearch() {
     );
 
     const reverseSearchResult = useReverseSearchQuery(
-        { store, queryName: query, perPage, sortBy, sortOrder, marketplaceId, category },
-        { skip: !!searchId, refetchOnMountOrArgChange: true }
+        { seller_id, marketplaceId, category_id, perPage },
+        { skip: !!searchId || !seller_id, refetchOnMountOrArgChange: true }
     );
 
     type QueryResult = {
@@ -82,18 +79,17 @@ export default function ReverseSearch() {
     )
 
     useEffect(() => {
-        const currentParams = { query, store, marketplaceId, category };
+        const currentParams = { seller_id, marketplaceId, category_id };
         const hasParamsChanged =
-            lastQueryParams.query !== currentParams.query ||
-            lastQueryParams.store !== currentParams.store ||
+            lastQueryParams.seller_id !== currentParams.seller_id ||
             lastQueryParams.marketplaceId !== currentParams.marketplaceId ||
-            lastQueryParams.category !== currentParams.category;
+            lastQueryParams.category_id !== currentParams.category_id;
 
         if (hasParamsChanged) {
             setIsRouteChanging(true);
             setLastQueryParams(currentParams);
         }
-    }, [query, store, marketplaceId, category, pathname, lastQueryParams.query, lastQueryParams.store, lastQueryParams.marketplaceId, lastQueryParams.category]);
+    }, [seller_id, marketplaceId, category_id, pathname, lastQueryParams.seller_id, lastQueryParams.marketplaceId, lastQueryParams.category_id]);
 
     useEffect(() => {
         if (!isFetching) {
@@ -170,8 +166,8 @@ export default function ReverseSearch() {
     if (isLoading || isRouteChanging) {
         return (
             <GoCompareLoader
-                asin={query}
-                storeNames={[store]}
+                asin={seller_id}
+                storeNames={[]}
                 isLoading={isLoading || isRouteChanging}
             />
         );
