@@ -162,3 +162,28 @@ html::-webkit-scrollbar {
     opacity: 1;
   }
 }
+
+
+/* Country dropup scrollbar */
+.country-dropup::-webkit-scrollbar {
+  width: 6px;
+}
+
+.country-dropup::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 3px;
+}
+
+.country-dropup::-webkit-scrollbar-thumb {
+  background: #cbd5e0;
+  border-radius: 3px;
+}
+
+.country-dropup::-webkit-scrollbar-thumb:hover {
+  background: #a0aec0;
+}
+
+.country-dropup {
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e0 #f1f1f1;
+}
