@@ -42,7 +42,7 @@ const menuData = [
     path: "",
     label: "Keepa",
     icon: HiOutlineChartBar,
-    comingSoon: true,
+    comingSoon: false,
   },
   {
     id: "5",
@@ -259,14 +259,14 @@ const DashSider = () => {
             {/* Upgrade */}
             <div className="mt-10 flex flex-col justify-end bg-[#48D9AE] bg-[url(/assets/images/upgrade-bg-group-pattern.png)] bg-cover bg-no-repeat bg-center rounded-lg h-[277px] p-4">
               <Link
-                href=""
+                href="/subscriptions"
                 className="text-[#0F172A] text-lg md:text-xl xl:text-[22px] font-bold flex items-center gap-2"
               >
                 Upgrade Plans
                 <HiMiniArrowTopRightOnSquare size={20} />
               </Link>
               <p className="text-white font-medium text-sm mt-1">
-                Plans $45 upwards
+                Plans $35 upwards
               </p>
             </div>
 

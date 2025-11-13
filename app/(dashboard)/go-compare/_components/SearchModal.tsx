@@ -44,7 +44,7 @@ export function SearchModal({ isOpen, onClose, title, inputLabel }: SearchModalP
         if (isTacticalReverseSearch) {
             getReverseSearchCategories({});
         }
-    }, [isTacticalReverseSearch, getCountries, getReverseSearchCategories]);
+    }, [getCountries, getProductCategories, isTacticalReverseSearch]);
 
     useEffect(() => {
         if (countries?.data?.length > 0) {
@@ -87,26 +87,34 @@ export function SearchModal({ isOpen, onClose, title, inputLabel }: SearchModalP
             return;
         }
         
-        const marketplaceMapping: { [key: string]: number } = {
-            'US': 1,
-            'UK': 2,
-            'CA': 6,
-            'AU': 4,
-            'DE': 5,
-            'FR': 3,
-            'NG': 7,
-            'IN': 8
-        };
-        const marketplaceId = marketplaceMapping[selectedCountry.short_code] || 1;
-
-        // For Tactical Reverse Search Manual mode, navigate to reverse search page
-        if (isTacticalReverseSearch && activeTab === "manual") {
-            if (!asinOrUpc) {
-                message.error("Please enter a seller ID");
-                return;
-            }
-
-            let queryString = `/go-compare/reverse-search?seller_id=${encodeURIComponent(asinOrUpc)}&marketplace_id=${marketplaceId}`;
+        message.loading({
+            content: "Initiating search...",
+            key: "searchLoading",
+            duration: 1
+        });
+        
+        if (title === "Quick Search") {
+            const marketplaceMapping: { [key: string]: number } = {
+                'US': 1,
+                'UK': 2,
+                'CA': 6,
+                'AU': 4,
+                'DE': 5,
+                'FR': 3,
+                'NG': 7,
+                'IN': 8
+            };
+            const marketplaceId = marketplaceMapping[selectedCountry.short_code] || 1;
+            
+            setTimeout(() => {
+                router.push(
+                    `/go-compare/quick-search?asin=${asinOrUpc}&marketplace_id=${marketplaceId}`
+                );
+                handleClose();
+            }, 100);
+        } else {
+            // Build query params for Tactical Reverse Search
+            let queryString = `/go-compare/reverse-search?query=${asinOrUpc}`;
             
             if (selectedCategory) {
                 queryString += `&category_id=${selectedCategory}`;
@@ -179,7 +187,53 @@ export function SearchModal({ isOpen, onClose, title, inputLabel }: SearchModalP
                     </button>
                 </div>
 
-                <div className="p-5 pt-4 max-h-[70vh] overflow-y-auto space-y-4 font-normal">
+                {/* Tabs - Only show for Tactical Reverse Search */}
+                {isTacticalReverseSearch && (
+                    <div className="px-5 border-b border-gray-200">
+                        <div className="flex gap-4">
+                            <button
+                                onClick={() => setActiveTab("manual")}
+                                className={`pb-3 px-1 text-sm font-medium border-b-2 transition-colors ${
+                                    activeTab === "manual"
+                                        ? "border-primary text-primary"
+                                        : "border-transparent text-gray-500 hover:text-gray-700"
+                                }`}
+                            >
+                                Manual Search
+                            </button>
+                            <button
+                                onClick={() => setActiveTab("ai")}
+                                className={`pb-3 px-1 text-sm font-medium border-b-2 transition-colors ${
+                                    activeTab === "ai"
+                                        ? "border-primary text-primary"
+                                        : "border-transparent text-gray-500 hover:text-gray-700"
+                                }`}
+                            >
+                                AI Search
+                            </button>
+                        </div>
+                    </div>
+                )}
+
+                <div className="p-5 pt-4 max-h-[70vh] overflow-y-visible space-y-4 font-normal">
+                    {/* AI Search Tab Content */}
+                    {isTacticalReverseSearch && activeTab === "ai" ? (
+                        <div className="py-6">
+                            <div className="text-center">
+                                <div className="mb-4">
+                                    <svg className="mx-auto h-16 w-16 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                                    </svg>
+                                </div>
+                                <h3 className="text-lg font-medium text-gray-900 mb-2">AI-Powered Search</h3>
+                                <p className="text-sm text-gray-600 leading-relaxed">
+                                    Our AI will automatically search and analyze the best possible products for you based on intelligent market analysis and trends.
+                                </p>
+                            </div>
+                        </div>
+                    ) : (
+                        /* Manual Search / Default Content */
+                        <>
                             <div>
                                 <label htmlFor="asin-upc" className="block text-xs text-[#737379] mb-1.5">
                                     {inputLabel}
@@ -255,11 +309,15 @@ export function SearchModal({ isOpen, onClose, title, inputLabel }: SearchModalP
                                             )}
                                             <span>{isLoading ? "Loading..." : selectedCountry?.name}</span>
                                         </div>
-                                        <GoChevronDown size={18} color="black" />
+                                        {isCountryDropdownOpen ? (
+                                            <GoChevronUp size={18} color="black" />
+                                        ) : (
+                                            <GoChevronDown size={18} color="black" />
+                                        )}
                                     </button>
 
                                     {isCountryDropdownOpen && (
-                                        <div className="absolute z-10 mt-1 px-2 w-full text-sm bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-auto">
+                                        <div className="country-dropup absolute z-10 bottom-full mb-1 px-2 w-full text-sm bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-y-auto overflow-x-hidden">
                                             {countries?.data.map((country: Country) => (
                                                 <button
                                                     key={country.id}
@@ -307,6 +365,10 @@ export function SearchModal({ isOpen, onClose, title, inputLabel }: SearchModalP
                                     )}
                                 </div>
                             </div>
+
+
+                        </>
+                    )}
                 </div>
 
                 <div className="p-5 text-sm font-medium flex justify-end space-x-3">
