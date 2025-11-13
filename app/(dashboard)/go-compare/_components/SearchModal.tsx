@@ -1,7 +1,7 @@
 "use client";
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useRef, useState } from "react";
-import { GoChevronDown } from "react-icons/go";
+import { GoChevronDown, GoChevronUp } from "react-icons/go";
 import { IoCloseOutline } from "react-icons/io5";
 import Image from "next/image";
 import { useLazyGetAllCountriesQuery, useLazyGetReverseSearchCategoriesQuery } from "@/redux/api/quickSearchApi";
@@ -44,7 +44,7 @@ export function SearchModal({ isOpen, onClose, title, inputLabel }: SearchModalP
         if (isTacticalReverseSearch) {
             getReverseSearchCategories({});
         }
-    }, [getCountries, getProductCategories, isTacticalReverseSearch]);
+    }, [getCountries, getReverseSearchCategories, isTacticalReverseSearch]);
 
     useEffect(() => {
         if (countries?.data?.length > 0) {
@@ -87,34 +87,26 @@ export function SearchModal({ isOpen, onClose, title, inputLabel }: SearchModalP
             return;
         }
         
-        message.loading({
-            content: "Initiating search...",
-            key: "searchLoading",
-            duration: 1
-        });
-        
-        if (title === "Quick Search") {
-            const marketplaceMapping: { [key: string]: number } = {
-                'US': 1,
-                'UK': 2,
-                'CA': 6,
-                'AU': 4,
-                'DE': 5,
-                'FR': 3,
-                'NG': 7,
-                'IN': 8
-            };
-            const marketplaceId = marketplaceMapping[selectedCountry.short_code] || 1;
-            
-            setTimeout(() => {
-                router.push(
-                    `/go-compare/quick-search?asin=${asinOrUpc}&marketplace_id=${marketplaceId}`
-                );
-                handleClose();
-            }, 100);
-        } else {
-            // Build query params for Tactical Reverse Search
-            let queryString = `/go-compare/reverse-search?query=${asinOrUpc}`;
+        const marketplaceMapping: { [key: string]: number } = {
+            'US': 1,
+            'UK': 2,
+            'CA': 6,
+            'AU': 4,
+            'DE': 5,
+            'FR': 3,
+            'NG': 7,
+            'IN': 8
+        };
+        const marketplaceId = marketplaceMapping[selectedCountry.short_code] || 1;
+
+        // For Tactical Reverse Search Manual mode, navigate to reverse search page
+        if (isTacticalReverseSearch && activeTab === "manual") {
+            if (!asinOrUpc) {
+                message.error("Please enter a seller ID");
+                return;
+            }
+
+            let queryString = `/go-compare/reverse-search?seller_id=${encodeURIComponent(asinOrUpc)}&marketplace_id=${marketplaceId}`;
             
             if (selectedCategory) {
                 queryString += `&category_id=${selectedCategory}`;
