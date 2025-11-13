@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 
 export async function POST(
   req: NextRequest,
-  { params }: { params: { scanId: string } }
+  { params }: { params: Promise<{ scanId: string }> }
 ) {
   try {
     // Get auth token from cookies
@@ -15,7 +15,8 @@ export async function POST(
       );
     }
 
-    const { scanId } = await Promise.resolve(params);
+    // Await params since it's a Promise in Next.js 15+
+    const { scanId } = await params;
     
     // Forward the request to the backend API
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;

@@ -42,7 +42,7 @@ const menuData = [
     path: "",
     label: "Keepa",
     icon: HiOutlineChartBar,
-    comingSoon: true,
+    comingSoon: false,
   },
   {
     id: "5",
@@ -214,6 +214,23 @@ const DashSider = () => {
           <ul className="space-y-1 px-4">{renderMenu(billingMenu)}</ul>
         </div>
 
+
+          {/* Support */}
+          <div className="p-4 border-t border-gray-200 mt-6">
+            <p className="text-sm font-medium">
+              Need Help? Contact Support
+            </p>
+            <p className="text-xs text-gray-500 mt-1">
+              Get assistance with your account, technical issues, or any questions about optisage.
+            </p>
+            <button
+              onClick={() => window.open("https://crm.optisage.ai/forms/ticket?styled=1", "_blank")}
+              className="bg-primary hover:bg-primary-hover duration-200 text-white text-sm font-medium px-4 py-2 rounded-md w-full mt-3 active:scale-95"
+            >
+              Contact Support
+            </button>
+          </div>
+
         {/* Bottom Section */}
         {!collapsed && (
           <div className="p-4 mt-6">
@@ -242,14 +259,14 @@ const DashSider = () => {
             {/* Upgrade */}
             <div className="mt-10 flex flex-col justify-end bg-[#48D9AE] bg-[url(/assets/images/upgrade-bg-group-pattern.png)] bg-cover bg-no-repeat bg-center rounded-lg h-[277px] p-4">
               <Link
-                href=""
+                href="/subscriptions"
                 className="text-[#0F172A] text-lg md:text-xl xl:text-[22px] font-bold flex items-center gap-2"
               >
                 Upgrade Plans
                 <HiMiniArrowTopRightOnSquare size={20} />
               </Link>
               <p className="text-white font-medium text-sm mt-1">
-                Plans $45 upwards
+                Plans $35 upwards
               </p>
             </div>
 

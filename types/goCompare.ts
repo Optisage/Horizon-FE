@@ -40,7 +40,7 @@ export interface CountryResponse {
     status: number;
     message: string;
     data: Country[];
-    meta: any[];
+    meta: Record<string, unknown>[];
 }
 
 export interface ApiSearchResponseItem {
@@ -53,7 +53,7 @@ export interface ApiSearchResponseItem {
         country: string;
         id: number;
     };
-    stores: any[];
+    stores: Store[];
     results_count: number;
     query: string;
     type_of_search: string;
@@ -104,28 +104,40 @@ export interface AmazonProduct {
 
 // New QuickSearchResult interface for the updated API
 export interface QuickSearchResult {
+    asin: string;
     store_name: string;
     product_name: string;
-    asin: string;
+    image_url: string;
     price: string;
     currency: string;
     country: string;
     product_url: string;
-    image_url: string;
     created_at: string;
-    number_of_sellers?: number;
-    profit_margin?: number;
-    gross_roi?: number;
-    target_fees?: string | number;
-    sales_rank?: number;
-    buybox_price?: string;
+    profit_margin: number;
+    gross_roi: number;
+    target_fees: string;
+    amazon_price: string;
+    sales_rank: string;
+    buybox_price: string;
+    number_of_sellers: string;
 }
 
 export interface QuickSearchResponse {
     status: number;
     message: string;
-    data: QuickSearchResult[];
-    meta: any[];
+    data: {
+        id: number;
+        user_id: number;
+        marketplace_id: number;
+        asin_upc: string;
+        search_type: string;
+        amazon_price: string;
+        stores: string[];
+        status: string;
+        results_count: number;
+        results: QuickSearchResult[];
+    };
+    meta: Record<string, unknown>[];
 }
 
 // Product Details API interfaces
@@ -151,7 +163,7 @@ export interface ProductDetailsResponse {
     message: string;
     data: ProductDetails;
     responseCode: string;
-    meta: any[];
+    meta: Record<string, unknown>[];
 }
 
 // Keep the old interface for backward compatibility
@@ -161,8 +173,8 @@ export interface QuickSearchData {
 }
 
 export interface ReverseSearchData {
-    buybox_price: any
-    price: any
+    buybox_price: string | number
+    price: string | number
     target_fees: string
     id: string
     display_message: string

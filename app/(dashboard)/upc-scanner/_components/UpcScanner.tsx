@@ -1,6 +1,7 @@
 "use client";
-
-import React, { useState, useRef, useEffect, useCallback, useMemo } from "react";
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-unused-vars */
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import { MdOutlineInsertChartOutlined } from "react-icons/md";
 import Header from "./Header";
 import ScanResultsTable from "./scan-results-table";
@@ -605,6 +606,8 @@ const UpcScanner = () => {
     }
 
     setIsUploading(true);
+    const retryCount = 0;
+    const maxRetries = 2;
     
     const attemptUpload = async () => {
       try {

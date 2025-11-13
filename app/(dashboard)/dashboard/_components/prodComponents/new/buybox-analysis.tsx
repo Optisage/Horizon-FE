@@ -1,8 +1,9 @@
 "use client";
 /* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect } from "react";
 import { BiChevronDown } from "react-icons/bi";
-import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
+import { PieChart, Pie, Cell, ResponsiveContainer, Sector } from "recharts";
 import { useGetBuyboxInfoQuery } from "@/redux/api/productsApi";
 import dayjs from "dayjs";
 
@@ -34,6 +35,7 @@ const BuyboxAnalysis = ({ asin, marketplaceId }: BuyboxAnalysisProps) => {
   const [statEndDate, setStatEndDate] = useState(
     dayjs().format("YYYY-MM-DD")
   );
+  const [activeIndex, setActiveIndex] = useState<number | null>(null);
 
   const {
     data: buyboxData,
@@ -96,6 +98,59 @@ const BuyboxAnalysis = ({ asin, marketplaceId }: BuyboxAnalysisProps) => {
     setStatEndDate(endDate.format("YYYY-MM-DD"));
   };
 
+  // Handle pie chart click
+  const onPieClick = (_: any, index: number) => {
+    setActiveIndex(activeIndex === index ? null : index);
+  };
+
+  // Render active shape with percentage
+  const renderActiveShape = (props: any) => {
+    const { cx, cy, innerRadius, outerRadius, startAngle, endAngle, fill, payload } = props;
+    
+    return (
+      <g>
+        <Sector
+          cx={cx}
+          cy={cy}
+          innerRadius={innerRadius}
+          outerRadius={outerRadius + 10}
+          startAngle={startAngle}
+          endAngle={endAngle}
+          fill={fill}
+        />
+        <Sector
+          cx={cx}
+          cy={cy}
+          innerRadius={innerRadius - 5}
+          outerRadius={innerRadius}
+          startAngle={startAngle}
+          endAngle={endAngle}
+          fill={fill}
+        />
+        <text
+          x={cx}
+          y={cy + 10}
+          textAnchor="middle"
+          fill="#414D55"
+          className="font-bold text-2xl"
+        >
+          {payload.value}%
+        </text>
+        {/** 
+        <text
+          x={cx}
+          y={cy + 15}
+          textAnchor="middle"
+          fill="#696D6E"
+          className="text-xs font-medium"
+        >
+          {payload.name}
+        </text>
+        */}
+      </g>
+    );
+  };
+
   return (
     <div className="rounded-xl  ">
       <div className="flex gap-4 items-center justify-between">
@@ -151,6 +206,10 @@ const BuyboxAnalysis = ({ asin, marketplaceId }: BuyboxAnalysisProps) => {
                   paddingAngle={2}
                   dataKey="value"
                   stroke="none"
+                  onClick={onPieClick}
+                  activeIndex={activeIndex !== null ? activeIndex : undefined}
+                  activeShape={renderActiveShape}
+                  style={{ cursor: "pointer" }}
                 >
                   {pieData.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={entry.color} />
@@ -159,22 +218,14 @@ const BuyboxAnalysis = ({ asin, marketplaceId }: BuyboxAnalysisProps) => {
               </PieChart>
             </ResponsiveContainer>
 
-            {/* Center Label 
-            <div className="absolute text-center">
-              <div className="text-2xl lg:text-3xl xl:text-[32px] font-bold text-[#414D55]">
-                {totalSellers}
-              </div>
-              <div className="text-xs text-[#696D6E] font-medium">SELLERS</div>
-            </div>
-            */}
-
-            {/* Buy Box Winner Tag
-            {buyboxWinner && (
-              <div className="absolute top-6 left-1/2 -translate-x-1/2 -translate-y-full bg-white px-2 py-1 rounded-full shadow text-xs font-semibold text-black">
-                {buyboxWinner.seller.toUpperCase()}
+            {/* Center Label when nothing is selected */}
+            {activeIndex === null && (
+              <div className="absolute text-center pointer-events-none">
+                <div className="text-xs text-[#696D6E] font-medium">
+                  Click to view
+                </div>
               </div>
             )}
-               */}
           </div>
 
           {/* Legend */}
@@ -182,23 +233,26 @@ const BuyboxAnalysis = ({ asin, marketplaceId }: BuyboxAnalysisProps) => {
             {pieData.map((entry, index) => (
               <div
                 key={index}
-                className="flex items-center gap-2 text-sm hover:bg-gray-50 p-1 rounded transition-colors"
+                className={`flex items-center gap-2 text-sm p-1 rounded transition-colors cursor-pointer ${
+                  activeIndex === index ? "bg-gray-100" : "hover:bg-gray-50"
+                }`}
+                onClick={() => setActiveIndex(activeIndex === index ? null : index)}
               >
                 <span
                   className="w-3 h-3 rounded-sm flex-shrink-0"
                   style={{ backgroundColor: entry.color }}
                 />
-                <span className="flex-1 truncate font-medium text-gray-700">
+                <span className="flex-1 truncate font-medium text-gray-700 space-x-3">
                   {entry.name}
-                </span>
-                <span className="font-semibold text-gray-900">
-                  {entry.value}%
                 </span>
                 {buybox[index]?.is_buybox_winner && (
                   <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-medium">
                     Winner
                   </span>
                 )}
+                <span className="font-semibold text-gray-900">
+                  {entry.value}%
+                </span>
               </div>
             ))}
           </div>
