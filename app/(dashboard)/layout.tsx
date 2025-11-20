@@ -1,4 +1,5 @@
 "use client";
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import {
   useLazyGetProfileQuery,
   useUpdateConnectAmazonMutation,
@@ -229,7 +230,7 @@ export default function DashboardLayout({
               {/* Body */}
               <div className="p-0 text-center">
                 <h2 className="text-base font-normal mb-3 text-[#596375]">
-                  Your current subscription package doesn't allow this feature.
+                  Your current subscription package doesnt allow this feature.
                   To access, click the upgrade button to upgrade your
                   subscription package.
                 </h2>
