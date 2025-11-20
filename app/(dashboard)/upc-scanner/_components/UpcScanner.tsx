@@ -1,12 +1,12 @@
 "use client";
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import React, { useState, useRef, useEffect, useCallback } from "react";
+import React, { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { MdOutlineInsertChartOutlined } from "react-icons/md";
 import Header from "./Header";
 import ScanResultsTable from "./scan-results-table";
 import { HiOutlineCloudArrowUp } from "react-icons/hi2";
-import ConfirmScanModal from "./confirm-scan-modal";
+
 import ScanDetailsTable from "./scan-details-table";
 import { CgClose } from "react-icons/cg";
 import MiniDatePicker from "./date-picker";
@@ -93,7 +93,7 @@ interface ScanDetailsData extends ScanResult {
 
 const UpcScanner = () => {
   const [activeTab, setActiveTab] = useState<Tab>("upc");
-  const [isModalOpen, setIsModalOpen] = useState(false);
+
   const [selectedProductId, setSelectedProductId] = useState<string | null>(
     null
   );
@@ -536,11 +536,6 @@ const UpcScanner = () => {
   };
 
   const handleStartNewScan = () => {
-    setIsModalOpen(true);
-  };
-
-  const handleConfirmScan = () => {
-    setIsModalOpen(false);
     setActiveTab("new");
   };
 
@@ -732,11 +727,7 @@ const UpcScanner = () => {
               </div>
             )}
 
-            <ConfirmScanModal
-              isOpen={isModalOpen}
-              onClose={() => setIsModalOpen(false)}
-              onConfirm={handleConfirmScan}
-            />
+
           </div>
 
           {activeTab === "upc" && !selectedProductId && (
