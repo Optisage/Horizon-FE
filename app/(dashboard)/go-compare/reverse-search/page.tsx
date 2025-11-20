@@ -34,8 +34,21 @@ export default function ReverseSearch() {
                 })
                 .catch((err: unknown) => {
                     console.error('Reverse search error:', err);
-                    const error = err as { data?: { message?: string } };
-                    setErrorMessage(error?.data?.message || 'Failed to initiate tactical search. Please try again.');
+                    const error = err as { status?: number; data?: { message?: string } };
+                    
+                    // Handle specific error status codes
+                    let message = 'Failed to initiate tactical search. Please try again.';
+                    if (error?.status === 400) {
+                        message = 'Unsupported marketplace value or bad request';
+                    } else if (error?.status === 404) {
+                        message = 'No ASINs found for seller or category filter mismatch';
+                    } else if (error?.status === 502) {
+                        message = 'Error communicating with analyser service';
+                    } else if (error?.data?.message) {
+                        message = error.data.message;
+                    }
+                    
+                    setErrorMessage(message);
                     setIsProcessing(false);
                     setShowModal(true);
                 });
