@@ -137,7 +137,7 @@ const SearchHistory = () => {
                                                 )}
                                             </div>
                                         </td>
-                                        <td className="px-4 py-3">{record.results}</td>
+                                        <td className="px-4 py-3">{Math.min(record.results, 10)}</td>
                                     </tr>
                                 ))}
                             </tbody>
