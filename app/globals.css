@@ -118,7 +118,7 @@ img {
 .three-dot-loader .dot {
   width: 4px;
   height: 4px;
-  background-color: #6b7280;
+  background-color: #18cb96;
   border-radius: 50%;
   animation: threeDotBounce 1.4s infinite ease-in-out;
 }
