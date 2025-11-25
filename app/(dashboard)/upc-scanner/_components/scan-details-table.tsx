@@ -2,6 +2,7 @@
 
 import { GoSearch } from "react-icons/go";
 import { Spin } from "antd";
+import { HiChevronUpDown, HiChevronUp, HiChevronDown } from "react-icons/hi2";
 
 interface ProductCost {
   amount: string | null;
@@ -42,6 +43,8 @@ interface ScanDetailsProps {
   isLoading?: boolean;
 }
 
+type SortOrder = 'asc' | 'desc' | null;
+
 const formatCurrency = (cost: ProductCost | undefined) => {
   if (!cost || cost.amount === null) return "-";
   return `${cost.currency}${cost.amount}`;
@@ -52,12 +55,54 @@ const formatValue = (value: string | number | null | undefined) => {
   return value.toString();
 };
 
-import { useEffect, useRef } from "react";
+const parsePrice = (cost: ProductCost | undefined): number => {
+  if (!cost || cost.amount === null) return 0;
+  return parseFloat(cost.amount) || 0;
+};
+
+import { useEffect, useRef, useState, useMemo } from "react";
 
 const ScanDetailsTable = ({ products = [], isLoading = false }: ScanDetailsProps) => {
   const tableContainerRef = useRef<HTMLDivElement>(null);
   const scrollbarRef = useRef<HTMLDivElement>(null);
   const scrollbarThumbRef = useRef<HTMLDivElement>(null);
+  const [sortOrder, setSortOrder] = useState<SortOrder>(null);
+
+  // Sort products based on Buy Box Price
+  const sortedProducts = useMemo(() => {
+    if (!sortOrder) return products;
+    
+    return [...products].sort((a, b) => {
+      const priceA = parsePrice(a.buy_box_price);
+      const priceB = parsePrice(b.buy_box_price);
+      
+      if (sortOrder === 'asc') {
+        return priceA - priceB;
+      } else {
+        return priceB - priceA;
+      }
+    });
+  }, [products, sortOrder]);
+
+  const handleSort = () => {
+    if (sortOrder === null) {
+      setSortOrder('asc');
+    } else if (sortOrder === 'asc') {
+      setSortOrder('desc');
+    } else {
+      setSortOrder(null);
+    }
+  };
+
+  const getSortIcon = () => {
+    if (sortOrder === 'asc') {
+      return <HiChevronUp className="size-4 text-primary" />;
+    } else if (sortOrder === 'desc') {
+      return <HiChevronDown className="size-4 text-primary" />;
+    } else {
+      return <HiChevronUpDown className="size-4 text-gray-400 group-hover:text-gray-600" />;
+    }
+  };
 
   useEffect(() => {
     const tableContainer = tableContainerRef.current;
@@ -124,7 +169,16 @@ const ScanDetailsTable = ({ products = [], isLoading = false }: ScanDetailsProps
               </th>
               <th className="px-4 py-3 text-left font-medium">UPC / EAN</th>
               <th className="px-4 py-3 text-left font-medium">Product Cost</th>
-              <th className="px-4 py-3 text-left font-medium">Buy Box Price</th>
+              <th className="px-4 py-3 text-left font-medium">
+                <button
+                  type="button"
+                  onClick={handleSort}
+                  className="group flex items-center gap-1 hover:text-gray-800 transition-colors"
+                >
+                  Buy Box Price
+                  {getSortIcon()}
+                </button>
+              </th>
               <th className="px-4 py-3 text-left font-medium">FBA Fee</th>
               <th className="px-4 py-3 text-left font-medium">Referral Fee</th>
               <th className="px-4 py-3 text-left font-medium">Storage Fee</th>
@@ -171,7 +225,7 @@ const ScanDetailsTable = ({ products = [], isLoading = false }: ScanDetailsProps
                 </td>
               </tr>
             ) : (
-              products.map((product, idx) => (
+              sortedProducts.map((product, idx) => (
                 <tr key={idx} className="border-b border-gray-200">
                   <td className="px-4 py-3">
                     <GoSearch className="size-4 text-gray-500" />
@@ -222,7 +276,14 @@ const ScanDetailsTable = ({ products = [], isLoading = false }: ScanDetailsProps
                     Product Cost
                   </th>
                   <th className="w-32 px-4 py-3 text-left font-medium whitespace-nowrap">
-                    Buy Box Price
+                    <button
+                      type="button"
+                      onClick={handleSort}
+                      className="group flex items-center gap-1 hover:text-gray-800 transition-colors"
+                    >
+                      Buy Box Price
+                      {getSortIcon()}
+                    </button>
                   </th>
                 </tr>
               </thead>
@@ -242,7 +303,7 @@ const ScanDetailsTable = ({ products = [], isLoading = false }: ScanDetailsProps
                     </td>
                   </tr>
                 ) : (
-                  products.map((product, idx) => (
+                  sortedProducts.map((product, idx) => (
                     <tr key={idx} className="border-b border-gray-200 h-12">
                       <td className="px-4 py-2">
                         <GoSearch className="size-4 text-gray-500" />
@@ -310,7 +371,7 @@ const ScanDetailsTable = ({ products = [], isLoading = false }: ScanDetailsProps
                     </td>
                   </tr>
                 ) : (
-                  products.map((product, idx) => (
+                  sortedProducts.map((product, idx) => (
                     <tr key={idx} className="border-b border-gray-200 h-12">
                       <td className="px-4 py-2">{formatValue(product.product_details.fba_fee)}</td>
                       <td className="px-4 py-2">{formatValue(product.product_details.referral_fee)}</td>
