@@ -113,7 +113,7 @@ const ScanDetailsTable = ({ products = [], isLoading = false }: ScanDetailsProps
     };
   }, []);
   return (
-    <div className="w-full overflow-x-auto rounded-b-xl border border-gray-200">
+    <div className="w-full overflow-x-auto scrollbar-hide rounded-b-xl border border-gray-200">
       {/* Mobile View */}
       <div className="sm:hidden">
         <table className="table-fixed w-full min-w-[1600px] text-sm bg-white">
@@ -124,7 +124,6 @@ const ScanDetailsTable = ({ products = [], isLoading = false }: ScanDetailsProps
               </th>
               <th className="px-4 py-3 text-left font-medium">UPC / EAN</th>
               <th className="px-4 py-3 text-left font-medium">Product Cost</th>
-              <th className="px-4 py-3 text-left font-medium">Selling Price</th>
               <th className="px-4 py-3 text-left font-medium">Buy Box Price</th>
               <th className="px-4 py-3 text-left font-medium">FBA Fee</th>
               <th className="px-4 py-3 text-left font-medium">Referral Fee</th>
@@ -140,8 +139,8 @@ const ScanDetailsTable = ({ products = [], isLoading = false }: ScanDetailsProps
                 Amazon Instock Rate
               </th>
               <th className="px-4 py-3 text-left font-medium"># FBA Sellers</th>
-               <th className="px-4 py-3 text-left font-medium"># FBM Sellers</th>
-               <th className="px-4 py-3 text-left font-medium"># AMZ Sellers</th>
+              <th className="px-4 py-3 text-left font-medium"># FBM Sellers</th>
+              <th className="px-4 py-3 text-left font-medium"># AMZ Sellers</th>
               <th className="px-4 py-3 text-left font-medium">
                 Est. Monthly Sold
               </th>
@@ -159,7 +158,7 @@ const ScanDetailsTable = ({ products = [], isLoading = false }: ScanDetailsProps
           <tbody className="text-gray-700">
             {isLoading ? (
               <tr>
-                <td colSpan={21} className="px-4 py-8 text-center">
+                <td colSpan={20} className="px-4 py-8 text-center">
                   <div className="flex justify-center">
                     <Spin size="large" style={{ color: "#18CB96" }} />
                   </div>
@@ -167,7 +166,7 @@ const ScanDetailsTable = ({ products = [], isLoading = false }: ScanDetailsProps
               </tr>
             ) : products.length === 0 ? (
               <tr>
-                <td colSpan={21} className="px-4 py-8 text-center">
+                <td colSpan={20} className="px-4 py-8 text-center">
                   No products found
                 </td>
               </tr>
@@ -179,7 +178,6 @@ const ScanDetailsTable = ({ products = [], isLoading = false }: ScanDetailsProps
                   </td>
                   <td className="px-4 py-3">{product.asin_upc}</td>
                   <td className="px-4 py-3">{formatCurrency(product.product_cost)}</td>
-                  <td className="px-4 py-3">{formatCurrency(product.selling_price)}</td>
                   <td className="px-4 py-3">{formatCurrency(product.buy_box_price)}</td>
                   <td className="px-4 py-3">{formatValue(product.product_details.fba_fee)}</td>
                   <td className="px-4 py-3">{formatValue(product.product_details.referral_fee)}</td>
@@ -191,8 +189,8 @@ const ScanDetailsTable = ({ products = [], isLoading = false }: ScanDetailsProps
                   <td className="px-4 py-3">{formatValue(product.product_details.rank)}</td>
                   <td className="px-4 py-3">{formatValue(product.product_details.amazon_instock_rate)}</td>
                   <td className="px-4 py-3">{formatValue(product.product_details.number_of_fba)}</td>
-                 <td className="px-4 py-3">{formatValue(product.product_details.number_of_fbm)}</td>
-                 <td className="px-4 py-3">{formatValue(product.product_details.number_of_amz)}</td>
+                  <td className="px-4 py-3">{formatValue(product.product_details.number_of_fbm)}</td>
+                  <td className="px-4 py-3">{formatValue(product.product_details.number_of_amz)}</td>
                   <td className="px-4 py-3">{formatValue(product.product_details.estimated_monthly_sales)}</td>
                   <td className="px-4 py-3">{formatValue(product.product_details.buy_box_equity)}</td>
                   <td className="px-4 py-3">{formatValue(product.product_details.out_of_stock)}</td>
@@ -207,10 +205,10 @@ const ScanDetailsTable = ({ products = [], isLoading = false }: ScanDetailsProps
       </div>
 
       {/* Desktop View */}
-      <div className="relative hidden sm:block w-full overflow-x-auto">
-        <div className="flex w-max">
+      <div className="relative hidden sm:block w-full">
+        <div className="flex">
           {/* Left Table */}
-          <div className="sticky left-0 z-10 w-[640px] border-r border-gray-300 bg-white">
+          <div className="sticky left-0 z-10 w-[512px] border-r border-gray-300 bg-white">
             <table className="table-fixed w-full text-sm border-separate border-spacing-0">
               <thead className="bg-[#F3F4F6] text-[#596375]">
                 <tr className="border-b border-gray-200 h-12">
@@ -223,9 +221,6 @@ const ScanDetailsTable = ({ products = [], isLoading = false }: ScanDetailsProps
                   <th className="w-32 px-4 py-3 text-left font-medium border-r-2 whitespace-nowrap">
                     Product Cost
                   </th>
-                  <th className="w-32 px-4 py-3 text-left font-medium border-r-2 whitespace-nowrap">
-                    Selling Price
-                  </th>
                   <th className="w-32 px-4 py-3 text-left font-medium whitespace-nowrap">
                     Buy Box Price
                   </th>
@@ -234,7 +229,7 @@ const ScanDetailsTable = ({ products = [], isLoading = false }: ScanDetailsProps
               <tbody className="text-gray-700">
                 {isLoading ? (
                   <tr>
-                    <td colSpan={5} className="px-4 py-8 text-center">
+                    <td colSpan={4} className="px-4 py-8 text-center">
                       <div className="flex justify-center">
                         <Spin size="large" />
                       </div>
@@ -242,7 +237,7 @@ const ScanDetailsTable = ({ products = [], isLoading = false }: ScanDetailsProps
                   </tr>
                 ) : products.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="px-4 py-8 text-center">
+                    <td colSpan={4} className="px-4 py-8 text-center">
                       No products found
                     </td>
                   </tr>
@@ -254,7 +249,6 @@ const ScanDetailsTable = ({ products = [], isLoading = false }: ScanDetailsProps
                       </td>
                       <td className="px-4 py-2">{product.asin_upc}</td>
                       <td className="px-4 py-2">{formatCurrency(product.product_cost)}</td>
-                      <td className="px-4 py-2">{formatCurrency(product.selling_price)}</td>
                       <td className="px-4 py-2">{formatCurrency(product.buy_box_price)}</td>
                     </tr>
                   ))
@@ -264,89 +258,83 @@ const ScanDetailsTable = ({ products = [], isLoading = false }: ScanDetailsProps
           </div>
 
           {/* Scrollable Right Table - Fees and Profit Section */}
-          <div className="flex-1 overflow-hidden">
-            <div ref={tableContainerRef} className="overflow-x-auto">
-              <table className="table-fixed w-[2560px] text-sm bg-white border-separate border-spacing-0">
-                <thead className="bg-[#F3F4F6] text-[#596375]">
-                  <tr className="border-b border-gray-200 divide-x-2 h-12">
-                    {[
-                      "FBA Fee",
-                      "Referral Fee",
-                      "Storage Fee",
-                      "Net Profit",
-                      "Net Margin",
-                      "ROI",
-                      "Potential Winner",
-                      "Rank",
-                      "Amazon Instock Rate",
-                      "# FBA Sellers",
-               "# FBM Sellers",
-               "# AMZ Sellers",
-                      "Est. Monthly Sold",
-                      "Buy Box Equity",
-                      "Out of Stock",
-                      "Dominant Seller",
-                      "ASIN",
-                      "Title",
-                    ].map((header) => (
-                      <th
-                        key={header}
-                        className={`px-4 py-3 text-left font-medium whitespace-nowrap ${
-                          header === "Title" ? "w-[75rem]" : 
-                          header === "Dominant Seller" ? "w-[13.2rem]" : 
+          <div ref={tableContainerRef} className="flex-1 overflow-x-auto relative show-scrollbar">
+            <table className="table-fixed w-[2560px] text-sm bg-white border-separate border-spacing-0">
+              <thead className="bg-[#F3F4F6] text-[#596375]">
+                <tr className="border-b border-gray-200 divide-x-2 h-12">
+                  {[
+                    "FBA Fee",
+                    "Referral Fee",
+                    "Storage Fee",
+                    "Net Profit",
+                    "Net Margin",
+                    "ROI",
+                    "Potential Winner",
+                    "Rank",
+                    "Amazon Instock Rate",
+                    "# FBA Sellers",
+                    "# FBM Sellers",
+                    "# AMZ Sellers",
+                    "Est. Monthly Sold",
+                    "Buy Box Equity",
+                    "Out of Stock",
+                    "Dominant Seller",
+                    "ASIN",
+                    "Title",
+                  ].map((header) => (
+                    <th
+                      key={header}
+                      className={`px-4 py-3 text-left font-medium whitespace-nowrap ${header === "Title" ? "w-[75rem]" :
+                        header === "Dominant Seller" ? "w-[13.2rem]" :
                           header === "Potential Winner" ? "w-[13.2rem]" : "w-44"
                         }`}
-                      >
-                        {header}
-                      </th>
-                    ))}
+                    >
+                      {header}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody className="text-gray-700">
+                {isLoading ? (
+                  <tr>
+                    <td colSpan={16} className="px-4 py-8 text-center">
+                      <div className="flex justify-center">
+                        <Spin size="large" style={{ color: "#18CB96" }} />
+                      </div>
+                    </td>
                   </tr>
-                </thead>
-                <tbody className="text-gray-700">
-                  {isLoading ? (
-                    <tr>
-                      <td colSpan={16} className="px-4 py-8 text-center">
-                        <div className="flex justify-center">
-                          <Spin size="large" style={{ color: "#18CB96" }} />
-                        </div>
-                      </td>
+                ) : products.length === 0 ? (
+                  <tr>
+                    <td colSpan={16} className="px-4 py-8 text-center">
+                      No products found
+                    </td>
+                  </tr>
+                ) : (
+                  products.map((product, idx) => (
+                    <tr key={idx} className="border-b border-gray-200 h-12">
+                      <td className="px-4 py-2">{formatValue(product.product_details.fba_fee)}</td>
+                      <td className="px-4 py-2">{formatValue(product.product_details.referral_fee)}</td>
+                      <td className="px-4 py-2">{formatValue(product.product_details.storage_fee)}</td>
+                      <td className="px-4 py-2">{formatValue(product.product_details.net_profit)}</td>
+                      <td className="px-4 py-2">{formatValue(product.product_details.net_margin)}</td>
+                      <td className="px-4 py-2">{formatValue(product.product_details.roi)}</td>
+                      <td className="px-4 py-2">{formatValue(product.product_details.potential_winner)}</td>
+                      <td className="px-4 py-2">{formatValue(product.product_details.rank)}</td>
+                      <td className="px-4 py-2">{formatValue(product.product_details.amazon_instock_rate)}</td>
+                      <td className="px-4 py-2">{formatValue(product.product_details.number_of_fba)}</td>
+                      <td className="px-4 py-2">{formatValue(product.product_details.number_of_fbm)}</td>
+                      <td className="px-4 py-2">{formatValue(product.product_details.number_of_amz)}</td>
+                      <td className="px-4 py-2">{formatValue(product.product_details.estimated_monthly_sales)}</td>
+                      <td className="px-4 py-2">{formatValue(product.product_details.buy_box_equity)}</td>
+                      <td className="px-4 py-2">{formatValue(product.product_details.out_of_stock)}</td>
+                      <td className="px-4 py-2">{formatValue(product.product_details.dominant_seller)}</td>
+                      <td className="px-4 py-2">{formatValue(product.product_details.asin)}</td>
+                      <td className="px-4 py-2">{formatValue(product.product_details.title)}</td>
                     </tr>
-                  ) : products.length === 0 ? (
-                    <tr>
-                      <td colSpan={16} className="px-4 py-8 text-center">
-                        No products found
-                      </td>
-                    </tr>
-                  ) : (
-                    products.map((product, idx) => (
-                      <tr key={idx} className="border-b border-gray-200 h-12">
-                        <td className="px-4 py-2">{formatValue(product.product_details.fba_fee)}</td>
-                        <td className="px-4 py-2">{formatValue(product.product_details.referral_fee)}</td>
-                        <td className="px-4 py-2">{formatValue(product.product_details.storage_fee)}</td>
-                        <td className="px-4 py-2">{formatValue(product.product_details.net_profit)}</td>
-                        <td className="px-4 py-2">{formatValue(product.product_details.net_margin)}</td>
-                        <td className="px-4 py-2">{formatValue(product.product_details.roi)}</td>
-                        <td className="px-4 py-2">{formatValue(product.product_details.potential_winner)}</td>
-                        <td className="px-4 py-2">{formatValue(product.product_details.rank)}</td>
-                        <td className="px-4 py-2">{formatValue(product.product_details.amazon_instock_rate)}</td>
-                        <td className="px-4 py-2">{formatValue(product.product_details.number_of_fba)}</td>
-                 <td className="px-4 py-2">{formatValue(product.product_details.number_of_fbm)}</td>
-                 <td className="px-4 py-2">{formatValue(product.product_details.number_of_amz)}</td>
-                        <td className="px-4 py-2">{formatValue(product.product_details.estimated_monthly_sales)}</td>
-                        <td className="px-4 py-2">{formatValue(product.product_details.buy_box_equity)}</td>
-                        <td className="px-4 py-2">{formatValue(product.product_details.out_of_stock)}</td>
-                        <td className="px-4 py-2">{formatValue(product.product_details.dominant_seller)}</td>
-                        <td className="px-4 py-2">{formatValue(product.product_details.asin)}</td>
-                        <td className="px-4 py-2">{formatValue(product.product_details.title)}</td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
-            <div ref={scrollbarRef} className="custom-scrollbar">
-              <div ref={scrollbarThumbRef} className="custom-scrollbar-thumb"></div>
-            </div>
+                  ))
+                )}
+              </tbody>
+            </table>
           </div>
         </div>
       </div>
