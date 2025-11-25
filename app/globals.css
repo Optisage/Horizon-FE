@@ -2,29 +2,6 @@
 @tailwind components;
 @tailwind utilities;
 
-.custom-scrollbar {
-  height: 8px;
-  background-color: #f1f1f1;
-  border-radius: 4px;
-  cursor: pointer;
-  margin-top: 8px;
-}
-
-.custom-scrollbar-thumb {
-  height: 100%;
-  background-color: #c1c1c1;
-  border-radius: 4px;
-  width: 25%;
-}
-
-.custom-scrollbar-thumb:hover {
-  background-color: #a8a8a8;
-}
-
-.cursor-grabbing {
-  cursor: grabbing;
-}
-
 * {
   scroll-behavior: smooth;
 }
@@ -35,20 +12,7 @@ img {
   /* Disable right-clicking */
   /* user-drag: none; */
 }
-.show-scrollbar::-webkit-scrollbar {
-  display: block !important;
-  width: 8px;
-}
 
-.show-scrollbar::-webkit-scrollbar-thumb {
-  background-color: rgba(0, 0, 0, 0.2);
-  border-radius: 4px;
-}
-
-.show-scrollbar {
-  scrollbar-width: thin !important;
-  scrollbar-color: rgba(0, 0, 0, 0.2) transparent !important;
-}
 /* Hide Scrollbar */
 * {
   scroll-behavior: smooth;
@@ -87,7 +51,7 @@ img {
 .animation-delay-200 {
   animation-delay: 0.2s;
 }
-.animation-delay-200 {
+.animation-delay-300 {
   animation-delay: 0.3s;
 }
 .animation-delay-400 {
@@ -145,7 +109,6 @@ img {
     opacity: 1;
   }
 }
-
 
 /* Country dropup scrollbar */
 .country-dropup::-webkit-scrollbar {
