@@ -93,7 +93,7 @@ export default function QuickSearch() {
                 console.log('Available data structure:', JSON.stringify(quickSearchResult.data, null, 2));
             }
         }
-    }, [quickSearchResult.data, searchId, currentSearchId]);
+    }, [quickSearchResult.data, searchId, currentSearchId, quickSearchResult.isLoading, quickSearchResult.isError, quickSearchResult.error]);
 
     // Log the raw API response for debugging (only in development)
     useEffect(() => {
@@ -362,18 +362,25 @@ export default function QuickSearch() {
                 // Handle direct product data from the drag event
                     if (active.data.current?.product) {
                         const draggedProduct = active.data.current.product;
-                        // Set product for comparison
-                        setSelectedProducts([draggedProduct])
    
-                        // Update selected ASIN for product details
+                        // Update selected ASIN and price for product details
+                        // Match the exact logic from handleRowClick
                         if ('asin' in draggedProduct) {
                             console.log("Drag setting ASIN:", draggedProduct.asin, "Price:", draggedProduct.price);
-                            setSelectedAsin(draggedProduct.asin);
                             setSelectedSalesPrice(draggedProduct.price);
+                            setSelectedAsin(draggedProduct.asin);
+                            setSelectedProducts([draggedProduct]);
                         } else if ('scraped_product' in draggedProduct) {
                             console.log("Drag setting ASIN:", draggedProduct.scraped_product.id, "Price:", draggedProduct.scraped_product.price.formatted);
-                            setSelectedAsin(draggedProduct.scraped_product.id);
                             setSelectedSalesPrice(draggedProduct.scraped_product.price.formatted);
+                            setSelectedAsin(draggedProduct.scraped_product.id);
+                            setSelectedProducts([draggedProduct]);
+                        } else if ('store_name' in draggedProduct) {
+                            // Fallback for QuickSearchResult without asin property
+                            console.log("Drag QuickSearchResult fallback - using original ASIN:", asin, "Price:", draggedProduct.price);
+                            setSelectedSalesPrice(draggedProduct.price);
+                            setSelectedAsin(asin);
+                            setSelectedProducts([draggedProduct]);
                         }
    
                         // Scroll to Comparison Workspace section
@@ -398,10 +405,11 @@ export default function QuickSearch() {
                                  `${product.store_name}-${product.asin}` === active.id
                 )
                 if (draggedProduct) {
-                    console.log("Results array drag setting ASIN:", draggedProduct.asin, "Price:", draggedProduct.price);
-                    setSelectedProducts([draggedProduct as any])
-                    setSelectedAsin(draggedProduct.asin);
+                    // Use product's asin (same as handleRowClick)
+                    console.log("Results array drag - setting ASIN:", draggedProduct.asin, "Price:", draggedProduct.price);
                     setSelectedSalesPrice(draggedProduct.price);
+                    setSelectedAsin(draggedProduct.asin);
+                    setSelectedProducts([draggedProduct as any]);
                 }
             }
             // Handle new API response format with results array
@@ -414,10 +422,11 @@ export default function QuickSearch() {
                                      `${product.store_name}-${product.asin}` === active.id
                 )
                 if (draggedProduct) {
-                    console.log("Fallback drag setting ASIN:", draggedProduct.asin, "Price:", draggedProduct.price);
-                    setSelectedProducts([draggedProduct as any])
-                    setSelectedAsin(draggedProduct.asin);
+                    // Use product's asin (same as handleRowClick)
+                    console.log("Fallback drag - setting ASIN:", draggedProduct.asin, "Price:", draggedProduct.price);
                     setSelectedSalesPrice(draggedProduct.price);
+                    setSelectedAsin(draggedProduct.asin);
+                    setSelectedProducts([draggedProduct as any]);
                 }
             }
             // Handle old QuickSearchData structure
@@ -426,12 +435,13 @@ export default function QuickSearch() {
                     (product) => product.scraped_product.id === active.id
                 )
                 if (draggedProduct) {
-                    setSelectedProducts([draggedProduct])
+                    setSelectedSalesPrice(draggedProduct.scraped_product.price.formatted);
                     setSelectedAsin(draggedProduct.scraped_product.id);
+                    setSelectedProducts([draggedProduct]);
                 }
             }
         }
-    }, [data])
+    }, [data, asin])
 
     const handleRowClick = (product: ProductObj | QuickSearchResult) => {
         console.log("Row clicked - Product:", product);
@@ -708,6 +718,7 @@ export default function QuickSearch() {
                         productData={productData}
                         isSelected={selectedProducts.length > 0}
                         isLoading={amazonProductDetailsResult.isLoading || comparisonProductDetailsResult.isLoading}
+                        isGrossRoiFetching={comparisonProductDetailsResult.isFetching}
                     />
                 </div>
 
