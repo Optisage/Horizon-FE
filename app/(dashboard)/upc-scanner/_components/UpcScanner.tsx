@@ -1,5 +1,5 @@
 "use client";
-/* eslint-disable @typescript-eslint/no-explicit-any */
+ 
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import React, { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { MdOutlineInsertChartOutlined } from "react-icons/md";
