@@ -267,11 +267,11 @@ const ScanDetailsTable = ({ products = [], isLoading = false }: ScanDetailsProps
     };
   }, []);
   return (
-    <div className="w-full overflow-x-auto scrollbar-hide rounded-b-xl border border-gray-200">
+    <div className="w-full overflow-x-auto scrollbar-hide rounded-b-xl border border-gray-200 max-h-[600px] overflow-y-auto">
       {/* Mobile View */}
       <div className="sm:hidden">
         <table className="table-fixed w-full min-w-[1600px] text-sm bg-white">
-          <thead className="bg-[#F3F4F6] text-[#596375]">
+          <thead className="bg-[#F3F4F6] text-[#596375] sticky top-0 z-20">
             <tr className="border-b border-gray-200">
               <th className="px-4 py-3 text-left font-medium">
                 <GoSearch className="size-4 text-gray-500" />
@@ -471,9 +471,9 @@ const ScanDetailsTable = ({ products = [], isLoading = false }: ScanDetailsProps
       <div className="relative hidden sm:block w-full">
         <div className="flex">
           {/* Left Table */}
-          <div className="sticky left-0 z-10 w-[512px] border-r border-gray-300 bg-white">
+          <div className="sticky left-0 z-20 w-[512px] border-r border-gray-300 bg-white">
             <table className="table-fixed w-full text-sm border-separate border-spacing-0">
-              <thead className="bg-[#F3F4F6] text-[#596375]">
+              <thead className="bg-[#F3F4F6] text-[#596375] sticky top-0 z-30">
                 <tr className="border-b border-gray-200 h-12">
                   <th className="w-10 px-4 py-3 text-left font-medium">
                     <GoSearch className="size-4 text-gray-500" />
@@ -530,7 +530,7 @@ const ScanDetailsTable = ({ products = [], isLoading = false }: ScanDetailsProps
           {/* Scrollable Right Table - Fees and Profit Section */}
           <div ref={tableContainerRef} className="flex-1 overflow-x-auto relative show-scrollbar">
             <table className="table-fixed w-[2560px] text-sm bg-white border-separate border-spacing-0">
-              <thead className="bg-[#F3F4F6] text-[#596375]">
+              <thead className="bg-[#F3F4F6] text-[#596375] sticky top-0 z-10">
                 <tr className="border-b border-gray-200 divide-x-2 h-12">
                   <th className="px-4 py-3 text-left font-medium whitespace-nowrap w-44">
                     <button
