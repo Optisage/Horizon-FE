@@ -39,7 +39,7 @@ const menuData = [
   },
   {
     id: "4",
-    path: "",
+    path: "/keepa",
     label: "Keepa",
     icon: HiOutlineChartBar,
     comingSoon: false,

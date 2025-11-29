@@ -1,5 +1,5 @@
 "use client";
-/* eslint-disable @typescript-eslint/no-explicit-any */
+ 
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import React, { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { MdOutlineInsertChartOutlined } from "react-icons/md";
@@ -14,6 +14,7 @@ import { IoSearchOutline } from "react-icons/io5";
 import { message, Modal } from "antd";
 import dayjs from "dayjs";
 import debounce from "lodash/debounce";
+import { useLazyGetFeatureUsageQuery } from "@/redux/api/user";
 
 type Tab = "upc" | "new";
 
@@ -112,6 +113,12 @@ const UpcScanner = () => {
   const dropdownRef = useRef<HTMLDivElement>(null);
   const scanDetailsCache = useRef<Map<number, ScanDetailsData>>(new Map());
   const pendingRequests = useRef<Set<number>>(new Set());
+
+  const [checkUsage, { data, isLoading:UsageLoading, error }] = useLazyGetFeatureUsageQuery()
+
+  useEffect(()=>{
+    checkUsage('upc_scanner')
+  }, [])
 
   // Handle clicking outside dropdown to close it
   useEffect(() => {
@@ -758,6 +765,7 @@ const UpcScanner = () => {
         {/* UPC Scanner Tab */}
         {activeTab === "upc" && (
           <div className="flex flex-col gap-4">
+            <div className=" flex items-center gap-5">
             <p className="text-[#8C94A3] text-sm font-medium">
               {selectedProductId 
                 ? `${scanDetails?.products?.length || 0} Products found` 
@@ -766,6 +774,12 @@ const UpcScanner = () => {
                   : "No searches found"
               }
             </p>
+            <div className=" text-[#8C94A3] text-sm font-medium border rounded-xl p-1 px-3">
+              <span>
+               Scans Left: {(data?.data?.used || 0) + "/" + (data?.data?.limit || 0)}
+                </span>
+            </div>
+            </div>
             {selectedProductId ? (
               <div className="">
                 <div className="bg-[#F3F4F6] rounded-t-xl grid lg:grid-cols-[511px_1fr] lg:divide-x-2 divide-gray-200 border border-b-0 border-gray-200">
