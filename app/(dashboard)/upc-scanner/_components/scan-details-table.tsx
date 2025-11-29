@@ -45,6 +45,26 @@ interface ScanDetailsProps {
 
 type SortOrder = 'asc' | 'desc' | null;
 
+type SortableColumn = 
+  | 'buy_box_price'
+  | 'fba_fee'
+  | 'storage_fee'
+  | 'net_profit'
+  | 'net_margin'
+  | 'roi'
+  | 'rank'
+  | 'amazon_instock_rate'
+  | 'number_of_fba'
+  | 'number_of_fbm'
+  | 'estimated_monthly_sales'
+  | 'buy_box_equity'
+  | 'dominant_seller';
+
+interface SortState {
+  column: SortableColumn | null;
+  order: SortOrder;
+}
+
 const formatCurrency = (cost: ProductCost | undefined) => {
   if (!cost || cost.amount === null) return "-";
   return `${cost.currency}${cost.amount}`;
@@ -60,44 +80,133 @@ const parsePrice = (cost: ProductCost | undefined): number => {
   return parseFloat(cost.amount) || 0;
 };
 
+const parseNumericValue = (value: string | number | null | undefined): number => {
+  if (value === null || value === undefined) return 0;
+  if (typeof value === 'number') return value;
+  // Remove any non-numeric characters except decimal point and minus sign
+  const cleaned = value.replace(/[^0-9.-]/g, '');
+  return parseFloat(cleaned) || 0;
+};
+
+const parseStringValue = (value: string | null | undefined): string => {
+  if (value === null || value === undefined) return '';
+  return value.toLowerCase();
+};
+
 import { useEffect, useRef, useState, useMemo } from "react";
 
 const ScanDetailsTable = ({ products = [], isLoading = false }: ScanDetailsProps) => {
   const tableContainerRef = useRef<HTMLDivElement>(null);
   const scrollbarRef = useRef<HTMLDivElement>(null);
   const scrollbarThumbRef = useRef<HTMLDivElement>(null);
-  const [sortOrder, setSortOrder] = useState<SortOrder>(null);
+  const [sortState, setSortState] = useState<SortState>({ column: null, order: null });
 
-  // Sort products based on Buy Box Price
+  // Sort products based on selected column
   const sortedProducts = useMemo(() => {
-    if (!sortOrder) return products;
+    if (!sortState.column || !sortState.order) return products;
     
     return [...products].sort((a, b) => {
-      const priceA = parsePrice(a.buy_box_price);
-      const priceB = parsePrice(b.buy_box_price);
-      
-      if (sortOrder === 'asc') {
-        return priceA - priceB;
+      let valueA: number | string = 0;
+      let valueB: number | string = 0;
+
+      switch (sortState.column) {
+        case 'buy_box_price':
+          valueA = parsePrice(a.buy_box_price);
+          valueB = parsePrice(b.buy_box_price);
+          break;
+        case 'fba_fee':
+          valueA = parseNumericValue(a.product_details.fba_fee);
+          valueB = parseNumericValue(b.product_details.fba_fee);
+          break;
+        case 'storage_fee':
+          valueA = parseNumericValue(a.product_details.storage_fee);
+          valueB = parseNumericValue(b.product_details.storage_fee);
+          break;
+        case 'net_profit':
+          valueA = parseNumericValue(a.product_details.net_profit);
+          valueB = parseNumericValue(b.product_details.net_profit);
+          break;
+        case 'net_margin':
+          valueA = parseNumericValue(a.product_details.net_margin);
+          valueB = parseNumericValue(b.product_details.net_margin);
+          break;
+        case 'roi':
+          valueA = parseNumericValue(a.product_details.roi);
+          valueB = parseNumericValue(b.product_details.roi);
+          break;
+        case 'rank':
+          valueA = parseNumericValue(a.product_details.rank);
+          valueB = parseNumericValue(b.product_details.rank);
+          break;
+        case 'amazon_instock_rate':
+          valueA = parseNumericValue(a.product_details.amazon_instock_rate);
+          valueB = parseNumericValue(b.product_details.amazon_instock_rate);
+          break;
+        case 'number_of_fba':
+          valueA = parseNumericValue(a.product_details.number_of_fba);
+          valueB = parseNumericValue(b.product_details.number_of_fba);
+          break;
+        case 'number_of_fbm':
+          valueA = parseNumericValue(a.product_details.number_of_fbm);
+          valueB = parseNumericValue(b.product_details.number_of_fbm);
+          break;
+        case 'estimated_monthly_sales':
+          valueA = parseNumericValue(a.product_details.estimated_monthly_sales);
+          valueB = parseNumericValue(b.product_details.estimated_monthly_sales);
+          break;
+        case 'buy_box_equity':
+          valueA = parseNumericValue(a.product_details.buy_box_equity);
+          valueB = parseNumericValue(b.product_details.buy_box_equity);
+          break;
+        case 'dominant_seller':
+          valueA = parseStringValue(a.product_details.dominant_seller);
+          valueB = parseStringValue(b.product_details.dominant_seller);
+          break;
+      }
+
+      // Handle string comparison
+      if (typeof valueA === 'string' && typeof valueB === 'string') {
+        if (sortState.order === 'asc') {
+          return valueA.localeCompare(valueB);
+        } else {
+          return valueB.localeCompare(valueA);
+        }
+      }
+
+      // Handle numeric comparison
+      if (sortState.order === 'asc') {
+        return (valueA as number) - (valueB as number);
       } else {
-        return priceB - priceA;
+        return (valueB as number) - (valueA as number);
       }
     });
-  }, [products, sortOrder]);
+  }, [products, sortState]);
 
-  const handleSort = () => {
-    if (sortOrder === null) {
-      setSortOrder('asc');
-    } else if (sortOrder === 'asc') {
-      setSortOrder('desc');
-    } else {
-      setSortOrder(null);
-    }
+  const handleSort = (column: SortableColumn) => {
+    setSortState(prev => {
+      // If clicking the same column
+      if (prev.column === column) {
+        if (prev.order === null) {
+          return { column, order: 'asc' };
+        } else if (prev.order === 'asc') {
+          return { column, order: 'desc' };
+        } else {
+          return { column: null, order: null };
+        }
+      }
+      // If clicking a different column
+      return { column, order: 'asc' };
+    });
   };
 
-  const getSortIcon = () => {
-    if (sortOrder === 'asc') {
+  const getSortIcon = (column: SortableColumn) => {
+    if (sortState.column !== column) {
+      return <HiChevronUpDown className="size-4 text-gray-400 group-hover:text-gray-600" />;
+    }
+    
+    if (sortState.order === 'asc') {
       return <HiChevronUp className="size-4 text-primary" />;
-    } else if (sortOrder === 'desc') {
+    } else if (sortState.order === 'desc') {
       return <HiChevronDown className="size-4 text-primary" />;
     } else {
       return <HiChevronUpDown className="size-4 text-gray-400 group-hover:text-gray-600" />;
@@ -172,38 +281,138 @@ const ScanDetailsTable = ({ products = [], isLoading = false }: ScanDetailsProps
               <th className="px-4 py-3 text-left font-medium">
                 <button
                   type="button"
-                  onClick={handleSort}
+                  onClick={() => handleSort('buy_box_price')}
                   className="group flex items-center gap-1 hover:text-gray-800 transition-colors"
                 >
                   Buy Box Price
-                  {getSortIcon()}
+                  {getSortIcon('buy_box_price')}
                 </button>
               </th>
-              <th className="px-4 py-3 text-left font-medium">FBA Fee</th>
+              <th className="px-4 py-3 text-left font-medium">
+                <button
+                  type="button"
+                  onClick={() => handleSort('fba_fee')}
+                  className="group flex items-center gap-1 hover:text-gray-800 transition-colors"
+                >
+                  FBA Fee
+                  {getSortIcon('fba_fee')}
+                </button>
+              </th>
               <th className="px-4 py-3 text-left font-medium">Referral Fee</th>
-              <th className="px-4 py-3 text-left font-medium">Storage Fee</th>
-              <th className="px-4 py-3 text-left font-medium">Net Profit</th>
-              <th className="px-4 py-3 text-left font-medium">Net Margin</th>
-              <th className="px-4 py-3 text-left font-medium">ROI</th>
+              <th className="px-4 py-3 text-left font-medium">
+                <button
+                  type="button"
+                  onClick={() => handleSort('storage_fee')}
+                  className="group flex items-center gap-1 hover:text-gray-800 transition-colors"
+                >
+                  Storage Fee
+                  {getSortIcon('storage_fee')}
+                </button>
+              </th>
+              <th className="px-4 py-3 text-left font-medium">
+                <button
+                  type="button"
+                  onClick={() => handleSort('net_profit')}
+                  className="group flex items-center gap-1 hover:text-gray-800 transition-colors"
+                >
+                  Net Profit
+                  {getSortIcon('net_profit')}
+                </button>
+              </th>
+              <th className="px-4 py-3 text-left font-medium">
+                <button
+                  type="button"
+                  onClick={() => handleSort('net_margin')}
+                  className="group flex items-center gap-1 hover:text-gray-800 transition-colors"
+                >
+                  Net Margin
+                  {getSortIcon('net_margin')}
+                </button>
+              </th>
+              <th className="px-4 py-3 text-left font-medium">
+                <button
+                  type="button"
+                  onClick={() => handleSort('roi')}
+                  className="group flex items-center gap-1 hover:text-gray-800 transition-colors"
+                >
+                  ROI
+                  {getSortIcon('roi')}
+                </button>
+              </th>
               <th className="px-4 py-3 text-left font-medium">
                 Potential Winner
               </th>
-              <th className="px-4 py-3 text-left font-medium">Rank</th>
               <th className="px-4 py-3 text-left font-medium">
-                Amazon Instock Rate
+                <button
+                  type="button"
+                  onClick={() => handleSort('rank')}
+                  className="group flex items-center gap-1 hover:text-gray-800 transition-colors"
+                >
+                  Rank
+                  {getSortIcon('rank')}
+                </button>
               </th>
-              <th className="px-4 py-3 text-left font-medium"># FBA Sellers</th>
-              <th className="px-4 py-3 text-left font-medium"># FBM Sellers</th>
+              <th className="px-4 py-3 text-left font-medium">
+                <button
+                  type="button"
+                  onClick={() => handleSort('amazon_instock_rate')}
+                  className="group flex items-center gap-1 hover:text-gray-800 transition-colors"
+                >
+                  Amazon Instock Rate
+                  {getSortIcon('amazon_instock_rate')}
+                </button>
+              </th>
+              <th className="px-4 py-3 text-left font-medium">
+                <button
+                  type="button"
+                  onClick={() => handleSort('number_of_fba')}
+                  className="group flex items-center gap-1 hover:text-gray-800 transition-colors"
+                >
+                  # FBA Sellers
+                  {getSortIcon('number_of_fba')}
+                </button>
+              </th>
+              <th className="px-4 py-3 text-left font-medium">
+                <button
+                  type="button"
+                  onClick={() => handleSort('number_of_fbm')}
+                  className="group flex items-center gap-1 hover:text-gray-800 transition-colors"
+                >
+                  # FBM Sellers
+                  {getSortIcon('number_of_fbm')}
+                </button>
+              </th>
               <th className="px-4 py-3 text-left font-medium"># AMZ Sellers</th>
               <th className="px-4 py-3 text-left font-medium">
-                Est. Monthly Sold
+                <button
+                  type="button"
+                  onClick={() => handleSort('estimated_monthly_sales')}
+                  className="group flex items-center gap-1 hover:text-gray-800 transition-colors"
+                >
+                  Est. Monthly Sold
+                  {getSortIcon('estimated_monthly_sales')}
+                </button>
               </th>
               <th className="px-4 py-3 text-left font-medium">
-                Buy Box Equity
+                <button
+                  type="button"
+                  onClick={() => handleSort('buy_box_equity')}
+                  className="group flex items-center gap-1 hover:text-gray-800 transition-colors"
+                >
+                  Buy Box Equity
+                  {getSortIcon('buy_box_equity')}
+                </button>
               </th>
               <th className="px-4 py-3 text-left font-medium">Out of Stock</th>
               <th className="px-4 py-3 text-left font-medium">
-                Dominant Seller
+                <button
+                  type="button"
+                  onClick={() => handleSort('dominant_seller')}
+                  className="group flex items-center gap-1 hover:text-gray-800 transition-colors"
+                >
+                  Dominant Seller
+                  {getSortIcon('dominant_seller')}
+                </button>
               </th>
               <th className="px-4 py-3 text-left font-medium">ASIN</th>
               <th className="px-4 py-3 text-left font-medium">Title</th>
@@ -278,11 +487,11 @@ const ScanDetailsTable = ({ products = [], isLoading = false }: ScanDetailsProps
                   <th className="w-32 px-4 py-3 text-left font-medium whitespace-nowrap">
                     <button
                       type="button"
-                      onClick={handleSort}
+                      onClick={() => handleSort('buy_box_price')}
                       className="group flex items-center gap-1 hover:text-gray-800 transition-colors"
                     >
                       Buy Box Price
-                      {getSortIcon()}
+                      {getSortIcon('buy_box_price')}
                     </button>
                   </th>
                 </tr>
@@ -323,36 +532,144 @@ const ScanDetailsTable = ({ products = [], isLoading = false }: ScanDetailsProps
             <table className="table-fixed w-[2560px] text-sm bg-white border-separate border-spacing-0">
               <thead className="bg-[#F3F4F6] text-[#596375]">
                 <tr className="border-b border-gray-200 divide-x-2 h-12">
-                  {[
-                    "FBA Fee",
-                    "Referral Fee",
-                    "Storage Fee",
-                    "Net Profit",
-                    "Net Margin",
-                    "ROI",
-                    "Potential Winner",
-                    "Rank",
-                    "Amazon Instock Rate",
-                    "# FBA Sellers",
-                    "# FBM Sellers",
-                    "# AMZ Sellers",
-                    "Est. Monthly Sold",
-                    "Buy Box Equity",
-                    "Out of Stock",
-                    "Dominant Seller",
-                    "ASIN",
-                    "Title",
-                  ].map((header) => (
-                    <th
-                      key={header}
-                      className={`px-4 py-3 text-left font-medium whitespace-nowrap ${header === "Title" ? "w-[75rem]" :
-                        header === "Dominant Seller" ? "w-[13.2rem]" :
-                          header === "Potential Winner" ? "w-[13.2rem]" : "w-44"
-                        }`}
+                  <th className="px-4 py-3 text-left font-medium whitespace-nowrap w-44">
+                    <button
+                      type="button"
+                      onClick={() => handleSort('fba_fee')}
+                      className="group flex items-center gap-1 hover:text-gray-800 transition-colors"
                     >
-                      {header}
-                    </th>
-                  ))}
+                      FBA Fee
+                      {getSortIcon('fba_fee')}
+                    </button>
+                  </th>
+                  <th className="px-4 py-3 text-left font-medium whitespace-nowrap w-44">
+                    Referral Fee
+                  </th>
+                  <th className="px-4 py-3 text-left font-medium whitespace-nowrap w-44">
+                    <button
+                      type="button"
+                      onClick={() => handleSort('storage_fee')}
+                      className="group flex items-center gap-1 hover:text-gray-800 transition-colors"
+                    >
+                      Storage Fee
+                      {getSortIcon('storage_fee')}
+                    </button>
+                  </th>
+                  <th className="px-4 py-3 text-left font-medium whitespace-nowrap w-44">
+                    <button
+                      type="button"
+                      onClick={() => handleSort('net_profit')}
+                      className="group flex items-center gap-1 hover:text-gray-800 transition-colors"
+                    >
+                      Net Profit
+                      {getSortIcon('net_profit')}
+                    </button>
+                  </th>
+                  <th className="px-4 py-3 text-left font-medium whitespace-nowrap w-44">
+                    <button
+                      type="button"
+                      onClick={() => handleSort('net_margin')}
+                      className="group flex items-center gap-1 hover:text-gray-800 transition-colors"
+                    >
+                      Net Margin
+                      {getSortIcon('net_margin')}
+                    </button>
+                  </th>
+                  <th className="px-4 py-3 text-left font-medium whitespace-nowrap w-44">
+                    <button
+                      type="button"
+                      onClick={() => handleSort('roi')}
+                      className="group flex items-center gap-1 hover:text-gray-800 transition-colors"
+                    >
+                      ROI
+                      {getSortIcon('roi')}
+                    </button>
+                  </th>
+                  <th className="px-4 py-3 text-left font-medium whitespace-nowrap w-[13.2rem]">
+                    Potential Winner
+                  </th>
+                  <th className="px-4 py-3 text-left font-medium whitespace-nowrap w-44">
+                    <button
+                      type="button"
+                      onClick={() => handleSort('rank')}
+                      className="group flex items-center gap-1 hover:text-gray-800 transition-colors"
+                    >
+                      Rank
+                      {getSortIcon('rank')}
+                    </button>
+                  </th>
+                  <th className="px-4 py-3 text-left font-medium whitespace-nowrap w-44">
+                    <button
+                      type="button"
+                      onClick={() => handleSort('amazon_instock_rate')}
+                      className="group flex items-center gap-1 hover:text-gray-800 transition-colors"
+                    >
+                      Amazon Instock Rate
+                      {getSortIcon('amazon_instock_rate')}
+                    </button>
+                  </th>
+                  <th className="px-4 py-3 text-left font-medium whitespace-nowrap w-44">
+                    <button
+                      type="button"
+                      onClick={() => handleSort('number_of_fba')}
+                      className="group flex items-center gap-1 hover:text-gray-800 transition-colors"
+                    >
+                      # FBA Sellers
+                      {getSortIcon('number_of_fba')}
+                    </button>
+                  </th>
+                  <th className="px-4 py-3 text-left font-medium whitespace-nowrap w-44">
+                    <button
+                      type="button"
+                      onClick={() => handleSort('number_of_fbm')}
+                      className="group flex items-center gap-1 hover:text-gray-800 transition-colors"
+                    >
+                      # FBM Sellers
+                      {getSortIcon('number_of_fbm')}
+                    </button>
+                  </th>
+                  <th className="px-4 py-3 text-left font-medium whitespace-nowrap w-44">
+                    # AMZ Sellers
+                  </th>
+                  <th className="px-4 py-3 text-left font-medium whitespace-nowrap w-44">
+                    <button
+                      type="button"
+                      onClick={() => handleSort('estimated_monthly_sales')}
+                      className="group flex items-center gap-1 hover:text-gray-800 transition-colors"
+                    >
+                      Est. Monthly Sold
+                      {getSortIcon('estimated_monthly_sales')}
+                    </button>
+                  </th>
+                  <th className="px-4 py-3 text-left font-medium whitespace-nowrap w-44">
+                    <button
+                      type="button"
+                      onClick={() => handleSort('buy_box_equity')}
+                      className="group flex items-center gap-1 hover:text-gray-800 transition-colors"
+                    >
+                      Buy Box Equity
+                      {getSortIcon('buy_box_equity')}
+                    </button>
+                  </th>
+                  <th className="px-4 py-3 text-left font-medium whitespace-nowrap w-44">
+                    Out of Stock
+                  </th>
+                  <th className="px-4 py-3 text-left font-medium whitespace-nowrap w-[13.2rem]">
+                    <button
+                      type="button"
+                      onClick={() => handleSort('dominant_seller')}
+                      className="group flex items-center gap-1 hover:text-gray-800 transition-colors"
+                    >
+                      Dominant Seller
+                      {getSortIcon('dominant_seller')}
+                    </button>
+                  </th>
+                  <th className="px-4 py-3 text-left font-medium whitespace-nowrap w-44">
+                    ASIN
+                  </th>
+                  <th className="px-4 py-3 text-left font-medium whitespace-nowrap w-[75rem]">
+                    Title
+                  </th>
                 </tr>
               </thead>
               <tbody className="text-gray-700">
