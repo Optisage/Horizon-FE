@@ -782,7 +782,7 @@ const UpcScanner = () => {
             </div>
             {selectedProductId ? (
               <div className="">
-                <div className="bg-[#F3F4F6] rounded-t-xl grid lg:grid-cols-[511px_1fr] lg:divide-x-2 divide-gray-200 border border-b-0 border-gray-200">
+                <div className="bg-[#F3F4F6] rounded-t-xl grid lg:grid-cols-[456px_1fr] lg:divide-x-2 divide-gray-200 border border-b-0 border-gray-200">
                   <div className="hidden lg:block p-8" />
                   <div className="p-6 lg:p-8 text-[#596375] text-sm font-semibold text-center lg:text-start">
                     Fees and Profit
