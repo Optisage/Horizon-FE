@@ -93,12 +93,15 @@ const parseStringValue = (value: string | null | undefined): string => {
   return value.toLowerCase();
 };
 
-import { useEffect, useRef, useState, useMemo } from "react";
+const truncateText = (text: string | null | undefined, maxLength: number = 80): string => {
+  if (!text || text === '-') return text || '-';
+  if (text.length <= maxLength) return text;
+  return text.substring(0, maxLength) + '...';
+};
+
+import { useEffect, useState, useMemo } from "react";
 
 const ScanDetailsTable = ({ products = [], isLoading = false }: ScanDetailsProps) => {
-  const tableContainerRef = useRef<HTMLDivElement>(null);
-  const scrollbarRef = useRef<HTMLDivElement>(null);
-  const scrollbarThumbRef = useRef<HTMLDivElement>(null);
   const [sortState, setSortState] = useState<SortState>({ column: null, order: null });
 
   // Sort products based on selected column
@@ -214,62 +217,14 @@ const ScanDetailsTable = ({ products = [], isLoading = false }: ScanDetailsProps
   };
 
   useEffect(() => {
-    const tableContainer = tableContainerRef.current;
-    const scrollbar = scrollbarRef.current;
-    const scrollbarThumb = scrollbarThumbRef.current;
-
-    if (!tableContainer || !scrollbar || !scrollbarThumb) return;
-
-    const handleScroll = () => {
-      if (!scrollbarThumb) return; // Add guard clause
-      const scrollPercentage = tableContainer.scrollLeft / (tableContainer.scrollWidth - tableContainer.clientWidth);
-      const thumbX = scrollPercentage * (scrollbar.clientWidth - scrollbarThumb.clientWidth);
-      scrollbarThumb.style.transform = `translateX(${thumbX}px)`;
-    };
-
-    tableContainer.addEventListener('scroll', handleScroll);
-
-    let isDragging = false;
-    let startX = 0;
-    let scrollLeft = 0;
-
-    const handleMouseDown = (e: MouseEvent) => {
-      isDragging = true;
-      startX = e.pageX;
-      scrollLeft = tableContainer.scrollLeft;
-      scrollbar.classList.add('cursor-grabbing');
-      document.addEventListener('mousemove', handleMouseMove);
-      document.addEventListener('mouseup', handleMouseUp);
-    };
-
-    const handleMouseMove = (e: MouseEvent) => {
-      if (!isDragging) return;
-      e.preventDefault();
-      const x = e.pageX;
-      const walk = (x - startX) * 3; //scroll-fast
-      tableContainer.scrollLeft = scrollLeft + walk;
-    };
-
-    const handleMouseUp = () => {
-      isDragging = false;
-      scrollbar.classList.remove('cursor-grabbing');
-      document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('mouseup', handleMouseUp);
-    };
-
-    scrollbar.addEventListener('mousedown', handleMouseDown);
-
-    return () => {
-      tableContainer.removeEventListener('scroll', handleScroll);
-      scrollbar.removeEventListener('mousedown', handleMouseDown);
-      document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('mouseup', handleMouseUp);
-    };
+    // Since we're using fixed positioning for the left table and overflow-x-auto for the right table,
+    // we don't need the custom scrollbar functionality anymore
+    // The browser's native scrollbar will handle the right table scrolling
   }, []);
   return (
-    <div className="w-full overflow-x-auto scrollbar-hide rounded-b-xl border border-gray-200 max-h-[600px] overflow-y-auto">
+    <div className="w-full relative bg-white">
       {/* Mobile View */}
-      <div className="sm:hidden">
+      <div className="sm:hidden max-h-[600px] overflow-y-auto">
         <table className="table-fixed w-full min-w-[1600px] text-sm bg-white">
           <thead className="bg-[#F3F4F6] text-[#596375] sticky top-0 z-20">
             <tr className="border-b border-gray-200">
@@ -448,7 +403,9 @@ const ScanDetailsTable = ({ products = [], isLoading = false }: ScanDetailsProps
                   <td className="px-4 py-3">{formatValue(product.product_details.net_profit)}</td>
                   <td className="px-4 py-3">{formatValue(product.product_details.net_margin)}</td>
                   <td className="px-4 py-3">{formatValue(product.product_details.roi)}</td>
-                  <td className="px-4 py-3">{formatValue(product.product_details.potential_winner)}</td>
+                  <td className="px-4 py-3" title={formatValue(product.product_details.potential_winner)}>
+                    {truncateText(formatValue(product.product_details.potential_winner), 30)}
+                  </td>
                   <td className="px-4 py-3">{formatValue(product.product_details.rank)}</td>
                   <td className="px-4 py-3">{formatValue(product.product_details.amazon_instock_rate)}</td>
                   <td className="px-4 py-3">{formatValue(product.product_details.number_of_fba)}</td>
@@ -457,9 +414,13 @@ const ScanDetailsTable = ({ products = [], isLoading = false }: ScanDetailsProps
                   <td className="px-4 py-3">{formatValue(product.product_details.estimated_monthly_sales)}</td>
                   <td className="px-4 py-3">{formatValue(product.product_details.buy_box_equity)}</td>
                   <td className="px-4 py-3">{formatValue(product.product_details.out_of_stock)}</td>
-                  <td className="px-4 py-3">{formatValue(product.product_details.dominant_seller)}</td>
+                  <td className="px-4 py-3" title={formatValue(product.product_details.dominant_seller)}>
+                    {truncateText(formatValue(product.product_details.dominant_seller), 30)}
+                  </td>
                   <td className="px-4 py-3">{formatValue(product.product_details.asin)}</td>
-                  <td className="px-4 py-3">{formatValue(product.product_details.title)}</td>
+                  <td className="px-4 py-3" title={formatValue(product.product_details.title)}>
+                    {truncateText(formatValue(product.product_details.title), 80)}
+                  </td>
                 </tr>
               ))
             )}
@@ -469,19 +430,20 @@ const ScanDetailsTable = ({ products = [], isLoading = false }: ScanDetailsProps
 
       {/* Desktop View */}
       <div className="relative hidden sm:block w-full">
-        <div className="flex">
-          {/* Left Table */}
-          <div className="sticky left-0 z-20 w-[512px] border-r border-gray-300 bg-white">
-            <table className="table-fixed w-full text-sm border-separate border-spacing-0">
-              <thead className="bg-[#F3F4F6] text-[#596375] sticky top-0 z-30">
+        <div className="max-h-[600px] overflow-y-auto border border-gray-200 rounded-b-xl">
+          <div className="flex overflow-x-auto">
+            {/* Left Sticky Table */}
+            <div className="sticky left-0 z-30 w-[456px] border-r-2 border-gray-300 bg-white shadow-lg flex-shrink-0">
+              <table className="table-fixed w-full text-sm">
+                <thead className="bg-[#F3F4F6] text-[#596375] sticky top-0 z-40">
                 <tr className="border-b border-gray-200 h-12">
                   <th className="w-10 px-4 py-3 text-left font-medium">
                     <GoSearch className="size-4 text-gray-500" />
                   </th>
-                  <th className="w-40 px-4 py-3 text-left font-medium border-r-2 whitespace-nowrap">
+                  <th className="w-40 px-4 py-3 text-left font-medium whitespace-nowrap">
                     UPC / EAN
                   </th>
-                  <th className="w-32 px-4 py-3 text-left font-medium border-r-2 whitespace-nowrap">
+                  <th className="w-32 px-4 py-3 text-left font-medium whitespace-nowrap">
                     Product Cost
                   </th>
                   <th className="w-32 px-4 py-3 text-left font-medium whitespace-nowrap">
@@ -514,12 +476,12 @@ const ScanDetailsTable = ({ products = [], isLoading = false }: ScanDetailsProps
                 ) : (
                   sortedProducts.map((product, idx) => (
                     <tr key={idx} className="border-b border-gray-200 h-12">
-                      <td className="px-4 py-2">
+                      <td className="px-4 py-2 align-middle">
                         <GoSearch className="size-4 text-gray-500" />
                       </td>
-                      <td className="px-4 py-2">{product.asin_upc}</td>
-                      <td className="px-4 py-2">{formatCurrency(product.product_cost)}</td>
-                      <td className="px-4 py-2">{formatCurrency(product.buy_box_price)}</td>
+                      <td className="px-4 py-2 align-middle">{product.asin_upc}</td>
+                      <td className="px-4 py-2 align-middle">{formatCurrency(product.product_cost)}</td>
+                      <td className="px-4 py-2 align-middle">{formatCurrency(product.buy_box_price)}</td>
                     </tr>
                   ))
                 )}
@@ -527,12 +489,12 @@ const ScanDetailsTable = ({ products = [], isLoading = false }: ScanDetailsProps
             </table>
           </div>
 
-          {/* Scrollable Right Table - Fees and Profit Section */}
-          <div ref={tableContainerRef} className="flex-1 overflow-x-auto relative show-scrollbar">
-            <table className="table-fixed w-[2560px] text-sm bg-white border-separate border-spacing-0">
-              <thead className="bg-[#F3F4F6] text-[#596375] sticky top-0 z-10">
-                <tr className="border-b border-gray-200 divide-x-2 h-12">
-                  <th className="px-4 py-3 text-left font-medium whitespace-nowrap w-44">
+            {/* Right Scrollable Table - All Analytics Columns */}
+            <div className="flex-1 bg-white">
+              <table className="table-fixed w-full text-sm min-w-[1600px]">
+                <thead className="bg-[#F3F4F6] text-[#596375] sticky top-0 z-20">
+                <tr className="border-b border-gray-200 h-12">
+                  <th className="px-4 py-3 text-left font-medium whitespace-nowrap w-36">
                     <button
                       type="button"
                       onClick={() => handleSort('fba_fee')}
@@ -542,10 +504,10 @@ const ScanDetailsTable = ({ products = [], isLoading = false }: ScanDetailsProps
                       {getSortIcon('fba_fee')}
                     </button>
                   </th>
-                  <th className="px-4 py-3 text-left font-medium whitespace-nowrap w-44">
+                  <th className="px-4 py-3 text-left font-medium whitespace-nowrap w-36">
                     Referral Fee
                   </th>
-                  <th className="px-4 py-3 text-left font-medium whitespace-nowrap w-44">
+                  <th className="px-4 py-3 text-left font-medium whitespace-nowrap w-36">
                     <button
                       type="button"
                       onClick={() => handleSort('storage_fee')}
@@ -555,7 +517,7 @@ const ScanDetailsTable = ({ products = [], isLoading = false }: ScanDetailsProps
                       {getSortIcon('storage_fee')}
                     </button>
                   </th>
-                  <th className="px-4 py-3 text-left font-medium whitespace-nowrap w-44">
+                  <th className="px-4 py-3 text-left font-medium whitespace-nowrap w-36">
                     <button
                       type="button"
                       onClick={() => handleSort('net_profit')}
@@ -565,7 +527,7 @@ const ScanDetailsTable = ({ products = [], isLoading = false }: ScanDetailsProps
                       {getSortIcon('net_profit')}
                     </button>
                   </th>
-                  <th className="px-4 py-3 text-left font-medium whitespace-nowrap w-44">
+                  <th className="px-4 py-3 text-left font-medium whitespace-nowrap w-36">
                     <button
                       type="button"
                       onClick={() => handleSort('net_margin')}
@@ -575,7 +537,7 @@ const ScanDetailsTable = ({ products = [], isLoading = false }: ScanDetailsProps
                       {getSortIcon('net_margin')}
                     </button>
                   </th>
-                  <th className="px-4 py-3 text-left font-medium whitespace-nowrap w-44">
+                  <th className="px-4 py-3 text-left font-medium whitespace-nowrap w-32">
                     <button
                       type="button"
                       onClick={() => handleSort('roi')}
@@ -585,10 +547,10 @@ const ScanDetailsTable = ({ products = [], isLoading = false }: ScanDetailsProps
                       {getSortIcon('roi')}
                     </button>
                   </th>
-                  <th className="px-4 py-3 text-left font-medium whitespace-nowrap w-[13.2rem]">
+                  <th className="px-4 py-3 text-left font-medium whitespace-nowrap w-40">
                     Potential Winner
                   </th>
-                  <th className="px-4 py-3 text-left font-medium whitespace-nowrap w-44">
+                  <th className="px-4 py-3 text-left font-medium whitespace-nowrap w-32">
                     <button
                       type="button"
                       onClick={() => handleSort('rank')}
@@ -598,7 +560,7 @@ const ScanDetailsTable = ({ products = [], isLoading = false }: ScanDetailsProps
                       {getSortIcon('rank')}
                     </button>
                   </th>
-                  <th className="px-4 py-3 text-left font-medium whitespace-nowrap w-44">
+                  <th className="px-4 py-3 text-left font-medium whitespace-nowrap w-48">
                     <button
                       type="button"
                       onClick={() => handleSort('amazon_instock_rate')}
@@ -608,7 +570,7 @@ const ScanDetailsTable = ({ products = [], isLoading = false }: ScanDetailsProps
                       {getSortIcon('amazon_instock_rate')}
                     </button>
                   </th>
-                  <th className="px-4 py-3 text-left font-medium whitespace-nowrap w-44">
+                  <th className="px-4 py-3 text-left font-medium whitespace-nowrap w-40">
                     <button
                       type="button"
                       onClick={() => handleSort('number_of_fba')}
@@ -618,7 +580,7 @@ const ScanDetailsTable = ({ products = [], isLoading = false }: ScanDetailsProps
                       {getSortIcon('number_of_fba')}
                     </button>
                   </th>
-                  <th className="px-4 py-3 text-left font-medium whitespace-nowrap w-44">
+                  <th className="px-4 py-3 text-left font-medium whitespace-nowrap w-40">
                     <button
                       type="button"
                       onClick={() => handleSort('number_of_fbm')}
@@ -628,7 +590,7 @@ const ScanDetailsTable = ({ products = [], isLoading = false }: ScanDetailsProps
                       {getSortIcon('number_of_fbm')}
                     </button>
                   </th>
-                  <th className="px-4 py-3 text-left font-medium whitespace-nowrap w-44">
+                  <th className="px-4 py-3 text-left font-medium whitespace-nowrap w-36">
                     # AMZ Sellers
                   </th>
                   <th className="px-4 py-3 text-left font-medium whitespace-nowrap w-44">
@@ -641,7 +603,7 @@ const ScanDetailsTable = ({ products = [], isLoading = false }: ScanDetailsProps
                       {getSortIcon('estimated_monthly_sales')}
                     </button>
                   </th>
-                  <th className="px-4 py-3 text-left font-medium whitespace-nowrap w-44">
+                  <th className="px-4 py-3 text-left font-medium whitespace-nowrap w-40">
                     <button
                       type="button"
                       onClick={() => handleSort('buy_box_equity')}
@@ -651,10 +613,10 @@ const ScanDetailsTable = ({ products = [], isLoading = false }: ScanDetailsProps
                       {getSortIcon('buy_box_equity')}
                     </button>
                   </th>
-                  <th className="px-4 py-3 text-left font-medium whitespace-nowrap w-44">
+                  <th className="px-4 py-3 text-left font-medium whitespace-nowrap w-32">
                     Out of Stock
                   </th>
-                  <th className="px-4 py-3 text-left font-medium whitespace-nowrap w-[13.2rem]">
+                  <th className="px-4 py-3 text-left font-medium whitespace-nowrap w-44">
                     <button
                       type="button"
                       onClick={() => handleSort('dominant_seller')}
@@ -664,10 +626,10 @@ const ScanDetailsTable = ({ products = [], isLoading = false }: ScanDetailsProps
                       {getSortIcon('dominant_seller')}
                     </button>
                   </th>
-                  <th className="px-4 py-3 text-left font-medium whitespace-nowrap w-44">
+                  <th className="px-4 py-3 text-left font-medium whitespace-nowrap w-32">
                     ASIN
                   </th>
-                  <th className="px-4 py-3 text-left font-medium whitespace-nowrap w-[75rem]">
+                  <th className="px-4 py-3 text-left font-medium whitespace-nowrap w-[600px]">
                     Title
                   </th>
                 </tr>
@@ -675,7 +637,7 @@ const ScanDetailsTable = ({ products = [], isLoading = false }: ScanDetailsProps
               <tbody className="text-gray-700">
                 {isLoading ? (
                   <tr>
-                    <td colSpan={16} className="px-4 py-8 text-center">
+                    <td colSpan={18} className="px-4 py-8 text-center">
                       <div className="flex justify-center">
                         <Spin size="large" style={{ color: "#18CB96" }} />
                       </div>
@@ -683,36 +645,49 @@ const ScanDetailsTable = ({ products = [], isLoading = false }: ScanDetailsProps
                   </tr>
                 ) : products.length === 0 ? (
                   <tr>
-                    <td colSpan={16} className="px-4 py-8 text-center">
+                    <td colSpan={18} className="px-4 py-8 text-center">
                       No products found
                     </td>
                   </tr>
                 ) : (
                   sortedProducts.map((product, idx) => (
                     <tr key={idx} className="border-b border-gray-200 h-12">
-                      <td className="px-4 py-2">{formatValue(product.product_details.fba_fee)}</td>
-                      <td className="px-4 py-2">{formatValue(product.product_details.referral_fee)}</td>
-                      <td className="px-4 py-2">{formatValue(product.product_details.storage_fee)}</td>
-                      <td className="px-4 py-2">{formatValue(product.product_details.net_profit)}</td>
-                      <td className="px-4 py-2">{formatValue(product.product_details.net_margin)}</td>
-                      <td className="px-4 py-2">{formatValue(product.product_details.roi)}</td>
-                      <td className="px-4 py-2">{formatValue(product.product_details.potential_winner)}</td>
-                      <td className="px-4 py-2">{formatValue(product.product_details.rank)}</td>
-                      <td className="px-4 py-2">{formatValue(product.product_details.amazon_instock_rate)}</td>
-                      <td className="px-4 py-2">{formatValue(product.product_details.number_of_fba)}</td>
-                      <td className="px-4 py-2">{formatValue(product.product_details.number_of_fbm)}</td>
-                      <td className="px-4 py-2">{formatValue(product.product_details.number_of_amz)}</td>
-                      <td className="px-4 py-2">{formatValue(product.product_details.estimated_monthly_sales)}</td>
-                      <td className="px-4 py-2">{formatValue(product.product_details.buy_box_equity)}</td>
-                      <td className="px-4 py-2">{formatValue(product.product_details.out_of_stock)}</td>
-                      <td className="px-4 py-2">{formatValue(product.product_details.dominant_seller)}</td>
-                      <td className="px-4 py-2">{formatValue(product.product_details.asin)}</td>
-                      <td className="px-4 py-2">{formatValue(product.product_details.title)}</td>
+                      <td className="px-4 py-2 align-middle">{formatValue(product.product_details.fba_fee)}</td>
+                      <td className="px-4 py-2 align-middle">{formatValue(product.product_details.referral_fee)}</td>
+                      <td className="px-4 py-2 align-middle">{formatValue(product.product_details.storage_fee)}</td>
+                      <td className="px-4 py-2 align-middle">{formatValue(product.product_details.net_profit)}</td>
+                      <td className="px-4 py-2 align-middle">{formatValue(product.product_details.net_margin)}</td>
+                      <td className="px-4 py-2 align-middle">{formatValue(product.product_details.roi)}</td>
+                      <td className="px-4 py-2 align-middle" title={formatValue(product.product_details.potential_winner)}>
+                        <div className="truncate max-w-full">
+                          {truncateText(formatValue(product.product_details.potential_winner), 30)}
+                        </div>
+                      </td>
+                      <td className="px-4 py-2 align-middle">{formatValue(product.product_details.rank)}</td>
+                      <td className="px-4 py-2 align-middle">{formatValue(product.product_details.amazon_instock_rate)}</td>
+                      <td className="px-4 py-2 align-middle">{formatValue(product.product_details.number_of_fba)}</td>
+                      <td className="px-4 py-2 align-middle">{formatValue(product.product_details.number_of_fbm)}</td>
+                      <td className="px-4 py-2 align-middle">{formatValue(product.product_details.number_of_amz)}</td>
+                      <td className="px-4 py-2 align-middle">{formatValue(product.product_details.estimated_monthly_sales)}</td>
+                      <td className="px-4 py-2 align-middle">{formatValue(product.product_details.buy_box_equity)}</td>
+                      <td className="px-4 py-2 align-middle">{formatValue(product.product_details.out_of_stock)}</td>
+                      <td className="px-4 py-2 align-middle" title={formatValue(product.product_details.dominant_seller)}>
+                        <div className="truncate max-w-full">
+                          {truncateText(formatValue(product.product_details.dominant_seller), 30)}
+                        </div>
+                      </td>
+                      <td className="px-4 py-2 align-middle">{formatValue(product.product_details.asin)}</td>
+                      <td className="px-4 py-2 align-middle" title={formatValue(product.product_details.title)}>
+                        <div className="truncate max-w-full">
+                          {truncateText(formatValue(product.product_details.title), 80)}
+                        </div>
+                      </td>
                     </tr>
                   ))
                 )}
               </tbody>
-            </table>
+              </table>
+            </div>
           </div>
         </div>
       </div>
