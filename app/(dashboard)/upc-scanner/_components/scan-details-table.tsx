@@ -224,8 +224,8 @@ const ScanDetailsTable = ({ products = [], isLoading = false }: ScanDetailsProps
   return (
     <div className="w-full relative bg-white">
       {/* Mobile View */}
-      <div className="sm:hidden max-h-[600px] overflow-y-auto">
-        <table className="table-fixed w-full min-w-[1600px] text-sm bg-white">
+      <div className="sm:hidden max-h-[600px] overflow-y-auto overflow-x-auto">
+        <table className="table-fixed w-full min-w-[2400px] text-sm bg-white">
           <thead className="bg-[#F3F4F6] text-[#596375] sticky top-0 z-20">
             <tr className="border-b border-gray-200">
               <th className="px-4 py-3 text-left font-medium">
@@ -463,7 +463,7 @@ const ScanDetailsTable = ({ products = [], isLoading = false }: ScanDetailsProps
                   <tr>
                     <td colSpan={4} className="px-4 py-8 text-center">
                       <div className="flex justify-center">
-                        <Spin size="large" />
+                        <Spin size="large" style={{ color: "#18CB96" }} />
                       </div>
                     </td>
                   </tr>
