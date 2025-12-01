@@ -430,8 +430,8 @@ const ScanDetailsTable = ({ products = [], isLoading = false }: ScanDetailsProps
 
       {/* Desktop View */}
       <div className="relative hidden sm:block w-full">
-        <div className="max-h-[600px] overflow-y-auto border border-gray-200 rounded-b-xl">
-          <div className="flex overflow-x-auto">
+        <div className="max-h-[600px] overflow-auto border border-gray-200 rounded-b-xl">
+          <div className="flex" style={{ minWidth: 'calc(456px + 1600px)' }}>
             {/* Left Sticky Table */}
             <div className="sticky left-0 z-30 w-[456px] border-r-2 border-gray-300 bg-white shadow-lg flex-shrink-0">
               <table className="table-fixed w-full text-sm">
